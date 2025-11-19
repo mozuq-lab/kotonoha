@@ -351,6 +351,47 @@ Copyright (c) 2025 kotonoha project
   postgresql://kotonoha_user:your_password@localhost:5432/kotonoha_db
   ```
 
+##### TASK-0006: データベーススキーマ設計・SQL作成
+
+- **完了日**: 2025-11-20
+- **概要**: PostgreSQLデータベーススキーマの設計と実装、ERD作成、SQL構文検証
+- **実装内容**:
+  - database-schema.sqlの構文修正（PostgreSQL 15準拠）
+    - CREATE TABLE内のINDEX句を外部に移動（構文エラー解消）
+    - ai_conversion_logs テーブル: AI変換ログ（プライバシー保護のためSHA-256ハッシュ化）
+    - error_logs テーブル: システムエラーログ（デバッグ・監視用）
+  - ERD（Entity Relationship Diagram）作成（Mermaid形式）
+  - テーブル詳細説明書の作成
+  - データ保持ポリシーの定義（AI変換ログ90日、エラーログ30日）
+  - インデックス設計（created_at降順、error_code検索用）
+- **動作確認**:
+  - PostgreSQL 15.15での構文検証成功
+  - トランザクション内でのテーブル作成・ロールバック確認
+  - 全SQL文の実行成功（CREATE EXTENSION, CREATE FUNCTION, CREATE TABLE, CREATE INDEX, COMMENT）
+- **成果物**:
+  - データベーススキーマ:
+    - テーブル: ai_conversion_logs, error_logs
+    - インデックス: idx_ai_conversion_logs_created_at, idx_error_logs_code_created, idx_error_logs_created_at
+    - 拡張機能: uuid-ossp（UUID生成）
+    - 関数: update_updated_at_column（タイムスタンプ自動更新）
+  - ファイル:
+    - docs/design/kotonoha/database-schema.sql (9.8KB)
+    - docs/design/kotonoha/database-erd.md (6.1KB)
+  - 実装記録: docs/implements/kotonoha/TASK-0006/ (setup-report.md, verify-report.md)
+- **データベーススキーマ概要**:
+  ```sql
+  -- ai_conversion_logs: AI変換ログテーブル
+  --   - プライバシー保護のため入力/出力テキストはSHA-256ハッシュ化
+  --   - 統計用に文字数、処理時間、丁寧さレベルを記録
+  --   - NFR-002監視用（平均3秒以内）: processing_time_ms カラム
+
+  -- error_logs: エラーログテーブル
+  --   - システムエラー、APIエラーの記録用
+  --   - JSONB型でコンテキスト情報を柔軟に保存
+  --   - デバッグと監視用途
+  ```
+- **次のステップ**: TASK-0007（Alembic初期設定・マイグレーション環境構築）
+
 ## コントリビューション
 
 コントリビューションを歓迎します。詳細は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。

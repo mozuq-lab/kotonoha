@@ -64,11 +64,11 @@ CREATE TABLE ai_conversion_logs (
     api_status_code INTEGER,
 
     -- 作成日時
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- インデックス: 作成日時での検索用
-    INDEX idx_ai_conversion_logs_created_at (created_at DESC)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- インデックス: 作成日時での検索用
+CREATE INDEX idx_ai_conversion_logs_created_at ON ai_conversion_logs(created_at DESC);
 
 COMMENT ON TABLE ai_conversion_logs IS 'AI変換の使用ログ（プライバシー保護のためハッシュ化）';
 COMMENT ON COLUMN ai_conversion_logs.input_text_hash IS '変換元テキストのSHA-256ハッシュ値';
@@ -102,12 +102,12 @@ CREATE TABLE error_logs (
     context JSONB,
 
     -- 作成日時
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- インデックス: エラーコードと作成日時での検索用
-    INDEX idx_error_logs_code_created (error_code, created_at DESC),
-    INDEX idx_error_logs_created_at (created_at DESC)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- インデックス: エラーコードと作成日時での検索用
+CREATE INDEX idx_error_logs_code_created ON error_logs(error_code, created_at DESC);
+CREATE INDEX idx_error_logs_created_at ON error_logs(created_at DESC);
 
 COMMENT ON TABLE error_logs IS 'システムエラーログ（デバッグ・監視用）';
 COMMENT ON COLUMN error_logs.context IS 'エラー発生時の追加情報（JSON形式、柔軟な情報保存用）';
