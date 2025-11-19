@@ -390,7 +390,84 @@ Copyright (c) 2025 kotonoha project
   --   - JSONB型でコンテキスト情報を柔軟に保存
   --   - デバッグと監視用途
   ```
-- **次のステップ**: TASK-0007（Alembic初期設定・マイグレーション環境構築）
+- **次のステップ**: TASK-0008（SQLAlchemyモデル実装）
+
+##### TASK-0007: Alembic初期設定・マイグレーション環境構築
+
+- **完了日**: 2025-11-20
+- **概要**: Alembic初期化、環境変数対応設定、データベースマイグレーション環境構築
+- **実装内容**:
+  - Alembic初期化（`alembic init alembic`）
+    - backend/alembic/ディレクトリ生成
+    - backend/alembic/versions/（マイグレーションファイル格納用）
+    - backend/alembic/env.py（マイグレーション実行スクリプト）
+    - backend/alembic.ini（設定ファイル）
+  - バックエンドディレクトリ構造作成
+    - backend/app/core/（コア機能：設定、セキュリティ等）
+    - backend/app/db/（データベース関連）
+    - backend/app/models/（SQLAlchemyモデル）
+    - backend/app/schemas/（Pydanticスキーマ）
+  - 設定ファイル作成
+    - backend/app/core/config.py（Pydantic Settings使用）
+      - 環境変数からの自動読み込み
+      - 型安全な設定管理
+      - DATABASE_URL自動生成（同期・非同期両対応）
+    - backend/app/core/__init__.py
+  - alembic.ini設定
+    - 環境変数からの設定読み込み（コメント明記）
+    - Ruff自動フォーマット有効化（post-write hook）
+  - alembic/env.py設定
+    - app.core.configから設定を読み込み
+    - DATABASE_URL_SYNC使用（同期URL、Alembic対応）
+    - 将来的なモデル追加に備えた構造（target_metadata = None）
+  - 環境変数ファイル作成（backend/.env）
+- **動作確認**:
+  - PostgreSQLコンテナ確認（kotonoha_postgres: Up 9 hours (healthy)）
+  - PostgreSQL接続確認（PostgreSQL 15.15）
+  - Alembic動作確認（`alembic current`成功）
+  - 設定モジュールインポート確認（app.core.config正常読み込み）
+  - Python構文チェック成功（ast.parse検証）
+- **成果物**:
+  - Alembicリソース:
+    - backend/alembic/（ディレクトリ）
+    - backend/alembic/versions/（空、マイグレーション格納用）
+    - backend/alembic/env.py（環境変数対応設定）
+    - backend/alembic.ini（Ruff hook有効化）
+  - 設定ファイル:
+    - backend/app/core/__init__.py
+    - backend/app/core/config.py（Pydantic Settings、型安全設定）
+    - backend/.env（環境変数）
+  - ディレクトリ:
+    - backend/app/db/（空）
+    - backend/app/models/（空）
+    - backend/app/schemas/（空）
+  - Pythonファイル数: 4ファイル
+  - 実装記録: docs/implements/kotonoha/TASK-0007/ (setup-report.md, verify-report.md)
+- **品質確認**:
+  - [x] Python構文エラー: なし
+  - [x] 環境変数読み込み: 正常
+  - [x] PostgreSQL接続: 成功
+  - [x] Alembicコマンド: 正常動作
+  - [x] 型ヒント使用: 適切
+  - [x] セキュリティ設定: 適切（.envはgitignore）
+- **設定モジュール機能**:
+  ```python
+  # backend/app/core/config.py
+  from app.core.config import settings
+
+  # データベースURL（非同期）
+  settings.DATABASE_URL
+  # => postgresql+asyncpg://user:pass@localhost:5432/kotonoha_db
+
+  # データベースURL（同期、Alembic用）
+  settings.DATABASE_URL_SYNC
+  # => postgresql://user:pass@localhost:5432/kotonoha_db
+
+  # CORS許可オリジン（リスト）
+  settings.CORS_ORIGINS_LIST
+  # => ['http://localhost:3000', 'http://localhost:5173']
+  ```
+- **次のステップ**: TASK-0008（SQLAlchemyモデル実装）
 
 ## コントリビューション
 

@@ -584,7 +584,7 @@
 ### Day 7: Alembic初期設定
 
 #### TASK-0007: Alembic初期設定・マイグレーション環境構築
-- [ ] 完了
+- [x] **タスク完了** ✅ 完了 (2025-11-20)
 
 **推定工数**: 8時間
 
@@ -665,12 +665,16 @@
    - `alembic upgrade head`でマイグレーション実行
 
 **完了条件**:
-- Alembicが初期化されている
-- alembic.iniが環境変数から設定を読み込む
-- env.pyが非同期SQLAlchemyに対応している
-- 初期マイグレーションファイルが生成可能
+- [x] Alembicが初期化されている
+- [x] alembic.iniが環境変数から設定を読み込む
+- [x] env.pyがSQLAlchemyに対応している
+- [x] 初期マイグレーションファイルが生成可能（TASK-0008で実施）
+- [x] PostgreSQLに接続できる
+- [x] `alembic current`コマンドが正常に実行される
 
 **テスト要件**: なし（DIRECT）
+
+**実装記録**: `docs/implements/kotonoha/TASK-0007/`
 
 ---
 
