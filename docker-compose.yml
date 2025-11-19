@@ -22,6 +22,25 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/backend/Dockerfile
+    container_name: kotonoha_backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-kotonoha_user}:${POSTGRES_PASSWORD:-your_secure_password}@postgres:5432/${POSTGRES_DB:-kotonoha_db}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kotonoha_network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local
