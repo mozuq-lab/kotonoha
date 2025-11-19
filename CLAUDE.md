@@ -45,6 +45,7 @@ Tsumikiは、要件定義から設計、タスク管理、テスト駆動実装�
 
 - **フロントエンド**: Flutter 3.38.1 + Riverpod 2.x
 - **バックエンド**: FastAPI 0.121 + SQLAlchemy 2.x + PostgreSQL 15+
+- **IaC**: AWS CDK 2.x (TypeScript)
 - **開発環境**: Docker + Docker Compose
 
 詳細な技術スタック、セットアップ手順、推奨ディレクトリ構造については `docs/tech-stack.md` を参照してください。
@@ -189,6 +190,12 @@ alembic upgrade head
 3. `/tsumiki:kairo-tasks` - タスク分割（1日単位）
 4. `/tsumiki:kairo-implement` - TDDサイクルで実装
 5. CI/CD自動テスト・デプロイ
+
+### コミット戦略
+- **1タスク完了ごとにコミット**: タスク（TASK-XXXX）が完了したら、必ずその時点でGitコミットを作成すること
+- コミットメッセージ形式: `タスク内容 (TASK-XXXX)`
+- 例: `Add Docker environment setup (TASK-0002)`
+- 変更履歴を細かく記録し、問題発生時のロールバックを容易にする
 
 Git ブランチ戦略等の詳細は `docs/tech-stack.md` を参照してください。
 

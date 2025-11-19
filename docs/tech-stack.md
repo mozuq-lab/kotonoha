@@ -169,6 +169,28 @@
 
 ## ☁️ インフラ・デプロイ
 
+### IaC（Infrastructure as Code）
+- **AWS CDK**: 2.x (TypeScript)
+  - インフラをコードで管理
+  - バージョン管理・レビュー可能
+  - 型安全なインフラ定義
+  - CloudFormationによる確実なデプロイ
+
+**管理対象リソース**:
+- VPC、サブネット、セキュリティグループ
+- ECS/Fargate クラスター（バックエンドAPI）
+- RDS for PostgreSQL
+- S3バケット（ログ、将来的なファイルストレージ）
+- CloudWatch（監視・ログ）
+- Secrets Manager（環境変数・認証情報）
+- ALB（Application Load Balancer）
+
+**選択理由**:
+- TypeScript経験を活かせる
+- AWSリソースの一元管理
+- 開発/ステージング/本番環境の構成を統一
+- インフラ変更の履歴管理とロールバックが容易
+
 ### モバイルアプリ配布
 - **iOS**:
   - 開発: Xcode + Simulator
@@ -287,6 +309,21 @@ kotonoha/
 │   ├── assets/                 # 画像、フォント等
 │   ├── pubspec.yaml
 │   ├── analysis_options.yaml
+│   └── README.md
+│
+├── infra/                       # AWS CDK インフラ定義
+│   ├── bin/
+│   │   └── kotonoha-infra.ts   # CDKアプリエントリーポイント
+│   ├── lib/
+│   │   ├── network-stack.ts    # VPC、サブネット
+│   │   ├── database-stack.ts   # RDS PostgreSQL
+│   │   ├── backend-stack.ts    # ECS/Fargate
+│   │   ├── monitoring-stack.ts # CloudWatch
+│   │   └── storage-stack.ts    # S3、Secrets Manager
+│   ├── test/                    # CDKスタックテスト
+│   ├── cdk.json
+│   ├── tsconfig.json
+│   ├── package.json
 │   └── README.md
 │
 ├── backend/                     # FastAPI バックエンド
@@ -410,7 +447,30 @@ flutter run
 flutter run -d chrome
 ```
 
-### 5. テスト実行
+### 5. AWS CDKセットアップ（本番環境用）
+```bash
+cd infra
+
+# AWS CDK CLI インストール（未インストールの場合）
+npm install -g aws-cdk
+
+# 依存関係インストール
+npm install
+
+# AWS認証情報設定
+aws configure  # アクセスキー、シークレットキー、リージョンを設定
+
+# CDK環境初期化（初回のみ）
+cdk bootstrap aws://<account-id>/<region>
+
+# デプロイ前の差分確認
+cdk diff
+
+# デプロイ
+cdk deploy --all  # すべてのスタックをデプロイ
+```
+
+### 6. テスト実行
 
 #### バックエンドテスト
 ```bash
@@ -459,6 +519,19 @@ alembic downgrade -1              # マイグレーションロールバック
 pytest                            # テスト実行
 ruff check .                      # リントチェック
 ruff format .                     # コード整形
+```
+
+### AWS CDK
+
+```bash
+cd infra
+cdk bootstrap                     # 初回のみ: CDK環境初期化
+cdk synth                         # CloudFormation テンプレート生成
+cdk diff                          # 変更差分確認
+cdk deploy --all                  # 全スタックデプロイ
+cdk deploy NetworkStack           # 特定スタックのみデプロイ
+cdk destroy --all                 # 全リソース削除（注意）
+npm test                          # CDKスタックテスト実行
 ```
 
 ## 📝 開発ワークフロー

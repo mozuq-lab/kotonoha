@@ -70,6 +70,11 @@
    │   └── requirements.txt
    ├── frontend/         # Flutter フロントエンド
    │   └── kotonoha_app/
+   ├── infra/            # AWS CDK インフラ定義
+   │   ├── bin/
+   │   ├── lib/
+   │   ├── test/
+   │   └── cdk.json
    ├── docs/             # ドキュメント
    │   ├── spec/
    │   ├── design/
@@ -103,7 +108,7 @@
 ### Day 2: Docker環境構築（PostgreSQL）
 
 #### TASK-0002: PostgreSQL Docker環境構築
-- [ ] 完了
+- [x] **タスク完了** ✅ 完了 (2025-11-20)
 
 **推定工数**: 8時間
 
@@ -164,10 +169,10 @@
    - `docker exec -it kotonoha_postgres psql -U kotonoha_user -d kotonoha_db`で接続確認
 
 **完了条件**:
-- PostgreSQLがDockerコンテナで起動する
-- 環境変数から設定が読み込まれる
-- docker-compose.ymlでPostgreSQLサービスが定義されている
-- 外部ツール（psql、pgAdmin）から接続できる
+- [x] PostgreSQLがDockerコンテナで起動する
+- [x] 環境変数から設定が読み込まれる
+- [x] docker-compose.ymlでPostgreSQLサービスが定義されている
+- [x] 外部ツール（psql、pgAdmin）から接続できる
 
 **テスト要件**: なし（DIRECT）
 
