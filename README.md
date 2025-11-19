@@ -299,6 +299,58 @@ Copyright (c) 2025 kotonoha project
   - 設定ファイル: .gitattributes (382 bytes), LICENSE (1,073 bytes)
   - 実装記録: docs/implements/kotonoha/TASK-0001/ (setup-report.md, verify-report.md)
 
+##### TASK-0002: PostgreSQL Docker環境構築
+
+- **完了日**: 2025-11-20
+- **概要**: PostgreSQL 15+のDocker環境構築と初期化スクリプト作成
+- **実装内容**:
+  - PostgreSQL 15 Alpine Dockerfileの作成
+  - 初期化スクリプト（init.sql）の実装
+    - タイムゾーン設定（Asia/Tokyo）
+    - 拡張機能有効化（uuid-ossp, pg_trgm）
+    - スキーマバージョン管理テーブル（schema_info）の作成
+  - docker-compose.yml作成（PostgreSQLサービス定義）
+    - 環境変数からの設定読み込み
+    - データ永続化ボリューム設定
+    - ヘルスチェック機能組み込み（10秒間隔）
+  - .envファイル作成（.env.exampleからコピー）
+- **動作確認**:
+  - Docker Desktopの起動確認
+  - PostgreSQLコンテナのビルド・起動成功
+  - データベース接続確認（psql経由）
+  - 拡張機能インストール確認（uuid-ossp, pg_trgm）
+  - schema_infoテーブル作成・初期データ挿入確認
+  - ヘルスチェック成功（STATUS: healthy）
+- **成果物**:
+  - Dockerリソース:
+    - イメージ: kotonoha-postgres:latest
+    - コンテナ: kotonoha_postgres (STATUS: healthy)
+    - ネットワーク: kotonoha_kotonoha_network
+    - ボリューム: kotonoha_postgres_data
+  - データベースリソース:
+    - データベース: kotonoha_db
+    - ユーザー: kotonoha_user
+    - 拡張機能: uuid-ossp (1.1), pg_trgm (1.6)
+    - テーブル: schema_info
+  - ファイル:
+    - docker/postgres/Dockerfile
+    - docker/postgres/init.sql
+    - docker-compose.yml
+    - .env (環境変数設定)
+  - 実装記録: docs/implements/kotonoha/TASK-0002/ (setup-report.md, verification-report.md)
+- **接続情報**:
+
+  ```bash
+  # Docker内部からの接続
+  docker exec -it kotonoha_postgres psql -U kotonoha_user -d kotonoha_db
+
+  # ホストマシンからの接続
+  psql -h localhost -p 5432 -U kotonoha_user -d kotonoha_db
+
+  # DATABASE_URL
+  postgresql://kotonoha_user:your_password@localhost:5432/kotonoha_db
+  ```
+
 ## コントリビューション
 
 コントリビューションを歓迎します。詳細は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
