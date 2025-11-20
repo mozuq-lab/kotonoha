@@ -106,3 +106,38 @@ async def db_session(test_session_maker) -> AsyncGenerator[AsyncSession, None]:
         await session.rollback()
         # 【セッションクローズ】: セッションを明示的にクローズ
         await session.close()
+
+
+@pytest.fixture(scope="function")
+async def test_client_with_db(test_engine, test_session_maker):
+    """
+    テスト用データベースを使用するFastAPIテストクライアントを作成
+
+    【テスト目的】: テスト用データベースに接続するFastAPIアプリケーションを提供
+    【テスト内容】: get_db依存性をオーバーライドし、テスト用DBセッションを使用
+    【期待される動作】: API呼び出しがテスト用データベースに接続する
+    【実装方針】: FastAPIの依存性オーバーライド機能を使用
+    🔵 FastAPI公式ドキュメント、テストパターンに基づく
+
+    Yields:
+        FastAPI: テスト用データベースに接続するFastAPIアプリケーション
+    """
+    from app.main import app
+    from app.db.session import get_db
+
+    # 【依存性オーバーライド関数】: テスト用DBセッションを返す
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+        """テスト用データベースセッションを提供"""
+        async with test_session_maker() as session:
+            try:
+                yield session
+            finally:
+                await session.close()
+
+    # 【依存性オーバーライド】: 本番DBの代わりにテスト用DBを使用
+    app.dependency_overrides[get_db] = override_get_db
+
+    yield app
+
+    # 【テスト後処理】: 依存性オーバーライドをクリア
+    app.dependency_overrides.clear()
