@@ -36,7 +36,7 @@ import enum
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, Enum, Integer, String, Text
+from sqlalchemy import DateTime, Enum, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQL_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -70,6 +70,28 @@ class AIConversionHistory(Base):
     # 【テーブル名指定】: データベーススキーマと一致するテーブル名を明示的に指定
     # 🔵 database-schema.sqlのテーブル名に基づく
     __tablename__ = "ai_conversion_history"
+
+    # 【インデックス定義】: パフォーマンス最適化のためのインデックスを定義
+    # 【実装方針】: SQLAlchemyの__table_args__を使用してインデックスを定義し、Alembicのautogenerateで自動生成可能にする
+    # 【idx_ai_conversion_created_at】: 時系列検索用インデックス（created_at DESC）
+    # 【idx_ai_conversion_session】: セッション絞り込み用インデックス（user_session_id）
+    # 【リファクタリング理由】: Greenフェーズではマイグレーションファイルに手動でインデックスを追加したが、
+    #                          モデル定義にインデックスを含めることで、今後のマイグレーション自動生成で一貫性を保つ
+    # 🔵 この実装はdatabase-schema.sql（line 54-68）に基づく
+    __table_args__ = (
+        # 【created_at降順インデックス】: 履歴を新しい順に取得するための最適化
+        # 【パフォーマンス】: 時系列検索クエリ（ORDER BY created_at DESC）の高速化
+        # 🔵 database-schema.sql（line 54-60）に基づくインデックス定義
+        Index(
+            "idx_ai_conversion_created_at",
+            "created_at",
+            postgresql_ops={"created_at": "DESC"},
+        ),
+        # 【user_session_idインデックス】: セッションごとの履歴取得の最適化
+        # 【パフォーマンス】: WHERE user_session_id = ?クエリの高速化
+        # 🔵 database-schema.sql（line 62-68）に基づくインデックス定義
+        Index("idx_ai_conversion_session", "user_session_id"),
+    )
 
     # 【主キー】: 自動生成される整数型のID
     # 【実装方針】: PostgreSQLのSERIAL型として自動インクリメント

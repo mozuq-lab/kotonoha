@@ -31,13 +31,13 @@ from app.core.config import settings  # noqa: E402
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_SYNC)
 
 # モデルのMetaDataオブジェクトをインポート
-# ここでは将来のモデル追加に備えて、base.pyからインポートする想定
-# from app.db.base import Base
-# target_metadata = Base.metadata
+# 【機能概要】: Alembicがモデル定義を認識し、マイグレーションファイルを自動生成できるようにする
+# 【実装方針】: app.db.baseからBaseをインポートし、Base.metadataをtarget_metadataに設定
+# 【テスト対応】: TASK-0009（初回マイグレーション実行）のテストを通すための実装
+# 🔵 この実装は要件定義書（line 231-233, line 262-274）に基づく
+from app.db.base import Base  # noqa: E402
 
-# 現時点ではモデル未作成なので、Noneのまま
-# TASK-0008でモデル実装後に更新予定
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:

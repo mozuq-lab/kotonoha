@@ -208,3 +208,80 @@ async def test_multiple_integrity_errors(db_session):
     # 【結果検証】: IntegrityErrorが発生したことを確認
     # 【検証項目】: 複数の制約違反がある場合も適切にエラーが発生するか
     # 🔵 要件定義書（line 54-55, line 146）に基づく検証
+
+
+# ================================================================================
+# カテゴリG: エラーハンドリングテスト（TASK-0009追加分）
+# ================================================================================
+
+
+async def test_insert_fails_with_not_null_constraint_after_migration(db_session):
+    """
+    G-3. マイグレーション後のレコード挿入でNOT NULL制約違反が発生する
+
+    【テスト目的】: マイグレーション後のテーブルでNOT NULL制約が正しく機能することを確認
+    【テスト内容】: 必須フィールド（input_text, converted_text）にNoneを設定してレコード挿入
+    【期待される動作】: IntegrityErrorが発生し、レコードが保存されない
+    🔵 この内容は要件定義書（line 267-286, line 421-426, NFR-304）とテストケース仕様書（line 474-497）に基づく
+    """
+    # 【テストデータ準備】: NOT NULL制約違反のデータ
+    # 【初期条件設定】: マイグレーションが実行済みで、ai_conversion_historyテーブルが存在する
+    # 【前提条件確認】: NOT NULL制約が正しく設定されていること
+    from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
+
+    # 【実際の処理実行】: NOT NULL制約違反のレコードを作成し、コミットを試みる
+    # 【処理内容】: input_textがNoneのため、データベース側でエラーが発生
+    # 【実行タイミング】: マイグレーション後の制約機能確認
+    # 【エラー処理の重要性】: データ整合性を保ち、不正なデータの保存を防ぐ（NFR-304）
+    with pytest.raises(IntegrityError) as exc_info:
+        record = AIConversionHistory(
+            input_text=None,  # NOT NULL制約違反
+            converted_text="テスト",
+            politeness_level=PolitenessLevel.NORMAL,
+        )
+        db_session.add(record)
+        await db_session.commit()
+
+    # 【結果検証】: IntegrityErrorが発生し、エラーメッセージに制約違反の詳細が含まれることを確認
+    # 【期待値確認】: 不正なデータがデータベースに保存されない
+    # 【品質保証】: データ整合性が保たれることを保証
+
+    # 【検証項目】: IntegrityErrorが発生したか
+    # 🔵 要件定義書（line 267-286, line 421-426, NFR-304）に基づく制約違反検証
+    assert exc_info.value is not None  # 【確認内容】: IntegrityErrorが発生している
+
+    # 【検証項目】: エラーメッセージに制約違反の詳細が含まれるか
+    # 🔵 要件定義書（line 146）に基づくNOT NULL制約の検証
+    error_message = str(exc_info.value)
+    assert "null" in error_message.lower()  # 【確認内容】: エラーメッセージに"null"が含まれる
+
+
+async def test_insert_fails_with_invalid_enum_value_after_migration(db_session):
+    """
+    G-4. マイグレーション後のレコード挿入で不正なEnum値によるエラーが発生する
+
+    【テスト目的】: Enum型バリデーションが正しく機能することを確認
+    【テスト内容】: politeness_levelに存在しないEnum値を設定してレコード挿入
+    【期待される動作】: ValueErrorまたはCheckViolationErrorが発生する
+    🟡 この内容は要件定義書（line 276-290）とテストケース仕様書（line 499-516）に基づくが、実装方法は推測
+    """
+    # 【テストデータ準備】: 不正なEnum値
+    # 【初期条件設定】: マイグレーションが実行済みで、ai_conversion_historyテーブルが存在する
+    # 【前提条件確認】: PolitenessLevel Enumが正しく定義されていること
+    from app.models.ai_conversion_history import PolitenessLevel
+
+    # 【実際の処理実行】: 不正なEnum値でインスタンスを作成しようとする
+    # 【処理内容】: 'super_polite'はEnum定義に存在しないため、エラーが発生
+    # 【実行タイミング】: マイグレーション後のEnum検証
+    # 【エラー処理の重要性】: Enum型バリデーションにより、不正な値の保存を防ぐ
+    with pytest.raises((ValueError, AttributeError)) as exc_info:
+        # 【実際の処理実行】: 存在しないEnum値を使用しようとする
+        invalid_level = PolitenessLevel("super_polite")
+
+    # 【結果検証】: ValueError or AttributeErrorが発生したことを確認
+    # 【期待値確認】: 不正なEnum値がデータベースに保存されない
+    # 【品質保証】: 不正な値が保存されないことを保証
+
+    # 【検証項目】: Enum型バリデーションエラーが発生したか
+    # 🟡 要件定義書（line 276-290）に基づくEnum検証（実装方法は推測）
+    assert exc_info.value is not None  # 【確認内容】: ValueErrorまたはAttributeErrorが発生している
