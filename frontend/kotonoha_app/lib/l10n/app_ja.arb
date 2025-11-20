@@ -1,0 +1,11 @@
+{
+  "@@locale": "ja",
+  "appTitle": "kotonoha",
+  "@appTitle": {
+    "description": "アプリケーション名"
+  },
+  "appDescription": "文字盤コミュニケーション支援アプリ",
+  "@appDescription": {
+    "description": "アプリケーション説明"
+  }
+}
