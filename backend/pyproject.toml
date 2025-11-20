@@ -19,7 +19,12 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 asyncio_mode = "auto"
-addopts = "--cov=app --cov-report=html --cov-report=term-missing"
+# 【イベントループスコープ設定】: functionスコープでイベントループを管理し、テスト間の分離を保証
+# 【実装方針】: 各テスト関数ごとに新しいイベントループを作成し、接続プール問題を回避
+# 🔵 pytest-asyncio 0.25.x の推奨設定に基づく
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+# addopts = "--cov=app --cov-report=html --cov-report=term-missing"  # pytest-covをインストール後に有効化
 
 [tool.coverage.run]
 source = ["app"]
