@@ -1114,7 +1114,7 @@
 ### Day 12: Flutter依存パッケージ追加・設定
 
 #### TASK-0012: Flutter依存パッケージ追加・pubspec.yaml設定
-- [ ] 完了
+- [x] **タスク完了** ✅ 完了 (2025-11-20) - 検証完了 (依存パッケージ追加・設定完了)
 
 **推定工数**: 8時間
 
@@ -1215,11 +1215,16 @@
    - `flutter pub outdated`で依存関係確認
 
 **完了条件**:
-- pubspec.yamlに必要な依存パッケージが追加されている
-- `flutter pub get`でエラーがない
-- 各パッケージが最新安定版である
+- [x] pubspec.yamlに必要な依存パッケージが追加されている
+- [x] `flutter pub get`でエラーがない
+- [x] 各パッケージが最新安定版である
+- [x] build.yamlが作成されRiverpod設定が正しい
+- [x] `flutter analyze`でエラーがない
+- [x] コード生成（build_runner）が正常に動作する
 
 **テスト要件**: なし（DIRECT）
+
+**実装記録**: `docs/implements/kotonoha/TASK-0012/`
 
 ---
 

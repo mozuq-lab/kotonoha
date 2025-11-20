@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      riverpod_generator:
+        options:
+          riverpod_generator:
+            generate_riverpod_annotation: true
