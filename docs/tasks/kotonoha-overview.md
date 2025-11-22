@@ -10,7 +10,7 @@
 
 - **開発期間**: 約100営業日（5ヶ月）
 - **総工数**: 約800時間
-- **総タスク数**: 100タスク
+- **総タスク数**: 95タスク
 - **技術スタック**: Flutter 3.38.1 + FastAPI 0.121 + PostgreSQL 15 + AWS CDK 2.x
 
 ## 🔵 信頼性レベルについて
@@ -39,7 +39,7 @@
 | フェーズ | 期間 | 成果物 | タスク数 | 工数 | ファイル |
 |---------|------|--------|---------|------|---------|
 | Phase 1 | Week 1-4 (20日) | 開発環境構築・基盤実装 | 20タスク | 160時間 | [kotonoha-phase1.md](./kotonoha-phase1.md) |
-| Phase 2 | Week 5-8 (20日) | バックエンドAPI実装 | 16タスク | 128時間 | [kotonoha-phase2.md](./kotonoha-phase2.md) |
+| Phase 2 | Week 5-8 (20日) | バックエンドAPI実装 | 11タスク | 88時間 | [kotonoha-phase2.md](./kotonoha-phase2.md) |
 | Phase 3 | Week 9-12 (20日) | フロントエンド基本機能実装 | 24タスク | 192時間 | [kotonoha-phase3.md](./kotonoha-phase3.md) |
 | Phase 4 | Week 13-16 (20日) | フロントエンド応用機能実装 | 20タスク | 160時間 | [kotonoha-phase4.md](./kotonoha-phase4.md) |
 | Phase 5 | Week 17-20 (20日) | 統合・テスト・リリース準備 | 20タスク | 160時間 | [kotonoha-phase5.md](./kotonoha-phase5.md) |
@@ -48,11 +48,12 @@
 
 ### 使用済みタスク番号
 
-- **Phase 1**: TASK-0001 〜 TASK-0020
-- **Phase 2**: TASK-0021 〜 TASK-0036
-- **Phase 3**: TASK-0037 〜 TASK-0060
-- **Phase 4**: TASK-0061 〜 TASK-0080
-- **Phase 5**: TASK-0081 〜 TASK-0100
+- **Phase 1**: TASK-0001 〜 TASK-0020 (20タスク) ✅ 完了
+- **Phase 2**: TASK-0021 〜 TASK-0031 (11タスク) ✅ 完了
+- **Phase 3**: TASK-0037 〜 TASK-0060 (24タスク)
+- **Phase 4**: TASK-0061 〜 TASK-0080 (20タスク)
+- **Phase 5**: TASK-0081 〜 TASK-0100 (20タスク)
+- **欠番**: TASK-0032 〜 TASK-0036（Phase 2計画変更により未使用）
 
 ### 次回開始番号
 
@@ -67,11 +68,12 @@
 - [x] Week 3: Flutter プロジェクト構造構築 (5/5タスク完了)
 - [x] Week 4: 共通コンポーネント・ユーティリティ実装 (5/5タスク完了)
 
-### Phase 2: バックエンドAPI実装
-- [ ] Week 5: FastAPI基盤構築・認証設定
-- [ ] Week 6: AI変換API実装
-- [ ] Week 7: エラーハンドリング・ロギング
-- [ ] Week 8: バックエンドテスト・API文書化
+### Phase 2: バックエンドAPI実装 - 完了 (2025-11-22)
+- [x] TASK-0021〜TASK-0031: 全タスク完了
+- [x] Week 5: FastAPI基盤構築・認証設定 (3/3タスク完了)
+- [x] Week 6: AI変換API実装 (4/4タスク完了)
+- [x] Week 7: エラーハンドリング・ロギング (2/2タスク完了)
+- [x] Week 8: バックエンドテスト・API文書化 (2/2タスク完了)
 
 ### Phase 3: フロントエンド基本機能実装
 - [ ] Week 9: 文字盤・定型文UI実装
@@ -228,3 +230,7 @@ gantt
 - **2025-11-22**: Phase 1完了（tsumiki:direct-verify により更新）
   - TASK-0001〜TASK-0020 全タスク完了
   - Week 4進捗を完了に更新
+- **2025-11-22**: Phase 2完了・タスク番号整理
+  - TASK-0021〜TASK-0031 全タスク完了（11タスク）
+  - TASK-0032〜TASK-0036 を欠番として管理（当初計画から削減）
+  - 総タスク数を100から95に修正
