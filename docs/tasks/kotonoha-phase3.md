@@ -92,7 +92,7 @@ testWidgets('文字タップで入力バッファに追加', (tester) async {
 
 #### Day 2: TASK-0038 - 文字入力バッファ管理（Riverpod StateNotifier）
 
-- [ ] **タスク完了**
+- [x] **タスク完了** (2025-11-22)
 - **推定工数**: 8時間
 - **タスクタイプ**: TDD
 - **要件名**: kotonoha
