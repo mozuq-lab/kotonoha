@@ -41,27 +41,40 @@ class RootResponse(BaseModel):
 class HealthResponse(BaseModel):
     """
     【機能概要】: ヘルスチェックエンドポイント（GET /health）のレスポンススキーマ（正常時）
-    【実装方針】: データベース接続確認、タイムスタンプ、バージョン情報を含む
+    【実装方針】: データベース接続確認、AIプロバイダー情報、タイムスタンプ、バージョン情報を含む
     【テスト対応】: test_health_endpoint_returns_database_connected（testcases.md B-1）を通すための実装
     🔵 要件定義書（line 93-101）に基づく
+    🔵 TASK-0029: AI プロバイダー確認機能を追加
 
     Attributes:
-        status (str): ヘルスチェックステータス（正常時: "ok"）
+        status (str): ヘルスチェックステータス（正常時: "ok"、一部機能低下時: "degraded"）
         database (str): データベース接続状態（正常時: "connected"）
+        ai_provider (str): 有効なAIプロバイダー（"anthropic", "openai", "none"）
         version (str): APIのバージョン情報（例: "1.0.0"）
         timestamp (str): ヘルスチェック実行時刻（ISO 8601形式）
     """
 
     # 【フィールド定義】: ヘルスチェックステータス
-    # 【データ型】: 文字列（正常時: "ok"）
+    # 【データ型】: 文字列（正常時: "ok"、一部機能低下時: "degraded"）
     # 🔵 要件定義書（line 96）に基づく
-    status: str = Field(..., description="ヘルスチェックステータス", examples=["ok"])
+    status: str = Field(
+        ..., description="ヘルスチェックステータス", examples=["ok", "degraded"]
+    )
 
     # 【フィールド定義】: データベース接続状態
     # 【データ型】: 文字列（正常時: "connected"）
     # 🔵 要件定義書（line 97）に基づく
     database: str = Field(
         ..., description="データベース接続状態", examples=["connected"]
+    )
+
+    # 【フィールド定義】: 有効なAIプロバイダー
+    # 【データ型】: 文字列（"anthropic", "openai", "none"）
+    # 🔵 TASK-0029に基づく
+    ai_provider: str = Field(
+        ...,
+        description="有効なAIプロバイダー",
+        examples=["anthropic", "openai", "none"],
     )
 
     # 【フィールド定義】: APIのバージョン情報

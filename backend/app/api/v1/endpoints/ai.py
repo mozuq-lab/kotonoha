@@ -257,8 +257,15 @@ async def regenerate_text(
     db: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     """
-    【機能概要】: AI再変換エンドポイント（仮実装）
-    【実装方針】: レート制限を適用、本実装はTASK-0028で行う
+    【機能概要】: AI再変換エンドポイント
+    【実装方針】:
+      - AIClientのregenerate_textを使用してテキストを再変換
+      - 前回と異なる表現を生成
+      - 成功・失敗に関わらずログを記録
+      - 例外に応じた適切なHTTPステータスコードを返却
+
+    TASK-0028: AI再変換エンドポイント実装（POST /api/v1/ai/regenerate）
+    🔵 REQ-904（同じ丁寧さで再変換可能）に基づく
 
     Args:
         request: FastAPIリクエストオブジェクト（レート制限用）
@@ -268,15 +275,57 @@ async def regenerate_text(
     Returns:
         AIConversionResponse: AI変換レスポンス
     """
-    # 仮実装: 前回結果と異なる結果を返す（TASK-0028で本実装）
-    response_data = {
-        "converted_text": f"{regenerate_request.input_text}（再変換済み）",
-        "original_text": regenerate_request.input_text,
-        "politeness_level": regenerate_request.politeness_level.value,
-        "processing_time_ms": 150,
-    }
+    input_text = regenerate_request.input_text
+    politeness_level = regenerate_request.politeness_level.value
+    previous_result = regenerate_request.previous_result
+    session_id = uuid.uuid4()
 
-    return JSONResponse(
-        content=response_data,
-        headers=RATE_LIMIT_HEADERS,
-    )
+    try:
+        # AI再変換を実行
+        converted_text, processing_time_ms = await ai_client_module.ai_client.regenerate_text(
+            input_text=input_text,
+            politeness_level=politeness_level,
+            previous_result=previous_result,
+        )
+
+        # 成功時のログ記録
+        await create_conversion_log(
+            db=db,
+            input_text=input_text,
+            output_text=converted_text,
+            politeness_level=politeness_level,
+            conversion_time_ms=processing_time_ms,
+            session_id=session_id,
+            is_success=True,
+        )
+
+        # 成功レスポンス
+        response_data = {
+            "converted_text": converted_text,
+            "original_text": input_text,
+            "politeness_level": politeness_level,
+            "processing_time_ms": processing_time_ms,
+        }
+
+        return JSONResponse(
+            content=response_data,
+            headers=RATE_LIMIT_HEADERS,
+        )
+
+    except (
+        AITimeoutException,
+        AIProviderException,
+        AIRateLimitException,
+        AIConversionException,
+    ) as e:
+        # 既知のAI変換エラー
+        error_info = _get_error_info(e)
+        logger.error(f"AI regeneration error ({error_info.code}): {e}")
+        await _log_conversion_error(db, input_text, politeness_level, session_id, e)
+        return _create_error_response(error_info)
+
+    except Exception as e:
+        # 予期しないエラー
+        logger.exception(f"Unexpected error during AI regeneration: {e}")
+        await _log_conversion_error(db, input_text, politeness_level, session_id, e)
+        return _create_error_response(DEFAULT_ERROR)

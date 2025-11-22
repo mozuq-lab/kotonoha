@@ -10,13 +10,20 @@ from datetime import datetime, timezone
 from typing import AsyncIterator
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.api import api_router
 from app.core.config import settings
+from app.core.exceptions import (
+    database_exception_handler,
+    global_exception_handler,
+    validation_exception_handler,
+)
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.logging_config import get_logger, setup_logging
 from app.db.session import get_db
@@ -57,6 +64,12 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
+# グローバルエラーハンドラー登録
+# TASK-0031: グローバルエラーハンドラー・例外処理実装
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(SQLAlchemyError, database_exception_handler)
+app.add_exception_handler(Exception, global_exception_handler)
+
 # CORS設定
 app.add_middleware(
     CORSMiddleware,
@@ -93,6 +106,26 @@ async def root() -> RootResponse:
     return RootResponse(message="kotonoha API is running", version=settings.VERSION)
 
 
+def get_ai_provider_status() -> str:
+    """
+    【機能概要】: 有効なAIプロバイダーを確認するヘルパー関数
+    【設計方針】: AIClient の初期化状態を確認し、使用可能なプロバイダーを返す
+
+    Returns:
+        str: AIプロバイダー名（"anthropic", "openai", "none"）
+
+    🔵 TASK-0029に基づく
+    """
+    from app.utils import ai_client as ai_client_module
+
+    ai_client = ai_client_module.ai_client
+    if ai_client.anthropic_client:
+        return "anthropic"
+    elif ai_client.openai_client:
+        return "openai"
+    return "none"
+
+
 @app.get(
     "/health",
     response_model=HealthResponse,
@@ -109,7 +142,7 @@ async def health_check(
 ) -> HealthResponse | HealthErrorResponse:
     """
     【機能概要】: ヘルスチェックエンドポイント - システム稼働状況とデータベース接続確認
-    【実装方針】: データベース接続確認（SELECT 1実行）、タイムスタンプ、バージョン情報を含む
+    【実装方針】: データベース接続確認（SELECT 1実行）、AIプロバイダー確認、タイムスタンプ、バージョン情報を含む
     【後方互換性】: /health エンドポイントをルートレベルでも提供（/api/v1/health と同等）
 
     Args:
@@ -120,13 +153,20 @@ async def health_check(
 
     Raises:
         HTTPException: データベース接続失敗時に500エラーを返す
+
+    🔵 TASK-0029: AI プロバイダー確認機能を追加
     """
     try:
         timestamp = get_current_timestamp()
         await db.execute(text("SELECT 1"))
+
+        # AIプロバイダー確認
+        ai_provider = get_ai_provider_status()
+
         return HealthResponse(
             status="ok",
             database="connected",
+            ai_provider=ai_provider,
             version=settings.VERSION,
             timestamp=timestamp,
         )

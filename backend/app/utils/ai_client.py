@@ -317,5 +317,117 @@ class AIClient:
             raise AIProviderException(f"Unknown AI provider: {provider}")
 
 
+    async def regenerate_text(
+        self,
+        input_text: str,
+        politeness_level: PolitenessLevel,
+        previous_result: str,
+        provider: str | None = None,
+    ) -> tuple[str, int]:
+        """
+        AI再変換（前回と異なる表現を生成）
+
+        【機能概要】: 前回の変換結果と異なる表現を生成
+        【実装方針】:
+          - 前回結果を参考にして異なる表現を指示
+          - temperature を高めに設定して多様性を確保
+          - provider引数でプロバイダーを明示的に指定可能
+
+        Args:
+            input_text: 変換対象のテキスト
+            politeness_level: 丁寧さレベル
+            previous_result: 前回の変換結果（重複回避用）
+            provider: 使用するプロバイダー（"anthropic" or "openai"）
+
+        Returns:
+            tuple[str, int]: (変換後テキスト, 処理時間ミリ秒)
+
+        Raises:
+            AIProviderException: 無効なプロバイダー指定時
+            AITimeoutException: APIタイムアウト時
+            AIRateLimitException: レート制限超過時
+            AIConversionException: その他の変換エラー
+
+        🔵 REQ-904（同じ丁寧さで再変換可能）に基づく
+        """
+        provider = provider or settings.DEFAULT_AI_PROVIDER
+
+        start_time = time.time()
+
+        instruction = self._get_politeness_instruction(politeness_level)
+        prompt = f"""以下の日本語文を{instruction}
+
+元の入力文: {input_text}
+前回の変換結果: {previous_result}
+
+前回と**異なる表現**で変換してください。意味は同じでも、言い回しを変えてください。
+変換後の文のみを出力してください。説明や追加情報は不要です。"""
+
+        try:
+            if provider == "anthropic":
+                if not self.anthropic_client:
+                    raise AIProviderException("Anthropic API key is not configured")
+
+                response = await self.anthropic_client.messages.create(
+                    model="claude-3-5-sonnet-20241022",
+                    max_tokens=1024,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+
+                converted_text = response.content[0].text.strip()
+
+            elif provider == "openai":
+                if not self.openai_client:
+                    raise AIProviderException("OpenAI API key is not configured")
+
+                response = await self.openai_client.chat.completions.create(
+                    model=settings.OPENAI_MODEL,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "あなたは日本語の文章を適切な丁寧さレベルに変換する専門家です。",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=1024,
+                    temperature=0.9,  # 多様性を高める
+                )
+
+                converted_text = response.choices[0].message.content.strip()
+
+            else:
+                raise AIProviderException(f"Unknown AI provider: {provider}")
+
+            conversion_time_ms = int((time.time() - start_time) * 1000)
+
+            logger.info(
+                f"AI regeneration completed in {conversion_time_ms}ms: "
+                f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
+            )
+
+            return converted_text, conversion_time_ms
+
+        except AIProviderException:
+            raise
+        except Exception as e:
+            error_message = str(e)
+            logger.error(f"AI regeneration error: {error_message}")
+
+            # タイムアウト判定
+            if "timeout" in error_message.lower():
+                raise AITimeoutException(
+                    f"AI API timeout: {error_message}"
+                ) from e
+
+            # レート制限判定
+            if "rate" in error_message.lower() or "429" in error_message:
+                raise AIRateLimitException(
+                    f"AI API rate limit: {error_message}"
+                ) from e
+
+            # その他のエラー
+            raise AIConversionException(f"AI API error: {error_message}") from e
+
+
 # シングルトンインスタンス
 ai_client = AIClient()

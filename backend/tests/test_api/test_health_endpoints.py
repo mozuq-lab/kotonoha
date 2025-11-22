@@ -132,13 +132,14 @@ async def test_health_endpoint_returns_database_connected(test_client_with_db):
     """
     【テスト目的】: ヘルスチェックエンドポイントがデータベース接続を確認して正常に応答することを確認
     【テスト内容】: GET /healthがデータベース接続を確認し、成功時に正しいレスポンスを返すことを検証
-    【期待される動作】: ステータスコード200、status=ok、database=connectedを含むJSON
+    【期待される動作】: ステータスコード200、status=ok、database=connected、ai_providerを含むJSON
     🔵 testcases.md B-1（line 164-183）に基づく
+    🔵 TASK-0029: AI プロバイダー確認機能を追加
 
     【テストシナリオ】:
     - Given: データベースが起動しており、接続可能な状態
     - When: GET /healthにアクセス
-    - Then: HTTPステータスコード200、status=ok、database=connected、version、timestampを含むJSONレスポンス
+    - Then: HTTPステータスコード200、status=ok、database=connected、ai_provider、version、timestampを含むJSONレスポンス
     """
     # 【テストデータ準備】: HTTPクライアントを作成（テスト用データベースを使用）
     # 【初期条件設定】: システム稼働状況の確認、運用監視ツールからの定期ポーリングを想定
@@ -155,10 +156,12 @@ async def test_health_endpoint_returns_database_connected(test_client_with_db):
         assert response.status_code == 200  # 【確認内容】: HTTPステータスコード200 🔵
 
         # 【結果検証】: レスポンスボディが期待される形式であることを確認
-        # 【期待値確認】: status, database, version, timestampフィールドを含むことを検証
+        # 【期待値確認】: status, database, ai_provider, version, timestampフィールドを含むことを検証
         response_json = response.json()
         assert response_json["status"] == "ok"  # 【確認内容】: statusフィールドが"ok" 🔵
         assert response_json["database"] == "connected"  # 【確認内容】: databaseフィールドが"connected" 🔵
+        assert "ai_provider" in response_json  # 【確認内容】: ai_providerフィールドが存在する 🔵
+        assert response_json["ai_provider"] in ["anthropic", "openai", "none"]  # 【確認内容】: ai_providerが有効な値 🔵
         assert response_json["version"] == "1.0.0"  # 【確認内容】: versionフィールドが"1.0.0" 🔵
         assert "timestamp" in response_json  # 【確認内容】: timestampフィールドが存在する 🔵
 
@@ -361,3 +364,122 @@ async def test_health_endpoint_handles_multiple_requests(test_client_with_db):
             assert response.status_code == 200  # 【確認内容】: 全リクエストがHTTPステータスコード200 🔵
             response_json = response.json()
             assert response_json["status"] == "ok"  # 【確認内容】: 全リクエストのstatusが"ok" 🔵
+
+
+# ================================================================================
+# カテゴリC: AI プロバイダー確認テスト（TASK-0029追加）
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint_ai_provider_with_mock():
+    """
+    【テスト目的】: ヘルスチェックでAIプロバイダー情報が正しく返されることを確認
+    【テスト内容】: モックを使用してAIプロバイダー確認機能を検証
+    【期待される動作】: ai_providerフィールドが有効な値を持つ
+    🔵 TASK-0029に基づく
+
+    【テストシナリオ】:
+    - Given: AIクライアントがモック化されている
+    - When: GET /healthにアクセス
+    - Then: ai_providerフィールドが有効な値を持つ
+    """
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    # データベースセッションをモック
+    mock_session = MagicMock()
+    mock_session.execute = AsyncMock()
+
+    async def mock_get_db():
+        yield mock_session
+
+    from app.main import app as test_app
+    from app.db.session import get_db
+
+    test_app.dependency_overrides[get_db] = mock_get_db
+
+    try:
+        # main.pyのget_ai_provider_status関数を直接モック
+        with patch("app.main.get_ai_provider_status", return_value="anthropic"):
+            async with AsyncClient(
+                transport=ASGITransport(app=test_app), base_url="http://test"
+            ) as client:
+                response = await client.get("/health")
+
+                # 【結果検証】: ai_providerフィールドが存在し、有効な値を持つ
+                assert response.status_code == 200
+                response_json = response.json()
+                assert "ai_provider" in response_json
+                assert response_json["ai_provider"] == "anthropic"
+    finally:
+        test_app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint_ai_provider_openai_with_mock():
+    """
+    【テスト目的】: OpenAIがプロバイダーとして認識されることを確認
+    【テスト内容】: OpenAIが有効な場合の動作を検証
+    【期待される動作】: ai_provider="openai"が返される
+    🔵 TASK-0029に基づく
+    """
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    mock_session = MagicMock()
+    mock_session.execute = AsyncMock()
+
+    async def mock_get_db():
+        yield mock_session
+
+    from app.main import app as test_app
+    from app.db.session import get_db
+
+    test_app.dependency_overrides[get_db] = mock_get_db
+
+    try:
+        with patch("app.main.get_ai_provider_status", return_value="openai"):
+            async with AsyncClient(
+                transport=ASGITransport(app=test_app), base_url="http://test"
+            ) as client:
+                response = await client.get("/health")
+
+                assert response.status_code == 200
+                response_json = response.json()
+                assert response_json["ai_provider"] == "openai"
+    finally:
+        test_app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint_ai_provider_none_with_mock():
+    """
+    【テスト目的】: AIプロバイダーが未設定の場合に"none"が返されることを確認
+    【テスト内容】: 両方のAIプロバイダーが無効な場合の動作を検証
+    【期待される動作】: ai_provider="none"が返される
+    🔵 TASK-0029に基づく
+    """
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    mock_session = MagicMock()
+    mock_session.execute = AsyncMock()
+
+    async def mock_get_db():
+        yield mock_session
+
+    from app.main import app as test_app
+    from app.db.session import get_db
+
+    test_app.dependency_overrides[get_db] = mock_get_db
+
+    try:
+        with patch("app.main.get_ai_provider_status", return_value="none"):
+            async with AsyncClient(
+                transport=ASGITransport(app=test_app), base_url="http://test"
+            ) as client:
+                response = await client.get("/health")
+
+                assert response.status_code == 200
+                response_json = response.json()
+                assert response_json["ai_provider"] == "none"
+    finally:
+        test_app.dependency_overrides.clear()
