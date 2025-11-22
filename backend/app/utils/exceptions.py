@@ -68,3 +68,61 @@ class RateLimitException(AppException):
 
     def __init__(self, message: str = "Rate limit exceeded"):
         super().__init__(message, status_code=429)
+
+
+# ============================================================
+# AI変換関連例外クラス (TASK-0026)
+# ============================================================
+
+
+class AIConversionException(AppException):
+    """
+    【機能概要】: AI変換基底例外クラス
+    【実装方針】: AI変換に関連するすべての例外の基底クラス
+
+    HTTPステータスコード: 500 Internal Server Error
+    🔵 REQ-901に基づく
+    """
+
+    def __init__(self, message: str = "AI conversion error"):
+        super().__init__(message, status_code=500)
+
+
+class AITimeoutException(AIConversionException):
+    """
+    【機能概要】: AI APIタイムアウト例外
+    【実装方針】: AI API呼び出しがタイムアウトした場合に使用
+
+    HTTPステータスコード: 504 Gateway Timeout
+    🔵 NFR-002に基づく（30秒タイムアウト）
+    """
+
+    def __init__(self, message: str = "AI API timeout"):
+        # AIConversionExceptionを継承しつつ、status_codeを504に変更
+        AppException.__init__(self, message, status_code=504)
+
+
+class AIRateLimitException(AIConversionException):
+    """
+    【機能概要】: AI APIレート制限例外
+    【実装方針】: AI APIのレート制限に達した場合に使用
+
+    HTTPステータスコード: 429 Too Many Requests
+    🔵 NFR-101に基づく
+    """
+
+    def __init__(self, message: str = "AI API rate limit exceeded"):
+        AppException.__init__(self, message, status_code=429)
+
+
+class AIProviderException(AIConversionException):
+    """
+    【機能概要】: AIプロバイダーエラー例外
+    【実装方針】: AIプロバイダーが利用できない、または設定エラーの場合に使用
+
+    HTTPステータスコード: 503 Service Unavailable
+    🔵 EDGE-001に基づく
+    """
+
+    def __init__(self, message: str = "AI provider error"):
+        AppException.__init__(self, message, status_code=503)
