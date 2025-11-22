@@ -11,11 +11,13 @@ from typing import AsyncIterator
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.api import api_router
 from app.core.config import settings
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.logging_config import get_logger, setup_logging
 from app.db.session import get_db
 from app.schemas.health import HealthErrorResponse, HealthResponse, RootResponse
@@ -49,6 +51,11 @@ app = FastAPI(
     description="文字盤コミュニケーション支援アプリ バックエンドAPI",
     lifespan=lifespan,
 )
+
+# レート制限設定
+# TASK-0025: レート制限ミドルウェア実装
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 # CORS設定
 app.add_middleware(
