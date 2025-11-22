@@ -1,8 +1,24 @@
+/// ライトテーマ設定
+///
+/// TASK-0016: テーマ実装（ライト・ダーク・高コントラスト）
+/// 要件: REQ-803（テーマ設定）
+/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+///
+/// ライトモード用のThemeData設定。
+/// - 明るい背景色と暗いテキスト色
+/// - アクセシビリティ要件に準拠したタップターゲットサイズ
+/// - Material 3デザインシステム準拠
+library;
+
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
-/// Light theme configuration
+/// ライトテーマの定義
+///
+/// アクセシビリティ要件:
+/// - タップターゲットサイズ: 最小44px x 44px、推奨60px x 60px
+/// - フォントサイズ: AppSizesの定義に従う
 final ThemeData lightTheme = ThemeData(
   brightness: Brightness.light,
   colorScheme: const ColorScheme.light(

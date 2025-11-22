@@ -1,9 +1,29 @@
+/// 高コントラストテーマ設定
+///
+/// TASK-0016: テーマ実装（ライト・ダーク・高コントラスト）
+/// 要件: REQ-803（テーマ設定）、REQ-5006（WCAG 2.1 AA準拠）
+/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+///
+/// 視覚障害を持つユーザー向けの高コントラストテーマ。
+/// - WCAG 2.1 AAレベル準拠（コントラスト比4.5:1以上）
+/// - 白背景に黒テキストで最大のコントラスト
+/// - 太い境界線で要素の区別を明確化
+/// - ボタンや入力フィールドに明確な輪郭
+/// - Material 3デザインシステム準拠
+library;
+
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
-/// High contrast theme configuration
-/// WCAG 2.1 AA compliant (REQ-5006: Contrast ratio 4.5:1 or higher)
+/// 高コントラストテーマの定義
+///
+/// アクセシビリティ要件:
+/// - コントラスト比: 4.5:1以上（WCAG 2.1 AAレベル）
+/// - タップターゲットサイズ: 最小44px x 44px、推奨60px x 60px
+/// - フォントサイズ: AppSizesの定義に従う
+/// - テキストの太さ: 視認性向上のためやや太め（w600）
+/// - 境界線: 2px以上の黒色で明確な区別
 final ThemeData highContrastTheme = ThemeData(
   brightness: Brightness.light,
   colorScheme: const ColorScheme.light(
