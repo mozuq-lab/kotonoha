@@ -2,11 +2,15 @@
 AI変換エンドポイント
 
 【機能概要】: AI変換機能のエンドポイント
-【実装予定】: TASK-0025でレート制限、TASK-0027〜0028で本実装
+【実装方針】: AIClientを使用してテキスト変換、ログ記録、エラーハンドリング
 
 TASK-0025: レート制限ミドルウェア実装
-🔵 NFR-101: レート制限（1リクエスト/10秒/IP）
+TASK-0027: AI変換エンドポイント実装
 """
+
+import logging
+import uuid
+from dataclasses import dataclass
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
@@ -14,13 +18,146 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session
 from app.core.rate_limit import AI_RATE_LIMIT, limiter
+from app.crud.crud_ai_conversion import create_conversion_log
 from app.schemas.ai_conversion import (
     AIConversionRequest,
     AIConversionResponse,
     AIRegenerateRequest,
 )
+from app.utils import ai_client as ai_client_module
+from app.utils.exceptions import (
+    AIConversionException,
+    AIProviderException,
+    AIRateLimitException,
+    AITimeoutException,
+)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# レート制限ヘッダー定数
+RATE_LIMIT_HEADERS = {
+    "X-RateLimit-Limit": "1",
+    "X-RateLimit-Remaining": "0",
+    "X-RateLimit-Reset": "10",
+}
+
+
+@dataclass(frozen=True)
+class ErrorInfo:
+    """エラー情報を保持するデータクラス"""
+
+    code: str
+    message: str
+    status_code: int
+
+
+# エラー定義マッピング
+ERROR_DEFINITIONS: dict[type[Exception], ErrorInfo] = {
+    AITimeoutException: ErrorInfo(
+        code="AI_API_TIMEOUT",
+        message="AI変換APIがタイムアウトしました。しばらく待ってから再度お試しください。",
+        status_code=504,
+    ),
+    AIProviderException: ErrorInfo(
+        code="AI_PROVIDER_ERROR",
+        message="AI変換サービスが一時的に利用できません。しばらく待ってから再度お試しください。",
+        status_code=503,
+    ),
+    AIRateLimitException: ErrorInfo(
+        code="AI_RATE_LIMIT",
+        message="AI変換APIのレート制限に達しました。しばらく待ってから再度お試しください。",
+        status_code=429,
+    ),
+    AIConversionException: ErrorInfo(
+        code="AI_API_ERROR",
+        message="AI変換APIからのレスポンスに失敗しました。しばらく待ってから再度お試しください。",
+        status_code=500,
+    ),
+}
+
+# デフォルトエラー（予期しないエラー用）
+DEFAULT_ERROR = ErrorInfo(
+    code="INTERNAL_ERROR",
+    message="予期しないエラーが発生しました。",
+    status_code=500,
+)
+
+
+def _create_error_response(error_info: ErrorInfo) -> JSONResponse:
+    """
+    統一エラーレスポンスを生成
+
+    【機能概要】: エラーレスポンスを統一形式で生成
+    【実装方針】: success, data, errorフィールドを含むJSON形式
+
+    Args:
+        error_info: エラー情報（コード、メッセージ、ステータスコード）
+
+    Returns:
+        JSONResponse: 統一形式のエラーレスポンス
+    """
+    return JSONResponse(
+        status_code=error_info.status_code,
+        content={
+            "success": False,
+            "data": None,
+            "error": {
+                "code": error_info.code,
+                "message": error_info.message,
+                "status_code": error_info.status_code,
+            },
+        },
+        headers=RATE_LIMIT_HEADERS,
+    )
+
+
+async def _log_conversion_error(
+    db: AsyncSession,
+    input_text: str,
+    politeness_level: str,
+    session_id: uuid.UUID,
+    error: Exception,
+) -> None:
+    """
+    AI変換エラーをログに記録
+
+    【機能概要】: 変換失敗時のログを統一的に記録
+    【実装方針】: 共通のログ記録パターンを抽出
+
+    Args:
+        db: データベースセッション
+        input_text: 入力テキスト
+        politeness_level: 丁寧さレベル
+        session_id: セッションID
+        error: 発生したエラー
+    """
+    await create_conversion_log(
+        db=db,
+        input_text=input_text,
+        output_text="",
+        politeness_level=politeness_level,
+        session_id=session_id,
+        is_success=False,
+        error_message=str(error),
+    )
+
+
+def _get_error_info(error: Exception) -> ErrorInfo:
+    """
+    例外からエラー情報を取得
+
+    【機能概要】: 例外の型に応じたエラー情報を返す
+    【実装方針】: ERROR_DEFINITIONSマッピングを使用
+
+    Args:
+        error: 発生した例外
+
+    Returns:
+        ErrorInfo: 対応するエラー情報
+    """
+    return ERROR_DEFINITIONS.get(type(error), DEFAULT_ERROR)
 
 
 @router.post(
@@ -36,8 +173,11 @@ async def convert_text(
     db: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     """
-    【機能概要】: AI変換エンドポイント（仮実装）
-    【実装方針】: レート制限を適用、本実装はTASK-0027で行う
+    【機能概要】: AI変換エンドポイント
+    【実装方針】:
+      - AIClientを使用してテキストを変換
+      - 成功・失敗に関わらずログを記録
+      - 例外に応じた適切なHTTPステータスコードを返却
 
     Args:
         request: FastAPIリクエストオブジェクト（レート制限用）
@@ -46,23 +186,62 @@ async def convert_text(
 
     Returns:
         AIConversionResponse: AI変換レスポンス
-    """
-    # 仮実装: 入力テキストをそのまま返す（TASK-0027で本実装）
-    response_data = {
-        "converted_text": f"{conversion_request.input_text}（変換済み）",
-        "original_text": conversion_request.input_text,
-        "politeness_level": conversion_request.politeness_level.value,
-        "processing_time_ms": 100,
-    }
 
-    return JSONResponse(
-        content=response_data,
-        headers={
-            "X-RateLimit-Limit": "1",
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": "10",
-        },
-    )
+    Raises:
+        HTTPException: AI変換エラー時
+    """
+    input_text = conversion_request.input_text
+    politeness_level = conversion_request.politeness_level.value
+    session_id = uuid.uuid4()
+
+    try:
+        # AI変換を実行
+        converted_text, processing_time_ms = await ai_client_module.ai_client.convert_text(
+            input_text=input_text,
+            politeness_level=politeness_level,
+        )
+
+        # 成功時のログ記録
+        await create_conversion_log(
+            db=db,
+            input_text=input_text,
+            output_text=converted_text,
+            politeness_level=politeness_level,
+            conversion_time_ms=processing_time_ms,
+            session_id=session_id,
+            is_success=True,
+        )
+
+        # 成功レスポンス
+        response_data = {
+            "converted_text": converted_text,
+            "original_text": input_text,
+            "politeness_level": politeness_level,
+            "processing_time_ms": processing_time_ms,
+        }
+
+        return JSONResponse(
+            content=response_data,
+            headers=RATE_LIMIT_HEADERS,
+        )
+
+    except (
+        AITimeoutException,
+        AIProviderException,
+        AIRateLimitException,
+        AIConversionException,
+    ) as e:
+        # 既知のAI変換エラー
+        error_info = _get_error_info(e)
+        logger.error(f"AI conversion error ({error_info.code}): {e}")
+        await _log_conversion_error(db, input_text, politeness_level, session_id, e)
+        return _create_error_response(error_info)
+
+    except Exception as e:
+        # 予期しないエラー
+        logger.exception(f"Unexpected error during AI conversion: {e}")
+        await _log_conversion_error(db, input_text, politeness_level, session_id, e)
+        return _create_error_response(DEFAULT_ERROR)
 
 
 @router.post(
@@ -99,9 +278,5 @@ async def regenerate_text(
 
     return JSONResponse(
         content=response_data,
-        headers={
-            "X-RateLimit-Limit": "1",
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": "10",
-        },
+        headers=RATE_LIMIT_HEADERS,
     )
