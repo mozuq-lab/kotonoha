@@ -1,0 +1,105 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.1'
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        working-directory: ./frontend/kotonoha_app
+        run: flutter pub get
+
+      - name: Run code generation
+        working-directory: ./frontend/kotonoha_app
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze code
+        working-directory: ./frontend/kotonoha_app
+        run: flutter analyze
+
+      - name: Check formatting
+        working-directory: ./frontend/kotonoha_app
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Run tests with coverage
+        working-directory: ./frontend/kotonoha_app
+        run: flutter test --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./frontend/kotonoha_app/coverage/lcov.info
+          flags: flutter
+          name: flutter-coverage
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [web, apk]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.1'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        working-directory: ./frontend/kotonoha_app
+        run: flutter pub get
+
+      - name: Run code generation
+        working-directory: ./frontend/kotonoha_app
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Build Web
+        if: matrix.target == 'web'
+        working-directory: ./frontend/kotonoha_app
+        run: flutter build web --release
+
+      - name: Build APK
+        if: matrix.target == 'apk'
+        working-directory: ./frontend/kotonoha_app
+        run: flutter build apk --release
+
+      - name: Upload Web build artifacts
+        if: matrix.target == 'web'
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: ./frontend/kotonoha_app/build/web
+          retention-days: 7
+
+      - name: Upload APK build artifacts
+        if: matrix.target == 'apk'
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-build
+          path: ./frontend/kotonoha_app/build/app/outputs/flutter-apk/*.apk
+          retention-days: 7
