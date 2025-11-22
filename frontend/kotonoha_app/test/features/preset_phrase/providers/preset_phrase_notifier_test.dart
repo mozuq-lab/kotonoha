@@ -1,7 +1,8 @@
 /// PresetPhraseNotifier テスト
 ///
 /// TASK-0041: 定型文CRUD機能実装
-/// テストケース: TC-041-032〜TC-041-042
+/// TASK-0042: 定型文初期データ投入機能
+/// テストケース: TC-041-032〜TC-041-042, TC-042-XXX
 ///
 /// テスト対象: lib/features/preset_phrase/providers/preset_phrase_notifier.dart
 ///
@@ -10,6 +11,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kotonoha_app/features/preset_phrase/data/default_phrases.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
 
 void main() {
@@ -369,6 +371,172 @@ void main() {
       // 【結果検証】: エラーハンドリングされ、状態は変化しないことを確認
       final state = container.read(presetPhraseNotifierProvider);
       expect(state.phrases.length, equals(1)); // 【確認内容】: 状態は変化しない 🟡
+    });
+  });
+
+  group('PresetPhraseNotifier - 初期データ投入機能テスト (TASK-0042)', () {
+    // =========================================================================
+    // TC-042-001: 初期データが投入される
+    // =========================================================================
+    /// TC-042-001: initializeDefaultPhrases()で初期データが投入される
+    ///
+    /// 【テスト目的】: 初期データ投入の確認
+    /// 【テスト内容】: 初期データ投入機能
+    /// 【期待される動作】: 50個以上の定型文が投入される
+    ///
+    /// 信頼性レベル: 🔵 青信号
+    /// 関連要件: REQ-107
+    /// 優先度: P0 必須
+    test('TC-042-001: initializeDefaultPhrases()で50個以上の定型文が投入される', () async {
+      // 【前提条件】: 空の状態
+      final initialState = container.read(presetPhraseNotifierProvider);
+      expect(initialState.phrases.length, equals(0));
+
+      // 【実行】: 初期データを投入
+      await notifier.initializeDefaultPhrases();
+
+      // 【結果検証】: 50個以上の定型文があることを確認
+      final state = container.read(presetPhraseNotifierProvider);
+      expect(state.phrases.length, greaterThanOrEqualTo(50)); // 【確認内容】: REQ-107 🔵
+      expect(state.phrases.length, lessThanOrEqualTo(100)); // 【確認内容】: 100個以下 🔵
+    });
+
+    // =========================================================================
+    // TC-042-002: カテゴリごとに適切に分類される
+    // =========================================================================
+    /// TC-042-002: 投入される定型文がカテゴリごとに分類されている
+    ///
+    /// 【テスト目的】: カテゴリ分類の確認
+    /// 【テスト内容】: カテゴリ分類機能
+    /// 【期待される動作】: daily, health, otherの3カテゴリに分類される
+    ///
+    /// 信頼性レベル: 🔵 青信号
+    /// 関連要件: REQ-107
+    /// 優先度: P0 必須
+    test('TC-042-002: 投入される定型文が3カテゴリに分類されている', () async {
+      // 【実行】: 初期データを投入
+      await notifier.initializeDefaultPhrases();
+
+      // 【結果検証】: 各カテゴリにデータがあることを確認
+      final state = container.read(presetPhraseNotifierProvider);
+
+      final dailyPhrases = state.phrases.where((p) => p.category == 'daily');
+      final healthPhrases = state.phrases.where((p) => p.category == 'health');
+      final otherPhrases = state.phrases.where((p) => p.category == 'other');
+
+      expect(dailyPhrases.length, greaterThan(0)); // 【確認内容】: daily 🔵
+      expect(healthPhrases.length, greaterThan(0)); // 【確認内容】: health 🔵
+      expect(otherPhrases.length, greaterThan(0)); // 【確認内容】: other 🔵
+    });
+
+    // =========================================================================
+    // TC-042-003: 重複投入されない
+    // =========================================================================
+    /// TC-042-003: 既にデータがある場合は投入されない
+    ///
+    /// 【テスト目的】: 重複投入防止の確認
+    /// 【テスト内容】: 重複投入防止機能
+    /// 【期待される動作】: 既存データがある場合は何もしない
+    ///
+    /// 信頼性レベル: 🔵 青信号
+    /// 関連要件: REQ-107
+    /// 優先度: P0 必須
+    test('TC-042-003: 既にデータがある場合は初期データが投入されない', () async {
+      // 【前提条件】: 手動でデータを追加
+      await notifier.addPhrase('手動追加', 'daily');
+      final initialState = container.read(presetPhraseNotifierProvider);
+      expect(initialState.phrases.length, equals(1));
+
+      // 【実行】: 初期データを投入しようとする
+      await notifier.initializeDefaultPhrases();
+
+      // 【結果検証】: データが増えていないことを確認
+      final state = container.read(presetPhraseNotifierProvider);
+      expect(state.phrases.length, equals(1)); // 【確認内容】: 重複投入防止 🔵
+      expect(state.phrases.first.content, equals('手動追加'));
+    });
+
+    // =========================================================================
+    // TC-042-004: 初期データにUUIDが付与される
+    // =========================================================================
+    /// TC-042-004: 投入される初期データにUUIDが自動付与される
+    ///
+    /// 【テスト目的】: UUID付与の確認
+    /// 【テスト内容】: UUID自動生成
+    /// 【期待される動作】: すべてのデータにユニークなUUIDが付与される
+    ///
+    /// 信頼性レベル: 🔵 青信号
+    /// 関連要件: CRUD-003
+    /// 優先度: P1 重要
+    test('TC-042-004: 投入される初期データにユニークなUUIDが付与される', () async {
+      // 【実行】: 初期データを投入
+      await notifier.initializeDefaultPhrases();
+
+      // 【結果検証】: すべてのIDがユニークであることを確認
+      final state = container.read(presetPhraseNotifierProvider);
+      final ids = state.phrases.map((p) => p.id).toSet();
+      expect(ids.length, equals(state.phrases.length)); // 【確認内容】: IDのユニーク性 🔵
+
+      // UUID形式の確認
+      final uuidRegex = RegExp(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+        caseSensitive: false,
+      );
+      for (final phrase in state.phrases) {
+        expect(uuidRegex.hasMatch(phrase.id), isTrue); // 【確認内容】: UUID形式 🔵
+      }
+    });
+
+    // =========================================================================
+    // TC-042-005: 初期データとDefaultPhrasesの整合性
+    // =========================================================================
+    /// TC-042-005: 投入される定型文の数がDefaultPhrasesと一致する
+    ///
+    /// 【テスト目的】: データ整合性の確認
+    /// 【テスト内容】: データ整合性
+    /// 【期待される動作】: DefaultPhrases.totalCountと一致する
+    ///
+    /// 信頼性レベル: 🔵 青信号
+    /// 関連要件: REQ-107
+    /// 優先度: P1 重要
+    test('TC-042-005: 投入される定型文の数がDefaultPhrasesと一致する', () async {
+      // 【実行】: 初期データを投入
+      await notifier.initializeDefaultPhrases();
+
+      // 【結果検証】: 数が一致することを確認
+      final state = container.read(presetPhraseNotifierProvider);
+      expect(state.phrases.length, equals(DefaultPhrases.totalCount)); // 【確認内容】: 数の一致 🔵
+    });
+
+    // =========================================================================
+    // TC-042-006: リセット機能のテスト
+    // =========================================================================
+    /// TC-042-006: resetToDefaults()でデータを初期状態に戻せる
+    ///
+    /// 【テスト目的】: リセット機能の確認
+    /// 【テスト内容】: リセット機能
+    /// 【期待される動作】: 既存データが削除され、初期データが投入される
+    ///
+    /// 信頼性レベル: 🔵 青信号
+    /// 関連要件: REQ-107
+    /// 優先度: P2 推奨
+    test('TC-042-006: resetToDefaults()でデータを初期状態に戻せる', () async {
+      // 【前提条件】: 手動でデータを追加し、初期データを投入しない状態
+      await notifier.addPhrase('手動追加1', 'daily');
+      await notifier.addPhrase('手動追加2', 'health');
+
+      // 【実行】: リセット
+      await notifier.resetToDefaults();
+
+      // 【結果検証】: 初期データに戻っていることを確認
+      final state = container.read(presetPhraseNotifierProvider);
+      expect(state.phrases.length, equals(DefaultPhrases.totalCount)); // 【確認内容】: リセット成功 🔵
+
+      // 手動追加のデータがないことを確認
+      final manualPhrases = state.phrases.where(
+        (p) => p.content == '手動追加1' || p.content == '手動追加2',
+      );
+      expect(manualPhrases.isEmpty, isTrue);
     });
   });
 }

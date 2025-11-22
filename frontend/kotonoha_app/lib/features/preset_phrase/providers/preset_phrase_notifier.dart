@@ -1,17 +1,20 @@
 /// PresetPhraseNotifier - 定型文状態管理
 ///
 /// TASK-0041: 定型文CRUD機能実装
+/// TASK-0042: 定型文初期データ投入機能追加
 /// TDD Refactorフェーズ: ドキュメント改善
 ///
 /// 関連要件:
 /// - REQ-104: 定型文の追加・編集・削除機能
 /// - REQ-105: お気に入り定型文を一覧上部に優先表示
+/// - REQ-107: 初期データとして50-100個の汎用定型文を提供
 /// - CRUD-003: UUID形式の一意識別子を自動付与
 /// - CRUD-007: お気に入りフラグを切り替える機能
 /// - CRUD-008: createdAt/updatedAtタイムスタンプを自動設定
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/features/preset_phrase/data/default_phrases.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:uuid/uuid.dart';
 
@@ -156,6 +159,65 @@ class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
     // 現在はメモリ内での管理のみ
     // 将来的にはHiveからの読み込みを実装
     state = state.copyWith(isLoading: false);
+  }
+
+  /// 【メソッド】: 初期定型文データを投入する
+  /// 【実装内容】: DefaultPhrasesから70個程度の定型文を読み込み、状態に追加
+  /// 【テスト対応】: TASK-0042
+  /// 🔵 信頼性レベル: 青信号 - REQ-107に基づく
+  ///
+  /// 初回起動時に呼び出され、デフォルトの定型文を投入する。
+  /// 既に定型文が存在する場合は何もしない（重複投入防止）。
+  Future<void> initializeDefaultPhrases() async {
+    // 既にデータがある場合は何もしない
+    if (state.phrases.isNotEmpty) {
+      return;
+    }
+
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final allPhrases = DefaultPhrases.getAllPhrases();
+      final now = DateTime.now();
+      final phrases = <PresetPhrase>[];
+      var displayOrder = 0;
+
+      // カテゴリ順: daily -> health -> other
+      for (final category in ['daily', 'health', 'other']) {
+        final categoryPhrases = allPhrases[category] ?? [];
+        for (final content in categoryPhrases) {
+          phrases.add(PresetPhrase(
+            id: _uuid.v4(),
+            content: content,
+            category: category,
+            isFavorite: false,
+            displayOrder: displayOrder++,
+            createdAt: now,
+            updatedAt: now,
+          ));
+        }
+      }
+
+      state = state.copyWith(
+        phrases: phrases,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: '初期データの読み込みに失敗しました: $e',
+      );
+    }
+  }
+
+  /// 【メソッド】: 定型文データをリセットする
+  /// 【実装内容】: 全定型文を削除し、初期データを再投入
+  /// 🔵 信頼性レベル: 青信号 - REQ-107に基づく
+  ///
+  /// 設定画面等から呼び出され、定型文を初期状態に戻す。
+  Future<void> resetToDefaults() async {
+    state = state.copyWith(phrases: [], isLoading: true);
+    await initializeDefaultPhrases();
   }
 
   /// 【プライベートメソッド】: 定型文をソートする
