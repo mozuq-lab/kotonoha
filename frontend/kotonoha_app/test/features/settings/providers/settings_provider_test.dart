@@ -13,7 +13,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
-import 'package:kotonoha_app/features/settings/models/app_settings.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/settings/models/app_theme.dart';
 

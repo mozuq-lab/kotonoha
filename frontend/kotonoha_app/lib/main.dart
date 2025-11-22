@@ -1,51 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/core/utils/hive_init.dart';
 
-void main() {
+/// 【main関数】: アプリのエントリーポイント
+/// 【実装内容】: Hive初期化を実行してからFlutterアプリを起動
+/// 【テスト対応】: TC-001（Hive初期化成功テスト）の基盤
+/// 🔵 信頼性レベル: 青信号 - TASK-0014の実装詳細に基づく
+void main() async {
+  // 【Flutter初期化】: WidgetsFlutterBindingの初期化
+  // 【実装内容】: async main関数でawaitを使用するために必要
+  // 🔵 信頼性レベル: 青信号 - Flutter公式ドキュメントに基づく
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 【Hive初期化】: ローカルストレージの初期化
+  // 【実装内容】: TypeAdapter登録とボックスオープンを実行
+  // 【テスト対応】: TC-001、TC-002、TC-003
+  // 🔵 信頼性レベル: 青信号 - REQ-5003（データ永続化）の実現
+  await initHive();
+
+  // 【アプリ起動】: Flutterアプリの起動
+  // 【実装内容】: MyAppウィジェットをルートとして起動
+  // 🔵 信頼性レベル: 青信号 - Flutter標準パターン
   runApp(const MyApp());
 }
 
+/// 【MyAppウィジェット】: アプリのルートウィジェット
+/// 【実装内容】: MaterialAppを提供する最上位ウィジェット
+/// 🔵 信頼性レベル: 青信号 - Flutter標準パターン
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'kotonoha',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'kotonoha - 文字盤コミュニケーション支援'),
     );
   }
 }
 
+/// 【MyHomePageウィジェット】: ホーム画面ウィジェット
+/// 【実装内容】: 仮のホーム画面（Phase 2以降で実装予定）
+/// 🔴 信頼性レベル: 赤信号 - Phase 1では仮実装
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -58,52 +59,23 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _incrementCounter() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       _counter++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            const Text('Phase 1: Hiveローカルストレージセットアップ完了'),
+            const SizedBox(height: 20),
             const Text('You have pushed the button this many times:'),
             Text(
               '$_counter',
@@ -116,7 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }
