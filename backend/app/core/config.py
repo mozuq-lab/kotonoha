@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "kotonoha API"
+    VERSION: str = "1.0.0"
+
+    # 認証設定
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8日間
 
     # 環境設定
     ENVIRONMENT: str = "development"
@@ -34,12 +40,19 @@ class Settings(BaseSettings):
     # レート制限設定
     RATE_LIMIT_PER_MINUTE: int = 10
 
-    # ログレベル
+    # ログ設定
     LOG_LEVEL: str = "INFO"
+    LOG_FILE_PATH: str = "logs/app.log"
 
-    # AI変換機能設定（オプション）
+    # AI変換機能設定（OpenAI）
     OPENAI_API_KEY: str | None = None
     OPENAI_MODEL: str = "gpt-4o-mini"
+
+    # AI変換機能設定（Anthropic）
+    ANTHROPIC_API_KEY: str | None = None
+    DEFAULT_AI_PROVIDER: str = "anthropic"
+    AI_API_TIMEOUT: int = 30
+    AI_MAX_RETRIES: int = 3
 
     model_config = SettingsConfigDict(
         env_file=".env",

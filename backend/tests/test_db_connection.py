@@ -35,11 +35,11 @@ async def test_database_connection(db_session):
 
 async def test_database_connection_error():
     """
-    D-3. データベースが利用不可の場合、OperationalErrorが発生する
+    D-3. データベースが利用不可の場合、接続エラーが発生する
 
     【テスト目的】: データベース接続エラー時の適切なエラーハンドリングを確認
-    【テスト内容】: 不正なデータベースURLで接続を試み、OperationalErrorを確認
-    【期待される動作】: OperationalErrorが発生し、エラーメッセージが適切に設定される
+    【テスト内容】: 不正なデータベースURLで接続を試み、エラーを確認
+    【期待される動作】: OperationalErrorまたはOSErrorが発生し、エラーメッセージが適切に設定される
     🟡 この内容は要件定義書（line 234-251, line 416-420）に基づくが、テスト実装方法は推測
     """
     # 【テストデータ準備】: 不正なデータベースURL（存在しないホスト）
@@ -52,8 +52,8 @@ async def test_database_connection_error():
     invalid_url = "postgresql+asyncpg://invalid:invalid@localhost:9999/invalid"
     engine = create_async_engine(invalid_url, echo=False)
 
-    # 【結果検証】: OperationalErrorが発生することを確認
-    with pytest.raises(OperationalError):
+    # 【結果検証】: OperationalErrorまたはOSError（接続拒否）が発生することを確認
+    with pytest.raises((OperationalError, OSError)):
         # 【検証項目】: 接続エラーが適切に発生するか
         # 🟡 要件定義書（line 234-251, NFR-304）に基づくエラーハンドリングの検証
         async with engine.begin() as conn:
