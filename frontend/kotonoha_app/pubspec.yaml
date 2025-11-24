@@ -36,6 +36,9 @@ dependencies:
   # TTS（音声読み上げ）
   flutter_tts: ^4.2.0
 
+  # 緊急音再生
+  audioplayers: ^6.1.0
+
   # ロギング
   logger: ^2.5.0
 
@@ -68,6 +71,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+
+  assets:
+    - assets/audio/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
