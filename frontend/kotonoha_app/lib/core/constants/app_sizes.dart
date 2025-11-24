@@ -49,4 +49,12 @@ class AppSizes {
   // 入力欄 (Input field)
   static const double inputFieldHeight = 60.0;
   static const int maxInputLength = 1000;
+
+  // ダイアログボタン (Dialog buttons)
+  static const double dialogButtonWidth = 120.0;
+  static const double dialogButtonMinWidth = 100.0;
+
+  // エレベーション (Elevation)
+  static const double elevationSmall = 2.0;
+  static const double elevationMedium = 4.0;
 }

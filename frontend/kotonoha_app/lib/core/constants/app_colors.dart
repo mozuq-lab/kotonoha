@@ -89,6 +89,21 @@ class AppColors {
   /// 緊急ボタン・エラー表示用（赤）
   static const Color emergency = Color(0xFFD32F2F);
 
+  /// 緊急ボタン用（ダークモード - 明るい赤）
+  static const Color emergencyDark = Color(0xFFEF5350);
+
+  /// 緊急ボタン用（高コントラストモード - 純粋な赤）
+  static const Color emergencyHighContrast = Color(0xFFFF0000);
+
+  /// キャンセルボタン用グレー（ライトモード）
+  static const Color cancelButtonLight = Color(0xFF757575);
+
+  /// キャンセルボタン用グレー（ダークモード - 明るいグレー）
+  static const Color cancelButtonDark = Color(0xFFBDBDBD);
+
+  /// キャンセルボタン用（高コントラストモード - 黒）
+  static const Color cancelButtonHighContrast = Color(0xFF000000);
+
   /// 成功・完了表示用（緑）
   static const Color success = Color(0xFF4CAF50);
 
