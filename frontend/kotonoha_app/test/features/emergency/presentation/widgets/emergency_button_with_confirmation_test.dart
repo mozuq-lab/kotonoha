@@ -624,12 +624,19 @@ void main() {
           ),
         );
 
-        // Act - 連続タップ
+        // Act - 連続タップ（ダイアログ表示後はモーダルバリアにより遮断される）
         await tester.tap(find.byType(EmergencyButtonWithConfirmation));
         await tester.pump(const Duration(milliseconds: 50));
-        await tester.tap(find.byType(EmergencyButtonWithConfirmation));
+        // ダイアログ表示後のタップはモーダルバリアで遮断されるため warnIfMissed: false
+        await tester.tap(
+          find.byType(EmergencyButtonWithConfirmation),
+          warnIfMissed: false,
+        );
         await tester.pump(const Duration(milliseconds: 50));
-        await tester.tap(find.byType(EmergencyButtonWithConfirmation));
+        await tester.tap(
+          find.byType(EmergencyButtonWithConfirmation),
+          warnIfMissed: false,
+        );
         await tester.pumpAndSettle();
 
         // Assert - ダイアログは1つのみ表示される
@@ -802,6 +809,240 @@ void main() {
 
         // Assert - タップのみで操作が完了
         expect(callbackCalled, isTrue);
+      });
+    });
+
+    // =========================================================================
+    // TASK-0046: 緊急ボタン2段階確認実装 - 追加テスト
+    // =========================================================================
+    group('TASK-0046 追加テスト: 連続タップ防止', () {
+      /// TC-046-019: 緊急ボタン連続タップで複数のダイアログが表示されない
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: FR-104, REQ-5002, AC-011, EDGE-001
+      /// 検証内容: ボタン連続タップ時にダイアログが1つのみ表示されることを詳細検証
+      testWidgets(
+          'TC-046-019: 緊急ボタン連続タップで複数のダイアログが表示されない（詳細版）',
+          (tester) async {
+        // Arrange
+        int dialogShowCount = 0;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: EmergencyButtonWithConfirmation(
+                onEmergencyConfirmed: () {},
+                dialogBuilder: (context, onConfirm, onCancel) {
+                  dialogShowCount++;
+                  return EmergencyConfirmationDialog(
+                    onConfirm: onConfirm,
+                    onCancel: onCancel,
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+
+        // Act - 短い間隔で連続タップ（10ms間隔で5回）
+        // ダイアログ表示後のタップはモーダルバリアで遮断されるため warnIfMissed: false
+        for (var i = 0; i < 5; i++) {
+          await tester.tap(
+            find.byType(EmergencyButtonWithConfirmation),
+            warnIfMissed: false,
+          );
+          await tester.pump(const Duration(milliseconds: 10));
+        }
+        await tester.pumpAndSettle();
+
+        // Assert - ダイアログ表示回数が1回のみ
+        expect(dialogShowCount, equals(1));
+        expect(find.byType(EmergencyConfirmationDialog), findsOneWidget);
+      });
+
+      /// TC-046-020: ダイアログ表示中に緊急ボタン領域タップが遮断される
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: FR-105, REQ-5002, AC-012
+      testWidgets('TC-046-020: ダイアログ表示中に緊急ボタン領域タップが遮断される',
+          (tester) async {
+        // Arrange
+        int dialogShowCount = 0;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: EmergencyButtonWithConfirmation(
+                  onEmergencyConfirmed: () {},
+                  dialogBuilder: (context, onConfirm, onCancel) {
+                    dialogShowCount++;
+                    return EmergencyConfirmationDialog(
+                      onConfirm: onConfirm,
+                      onCancel: onCancel,
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+
+        // Act - 最初のタップでダイアログ表示
+        await tester.tap(find.byType(EmergencyButtonWithConfirmation));
+        await tester.pumpAndSettle();
+
+        // ダイアログ表示後、緊急ボタンがあった位置（中央）をタップ
+        // モーダルバリアにより遮断されるはず
+        await tester.tapAt(
+            tester.getCenter(find.byType(EmergencyButtonWithConfirmation)));
+        await tester.pumpAndSettle();
+
+        // Assert - ダイアログ表示回数は1回のまま
+        expect(dialogShowCount, equals(1));
+        expect(find.byType(EmergencyConfirmationDialog), findsOneWidget);
+      });
+
+      /// TC-046-021: 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: AC-013, EDGE-003
+      /// 検証内容: ダイアログが閉じる前に連続タップしてもコールバックが1回のみ呼ばれる
+      /// 【TDD Red】: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
+      testWidgets('TC-046-021: 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる',
+          (tester) async {
+        // Arrange
+        int callbackCount = 0;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () {
+                    showDialog<void>(
+                      context: context,
+                      barrierDismissible: false,
+                      // ダイアログを閉じないコールバックで連続タップ防止機能をテスト
+                      builder: (_) => EmergencyConfirmationDialog(
+                        onConfirm: () {
+                          callbackCount++;
+                          // 意図的にダイアログを閉じない（連続タップテストのため）
+                        },
+                        onCancel: () {},
+                      ),
+                    );
+                  },
+                  child: const Text('Show Dialog'),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        // Act - ダイアログを表示
+        await tester.tap(find.text('Show Dialog'));
+        await tester.pumpAndSettle();
+
+        // 「はい」ボタンを短い間隔で連続タップ（ダイアログが閉じない状態で複数回タップ）
+        final yesButton = find.text('はい');
+        await tester.tap(yesButton);
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.tap(yesButton);
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.tap(yesButton);
+        await tester.pumpAndSettle();
+
+        // Assert - コールバックは1回のみ呼ばれるべき（連続タップ防止機能が必要）
+        expect(callbackCount, equals(1));
+      });
+
+      /// TC-046-022: 「いいえ」ボタン連続タップでonCancelledが1回だけ呼ばれる
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: AC-014, EDGE-004
+      /// 【TDD Red】: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
+      testWidgets('TC-046-022: 「いいえ」ボタン連続タップでonCancelledが1回だけ呼ばれる',
+          (tester) async {
+        // Arrange
+        int cancelCallCount = 0;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () {
+                    showDialog<void>(
+                      context: context,
+                      barrierDismissible: false,
+                      // ダイアログを閉じないコールバックで連続タップ防止機能をテスト
+                      builder: (_) => EmergencyConfirmationDialog(
+                        onConfirm: () {},
+                        onCancel: () {
+                          cancelCallCount++;
+                          // 意図的にダイアログを閉じない（連続タップテストのため）
+                        },
+                      ),
+                    );
+                  },
+                  child: const Text('Show Dialog'),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        // Act - ダイアログを表示
+        await tester.tap(find.text('Show Dialog'));
+        await tester.pumpAndSettle();
+
+        // 「いいえ」ボタンを短い間隔で連続タップ（ダイアログが閉じない状態で複数回タップ）
+        final noButton = find.text('いいえ');
+        await tester.tap(noButton);
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.tap(noButton);
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.tap(noButton);
+        await tester.pumpAndSettle();
+
+        // Assert - コールバックは1回のみ呼ばれるべき（連続タップ防止機能が必要）
+        expect(cancelCallCount, equals(1));
+      });
+
+      /// TC-046-015: 「いいえ」タップ後に通常状態に戻る
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: FR-102
+      /// 検証内容: キャンセル後に再度タップで確認ダイアログが表示される
+      testWidgets('TC-046-015: 「いいえ」タップ後に通常状態に戻る（再タップで再表示可能）',
+          (tester) async {
+        // Arrange
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: EmergencyButtonWithConfirmation(
+                onEmergencyConfirmed: () {},
+              ),
+            ),
+          ),
+        );
+
+        // Act - 1回目: ダイアログを表示してキャンセル
+        await tester.tap(find.byType(EmergencyButtonWithConfirmation));
+        await tester.pumpAndSettle();
+        expect(find.byType(EmergencyConfirmationDialog), findsOneWidget);
+
+        await tester.tap(find.text('いいえ'));
+        await tester.pumpAndSettle();
+        expect(find.byType(EmergencyConfirmationDialog), findsNothing);
+
+        // Act - 2回目: 再度タップでダイアログが表示される
+        await tester.tap(find.byType(EmergencyButtonWithConfirmation));
+        await tester.pumpAndSettle();
+
+        // Assert - 再度ダイアログが表示される
+        expect(find.byType(EmergencyConfirmationDialog), findsOneWidget);
       });
     });
   });

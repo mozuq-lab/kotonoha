@@ -1,6 +1,7 @@
 /// EmergencyConfirmationDialog ウィジェット
 ///
 /// TASK-0045: 緊急ボタンUI実装
+/// TASK-0046: 緊急ボタン2段階確認実装（連続タップ防止機能追加）
 /// 要件: REQ-2004（確認ダイアログ表示）、REQ-2005（確認後の動作）
 /// 信頼性レベル: 🔵 青信号（要件定義書ベース）
 ///
@@ -24,6 +25,7 @@ import 'package:kotonoha_app/core/constants/app_text_styles.dart';
 /// - 「はい」ボタン: 赤色背景、緊急処理実行
 /// - 「いいえ」ボタン: グレー背景、キャンセル
 /// - ダイアログ外タップでは閉じない（barrierDismissible: false）
+/// - 連続タップ防止機能により、ボタンは1回のみ反応する
 ///
 /// 使用例:
 /// ```dart
@@ -39,7 +41,7 @@ import 'package:kotonoha_app/core/constants/app_text_styles.dart';
 ///   ),
 /// );
 /// ```
-class EmergencyConfirmationDialog extends StatelessWidget {
+class EmergencyConfirmationDialog extends StatefulWidget {
   /// 「はい」ボタンタップ時のコールバック
   final VoidCallback onConfirm;
 
@@ -78,47 +80,52 @@ class EmergencyConfirmationDialog extends StatelessWidget {
     return AppColors.emergency;
   }
 
+  @override
+  State<EmergencyConfirmationDialog> createState() =>
+      _EmergencyConfirmationDialogState();
+}
+
+/// EmergencyConfirmationDialogの状態管理クラス
+class _EmergencyConfirmationDialogState
+    extends State<EmergencyConfirmationDialog> {
+  /// 処理中フラグ（連続タップ防止用）
+  bool _isProcessing = false;
+
+  /// 高コントラストモードかどうか判定
+  bool _isHighContrastMode(ThemeData theme) =>
+      theme.colorScheme.primary == AppColors.primaryHighContrast;
+
+  /// ダークモードかどうか判定
+  bool _isDarkMode(ThemeData theme) => theme.brightness == Brightness.dark;
+
   /// テーマに応じたキャンセルボタンの背景色を取得
-  Color _getCancelButtonColor(BuildContext context) {
-    final theme = Theme.of(context);
-
-    // 高コントラストモード
-    if (theme.colorScheme.primary == AppColors.primaryHighContrast) {
-      return AppColors.cancelButtonHighContrast;
-    }
-
-    // ダークモード
-    if (theme.brightness == Brightness.dark) {
-      return AppColors.cancelButtonDark;
-    }
-
-    // ライトモード
+  Color _getCancelButtonColor(ThemeData theme) {
+    if (_isHighContrastMode(theme)) return AppColors.cancelButtonHighContrast;
+    if (_isDarkMode(theme)) return AppColors.cancelButtonDark;
     return AppColors.cancelButtonLight;
   }
 
   /// テーマに応じたキャンセルボタンのテキスト色を取得
-  Color _getCancelButtonTextColor(BuildContext context) {
-    final theme = Theme.of(context);
-
-    // 高コントラストモード・ライトモード: 白文字
-    if (theme.colorScheme.primary == AppColors.primaryHighContrast) {
-      return Colors.white;
-    }
-
-    // ダークモード: 黒文字（明るいグレー背景に対して）
-    if (theme.brightness == Brightness.dark) {
-      return Colors.black;
-    }
-
-    // ライトモード: 白文字
+  Color _getCancelButtonTextColor(ThemeData theme) {
+    // ダークモードのみ黒文字（明るいグレー背景に対して）
+    if (_isDarkMode(theme) && !_isHighContrastMode(theme)) return Colors.black;
     return Colors.white;
+  }
+
+  /// ボタンタップ処理（連続タップ防止付き）
+  void _handleTap(VoidCallback callback) {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+    callback();
   }
 
   @override
   Widget build(BuildContext context) {
-    final confirmButtonColor = getEmergencyColor(context);
-    final cancelButtonColor = _getCancelButtonColor(context);
-    final cancelButtonTextColor = _getCancelButtonTextColor(context);
+    final theme = Theme.of(context);
+    final confirmButtonColor =
+        EmergencyConfirmationDialog.getEmergencyColor(context);
+    final cancelButtonColor = _getCancelButtonColor(theme);
+    final cancelButtonTextColor = _getCancelButtonTextColor(theme);
 
     return Semantics(
       label: '緊急呼び出し確認ダイアログ',
@@ -155,13 +162,18 @@ class EmergencyConfirmationDialog extends StatelessWidget {
     );
   }
 
-  /// 「いいえ」ボタンを構築
-  Widget _buildCancelButton(Color backgroundColor, Color textColor) {
+  /// ダイアログボタンを構築する共通メソッド
+  Widget _buildDialogButton({
+    required String label,
+    required Color backgroundColor,
+    required Color textColor,
+    required VoidCallback onTap,
+  }) {
     return SizedBox(
       width: AppSizes.dialogButtonWidth,
       height: AppSizes.minTapTarget,
       child: ElevatedButton(
-        onPressed: onCancel,
+        onPressed: _isProcessing ? null : () => _handleTap(onTap),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: textColor,
@@ -173,37 +185,25 @@ class EmergencyConfirmationDialog extends StatelessWidget {
             horizontal: AppSizes.paddingMedium,
           ),
         ),
-        child: Text(
-          'いいえ',
-          style: AppTextStyles.button,
-        ),
+        child: Text(label, style: AppTextStyles.button),
       ),
     );
   }
 
+  /// 「いいえ」ボタンを構築
+  Widget _buildCancelButton(Color backgroundColor, Color textColor) =>
+      _buildDialogButton(
+        label: 'いいえ',
+        backgroundColor: backgroundColor,
+        textColor: textColor,
+        onTap: widget.onCancel,
+      );
+
   /// 「はい」ボタンを構築
-  Widget _buildConfirmButton(Color backgroundColor) {
-    return SizedBox(
-      width: AppSizes.dialogButtonWidth,
-      height: AppSizes.minTapTarget,
-      child: ElevatedButton(
-        onPressed: onConfirm,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: Colors.white,
-          minimumSize: const Size(
-            AppSizes.dialogButtonMinWidth,
-            AppSizes.minTapTarget,
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.paddingMedium,
-          ),
-        ),
-        child: Text(
-          'はい',
-          style: AppTextStyles.button,
-        ),
-      ),
-    );
-  }
+  Widget _buildConfirmButton(Color backgroundColor) => _buildDialogButton(
+        label: 'はい',
+        backgroundColor: backgroundColor,
+        textColor: Colors.white,
+        onTap: widget.onConfirm,
+      );
 }

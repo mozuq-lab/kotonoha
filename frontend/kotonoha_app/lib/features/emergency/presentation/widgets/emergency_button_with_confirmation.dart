@@ -68,19 +68,16 @@ class EmergencyButtonWithConfirmation extends StatelessWidget {
   });
 
   /// 実際に使用するサイズを計算（最小44px保証）
-  double get _effectiveSize {
-    return size < AppSizes.minTapTarget ? AppSizes.minTapTarget : size;
-  }
+  double get _effectiveSize =>
+      size < AppSizes.minTapTarget ? AppSizes.minTapTarget : size;
 
   /// 確認ダイアログを表示
   Future<void> _showConfirmationDialog(BuildContext context) async {
-    void onConfirm() {
-      Navigator.of(context).pop();
-      onEmergencyConfirmed();
-    }
+    final navigator = Navigator.of(context);
 
-    void onCancel() {
-      Navigator.of(context).pop();
+    void closeDialogAndExecute(VoidCallback? action) {
+      navigator.pop();
+      action?.call();
     }
 
     await showDialog<void>(
@@ -88,11 +85,15 @@ class EmergencyButtonWithConfirmation extends StatelessWidget {
       barrierDismissible: false, // REQ-5002: 誤操作防止
       builder: (dialogContext) {
         if (dialogBuilder != null) {
-          return dialogBuilder!(dialogContext, onConfirm, onCancel);
+          return dialogBuilder!(
+            dialogContext,
+            () => closeDialogAndExecute(onEmergencyConfirmed),
+            () => closeDialogAndExecute(null),
+          );
         }
         return EmergencyConfirmationDialog(
-          onConfirm: onConfirm,
-          onCancel: onCancel,
+          onConfirm: () => closeDialogAndExecute(onEmergencyConfirmed),
+          onCancel: () => closeDialogAndExecute(null),
         );
       },
     );
