@@ -39,6 +39,9 @@ dependencies:
   # 緊急音再生
   audioplayers: ^6.1.0
 
+  # 音量制御
+  volume_controller: ^2.0.7
+
   # ロギング
   logger: ^2.5.0
 
