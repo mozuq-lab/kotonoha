@@ -204,11 +204,18 @@ class TTSService {
   /// 参照: requirements.md（141-145行目）、REQ-403
   /// 🔵 信頼性レベル: 高（要件定義書ベース）
   Future<void> stop() async {
-    // 【停止処理】: OS標準TTSエンジンに停止命令を送信
-    await tts.stop();
+    try {
+      // 【停止処理】: OS標準TTSエンジンに停止命令を送信
+      await tts.stop();
 
-    // 【状態更新】: 停止状態に遷移
-    state = TTSState.stopped;
+      // 【状態更新】: 停止状態に遷移
+      state = TTSState.stopped;
+    } catch (e) {
+      // 【エラー処理】: NFR-301準拠 - エラー時も基本機能は継続動作
+      // 停止エラーが発生しても、アプリはクラッシュしない
+      state = TTSState.error;
+      errorMessage = '読み上げ停止に失敗しました';
+    }
   }
 
   /// 読み上げ速度を設定
