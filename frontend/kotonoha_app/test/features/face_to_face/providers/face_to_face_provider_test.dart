@@ -1,11 +1,12 @@
 /// FaceToFaceProvider テスト
 ///
 /// TASK-0052: 対面表示モード（拡大表示）実装
-/// テストケース: TC-052-005〜TC-052-009
+/// TASK-0053: 180度画面回転機能実装
+/// テストケース: TC-052-005〜TC-052-009, TC-053-004〜TC-053-007
 ///
 /// テスト対象: lib/features/face_to_face/providers/face_to_face_provider.dart
 ///
-/// 【TDD Redフェーズ】: FaceToFaceNotifierが未実装、テストが失敗するはず
+/// 【TDD Redフェーズ】: 回転メソッドが未実装、新しいテストが失敗するはず
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -200,6 +201,289 @@ void main() {
           state.isEnabled,
           isFalse,
         ); // 【確認内容】: 2回目のトグルで無効になることを確認 🟡
+      });
+    });
+
+    // =========================================================================
+    // 3. TASK-0053: 180度回転機能テスト（Notifierメソッド）
+    // =========================================================================
+    group('180度回転機能テスト (TASK-0053)', () {
+      /// TC-053-004: toggleRotationで回転状態がトグルされる
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: REQ-502, REQ-503
+      /// 検証内容: toggleRotation呼び出しで回転状態がfalse→true→falseと切り替わること
+      test('TC-053-004: toggleRotationで回転状態がトグルされる', () {
+        // 【テスト目的】: toggleRotation呼び出しで回転状態がトグルされることを確認 🔵
+        // 【テスト内容】: toggleRotationを2回呼び出し、状態変化を検証
+        //   初期: isRotated180 = false
+        //   1回目: isRotated180 = true
+        //   2回目: isRotated180 = false
+        // 【期待される動作】: 呼び出すたびにisRotated180がトグルする
+        // 🔵 青信号: 要件定義書「再度タップで元に戻る」に基づく
+
+        // Given: 【テストデータ準備】: 初期状態のnotifierを取得
+        // 【初期条件設定】: 回転なし（isRotated180 = false）の状態
+        final notifier = container.read(faceToFaceProvider.notifier);
+
+        // 初期状態の確認
+        var state = container.read(faceToFaceProvider);
+        expect(
+          state.isRotated180,
+          isFalse,
+          reason: '初期状態では回転なし',
+        ); // 【確認内容】: 初期状態でisRotated180がfalseであることを確認 🔵
+
+        // When: 【実際の処理実行】: toggleRotationを呼び出す（1回目）
+        // 【処理内容】: 回転をトグル（false → true）
+        notifier.toggleRotation();
+
+        // Then: 【結果検証】: 回転が有効になることを確認
+        // 【期待値確認】: 1回目のトグルで有効になる
+        // 【品質保証】: ユーザーが回転ボタンをタップして回転できること
+        state = container.read(faceToFaceProvider);
+        expect(
+          state.isRotated180,
+          isTrue,
+          reason: '1回目のトグルで回転が有効になる',
+        ); // 【確認内容】: 1回目のトグルでisRotated180がtrueになることを確認 🔵
+
+        // When: 【実際の処理実行】: toggleRotationを呼び出す（2回目）
+        // 【処理内容】: 回転をトグル（true → false）
+        notifier.toggleRotation();
+
+        // Then: 【結果検証】: 回転が無効になることを確認
+        // 【期待値確認】: 2回目のトグルで無効になる
+        // 【品質保証】: ユーザーが回転ボタンをタップして元に戻せること
+        state = container.read(faceToFaceProvider);
+        expect(
+          state.isRotated180,
+          isFalse,
+          reason: '2回目のトグルで回転が無効になる',
+        ); // 【確認内容】: 2回目のトグルでisRotated180がfalseになることを確認 🔵
+      });
+
+      /// TC-053-005: enableRotationで回転が有効化される
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: REQ-502
+      /// 検証内容: enableRotation呼び出しでisRotated180がtrueになること
+      test('TC-053-005: enableRotationで回転が有効化される', () {
+        // 【テスト目的】: enableRotation呼び出しでisRotated180がtrueになることを確認 🔵
+        // 【テスト内容】: notifierのenableRotationメソッドを呼び出し、状態変化を検証
+        // 【期待される動作】: 回転が有効になる
+        // 🔵 青信号: 設計文書のFaceToFaceNotifier定義に基づく
+
+        // Given: 【テストデータ準備】: 初期状態のnotifierを取得
+        // 【初期条件設定】: 回転なし（isRotated180 = false）の状態
+        final notifier = container.read(faceToFaceProvider.notifier);
+
+        // When: 【実際の処理実行】: enableRotationを呼び出す
+        // 【処理内容】: 回転を明示的に有効化
+        notifier.enableRotation();
+
+        // Then: 【結果検証】: 回転が有効になることを確認
+        // 【期待値確認】: isRotated180がtrueになる
+        // 【品質保証】: 明示的に回転を有効化できること
+        final state = container.read(faceToFaceProvider);
+        expect(
+          state.isRotated180,
+          isTrue,
+          reason: 'enableRotation呼び出しで回転が有効になる',
+        ); // 【確認内容】: isRotated180がtrueになることを確認 🔵
+      });
+
+      /// TC-053-006: disableRotationで回転が無効化される
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: REQ-502
+      /// 検証内容: disableRotation呼び出しでisRotated180がfalseになること
+      test('TC-053-006: disableRotationで回転が無効化される', () {
+        // 【テスト目的】: disableRotation呼び出しでisRotated180がfalseになることを確認 🔵
+        // 【テスト内容】: 有効化後にdisableRotationを呼び出し、状態変化を検証
+        // 【期待される動作】: 回転が無効になる
+        // 🔵 青信号: 設計文書のFaceToFaceNotifier定義に基づく
+
+        // Given: 【テストデータ準備】: 回転を有効にする
+        // 【初期条件設定】: 回転が有効（isRotated180 = true）の状態
+        final notifier = container.read(faceToFaceProvider.notifier);
+        notifier.enableRotation();
+
+        // When: 【実際の処理実行】: disableRotationを呼び出す
+        // 【処理内容】: 回転を明示的に無効化
+        notifier.disableRotation();
+
+        // Then: 【結果検証】: 回転が無効になることを確認
+        // 【期待値確認】: isRotated180がfalseになる
+        // 【品質保証】: 明示的に回転を無効化できること
+        final state = container.read(faceToFaceProvider);
+        expect(
+          state.isRotated180,
+          isFalse,
+          reason: 'disableRotation呼び出しで回転が無効になる',
+        ); // 【確認内容】: isRotated180がfalseになることを確認 🔵
+      });
+
+      /// TC-053-007: 回転とテキスト更新が正しく共存する
+      ///
+      /// 優先度: P1（高優先度）
+      /// 関連要件: REQ-502
+      /// 検証内容: 回転状態でテキストを更新しても回転状態が維持されること
+      test('TC-053-007: 回転とテキスト更新が正しく共存する', () {
+        // 【テスト目的】: 回転状態でテキストを更新しても回転状態が維持されることを確認 🟡
+        // 【テスト内容】:
+        //   1. 回転を有効化
+        //   2. テキストを更新
+        //   3. 回転状態が維持されていることを確認
+        // 【期待される動作】: 回転とテキスト更新が互いに影響しない
+        // 🟡 黄信号: EDGE-103「操作中のテキスト変更」パターンから推測
+
+        // Given: 【テストデータ準備】: 回転を有効化し、初期テキストを設定
+        // 【初期条件設定】: 回転が有効で、テキストが設定されている状態
+        final notifier = container.read(faceToFaceProvider.notifier);
+        notifier.enableRotation();
+        notifier.updateText('初期テキスト');
+
+        // When: 【実際の処理実行】: テキストを更新
+        // 【処理内容】: 回転状態を維持しつつ、表示テキストを変更
+        const newText = '新しいテキスト';
+        notifier.updateText(newText);
+
+        // Then: 【結果検証】: 回転状態が維持され、テキストが更新されていることを確認
+        // 【期待値確認】: 回転とテキスト更新が共存できる
+        // 【品質保証】: 回転中にテキスト変更してもクラッシュしないこと
+        final state = container.read(faceToFaceProvider);
+        expect(
+          state.isRotated180,
+          isTrue,
+          reason: 'テキスト更新後も回転状態が維持される',
+        ); // 【確認内容】: 回転状態が維持されることを確認 🟡
+
+        expect(
+          state.displayText,
+          equals(newText),
+          reason: 'テキストが更新される',
+        ); // 【確認内容】: テキストが更新されることを確認 🟡
+      });
+
+      /// TC-053-021: 回転状態で対面表示を切り替えても回転維持
+      ///
+      /// 優先度: P1（高優先度）
+      /// 関連要件: REQ-502「対面表示モードと独立して利用可能」
+      /// 検証内容: 回転状態で対面表示を切り替えても回転状態が維持されること
+      test('TC-053-021: 回転状態で対面表示を切り替えても回転維持', () {
+        // 【テスト目的】: 回転状態で対面表示を切り替えても回転状態が維持されることを確認 🟡
+        // 【テスト内容】:
+        //   1. 回転を有効化
+        //   2. 対面表示をON→OFF→ON切り替え
+        //   3. 回転状態が維持されていることを確認
+        // 【期待される動作】: 回転と対面表示が独立して動作する
+        // 🟡 黄信号: 要件定義書の独立性要件から推測
+
+        // Given: 【テストデータ準備】: 回転を有効化
+        // 【初期条件設定】: 回転が有効な状態
+        final notifier = container.read(faceToFaceProvider.notifier);
+        notifier.enableRotation();
+
+        // When & Then: 【実際の処理実行】: 対面表示を切り替え
+        // 【処理内容】: 対面表示を複数回切り替える
+
+        // 対面表示をONにする
+        notifier.enableFaceToFace('テスト');
+        var state = container.read(faceToFaceProvider);
+        expect(
+          state.isRotated180,
+          isTrue,
+          reason: '対面表示ON後も回転状態が維持される',
+        ); // 🟡
+        expect(
+          state.isEnabled,
+          isTrue,
+          reason: '対面表示がONになる',
+        ); // 🟡
+
+        // 対面表示をOFFにする
+        notifier.disableFaceToFace();
+        state = container.read(faceToFaceProvider);
+        expect(
+          state.isRotated180,
+          isTrue,
+          reason: '対面表示OFF後も回転状態が維持される',
+        ); // 🟡
+        expect(
+          state.isEnabled,
+          isFalse,
+          reason: '対面表示がOFFになる',
+        ); // 🟡
+
+        // 対面表示を再度ONにする
+        notifier.enableFaceToFace('テスト2');
+        state = container.read(faceToFaceProvider);
+        expect(
+          state.isRotated180,
+          isTrue,
+          reason: '対面表示再ON後も回転状態が維持される',
+        ); // 🟡
+      });
+
+      /// TC-053-022: 対面表示状態で回転を切り替えても対面表示維持
+      ///
+      /// 優先度: P1（高優先度）
+      /// 関連要件: REQ-502「対面表示モードと独立して利用可能」
+      /// 検証内容: 対面表示状態で回転を切り替えても対面表示状態が維持されること
+      test('TC-053-022: 対面表示状態で回転を切り替えても対面表示維持', () {
+        // 【テスト目的】: 対面表示状態で回転を切り替えても対面表示状態が維持されることを確認 🟡
+        // 【テスト内容】:
+        //   1. 対面表示を有効化
+        //   2. 回転をON→OFF→ON切り替え
+        //   3. 対面表示状態が維持されていることを確認
+        // 【期待される動作】: 回転と対面表示が独立して動作する
+        // 🟡 黄信号: 要件定義書の独立性要件から推測
+
+        // Given: 【テストデータ準備】: 対面表示を有効化
+        // 【初期条件設定】: 対面表示が有効な状態
+        final notifier = container.read(faceToFaceProvider.notifier);
+        notifier.enableFaceToFace('テスト');
+
+        // When & Then: 【実際の処理実行】: 回転を切り替え
+        // 【処理内容】: 回転を複数回切り替える
+
+        // 回転をONにする
+        notifier.enableRotation();
+        var state = container.read(faceToFaceProvider);
+        expect(
+          state.isEnabled,
+          isTrue,
+          reason: '回転ON後も対面表示状態が維持される',
+        ); // 🟡
+        expect(
+          state.isRotated180,
+          isTrue,
+          reason: '回転がONになる',
+        ); // 🟡
+
+        // 回転をOFFにする
+        notifier.disableRotation();
+        state = container.read(faceToFaceProvider);
+        expect(
+          state.isEnabled,
+          isTrue,
+          reason: '回転OFF後も対面表示状態が維持される',
+        ); // 🟡
+        expect(
+          state.isRotated180,
+          isFalse,
+          reason: '回転がOFFになる',
+        ); // 🟡
+
+        // 回転を再度ONにする
+        notifier.enableRotation();
+        state = container.read(faceToFaceProvider);
+        expect(
+          state.isEnabled,
+          isTrue,
+          reason: '回転再ON後も対面表示状態が維持される',
+        ); // 🟡
       });
     });
   });

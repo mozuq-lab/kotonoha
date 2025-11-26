@@ -1,7 +1,9 @@
 /// 対面表示モードの状態管理プロバイダー
 ///
 /// TASK-0052: 対面表示モード（拡大表示）実装
+/// TASK-0053: 180度画面回転機能実装
 /// REQ-501: テキストを画面中央に大きく表示する拡大表示モード
+/// REQ-502: 画面を180度回転できる機能
 /// REQ-503: 通常モードと対面表示モードをシンプルな操作で切り替え
 library;
 
@@ -70,5 +72,28 @@ class FaceToFaceNotifier extends StateNotifier<FaceToFaceState> {
     } else {
       enableFaceToFace(text);
     }
+  }
+
+  /// 180度回転を有効化
+  ///
+  /// REQ-502: 画面を180度回転できる機能
+  void enableRotation() {
+    state = state.copyWith(isRotated180: true);
+  }
+
+  /// 180度回転を無効化
+  ///
+  /// REQ-502: 画面を180度回転できる機能
+  void disableRotation() {
+    state = state.copyWith(isRotated180: false);
+  }
+
+  /// 180度回転をトグル
+  ///
+  /// 現在の回転状態を反転する。
+  /// REQ-502: 画面を180度回転できる機能
+  /// REQ-503: シンプルな操作で切り替え
+  void toggleRotation() {
+    state = state.copyWith(isRotated180: !state.isRotated180);
   }
 }
