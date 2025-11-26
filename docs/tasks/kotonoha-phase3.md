@@ -783,7 +783,7 @@ test('設定をshared_preferencesに保存', () async {
 
 #### Day 21: TASK-0057 - Riverpod Provider 構造設計
 
-- [ ] **タスク完了**
+- [x] **タスク完了** (2025-11-26)
 - **推定工数**: 8時間
 - **タスクタイプ**: TDD
 - **要件名**: kotonoha
