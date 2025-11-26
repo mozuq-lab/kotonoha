@@ -13,7 +13,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
+import 'package:kotonoha_app/shared/models/history_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
 
 void main() {
   group('Hive初期化・TypeAdapter登録テスト', () {
@@ -164,6 +166,91 @@ void main() {
       // 🟡 黄信号: 冪等性の確認
       expect(Hive.isAdapterRegistered(0), true); // 【確認内容】: HistoryItemAdapterが依然として登録されている
       expect(Hive.isAdapterRegistered(1), true); // 【確認内容】: PresetPhraseAdapterが依然として登録されている
+    });
+
+    // TC-054-001: HistoryItemの保存・読み込みテスト
+    test('TC-054-001: HistoryItemをHiveに保存・読み込みできることを確認', () async {
+      // 【テスト目的】: HistoryItemAdapterが正しくシリアライズ/デシリアライズすること
+      // 【テスト内容】: HistoryItemを保存し、読み込んで値が一致するか確認
+      // 🔵 青信号: REQ-5003、REQ-601に基づく
+
+      // Given
+      if (!Hive.isAdapterRegistered(0)) {
+        Hive.registerAdapter(HistoryItemAdapter());
+      }
+      final box = await Hive.openBox<HistoryItem>('history');
+      final now = DateTime.now();
+      final item = HistoryItem(
+        id: 'test-001',
+        content: 'テストメッセージ',
+        createdAt: now,
+        type: 'manualInput',
+        isFavorite: true,
+      );
+
+      // When
+      await box.put('test-001', item);
+      final loaded = box.get('test-001');
+
+      // Then
+      expect(loaded, isNotNull);
+      expect(loaded!.id, 'test-001');
+      expect(loaded.content, 'テストメッセージ');
+      expect(loaded.type, 'manualInput');
+      expect(loaded.isFavorite, true);
+    });
+
+    // TC-054-002: PresetPhraseの保存・読み込みテスト
+    test('TC-054-002: PresetPhraseをHiveに保存・読み込みできることを確認', () async {
+      // 【テスト目的】: PresetPhraseAdapterが正しくシリアライズ/デシリアライズすること
+      // 【テスト内容】: PresetPhraseを保存し、読み込んで値が一致するか確認
+      // 🔵 青信号: REQ-5003、REQ-104に基づく
+
+      // Given
+      if (!Hive.isAdapterRegistered(1)) {
+        Hive.registerAdapter(PresetPhraseAdapter());
+      }
+      final box = await Hive.openBox<PresetPhrase>('presetPhrases');
+      final now = DateTime.now();
+      final phrase = PresetPhrase(
+        id: 'preset-001',
+        content: 'おはようございます',
+        category: 'daily',
+        isFavorite: true,
+        displayOrder: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      // When
+      await box.put('preset-001', phrase);
+      final loaded = box.get('preset-001');
+
+      // Then
+      expect(loaded, isNotNull);
+      expect(loaded!.id, 'preset-001');
+      expect(loaded.content, 'おはようございます');
+      expect(loaded.category, 'daily');
+      expect(loaded.isFavorite, true);
+      expect(loaded.displayOrder, 1);
+    });
+
+    // TC-054-003: エラー時の適切なハンドリングテスト
+    test('TC-054-003: 存在しないキーへのアクセスがnullを返すことを確認', () async {
+      // 【テスト目的】: 存在しないキーへのアクセスが安全に処理されること
+      // 🟡 黄信号: NFR-301（基本機能継続）に基づく
+
+      // Given
+      if (!Hive.isAdapterRegistered(0)) {
+        Hive.registerAdapter(HistoryItemAdapter());
+      }
+      final box = await Hive.openBox<HistoryItem>('history');
+
+      // When
+      final result = box.get('non-existent-key');
+
+      // Then
+      expect(result, isNull);
     });
   });
 }

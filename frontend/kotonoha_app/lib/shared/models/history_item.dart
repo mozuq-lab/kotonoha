@@ -1,7 +1,5 @@
 import 'package:hive/hive.dart';
 
-part 'history_item.g.dart';
-
 /// 【データモデル定義】: 履歴アイテム
 /// 【実装内容】: 文字盤入力・定型文・AI変換結果の履歴を保存するためのデータクラス
 /// 【Hive設定】: typeId 0 として登録、各フィールドに@HiveFieldアノテーション付与

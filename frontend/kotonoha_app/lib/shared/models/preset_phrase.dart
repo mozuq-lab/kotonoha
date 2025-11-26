@@ -1,7 +1,5 @@
 import 'package:hive/hive.dart';
 
-part 'preset_phrase.g.dart';
-
 /// 【データモデル定義】: 定型文
 /// 【実装内容】: ユーザーが登録・管理する定型文を保存するためのデータクラス
 /// 【Hive設定】: typeId 1 として登録、各フィールドに@HiveFieldアノテーション付与

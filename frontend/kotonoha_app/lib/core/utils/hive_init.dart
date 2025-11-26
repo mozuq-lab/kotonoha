@@ -1,6 +1,8 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
+import 'package:kotonoha_app/shared/models/history_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
 
 /// 【関数定義】: Hive初期化処理
 /// 【実装内容】: Hive.initFlutter()、TypeAdapter登録、ボックスオープンを順に実行
