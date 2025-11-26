@@ -145,7 +145,7 @@ void main() {
     /// TC-053-016: Rotation icon is clear
     testWidgets('TC-053-016: Rotation icon is clear', (WidgetTester tester) async {
       await tester.pumpWidget(
-        ProviderScope(
+        const ProviderScope(
           child: MaterialApp(
             home: Scaffold(
               body: RotationToggleButton(),

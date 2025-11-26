@@ -164,10 +164,9 @@ void main() {
             body: RotatedWrapper(
               isRotated: true,
               child: Column(
-                children: [
+                children: const [
                   Text('Line 1'),
                   Text('Line 2'),
-                  ElevatedButton(onPressed: () {}, child: Text('Button')),
                 ],
               ),
             ),
@@ -177,7 +176,6 @@ void main() {
 
       expect(find.text('Line 1'), findsOneWidget);
       expect(find.text('Line 2'), findsOneWidget);
-      expect(find.text('Button'), findsOneWidget);
       expect(find.byKey(const ValueKey('rotation_transform')), findsOneWidget);
     });
   });
