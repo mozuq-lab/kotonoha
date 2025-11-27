@@ -43,6 +43,7 @@ class TTSService {
   ///
   /// 【パラメータ】:
   /// - [tts] FlutterTtsインスタンス（テスト時はモックを注入）
+  /// - [onStateChanged] 状態変更時のコールバック（オプション）
   ///
   /// 【使用例】:
   /// ```dart
@@ -52,13 +53,18 @@ class TTSService {
   /// // テスト環境
   /// final service = TTSService(tts: mockFlutterTts);
   /// ```
-  TTSService({required this.tts});
+  TTSService({required this.tts, this.onStateChanged});
 
   /// FlutterTtsインスタンス
   ///
   /// 【役割】: OS標準TTSエンジンとの通信を担当
   /// 【依存性注入】: テスト時はモックを注入することでテスト可能性を確保
   final FlutterTts tts;
+
+  /// 状態変更時のコールバック
+  ///
+  /// 【役割】: TTS状態が変更された際にNotifierに通知
+  final void Function()? onStateChanged;
 
   /// 現在の状態
   ///
@@ -120,6 +126,12 @@ class TTSService {
       // 【速度設定】: 標準速度（1.0倍速）を設定
       await tts.setSpeechRate(1.0);
 
+      // 【完了コールバック登録】: 読み上げ完了時に状態をidleに戻す
+      tts.setCompletionHandler(() {
+        state = TTSState.idle;
+        onStateChanged?.call();
+      });
+
       // 【初期化完了】: フラグを設定し、読み上げ可能な状態にする
       _isInitialized = true;
       return true;
@@ -137,7 +149,7 @@ class TTSService {
   ///
   /// 【処理フロー】:
   /// 1. 空文字列チェック（何もせず終了）
-  /// 2. 初期化チェック（未初期化ならエラー）
+  /// 2. 初期化チェック（未初期化なら自動初期化）
   /// 3. 読み上げ中チェック（読み上げ中なら停止してから再開）
   /// 4. 状態をspeakingに変更
   /// 5. OS標準TTSで読み上げ開始
@@ -148,7 +160,7 @@ class TTSService {
   /// - 最大文字数: 1000文字（入力バッファの制限と同じ）
   ///
   /// 【エラーハンドリング】:
-  /// - 初期化前の呼び出し: state=error、エラーメッセージ設定
+  /// - 初期化失敗時: state=error、エラーメッセージ設定
   /// - 読み上げ失敗時: state=error、エラーメッセージ設定、アプリは継続（NFR-301）
   ///
   /// 【パフォーマンス】:
@@ -162,11 +174,13 @@ class TTSService {
     // 【入力検証】: 空文字列チェック（EDGE-3: 空文字列の読み上げ試行）
     if (text.isEmpty) return;
 
-    // 【初期化チェック】: 未初期化の場合はエラー（防御的プログラミング）
+    // 【自動初期化】: 未初期化の場合は自動的に初期化を実行
     if (!_isInitialized) {
-      state = TTSState.error;
-      errorMessage = 'TTSが初期化されていません';
-      return;
+      final success = await initialize();
+      if (!success) {
+        // 初期化失敗時はエラー状態のまま終了
+        return;
+      }
     }
 
     // 【読み上げ中断処理】: EDGE-2対応 - 読み上げ中に新しいテキストを読み上げる場合

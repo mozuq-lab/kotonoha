@@ -56,20 +56,12 @@ class TTSServiceState {
   }
 }
 
-/// TTSServiceのProvider
-///
-/// FlutterTtsをラップしたTTSServiceを提供する。
-/// テスト時はoverridesでモックを注入できる。
-final ttsServiceProvider = Provider<TTSService>((ref) {
-  return TTSService(tts: FlutterTts());
-});
-
 /// TTSNotifierのStateNotifierProvider
 ///
 /// TTS機能の状態管理を行うプロバイダー。
 /// UIからはこのプロバイダーを通してTTS機能を利用する。
 final ttsProvider = StateNotifierProvider<TTSNotifier, TTSServiceState>((ref) {
-  return TTSNotifier(ref.read(ttsServiceProvider));
+  return TTSNotifier();
 });
 
 /// TTSNotifier
@@ -84,11 +76,24 @@ final ttsProvider = StateNotifierProvider<TTSNotifier, TTSServiceState>((ref) {
 class TTSNotifier extends StateNotifier<TTSServiceState> {
   /// コンストラクタ
   ///
-  /// [_service] TTSServiceインスタンス
-  TTSNotifier(this._service) : super(TTSServiceState.initial());
+  /// TTSServiceを内部で作成し、状態変更コールバックを登録する。
+  TTSNotifier() : super(TTSServiceState.initial()) {
+    _service = TTSService(
+      tts: FlutterTts(),
+      onStateChanged: _onServiceStateChanged,
+    );
+  }
 
   /// TTSServiceインスタンス
-  final TTSService _service;
+  late final TTSService _service;
+
+  /// TTSServiceの状態変更時に呼ばれるコールバック
+  void _onServiceStateChanged() {
+    state = state.copyWith(
+      state: _service.state,
+      errorMessage: _service.errorMessage,
+    );
+  }
 
   /// TTS初期化
   ///
