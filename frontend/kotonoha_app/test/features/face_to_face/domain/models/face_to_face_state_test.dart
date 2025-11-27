@@ -278,28 +278,20 @@ void main() {
         // 【品質保証】: すべての組み合わせが可能であること
 
         // パターン1の検証
-        expect(pattern1.isRotated180, isFalse,
-            reason: 'パターン1: 回転なし'); // 🔵
-        expect(pattern1.isEnabled, isFalse,
-            reason: 'パターン1: 対面表示なし'); // 🔵
+        expect(pattern1.isRotated180, isFalse, reason: 'パターン1: 回転なし'); // 🔵
+        expect(pattern1.isEnabled, isFalse, reason: 'パターン1: 対面表示なし'); // 🔵
 
         // パターン2の検証
-        expect(pattern2.isRotated180, isTrue,
-            reason: 'パターン2: 回転あり'); // 🔵
-        expect(pattern2.isEnabled, isFalse,
-            reason: 'パターン2: 対面表示なし'); // 🔵
+        expect(pattern2.isRotated180, isTrue, reason: 'パターン2: 回転あり'); // 🔵
+        expect(pattern2.isEnabled, isFalse, reason: 'パターン2: 対面表示なし'); // 🔵
 
         // パターン3の検証
-        expect(pattern3.isRotated180, isFalse,
-            reason: 'パターン3: 回転なし'); // 🔵
-        expect(pattern3.isEnabled, isTrue,
-            reason: 'パターン3: 対面表示あり'); // 🔵
+        expect(pattern3.isRotated180, isFalse, reason: 'パターン3: 回転なし'); // 🔵
+        expect(pattern3.isEnabled, isTrue, reason: 'パターン3: 対面表示あり'); // 🔵
 
         // パターン4の検証
-        expect(pattern4.isRotated180, isTrue,
-            reason: 'パターン4: 回転あり'); // 🔵
-        expect(pattern4.isEnabled, isTrue,
-            reason: 'パターン4: 対面表示あり'); // 🔵
+        expect(pattern4.isRotated180, isTrue, reason: 'パターン4: 回転あり'); // 🔵
+        expect(pattern4.isEnabled, isTrue, reason: 'パターン4: 対面表示あり'); // 🔵
       });
 
       /// TC-053-003-1: equals演算子でisRotated180が正しく比較される
@@ -336,8 +328,7 @@ void main() {
         // Then: 【結果検証】: equals演算子が正しく動作することを確認
         // 【期待値確認】: 同じプロパティ値の状態は等しく、異なる状態は等しくない
         // 【品質保証】: equals演算子がisRotated180を正しく考慮すること
-        expect(state1, equals(state2),
-            reason: '同じプロパティ値の状態は等しい'); // 🔵
+        expect(state1, equals(state2), reason: '同じプロパティ値の状態は等しい'); // 🔵
 
         expect(state1, isNot(equals(state3)),
             reason: 'isRotated180が異なる状態は等しくない'); // 🔵

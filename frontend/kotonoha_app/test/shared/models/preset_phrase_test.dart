@@ -92,8 +92,10 @@ void main() {
       expect(retrieved.category, 'health'); // 【確認内容】: categoryフィールドが保持されている
       expect(retrieved.isFavorite, true); // 【確認内容】: isFavoriteフィールドが保持されている
       expect(retrieved.displayOrder, 0); // 【確認内容】: displayOrderフィールドが保持されている
-      expect(retrieved.createdAt, DateTime(2025, 11, 21, 10, 0)); // 【確認内容】: createdAtフィールドが保持されている
-      expect(retrieved.updatedAt, DateTime(2025, 11, 21, 10, 0)); // 【確認内容】: updatedAtフィールドが保持されている
+      expect(retrieved.createdAt,
+          DateTime(2025, 11, 21, 10, 0)); // 【確認内容】: createdAtフィールドが保持されている
+      expect(retrieved.updatedAt,
+          DateTime(2025, 11, 21, 10, 0)); // 【確認内容】: updatedAtフィールドが保持されている
     });
 
     // TC-010: PresetPhrase複数データの保存・読み込みテスト
@@ -155,17 +157,21 @@ void main() {
 
       // 【検証項目】: 異なるカテゴリ（daily, health）が混在して保存できること
       // 🔵 青信号: REQ-106のカテゴリ分類確認
-      expect(allPresets.where((p) => p.category == 'daily').length, 2); // 【確認内容】: 「日常」カテゴリが2件
-      expect(allPresets.where((p) => p.category == 'health').length, 1); // 【確認内容】: 「体調」カテゴリが1件
+      expect(allPresets.where((p) => p.category == 'daily').length,
+          2); // 【確認内容】: 「日常」カテゴリが2件
+      expect(allPresets.where((p) => p.category == 'health').length,
+          1); // 【確認内容】: 「体調」カテゴリが1件
 
       // 【検証項目】: isFavoriteフラグが保持されること
       // 🔵 青信号: REQ-105のお気に入り機能基盤
-      expect(allPresets.where((p) => p.isFavorite).length, 2); // 【確認内容】: お気に入りが2件
+      expect(
+          allPresets.where((p) => p.isFavorite).length, 2); // 【確認内容】: お気に入りが2件
       expect(allPresets.where((p) => !p.isFavorite).length, 1); // 【確認内容】: 通常が1件
     });
 
     // TC-011: PresetPhraseカテゴリ分類テスト
-    test('TC-011: 3種類のカテゴリ（daily, health, other）の定型文がそれぞれ正しく保存・識別できることを確認', () async {
+    test('TC-011: 3種類のカテゴリ（daily, health, other）の定型文がそれぞれ正しく保存・識別できることを確認',
+        () async {
       // 【テスト目的】: categoryフィールドの正確な保存と読み込みを確認
       // 【テスト内容】: 3種類すべてのカテゴリを保存し、正しく分類できることを検証
       // 【期待される動作】: カテゴリごとにデータが正しく分類される
@@ -215,19 +221,23 @@ void main() {
 
       // 【検証項目】: 「日常」カテゴリが正しく保存されること
       // 🔵 青信号: REQ-106のカテゴリ分類
-      expect(presetBox.get('preset-daily')!.category, 'daily'); // 【確認内容】: 「日常」カテゴリが正しく保存されている
+      expect(presetBox.get('preset-daily')!.category,
+          'daily'); // 【確認内容】: 「日常」カテゴリが正しく保存されている
 
       // 【検証項目】: 「体調」カテゴリが正しく保存されること
       // 🔵 青信号: REQ-106のカテゴリ分類
-      expect(presetBox.get('preset-health')!.category, 'health'); // 【確認内容】: 「体調」カテゴリが正しく保存されている
+      expect(presetBox.get('preset-health')!.category,
+          'health'); // 【確認内容】: 「体調」カテゴリが正しく保存されている
 
       // 【検証項目】: 「その他」カテゴリが正しく保存されること
       // 🔵 青信号: REQ-106のカテゴリ分類
-      expect(presetBox.get('preset-other')!.category, 'other'); // 【確認内容】: 「その他」カテゴリが正しく保存されている
+      expect(presetBox.get('preset-other')!.category,
+          'other'); // 【確認内容】: 「その他」カテゴリが正しく保存されている
 
       // 【検証項目】: カテゴリごとにフィルタリング可能であること
       // 🔵 青信号: UI表示の基盤
-      final dailyOnly = presetBox.values.where((p) => p.category == 'daily').toList();
+      final dailyOnly =
+          presetBox.values.where((p) => p.category == 'daily').toList();
       expect(dailyOnly.length, 1); // 【確認内容】: 「日常」カテゴリのみフィルタリングできる
     });
 
@@ -272,15 +282,18 @@ void main() {
 
       // 【検証項目】: お気に入り定型文のisFavoriteがtrueであること
       // 🔵 青信号: bool型の正確な保存
-      expect(presetBox.get('fav-001')!.isFavorite, true); // 【確認内容】: お気に入りフラグがtrueで保存されている
+      expect(presetBox.get('fav-001')!.isFavorite,
+          true); // 【確認内容】: お気に入りフラグがtrueで保存されている
 
       // 【検証項目】: 通常定型文のisFavoriteがfalseであること
       // 🔵 青信号: bool型の正確な保存
-      expect(presetBox.get('normal-001')!.isFavorite, false); // 【確認内容】: お気に入りフラグがfalseで保存されている
+      expect(presetBox.get('normal-001')!.isFavorite,
+          false); // 【確認内容】: お気に入りフラグがfalseで保存されている
 
       // 【検証項目】: お気に入りのみフィルタリング可能であること
       // 🔵 青信号: UI上部優先表示の基盤
-      final favoritesOnly = presetBox.values.where((p) => p.isFavorite).toList();
+      final favoritesOnly =
+          presetBox.values.where((p) => p.isFavorite).toList();
       expect(favoritesOnly.length, 1); // 【確認内容】: お気に入りのみフィルタリングできる
       expect(favoritesOnly.first.id, 'fav-001'); // 【確認内容】: お気に入り定型文が取得できる
     });
@@ -307,7 +320,8 @@ void main() {
       await presetBox.put(preset.id, preset);
 
       // 削除前の確認
-      expect(presetBox.get('preset-001'), isNotNull); // 【確認内容】: 削除前にデータが存在することを確認
+      expect(
+          presetBox.get('preset-001'), isNotNull); // 【確認内容】: 削除前にデータが存在することを確認
 
       // When（実行フェーズ）
       // 【実際の処理実行】: presetBox.delete()で削除
@@ -348,7 +362,8 @@ void main() {
         Hive.registerAdapter(PresetPhraseAdapter());
       }
 
-      var presetBox = await Hive.openBox<PresetPhrase>('test_preset_persistence');
+      var presetBox =
+          await Hive.openBox<PresetPhrase>('test_preset_persistence');
 
       final preset = PresetPhrase(
         id: 'preset-001',

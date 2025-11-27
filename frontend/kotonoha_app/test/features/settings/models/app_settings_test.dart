@@ -39,7 +39,8 @@ void main() {
         // Then: 【結果検証】: ttsSpeedがnormalに設定されたことを確認
         // 【期待値確認】: REQ-404の3段階選択要件を満たすため
         // 【品質保証】: ユーザーが明示的に速度を選択するまで、標準的な速度（1.0倍速）で読み上げが行われることを保証
-        expect(appSettings.ttsSpeed, TTSSpeed.normal); // 【確認内容】: デフォルト速度がnormalであることを確認 🔵
+        expect(appSettings.ttsSpeed,
+            TTSSpeed.normal); // 【確認内容】: デフォルト速度がnormalであることを確認 🔵
       });
 
       /// TC-049-002: AppSettings.copyWith()でttsSpeedを更新
@@ -68,10 +69,13 @@ void main() {
         // Then: 【結果検証】: ttsSpeedが変更され、他のフィールドが保持されていることを確認
         // 【期待値確認】: 不変オブジェクトパターンの正しい実装を保証
         // 【品質保証】: 設定の一部のみを変更する際に、他の設定が意図せず変更されないことを確認
-        expect(updated.ttsSpeed, TTSSpeed.slow); // 【確認内容】: ttsSpeedが変更されたことを確認 🔵
-        expect(updated.fontSize, FontSize.large); // 【確認内容】: fontSizeが保持されたことを確認 🔵
+        expect(
+            updated.ttsSpeed, TTSSpeed.slow); // 【確認内容】: ttsSpeedが変更されたことを確認 🔵
+        expect(
+            updated.fontSize, FontSize.large); // 【確認内容】: fontSizeが保持されたことを確認 🔵
         expect(updated.theme, AppTheme.dark); // 【確認内容】: themeが保持されたことを確認 🔵
-        expect(identical(original, updated), isFalse); // 【確認内容】: 新しいインスタンスが生成されたことを確認 🔵
+        expect(identical(original, updated),
+            isFalse); // 【確認内容】: 新しいインスタンスが生成されたことを確認 🔵
       });
 
       /// TC-049-003: AppSettings.toJson()でttsSpeedがシリアライズされる
@@ -96,7 +100,8 @@ void main() {
         // Then: 【結果検証】: ttsSpeedが文字列形式で含まれていることを確認
         // 【期待値確認】: shared_preferencesへの保存前に、AppSettingsが正しくJSON形式に変換されることを確認
         // 【品質保証】: 永続化データの形式が仕様通りであることを保証
-        expect(json['tts_speed'], 'fast'); // 【確認内容】: ttsSpeedが'fast'に変換されたことを確認 🔵
+        expect(
+            json['tts_speed'], 'fast'); // 【確認内容】: ttsSpeedが'fast'に変換されたことを確認 🔵
       });
 
       /// TC-049-004: AppSettings.fromJson()でttsSpeedがデシリアライズされる
@@ -125,8 +130,10 @@ void main() {
         // Then: 【結果検証】: ttsSpeedが正しく復元されたことを確認
         // 【期待値確認】: アプリ再起動時に、保存されたTTS速度が正しく復元されることを確認
         // 【品質保証】: データの永続化・復元サイクルが正しく機能することを保証
-        expect(settings.ttsSpeed, TTSSpeed.slow); // 【確認内容】: ttsSpeedがslowに復元されたことを確認 🔵
-        expect(settings.fontSize, FontSize.large); // 【確認内容】: fontSizeも正しく復元されたことを確認 🔵
+        expect(settings.ttsSpeed,
+            TTSSpeed.slow); // 【確認内容】: ttsSpeedがslowに復元されたことを確認 🔵
+        expect(settings.fontSize,
+            FontSize.large); // 【確認内容】: fontSizeも正しく復元されたことを確認 🔵
         expect(settings.theme, AppTheme.dark); // 【確認内容】: themeも正しく復元されたことを確認 🔵
       });
     });
@@ -140,7 +147,9 @@ void main() {
       /// 優先度: P1（高優先度）
       /// 関連要件: NFR-301, EDGE-3
       /// 検証内容: 不正な値に対する安全な動作
-      test('TC-049-011: shared_preferencesに不正な値（\'invalid\'）が保存されている場合、デフォルト値（normal）にフォールバックすることを確認', () {
+      test(
+          'TC-049-011: shared_preferencesに不正な値（\'invalid\'）が保存されている場合、デフォルト値（normal）にフォールバックすることを確認',
+          () {
         // 【テスト目的】: 不正な値に対する安全な動作を確認 🟡
         // 【テスト内容】: fromJson()で不正な値（'invalid'）を渡した場合、デフォルト値（normal）にフォールバックすることを検証
         // 【期待される動作】: アプリがクラッシュせず、デフォルト速度で動作継続する
@@ -162,7 +171,8 @@ void main() {
         // Then: 【結果検証】: デフォルト値にフォールバックされたことを確認
         // 【期待値確認】: エラーハンドリングの堅牢性を確認
         // 【システムの安全性】: エラー発生でもアプリがクラッシュしない
-        expect(settings.ttsSpeed, TTSSpeed.normal); // 【確認内容】: デフォルト値normalにフォールバックしたことを確認 🟡
+        expect(settings.ttsSpeed,
+            TTSSpeed.normal); // 【確認内容】: デフォルト値normalにフォールバックしたことを確認 🟡
       });
     });
 
@@ -175,7 +185,9 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-404
       /// 検証内容: null安全性の確認
-      test('TC-049-016: shared_preferencesに\'tts_speed\'キーが存在しない場合、デフォルト値（normal）が使用されることを確認', () {
+      test(
+          'TC-049-016: shared_preferencesに\'tts_speed\'キーが存在しない場合、デフォルト値（normal）が使用されることを確認',
+          () {
         // 【テスト目的】: null安全性を確認 🔵
         // 【テスト内容】: fromJson()で'tts_speed'キーが存在しないJSONを渡した場合、デフォルト値（normal）が使用されることを検証
         // 【期待される動作】: データが存在しない場合の安全なフォールバック
@@ -197,7 +209,8 @@ void main() {
         // Then: 【結果検証】: デフォルト値（normal）が使用されたことを確認
         // 【期待値確認】: null安全性を確認
         // 【堅牢性の確認】: データが存在しない極端な条件でも安定動作する
-        expect(settings.ttsSpeed, TTSSpeed.normal); // 【確認内容】: デフォルト値normalが使用されたことを確認 🔵
+        expect(settings.ttsSpeed,
+            TTSSpeed.normal); // 【確認内容】: デフォルト値normalが使用されたことを確認 🔵
       });
     });
   });

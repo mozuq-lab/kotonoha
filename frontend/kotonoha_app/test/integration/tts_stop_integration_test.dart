@@ -35,7 +35,8 @@ void main() {
 
       // モックのデフォルト動作を設定
       when(() => mockFlutterTts.setLanguage(any())).thenAnswer((_) async => 1);
-      when(() => mockFlutterTts.setSpeechRate(any())).thenAnswer((_) async => 1);
+      when(() => mockFlutterTts.setSpeechRate(any()))
+          .thenAnswer((_) async => 1);
       when(() => mockFlutterTts.speak(any())).thenAnswer((_) async => 1);
       when(() => mockFlutterTts.stop()).thenAnswer((_) async => 1);
     });
@@ -48,7 +49,8 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 検証内容: idle状態でstop()が呼ばれた場合の冪等性
-      testWidgets('TC-050-010: アイドル状態で停止操作をしてもエラーにならないことを確認', (WidgetTester tester) async {
+      testWidgets('TC-050-010: アイドル状態で停止操作をしてもエラーにならないことを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: idle状態でstop()が呼ばれた場合でもエラーにならないことを確認 🟡
         // 【テスト内容】: idle状態でstop()を呼び出し、エラーが発生しないことを検証
         // 【期待される動作】: エラーなし、状態はidleのまま（またはstopped→idleに遷移）
@@ -77,7 +79,10 @@ void main() {
         // 【期待値確認】: 冪等性が確保されている
         // 【品質保証】: アプリはクラッシュしない
         final state = container.read(ttsProvider).state;
-        expect(state, anyOf(TTSState.idle, TTSState.stopped)); // 【確認内容】: エラーなく状態が維持されることを確認 🟡
+        expect(
+            state,
+            anyOf(TTSState.idle,
+                TTSState.stopped)); // 【確認内容】: エラーなく状態が維持されることを確認 🟡
 
         container.dispose();
       });
@@ -86,7 +91,8 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 検証内容: 停止ボタンを連打した場合のUIの安全性
-      testWidgets('TC-050-011: 連続した停止操作が安全に処理されることを確認', (WidgetTester tester) async {
+      testWidgets('TC-050-011: 連続した停止操作が安全に処理されることを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: 停止ボタンを連打しても安全に処理されることを確認 🟡
         // 【テスト内容】: stop()を2回連続で呼び出し、エラーが発生しないことを検証
         // 【期待される動作】: 1回目で停止、2回目以降は無視
@@ -115,7 +121,8 @@ void main() {
         // Then: 【結果検証】: エラーが発生せず、状態がstoppedであることを確認
         // 【期待値確認】: 冪等性が確保されている
         // 【品質保証】: アプリの状態が破綻しない
-        expect(container.read(ttsProvider).state, TTSState.stopped); // 【確認内容】: 状態がstoppedのまま維持されることを確認 🟡
+        expect(container.read(ttsProvider).state,
+            TTSState.stopped); // 【確認内容】: 状態がstoppedのまま維持されることを確認 🟡
 
         container.dispose();
       });
@@ -125,7 +132,8 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: NFR-301
       /// 検証内容: stop()呼び出し時にエラーが発生した場合の堅牢性
-      testWidgets('TC-050-012: TTS停止エラー時も基本機能が継続動作することを確認', (WidgetTester tester) async {
+      testWidgets('TC-050-012: TTS停止エラー時も基本機能が継続動作することを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: stop()呼び出し時にエラーが発生しても基本機能が継続することを確認 🔵
         // 【テスト内容】: stop()が例外をスローする設定で、アプリがクラッシュしないことを検証
         // 【期待される動作】: エラー状態になるが、アプリはクラッシュしない
@@ -156,7 +164,13 @@ void main() {
         // 【期待値確認】: NFR-301「重大なエラーでも基本機能は継続」に基づく
         // 【品質保証】: 文字盤入力などの基本機能は継続動作
         final state = container.read(ttsProvider).state;
-        expect(state, anyOf(TTSState.error, TTSState.stopped, TTSState.idle)); // 【確認内容】: 状態がerror/stopped/idleのいずれかであることを確認 🔵
+        expect(
+            state,
+            anyOf(
+                TTSState.error,
+                TTSState.stopped,
+                TTSState
+                    .idle)); // 【確認内容】: 状態がerror/stopped/idleのいずれかであることを確認 🔵
 
         container.dispose();
       });
@@ -170,7 +184,8 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 検証内容: 状態遷移の境界（speaking直後のstop）
-      testWidgets('TC-050-013: 読み上げ開始直後の停止が正常に処理されることを確認', (WidgetTester tester) async {
+      testWidgets('TC-050-013: 読み上げ開始直後の停止が正常に処理されることを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: 読み上げ開始直後の停止が正常に処理されることを確認 🟡
         // 【テスト内容】: speak()の直後にstop()を呼び出し、正常に処理されることを検証
         // 【期待される動作】: 停止が正常に処理され、idle状態に戻る
@@ -199,10 +214,12 @@ void main() {
         // 【期待値確認】: speak→stopの順序が保証される
         // 【品質保証】: 高速な状態遷移でも安定動作
         final state = container.read(ttsProvider).state;
-        expect(state, anyOf(TTSState.stopped, TTSState.idle)); // 【確認内容】: 正常に停止されたことを確認 🟡
+        expect(state,
+            anyOf(TTSState.stopped, TTSState.idle)); // 【確認内容】: 正常に停止されたことを確認 🟡
 
         // stop()が呼ばれたことを確認
-        verify(() => mockFlutterTts.stop()).called(1); // 【確認内容】: stop()が呼ばれたことを確認 🟡
+        verify(() => mockFlutterTts.stop())
+            .called(1); // 【確認内容】: stop()が呼ばれたことを確認 🟡
 
         container.dispose();
       });
@@ -212,7 +229,8 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: EDGE-101
       /// 検証内容: 入力バッファ最大値での停止
-      testWidgets('TC-050-014: 長いテキスト（1000文字）の読み上げ中の停止が正常に処理されることを確認', (WidgetTester tester) async {
+      testWidgets('TC-050-014: 長いテキスト（1000文字）の読み上げ中の停止が正常に処理されることを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: 長いテキストの読み上げ中でも停止が正常に効くことを確認 🔵
         // 【テスト内容】: 1000文字のテキストを読み上げ中にstop()を呼び出し、即座に停止することを検証
         // 【期待される動作】: 読み上げが即座に停止する
@@ -242,8 +260,10 @@ void main() {
         // Then: 【結果検証】: 読み上げが即座に停止することを確認
         // 【期待値確認】: テキスト長に関わらず停止が効く
         // 【品質保証】: 極端な条件下でも安定動作
-        expect(container.read(ttsProvider).state, TTSState.stopped); // 【確認内容】: 状態がstoppedになったことを確認 🔵
-        verify(() => mockFlutterTts.stop()).called(1); // 【確認内容】: stop()が呼ばれたことを確認 🔵
+        expect(container.read(ttsProvider).state,
+            TTSState.stopped); // 【確認内容】: 状態がstoppedになったことを確認 🔵
+        verify(() => mockFlutterTts.stop())
+            .called(1); // 【確認内容】: stop()が呼ばれたことを確認 🔵
 
         container.dispose();
       });
@@ -257,7 +277,8 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 検証内容: 一連の操作フローが正常に動作すること
-      testWidgets('TC-050-015: 読み上げ→停止→再読み上げの一連のフローが正常に動作することを確認', (WidgetTester tester) async {
+      testWidgets('TC-050-015: 読み上げ→停止→再読み上げの一連のフローが正常に動作することを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: 一連の操作フローが正常に動作することを確認 🔵
         // 【テスト内容】: speak("A") → stop() → speak("B")の一連の操作が正常に動作することを検証
         // 【期待される動作】: 停止後に再度読み上げが可能
@@ -289,10 +310,14 @@ void main() {
         // Then: 【結果検証】: 両方のspeak()が正常に実行されたことを確認
         // 【期待値確認】: 基本的なユースケースの確認
         // 【品質保証】: 状態遷移が正しく行われること
-        verify(() => mockFlutterTts.speak('テキストA')).called(1); // 【確認内容】: テキストAが読み上げられたことを確認 🔵
-        verify(() => mockFlutterTts.stop()).called(greaterThanOrEqualTo(1)); // 【確認内容】: 停止が呼ばれたことを確認 🔵
-        verify(() => mockFlutterTts.speak('テキストB')).called(1); // 【確認内容】: テキストBが読み上げられたことを確認 🔵
-        expect(container.read(ttsProvider).state, TTSState.speaking); // 【確認内容】: 最終状態がspeakingであることを確認 🔵
+        verify(() => mockFlutterTts.speak('テキストA'))
+            .called(1); // 【確認内容】: テキストAが読み上げられたことを確認 🔵
+        verify(() => mockFlutterTts.stop())
+            .called(greaterThanOrEqualTo(1)); // 【確認内容】: 停止が呼ばれたことを確認 🔵
+        verify(() => mockFlutterTts.speak('テキストB'))
+            .called(1); // 【確認内容】: テキストBが読み上げられたことを確認 🔵
+        expect(container.read(ttsProvider).state,
+            TTSState.speaking); // 【確認内容】: 最終状態がspeakingであることを確認 🔵
 
         container.dispose();
       });
@@ -301,7 +326,8 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 検証内容: ウィジェットテストでボタン→Provider→TTSServiceの連携
-      testWidgets('TC-050-016: UIボタンタップからTTS停止までの統合フローが正常に動作することを確認', (WidgetTester tester) async {
+      testWidgets('TC-050-016: UIボタンタップからTTS停止までの統合フローが正常に動作することを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: ボタン→Provider→TTSServiceの連携が正常に動作することを確認 🔵
         // 【テスト内容】: WidgetTester.tap(停止ボタン)でTTSService.stop()が呼ばれることを検証
         // 【期待される動作】: ボタンタップでTTSが実際に停止する
@@ -349,7 +375,8 @@ void main() {
         // Then: 【結果検証】: TTSService.stop()が呼ばれたことを確認
         // 【期待値確認】: UI→ロジックの連携確認
         // 【品質保証】: 各レイヤーが正しく連携すること
-        verify(() => mockFlutterTts.stop()).called(1); // 【確認内容】: stop()が呼ばれたことを確認 🔵
+        verify(() => mockFlutterTts.stop())
+            .called(1); // 【確認内容】: stop()が呼ばれたことを確認 🔵
 
         container.dispose();
       });
@@ -359,7 +386,8 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: NFR-003
       /// 検証内容: 状態変更→UI更新のリアクティブな連携
-      testWidgets('TC-050-017: 状態変更に応じたボタン表示更新が正常に動作することを確認', (WidgetTester tester) async {
+      testWidgets('TC-050-017: 状態変更に応じたボタン表示更新が正常に動作することを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: 状態変更がボタン表示に即座に反映されることを確認 🔵
         // 【テスト内容】: TTSStateの変更がボタンラベルの切り替えにつながることを検証
         // 【期待される動作】: TTSStateの変更がボタン表示に即座に反映
@@ -398,7 +426,8 @@ void main() {
         await tester.pumpAndSettle();
 
         // Then: 【結果検証】: 初期状態で「読み上げ」ボタンが表示されていることを確認
-        expect(find.text('読み上げ'), findsOneWidget); // 【確認内容】: 初期状態で「読み上げ」が表示されていることを確認 🔵
+        expect(find.text('読み上げ'),
+            findsOneWidget); // 【確認内容】: 初期状態で「読み上げ」が表示されていることを確認 🔵
 
         // When: 【実際の処理実行】: 読み上げを開始（状態がspeakingに変更）
         // 【処理内容】: Provider状態の変更
@@ -408,7 +437,8 @@ void main() {
         // Then: 【結果検証】: 状態変更後、「停止」ボタンに切り替わったことを確認
         // 【期待値確認】: Riverpodのリアクティブ更新
         // 【品質保証】: 状態変更がUIに100ms以内に反映されること
-        expect(find.text('停止'), findsOneWidget); // 【確認内容】: speaking状態で「停止」が表示されていることを確認 🔵
+        expect(find.text('停止'),
+            findsOneWidget); // 【確認内容】: speaking状態で「停止」が表示されていることを確認 🔵
 
         container.dispose();
       });

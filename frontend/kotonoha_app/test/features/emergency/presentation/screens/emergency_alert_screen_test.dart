@@ -592,7 +592,8 @@ void main() {
         if (buttonFinder.evaluate().isNotEmpty) {
           final buttonSize = tester.getSize(buttonFinder);
           expect(buttonSize.width, greaterThanOrEqualTo(AppSizes.minTapTarget));
-          expect(buttonSize.height, greaterThanOrEqualTo(AppSizes.minTapTarget));
+          expect(
+              buttonSize.height, greaterThanOrEqualTo(AppSizes.minTapTarget));
         }
       });
 
@@ -664,8 +665,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: EDGE-006
-      testWidgets('TC-047-072: リセットボタン連続タップで1回だけ処理される',
-          (tester) async {
+      testWidgets('TC-047-072: リセットボタン連続タップで1回だけ処理される', (tester) async {
         // Arrange
         int resetCount = 0;
 

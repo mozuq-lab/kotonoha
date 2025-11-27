@@ -17,7 +17,8 @@ import 'package:kotonoha_app/features/face_to_face/providers/face_to_face_provid
 void main() {
   group('RotationToggleButton widget test (TASK-0053)', () {
     /// TC-053-012: Rotation button is displayed
-    testWidgets('TC-053-012: Rotation button is displayed', (WidgetTester tester) async {
+    testWidgets('TC-053-012: Rotation button is displayed',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -143,7 +144,8 @@ void main() {
     });
 
     /// TC-053-016: Rotation icon is clear
-    testWidgets('TC-053-016: Rotation icon is clear', (WidgetTester tester) async {
+    testWidgets('TC-053-016: Rotation icon is clear',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(

@@ -121,8 +121,7 @@ void main() {
       final isRetryable = ErrorHandler.isRetryable(error);
 
       // Assert
-      expect(isRetryable, isTrue,
-          reason: 'Network errors should be retryable');
+      expect(isRetryable, isTrue, reason: 'Network errors should be retryable');
     });
 
     // TC-ERR-012: エラー再試行可能判定テスト（タイムアウト）
@@ -134,8 +133,7 @@ void main() {
       final isRetryable = ErrorHandler.isRetryable(error);
 
       // Assert
-      expect(isRetryable, isTrue,
-          reason: 'Timeout errors should be retryable');
+      expect(isRetryable, isTrue, reason: 'Timeout errors should be retryable');
     });
 
     // TC-ERR-013: エラー再試行可能判定テスト（バリデーションエラー）
@@ -229,7 +227,8 @@ void main() {
       );
     });
 
-    test('TC-ERR-015: handleError should return valid message even for unexpected errors',
+    test(
+        'TC-ERR-015: handleError should return valid message even for unexpected errors',
         () {
       // Arrange
       final error = StateError('予期しない状態');

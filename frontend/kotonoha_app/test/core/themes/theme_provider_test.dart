@@ -73,14 +73,17 @@ void main() {
       await container.read(settingsNotifierProvider.future);
 
       // テーマをlightに設定
-      await container.read(settingsNotifierProvider.notifier).setTheme(AppTheme.light);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setTheme(AppTheme.light);
 
       // Act
       final theme = container.read(currentThemeProvider);
 
       // Assert
       expect(theme.brightness, equals(Brightness.light));
-      expect(theme.scaffoldBackgroundColor, equals(lightTheme.scaffoldBackgroundColor));
+      expect(theme.scaffoldBackgroundColor,
+          equals(lightTheme.scaffoldBackgroundColor));
     });
 
     /// TC-003: 設定がdarkの場合、darkThemeが返される
@@ -100,14 +103,17 @@ void main() {
       await container.read(settingsNotifierProvider.future);
 
       // テーマをdarkに設定
-      await container.read(settingsNotifierProvider.notifier).setTheme(AppTheme.dark);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setTheme(AppTheme.dark);
 
       // Act
       final theme = container.read(currentThemeProvider);
 
       // Assert
       expect(theme.brightness, equals(Brightness.dark));
-      expect(theme.scaffoldBackgroundColor, equals(darkTheme.scaffoldBackgroundColor));
+      expect(theme.scaffoldBackgroundColor,
+          equals(darkTheme.scaffoldBackgroundColor));
     });
 
     /// TC-004: 設定がhighContrastの場合、highContrastThemeが返される
@@ -127,14 +133,18 @@ void main() {
       await container.read(settingsNotifierProvider.future);
 
       // テーマをhighContrastに設定
-      await container.read(settingsNotifierProvider.notifier).setTheme(AppTheme.highContrast);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setTheme(AppTheme.highContrast);
 
       // Act
       final theme = container.read(currentThemeProvider);
 
       // Assert
-      expect(theme.scaffoldBackgroundColor, equals(AppColors.backgroundHighContrast));
-      expect(theme.scaffoldBackgroundColor, equals(highContrastTheme.scaffoldBackgroundColor));
+      expect(theme.scaffoldBackgroundColor,
+          equals(AppColors.backgroundHighContrast));
+      expect(theme.scaffoldBackgroundColor,
+          equals(highContrastTheme.scaffoldBackgroundColor));
     });
 
     /// TC-005: テーマ設定変更時にプロバイダーが即座に更新される
@@ -158,7 +168,9 @@ void main() {
       expect(initialTheme.brightness, equals(Brightness.light));
 
       // Act: テーマをダークに変更
-      await container.read(settingsNotifierProvider.notifier).setTheme(AppTheme.dark);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setTheme(AppTheme.dark);
 
       // Assert: 即座に更新される
       final updatedTheme = container.read(currentThemeProvider);
@@ -187,15 +199,20 @@ void main() {
       expect(theme.scaffoldBackgroundColor, equals(AppColors.backgroundLight));
 
       // Step 2: ダークテーマに変更
-      await container.read(settingsNotifierProvider.notifier).setTheme(AppTheme.dark);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setTheme(AppTheme.dark);
       theme = container.read(currentThemeProvider);
       expect(theme.brightness, equals(Brightness.dark));
       expect(theme.scaffoldBackgroundColor, equals(AppColors.backgroundDark));
 
       // Step 3: 高コントラストテーマに変更
-      await container.read(settingsNotifierProvider.notifier).setTheme(AppTheme.highContrast);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setTheme(AppTheme.highContrast);
       theme = container.read(currentThemeProvider);
-      expect(theme.scaffoldBackgroundColor, equals(AppColors.backgroundHighContrast));
+      expect(theme.scaffoldBackgroundColor,
+          equals(AppColors.backgroundHighContrast));
     });
 
     /// TC-007: highContrast -> light への切り替えが正しく動作する
@@ -215,14 +232,19 @@ void main() {
       await container.read(settingsNotifierProvider.future);
 
       // 高コントラストテーマに設定
-      await container.read(settingsNotifierProvider.notifier).setTheme(AppTheme.highContrast);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setTheme(AppTheme.highContrast);
 
       // 高コントラストテーマであることを確認
       var theme = container.read(currentThemeProvider);
-      expect(theme.scaffoldBackgroundColor, equals(AppColors.backgroundHighContrast));
+      expect(theme.scaffoldBackgroundColor,
+          equals(AppColors.backgroundHighContrast));
 
       // Act: ライトテーマに変更
-      await container.read(settingsNotifierProvider.notifier).setTheme(AppTheme.light);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setTheme(AppTheme.light);
 
       // Assert
       theme = container.read(currentThemeProvider);

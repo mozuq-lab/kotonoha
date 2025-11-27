@@ -36,8 +36,10 @@ void main() {
     /// - lightTheme.scaffoldBackgroundColorがAppColors.backgroundLight（#FFFFFF）である
     test('TC-102: ライトテーマの背景色が白系である', () {
       // Assert
-      expect(lightTheme.scaffoldBackgroundColor, equals(AppColors.backgroundLight));
-      expect(lightTheme.scaffoldBackgroundColor, equals(const Color(0xFFFFFFFF)));
+      expect(lightTheme.scaffoldBackgroundColor,
+          equals(AppColors.backgroundLight));
+      expect(
+          lightTheme.scaffoldBackgroundColor, equals(const Color(0xFFFFFFFF)));
     });
 
     /// TC-103: ライトテーマのプライマリ色が青系である

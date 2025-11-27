@@ -72,15 +72,18 @@ void main() {
 
       // 【検証項目】: historyボックスがオープンされていること
       // 🔵 青信号: REQ-601（履歴自動保存）の基盤
-      expect(Hive.isBoxOpen('history'), true); // 【確認内容】: historyボックスが正常にオープンされている
+      expect(
+          Hive.isBoxOpen('history'), true); // 【確認内容】: historyボックスが正常にオープンされている
 
       // 【検証項目】: presetPhrasesボックスがオープンされていること
       // 🔵 青信号: REQ-104（定型文機能）の基盤
-      expect(Hive.isBoxOpen('presetPhrases'), true); // 【確認内容】: presetPhrasesボックスが正常にオープンされている
+      expect(Hive.isBoxOpen('presetPhrases'),
+          true); // 【確認内容】: presetPhrasesボックスが正常にオープンされている
     });
 
     // TC-002: TypeAdapter登録成功テスト
-    test('TC-002: HistoryItemAdapterとPresetPhraseAdapterが正しく登録されることを確認', () async {
+    test('TC-002: HistoryItemAdapterとPresetPhraseAdapterが正しく登録されることを確認',
+        () async {
       // 【テスト目的】: TypeAdapterが正しく登録され、カスタムクラスの保存・読み込みが可能になること
       // 【テスト内容】: Hive.registerAdapter()が正常に動作し、typeId 0と1が登録される
       // 【期待される動作】: HistoryItemとPresetPhraseのシリアライズ/デシリアライズが可能
@@ -110,11 +113,13 @@ void main() {
 
       // 【検証項目】: typeId 0（HistoryItem）が登録されていること
       // 🔵 青信号: テストケース定義書TC-002に基づく
-      expect(Hive.isAdapterRegistered(0), true); // 【確認内容】: HistoryItemAdapterが登録されている
+      expect(Hive.isAdapterRegistered(0),
+          true); // 【確認内容】: HistoryItemAdapterが登録されている
 
       // 【検証項目】: typeId 1（PresetPhrase）が登録されていること
       // 🔵 青信号: テストケース定義書TC-002に基づく
-      expect(Hive.isAdapterRegistered(1), true); // 【確認内容】: PresetPhraseAdapterが登録されている
+      expect(Hive.isAdapterRegistered(1),
+          true); // 【確認内容】: PresetPhraseAdapterが登録されている
     });
 
     // TC-003: TypeAdapter重複登録時のエラーハンドリングテスト
@@ -164,8 +169,10 @@ void main() {
 
       // 【検証項目】: TypeAdapterが依然として登録されていること
       // 🟡 黄信号: 冪等性の確認
-      expect(Hive.isAdapterRegistered(0), true); // 【確認内容】: HistoryItemAdapterが依然として登録されている
-      expect(Hive.isAdapterRegistered(1), true); // 【確認内容】: PresetPhraseAdapterが依然として登録されている
+      expect(Hive.isAdapterRegistered(0),
+          true); // 【確認内容】: HistoryItemAdapterが依然として登録されている
+      expect(Hive.isAdapterRegistered(1),
+          true); // 【確認内容】: PresetPhraseAdapterが依然として登録されている
     });
 
     // TC-054-001: HistoryItemの保存・読み込みテスト

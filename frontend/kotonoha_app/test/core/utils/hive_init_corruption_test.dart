@@ -100,7 +100,8 @@ void main() {
 
       // Then（検証フェーズ）
       // Hiveの自動復旧により、Boxが使用可能になる
-      expect(Hive.isBoxOpen('test_log_presetPhrases'), true, reason: '自動復旧後Boxが使用可能');
+      expect(Hive.isBoxOpen('test_log_presetPhrases'), true,
+          reason: '自動復旧後Boxが使用可能');
 
       // 復旧後のBoxは空の状態
       expect(box.isEmpty, true, reason: '復旧後のBoxは空');
@@ -142,7 +143,8 @@ void main() {
 
       // Then（検証フェーズ）
       // 両方のBoxが自動復旧により使用可能
-      expect(Hive.isBoxOpen('multi_presetPhrases'), true, reason: 'presetPhrasesが自動復旧');
+      expect(Hive.isBoxOpen('multi_presetPhrases'), true,
+          reason: 'presetPhrasesが自動復旧');
       expect(Hive.isBoxOpen('multi_history'), true, reason: 'historyが自動復旧');
 
       // 復旧後のBoxは空の状態

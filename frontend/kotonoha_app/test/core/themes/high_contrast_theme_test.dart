@@ -278,7 +278,8 @@ void main() {
       expect(backgroundColor, isNotNull);
       expect(foregroundColor, isNotNull);
 
-      final contrastRatio = calculateContrastRatio(foregroundColor!, backgroundColor!);
+      final contrastRatio =
+          calculateContrastRatio(foregroundColor!, backgroundColor!);
 
       // WCAG 2.1 AAレベル: 4.5:1以上
       expect(contrastRatio, greaterThanOrEqualTo(4.5));
@@ -302,7 +303,8 @@ void main() {
       final outlineColor = highContrastTheme.colorScheme.outline;
 
       // Assert
-      final contrastRatio = calculateContrastRatio(outlineColor, backgroundColor);
+      final contrastRatio =
+          calculateContrastRatio(outlineColor, backgroundColor);
 
       // WCAG 2.1 AA UIコンポーネント要件: 3:1以上
       expect(contrastRatio, greaterThanOrEqualTo(3.0));
@@ -314,7 +316,8 @@ void main() {
     /// コントラスト比計算関数の検証テスト
     test('コントラスト比計算関数が正しく動作する', () {
       // 純白と純黒のコントラスト比は21:1
-      final whiteBlackRatio = calculateContrastRatio(Colors.white, Colors.black);
+      final whiteBlackRatio =
+          calculateContrastRatio(Colors.white, Colors.black);
       expect(whiteBlackRatio, closeTo(21.0, 0.1));
 
       // 同じ色のコントラスト比は1:1

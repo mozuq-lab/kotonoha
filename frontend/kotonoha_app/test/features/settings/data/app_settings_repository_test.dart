@@ -71,8 +71,7 @@ void main() {
         expect(loaded.politenessLevel, PolitenessLevel.casual);
       });
 
-      test('TC-056-006: アプリ再起動後も設定が保持される（永続化テスト）',
-          () async {
+      test('TC-056-006: アプリ再起動後も設定が保持される（永続化テスト）', () async {
         // Arrange - 設定を保存
         await repository.saveFontSize(FontSize.large);
         await repository.saveTheme(AppTheme.dark);
@@ -174,8 +173,7 @@ void main() {
     });
 
     group('異常系テスト', () {
-      test('TC-056-014: 不正なフォントサイズ値が保存されていた場合デフォルト値を返す',
-          () async {
+      test('TC-056-014: 不正なフォントサイズ値が保存されていた場合デフォルト値を返す', () async {
         // Arrange - 不正な値を直接保存
         await prefs.setString('fontSize', 'invalid_size');
 
@@ -186,8 +184,7 @@ void main() {
         expect(settings.fontSize, FontSize.medium);
       });
 
-      test('TC-056-015: 不正なテーマ値が保存されていた場合デフォルト値を返す',
-          () async {
+      test('TC-056-015: 不正なテーマ値が保存されていた場合デフォルト値を返す', () async {
         // Arrange - 不正な値を直接保存
         await prefs.setString('theme', 'invalid_theme');
 
@@ -198,8 +195,7 @@ void main() {
         expect(settings.theme, AppTheme.light);
       });
 
-      test('TC-056-016: 不正なTTS速度値が保存されていた場合デフォルト値を返す',
-          () async {
+      test('TC-056-016: 不正なTTS速度値が保存されていた場合デフォルト値を返す', () async {
         // Arrange - 不正な値を直接保存
         await prefs.setString('ttsSpeed', 'invalid_speed');
 
@@ -210,8 +206,7 @@ void main() {
         expect(settings.ttsSpeed, TtsSpeed.normal);
       });
 
-      test('TC-056-017: 不正な丁寧さレベル値が保存されていた場合デフォルト値を返す',
-          () async {
+      test('TC-056-017: 不正な丁寧さレベル値が保存されていた場合デフォルト値を返す', () async {
         // Arrange - 不正な値を直接保存
         await prefs.setString('politenessLevel', 'invalid_level');
 

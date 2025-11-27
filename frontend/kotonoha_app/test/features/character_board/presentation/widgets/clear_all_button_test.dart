@@ -84,8 +84,7 @@ void main() {
       );
 
       // Assert - ボタンの背景色が警告色（赤系）であることを確認
-      final button =
-          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       final style = button.style;
 
       // 警告色（error color）が使用されていることを確認
@@ -164,8 +163,7 @@ void main() {
       );
 
       // Assert - ボタンが有効状態であることを確認
-      final button =
-          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNotNull);
     });
   });
@@ -203,8 +201,7 @@ void main() {
       );
 
       // Assert - ElevatedButtonが無効状態であることを確認
-      final button =
-          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNull);
     });
 
@@ -225,8 +222,7 @@ void main() {
     /// 信頼性レベル: 🔵 青信号
     /// 関連要件: AC-006, EDGE-2
     /// 優先度: P0 必須
-    testWidgets(
-        'TC-039-013: enabled: falseの場合、タップしても確認ダイアログが表示されないことを確認',
+    testWidgets('TC-039-013: enabled: falseの場合、タップしても確認ダイアログが表示されないことを確認',
         (tester) async {
       // Arrange
       await tester.pumpWidget(
@@ -461,8 +457,7 @@ void main() {
     /// 信頼性レベル: 🔵 青信号
     /// 関連要件: AC-006, EDGE-2
     /// 優先度: P0 必須
-    testWidgets('TC-039-033: 入力バッファが空の場合、全消去ボタンが無効化されることを確認',
-        (tester) async {
+    testWidgets('TC-039-033: 入力バッファが空の場合、全消去ボタンが無効化されることを確認', (tester) async {
       // Arrange
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -491,8 +486,7 @@ void main() {
       );
 
       // Assert - ボタンが無効状態であることを確認
-      final button =
-          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNull);
     });
 
@@ -544,8 +538,7 @@ void main() {
       );
 
       // Assert - ボタンが有効状態であることを確認
-      final button =
-          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNotNull);
     });
   });
@@ -569,8 +562,7 @@ void main() {
     /// 関連要件: REQ-803, AC-009, AC-010
     /// 優先度: P1 重要
 
-    testWidgets('TC-039-040a: ライトテーマで全消去ボタンが警告色で表示されることを確認',
-        (tester) async {
+    testWidgets('TC-039-040a: ライトテーマで全消去ボタンが警告色で表示されることを確認', (tester) async {
       // Arrange & Act
       await tester.pumpWidget(
         MaterialApp(
@@ -589,8 +581,7 @@ void main() {
       // 全消去ボタンは警告色で表示されるべき
     });
 
-    testWidgets('TC-039-040b: ダークテーマで全消去ボタンが警告色で表示されることを確認',
-        (tester) async {
+    testWidgets('TC-039-040b: ダークテーマで全消去ボタンが警告色で表示されることを確認', (tester) async {
       // Arrange & Act
       await tester.pumpWidget(
         MaterialApp(

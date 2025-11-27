@@ -63,17 +63,23 @@ void main() {
 
       test('全テーマでElevatedButton最小サイズがAppSizes.recommendedTapTargetと一致する', () {
         // Arrange
-        final lightMinSize = lightTheme.elevatedButtonTheme.style?.minimumSize?.resolve({});
-        final darkMinSize = darkTheme.elevatedButtonTheme.style?.minimumSize?.resolve({});
-        final highContrastMinSize = highContrastTheme.elevatedButtonTheme.style?.minimumSize?.resolve({});
+        final lightMinSize =
+            lightTheme.elevatedButtonTheme.style?.minimumSize?.resolve({});
+        final darkMinSize =
+            darkTheme.elevatedButtonTheme.style?.minimumSize?.resolve({});
+        final highContrastMinSize = highContrastTheme
+            .elevatedButtonTheme.style?.minimumSize
+            ?.resolve({});
 
         // Assert - 全テーマで同じサイズ
         expect(lightMinSize?.width, equals(AppSizes.recommendedTapTarget));
         expect(lightMinSize?.height, equals(AppSizes.recommendedTapTarget));
         expect(darkMinSize?.width, equals(AppSizes.recommendedTapTarget));
         expect(darkMinSize?.height, equals(AppSizes.recommendedTapTarget));
-        expect(highContrastMinSize?.width, equals(AppSizes.recommendedTapTarget));
-        expect(highContrastMinSize?.height, equals(AppSizes.recommendedTapTarget));
+        expect(
+            highContrastMinSize?.width, equals(AppSizes.recommendedTapTarget));
+        expect(
+            highContrastMinSize?.height, equals(AppSizes.recommendedTapTarget));
       });
     });
 
@@ -122,9 +128,12 @@ void main() {
 
       test('全テーマでIconButton最小サイズがAppSizes.minTapTargetと一致する', () {
         // Arrange
-        final lightMinSize = lightTheme.iconButtonTheme.style?.minimumSize?.resolve({});
-        final darkMinSize = darkTheme.iconButtonTheme.style?.minimumSize?.resolve({});
-        final highContrastMinSize = highContrastTheme.iconButtonTheme.style?.minimumSize?.resolve({});
+        final lightMinSize =
+            lightTheme.iconButtonTheme.style?.minimumSize?.resolve({});
+        final darkMinSize =
+            darkTheme.iconButtonTheme.style?.minimumSize?.resolve({});
+        final highContrastMinSize =
+            highContrastTheme.iconButtonTheme.style?.minimumSize?.resolve({});
 
         // Assert - 全テーマで同じサイズ
         expect(lightMinSize?.width, equals(AppSizes.minTapTarget));
@@ -173,7 +182,8 @@ void main() {
         // Arrange
         final lightFontSize = lightTheme.textTheme.bodyMedium?.fontSize;
         final darkFontSize = darkTheme.textTheme.bodyMedium?.fontSize;
-        final highContrastFontSize = highContrastTheme.textTheme.bodyMedium?.fontSize;
+        final highContrastFontSize =
+            highContrastTheme.textTheme.bodyMedium?.fontSize;
 
         // Assert - 全テーマで同じフォントサイズ
         expect(lightFontSize, equals(darkFontSize));
@@ -185,7 +195,8 @@ void main() {
         // Arrange
         final lightFontSize = lightTheme.textTheme.bodyLarge?.fontSize;
         final darkFontSize = darkTheme.textTheme.bodyLarge?.fontSize;
-        final highContrastFontSize = highContrastTheme.textTheme.bodyLarge?.fontSize;
+        final highContrastFontSize =
+            highContrastTheme.textTheme.bodyLarge?.fontSize;
 
         // Assert - 全テーマで同じフォントサイズ
         expect(lightFontSize, equals(darkFontSize));
@@ -196,7 +207,8 @@ void main() {
         // Arrange
         final lightFontSize = lightTheme.textTheme.titleLarge?.fontSize;
         final darkFontSize = darkTheme.textTheme.titleLarge?.fontSize;
-        final highContrastFontSize = highContrastTheme.textTheme.titleLarge?.fontSize;
+        final highContrastFontSize =
+            highContrastTheme.textTheme.titleLarge?.fontSize;
 
         // Assert - 全テーマで同じフォントサイズ
         expect(lightFontSize, equals(darkFontSize));

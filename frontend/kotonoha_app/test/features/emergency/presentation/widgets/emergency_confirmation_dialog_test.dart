@@ -95,8 +95,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101, AC-006
-      testWidgets('TC-045-030: メッセージ「緊急呼び出しを実行しますか?」が表示される',
-          (tester) async {
+      testWidgets('TC-045-030: メッセージ「緊急呼び出しを実行しますか?」が表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -552,8 +551,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: AC-014, REQ-5001
-      testWidgets('TC-045-040: 「はい」ボタンのタップターゲットが44x44px以上',
-          (tester) async {
+      testWidgets('TC-045-040: 「はい」ボタンのタップターゲットが44x44px以上', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -590,8 +588,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: AC-014, REQ-5001
-      testWidgets('TC-045-041: 「いいえ」ボタンのタップターゲットが44x44px以上',
-          (tester) async {
+      testWidgets('TC-045-041: 「いいえ」ボタンのタップターゲットが44x44px以上', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -700,8 +697,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: NFR-A003
-      testWidgets('TC-045-044: ダイアログにSemantics情報が設定されている',
-          (tester) async {
+      testWidgets('TC-045-044: ダイアログにSemantics情報が設定されている', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -774,7 +770,8 @@ void main() {
         await tester.pumpAndSettle();
 
         // Assert
-        final context = tester.element(find.byType(EmergencyConfirmationDialog));
+        final context =
+            tester.element(find.byType(EmergencyConfirmationDialog));
         expect(Theme.of(context).brightness, equals(Brightness.light));
       });
 
@@ -810,7 +807,8 @@ void main() {
         await tester.pumpAndSettle();
 
         // Assert
-        final context = tester.element(find.byType(EmergencyConfirmationDialog));
+        final context =
+            tester.element(find.byType(EmergencyConfirmationDialog));
         expect(Theme.of(context).brightness, equals(Brightness.dark));
       });
 
@@ -818,8 +816,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-103, FR-202
-      testWidgets('TC-045-047: 高コントラストモードで適切な配色で表示される',
-          (tester) async {
+      testWidgets('TC-045-047: 高コントラストモードで適切な配色で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -956,8 +953,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: FR-006, NFR-U003
-      testWidgets('TC-046-008: ボタンが「いいえ」「はい」の順（左→右）で配置される',
-          (tester) async {
+      testWidgets('TC-046-008: ボタンが「いいえ」「はい」の順（左→右）で配置される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -1033,8 +1029,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: FR-103, REQ-5002, EDGE-002
-      testWidgets('TC-046-018: ダイアログ外の複数回タップでもダイアログが閉じない',
-          (tester) async {
+      testWidgets('TC-046-018: ダイアログ外の複数回タップでもダイアログが閉じない', (tester) async {
         // Arrange
         await tester.pumpWidget(
           MaterialApp(
@@ -1079,8 +1074,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: NFR-A001, AC-017
-      testWidgets(
-          'TC-046-027: 確認ダイアログにSemantics「緊急呼び出し確認ダイアログ」が設定されている',
+      testWidgets('TC-046-027: 確認ダイアログにSemantics「緊急呼び出し確認ダイアログ」が設定されている',
           (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -1120,8 +1114,7 @@ void main() {
       /// 関連要件: AC-013, EDGE-003
       /// 検証内容: ダイアログ閉じ前の連続タップでもコールバックが1回のみ呼ばれる
       /// 【TDD Red】: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
-      testWidgets(
-          'TC-046-021: 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）',
+      testWidgets('TC-046-021: 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）',
           (tester) async {
         // Arrange
         int confirmCallCount = 0;
@@ -1172,8 +1165,7 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: AC-014, EDGE-004
       /// 【TDD Red】: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
-      testWidgets(
-          'TC-046-022: 「いいえ」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）',
+      testWidgets('TC-046-022: 「いいえ」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）',
           (tester) async {
         // Arrange
         int cancelCallCount = 0;

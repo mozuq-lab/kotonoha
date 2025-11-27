@@ -154,8 +154,10 @@ void main() {
 
       // 【検証項目】: カテゴリ別に正しく分類されていること
       // 🔵 青信号: REQ-106のカテゴリ分類確認
-      expect(loaded.where((p) => p.category == 'daily').length, 2); // 【確認内容】: dailyが2件
-      expect(loaded.where((p) => p.category == 'health').length, 1); // 【確認内容】: healthが1件
+      expect(loaded.where((p) => p.category == 'daily').length,
+          2); // 【確認内容】: dailyが2件
+      expect(loaded.where((p) => p.category == 'health').length,
+          1); // 【確認内容】: healthが1件
     });
 
     // =========================================================================
@@ -331,9 +333,12 @@ void main() {
 
       // 【検証項目】: 各カテゴリが正しく保存されること
       // 🔵 青信号: REQ-106のカテゴリ分類確認
-      expect(loaded.firstWhere((p) => p.id == 'cat-daily').category, 'daily'); // 【確認内容】: dailyカテゴリ
-      expect(loaded.firstWhere((p) => p.id == 'cat-health').category, 'health'); // 【確認内容】: healthカテゴリ
-      expect(loaded.firstWhere((p) => p.id == 'cat-other').category, 'other'); // 【確認内容】: otherカテゴリ
+      expect(loaded.firstWhere((p) => p.id == 'cat-daily').category,
+          'daily'); // 【確認内容】: dailyカテゴリ
+      expect(loaded.firstWhere((p) => p.id == 'cat-health').category,
+          'health'); // 【確認内容】: healthカテゴリ
+      expect(loaded.firstWhere((p) => p.id == 'cat-other').category,
+          'other'); // 【確認内容】: otherカテゴリ
     });
   });
 

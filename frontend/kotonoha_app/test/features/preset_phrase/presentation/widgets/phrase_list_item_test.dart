@@ -82,7 +82,8 @@ void main() {
     /// 関連要件: REQ-105
     /// 優先度: P1 重要
     testWidgets('TC-040-012: お気に入り定型文にお気に入りアイコンが表示される', (tester) async {
-      final phrase = createTestPhrase(id: '1', content: 'お気に入り', isFavorite: true);
+      final phrase =
+          createTestPhrase(id: '1', content: 'お気に入り', isFavorite: true);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -110,7 +111,8 @@ void main() {
     /// 信頼性レベル: 🔵 青信号
     /// 関連要件: AC-004
     /// 優先度: P0 必須
-    testWidgets('TC-040-013: PhraseListItemタップでonTapコールバックが発火する', (tester) async {
+    testWidgets('TC-040-013: PhraseListItemタップでonTapコールバックが発火する',
+        (tester) async {
       bool tapped = false;
       final phrase = createTestPhrase(id: '1', content: 'タップテスト');
 
@@ -165,7 +167,8 @@ void main() {
 
       // 【結果検証】: Textウィジェットがoverflow設定を持っていることを確認
       final textWidget = tester.widget<Text>(find.byType(Text).first);
-      expect(textWidget.overflow, equals(TextOverflow.ellipsis)); // 【確認内容】: 省略設定 🟡
+      expect(textWidget.overflow,
+          equals(TextOverflow.ellipsis)); // 【確認内容】: 省略設定 🟡
     });
   });
 
@@ -197,7 +200,8 @@ void main() {
 
       // 【結果検証】: 最小高さを確認
       final itemSize = tester.getSize(find.byType(PhraseListItem));
-      expect(itemSize.height, greaterThanOrEqualTo(AppSizes.minTapTarget)); // 【確認内容】: 44px以上 🔵
+      expect(itemSize.height,
+          greaterThanOrEqualTo(AppSizes.minTapTarget)); // 【確認内容】: 44px以上 🔵
     });
 
     // =========================================================================
@@ -227,7 +231,10 @@ void main() {
 
       // 【結果検証】: 推奨高さを確認
       final itemSize = tester.getSize(find.byType(PhraseListItem));
-      expect(itemSize.height, greaterThanOrEqualTo(AppSizes.recommendedTapTarget)); // 【確認内容】: 60px以上 🟡
+      expect(
+          itemSize.height,
+          greaterThanOrEqualTo(
+              AppSizes.recommendedTapTarget)); // 【確認内容】: 60px以上 🟡
     });
   });
 
@@ -292,7 +299,8 @@ void main() {
       );
 
       // 【結果検証】: ウィジェットがエラーなく表示されることを確認
-      expect(find.byType(PhraseListItem), findsOneWidget); // 【確認内容】: 500文字でも表示 🟡
+      expect(
+          find.byType(PhraseListItem), findsOneWidget); // 【確認内容】: 500文字でも表示 🟡
     });
   });
 
@@ -309,9 +317,11 @@ void main() {
     /// 信頼性レベル: 🟡 黄信号
     /// 関連要件: REQ-105
     /// 優先度: P1 重要
-    testWidgets('TC-040-035: お気に入りアイコンタップでonFavoriteToggleが発火する', (tester) async {
+    testWidgets('TC-040-035: お気に入りアイコンタップでonFavoriteToggleが発火する',
+        (tester) async {
       bool favoriteToggled = false;
-      final phrase = createTestPhrase(id: '1', content: 'お気に入りテスト', isFavorite: false);
+      final phrase =
+          createTestPhrase(id: '1', content: 'お気に入りテスト', isFavorite: false);
 
       await tester.pumpWidget(
         MaterialApp(

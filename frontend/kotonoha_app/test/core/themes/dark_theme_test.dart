@@ -36,8 +36,10 @@ void main() {
     /// - darkTheme.scaffoldBackgroundColorがAppColors.backgroundDark（#121212）である
     test('TC-202: ダークテーマの背景色が暗い灰色系である', () {
       // Assert
-      expect(darkTheme.scaffoldBackgroundColor, equals(AppColors.backgroundDark));
-      expect(darkTheme.scaffoldBackgroundColor, equals(const Color(0xFF121212)));
+      expect(
+          darkTheme.scaffoldBackgroundColor, equals(AppColors.backgroundDark));
+      expect(
+          darkTheme.scaffoldBackgroundColor, equals(const Color(0xFF121212)));
     });
 
     /// TC-203: ダークテーマのテキスト色が白系である

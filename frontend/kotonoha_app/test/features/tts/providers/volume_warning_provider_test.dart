@@ -68,7 +68,8 @@ void main() {
         final state = container.read(volumeWarningProvider);
 
         // Then: 【結果検証】: showWarningがfalseであることを確認
-        expect(state.showWarning, isFalse); // 【確認内容】: 初期状態でshowWarningがfalseであることを確認 🔵
+        expect(state.showWarning,
+            isFalse); // 【確認内容】: 初期状態でshowWarningがfalseであることを確認 🔵
       });
 
       /// TC-051-006: 音量0でcheckVolumeを呼ぶとshowWarningがtrueになる
@@ -83,7 +84,8 @@ void main() {
         // 🔵 青信号: volume-warning-requirements.md「データフロー」セクションに基づく
 
         // Given: 【テストデータ準備】: 音量0.0を返すように設定
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 0.0);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 0.0);
 
         // When: 【実際の処理実行】: checkVolumeBeforeSpeakを呼び出す
         final notifier = container.read(volumeWarningProvider.notifier);
@@ -133,7 +135,8 @@ void main() {
         // 🔵 青信号: volume-warning-requirements.md「VolumeWarningWidget」セクションに基づく
 
         // Given: 【テストデータ準備】: 警告が表示されている状態を作る
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 0.0);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 0.0);
         final notifier = container.read(volumeWarningProvider.notifier);
         await notifier.checkVolumeBeforeSpeak();
 
@@ -167,7 +170,8 @@ void main() {
         // 🔵 青信号: volume-warning-requirements.md「データフロー」セクションに基づく
 
         // Given: 【テストデータ準備】: 音量0.0を返すように設定
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 0.0);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 0.0);
 
         // When: 【実際の処理実行】: checkVolumeBeforeSpeakを呼び出す
         final notifier = container.read(volumeWarningProvider.notifier);

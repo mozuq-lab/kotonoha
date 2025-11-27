@@ -232,7 +232,9 @@ void main() {
     });
 
     // TC-031: Provider定義テスト - inputBufferProviderの型確認
-    test('TC-031: inputBufferProviderがStateNotifierProvider<InputBufferNotifier, String>であることを確認', () {
+    test(
+        'TC-031: inputBufferProviderがStateNotifierProvider<InputBufferNotifier, String>であることを確認',
+        () {
       // 【テスト目的】: inputBufferProviderの型が正しいことを確認
       // 【テスト内容】: Providerから読み取った値の型を確認する
       // 【期待される動作】: Providerの状態型がStringである

@@ -40,7 +40,8 @@ void main() {
 
       // モックのデフォルト動作を設定
       when(() => mockFlutterTts.setLanguage(any())).thenAnswer((_) async => 1);
-      when(() => mockFlutterTts.setSpeechRate(any())).thenAnswer((_) async => 1);
+      when(() => mockFlutterTts.setSpeechRate(any()))
+          .thenAnswer((_) async => 1);
       when(() => mockFlutterTts.speak(any())).thenAnswer((_) async => 1);
       when(() => mockFlutterTts.stop()).thenAnswer((_) async => 1);
     });
@@ -78,7 +79,8 @@ void main() {
 
         // SettingsNotifierとTTSNotifierを取得
         await container.read(settingsNotifierProvider.future);
-        final settingsNotifier = container.read(settingsNotifierProvider.notifier);
+        final settingsNotifier =
+            container.read(settingsNotifierProvider.notifier);
 
         final ttsNotifier = container.read(ttsProvider.notifier);
         await ttsNotifier.initialize();
@@ -95,8 +97,10 @@ void main() {
         // Then: 【結果検証】: setSpeechRate(0.7)とspeak()が呼ばれたことを確認
         // 【期待値確認】: requirements.md（218-226行目）の使用例に基づく
         // 【品質保証】: エンドツーエンドで速度設定→読み上げが正しく機能することを確認
-        verify(() => mockFlutterTts.setSpeechRate(0.7)).called(1); // 【確認内容】: 0.7倍速が設定されたことを確認 🔵
-        verify(() => mockFlutterTts.speak('こんにちは')).called(1); // 【確認内容】: 読み上げが開始されたことを確認 🔵
+        verify(() => mockFlutterTts.setSpeechRate(0.7))
+            .called(1); // 【確認内容】: 0.7倍速が設定されたことを確認 🔵
+        verify(() => mockFlutterTts.speak('こんにちは'))
+            .called(1); // 【確認内容】: 読み上げが開始されたことを確認 🔵
 
         // 【確認ポイント】: 速度設定後、次回の読み上げから新しい速度が適用される
       });
@@ -124,7 +128,8 @@ void main() {
 
         // SettingsNotifierとTTSNotifierを取得
         await container.read(settingsNotifierProvider.future);
-        final settingsNotifier = container.read(settingsNotifierProvider.notifier);
+        final settingsNotifier =
+            container.read(settingsNotifierProvider.notifier);
 
         final ttsNotifier = container.read(ttsProvider.notifier);
         await ttsNotifier.initialize();
@@ -141,8 +146,10 @@ void main() {
         // Then: 【結果検証】: setSpeechRate(1.0)とspeak()が呼ばれたことを確認
         // 【期待値確認】: TTSSpeed.normalの値が1.0であること（tts_speed.dart 67-69行目）
         // 【品質保証】: デフォルト速度が正しく動作することを確認
-        verify(() => mockFlutterTts.setSpeechRate(1.0)).called(1); // 【確認内容】: 1.0倍速が設定されたことを確認 🔵
-        verify(() => mockFlutterTts.speak('こんにちは')).called(1); // 【確認内容】: 読み上げが開始されたことを確認 🔵
+        verify(() => mockFlutterTts.setSpeechRate(1.0))
+            .called(1); // 【確認内容】: 1.0倍速が設定されたことを確認 🔵
+        verify(() => mockFlutterTts.speak('こんにちは'))
+            .called(1); // 【確認内容】: 読み上げが開始されたことを確認 🔵
 
         // 【確認ポイント】: 1.0倍速が標準的な読み上げ速度として機能する
       });
@@ -170,7 +177,8 @@ void main() {
 
         // SettingsNotifierとTTSNotifierを取得
         await container.read(settingsNotifierProvider.future);
-        final settingsNotifier = container.read(settingsNotifierProvider.notifier);
+        final settingsNotifier =
+            container.read(settingsNotifierProvider.notifier);
 
         final ttsNotifier = container.read(ttsProvider.notifier);
         await ttsNotifier.initialize();
@@ -187,8 +195,10 @@ void main() {
         // Then: 【結果検証】: setSpeechRate(1.3)とspeak()が呼ばれたことを確認
         // 【期待値確認】: requirements.md（228-236行目）の使用例に基づく
         // 【品質保証】: 最大速度が正しく動作することを確認
-        verify(() => mockFlutterTts.setSpeechRate(1.3)).called(1); // 【確認内容】: 1.3倍速が設定されたことを確認 🔵
-        verify(() => mockFlutterTts.speak('こんにちは')).called(1); // 【確認内容】: 読み上げが開始されたことを確認 🔵
+        verify(() => mockFlutterTts.setSpeechRate(1.3))
+            .called(1); // 【確認内容】: 1.3倍速が設定されたことを確認 🔵
+        verify(() => mockFlutterTts.speak('こんにちは'))
+            .called(1); // 【確認内容】: 読み上げが開始されたことを確認 🔵
 
         // 【確認ポイント】: 1.3倍速でも聞き取れる範囲内の速度設定
       });
@@ -203,7 +213,9 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-404
       /// 検証内容: すべての速度設定が正常に動作することを確認
-      test('TC-049-015: TTSSpeed enumのすべての値（slow=0、normal=1、fast=2）が正しくshared_preferencesに保存・復元されることを確認', () async {
+      test(
+          'TC-049-015: TTSSpeed enumのすべての値（slow=0、normal=1、fast=2）が正しくshared_preferencesに保存・復元されることを確認',
+          () async {
         // 【テスト目的】: すべての速度設定が正常に動作することを確認 🔵
         // 【テスト内容】: 3つの速度設定すべてで保存・復元ロジックが動作することを検証
         // 【期待される動作】: slow、normal、fastすべてが正しくshared_preferencesに保存・復元される
@@ -227,7 +239,8 @@ void main() {
 
           // SettingsNotifierを取得
           await container.read(settingsNotifierProvider.future);
-          final settingsNotifier = container.read(settingsNotifierProvider.notifier);
+          final settingsNotifier =
+              container.read(settingsNotifierProvider.notifier);
 
           // When: 【実際の処理実行】: 各速度を設定
           // 【処理内容】: setTTSSpeed()で速度を変更
@@ -237,7 +250,8 @@ void main() {
           // 【期待値確認】: 3つの速度設定すべてで同じ保存・復元ロジックが動作する
           // 【品質保証】: すべての速度設定が正常に動作することを確認
           final prefs = await SharedPreferences.getInstance();
-          expect(prefs.getString('tts_speed'), speed.name); // 【確認内容】: shared_preferencesに正しく保存されたことを確認 🔵
+          expect(prefs.getString('tts_speed'),
+              speed.name); // 【確認内容】: shared_preferencesに正しく保存されたことを確認 🔵
 
           // 再起動後の復元テスト
           SharedPreferences.setMockInitialValues({
@@ -248,8 +262,10 @@ void main() {
           container = ProviderContainer();
 
           // 復元を確認
-          final restoredSettings = await container.read(settingsNotifierProvider.future);
-          expect(restoredSettings.ttsSpeed, speed); // 【確認内容】: 再起動後に正しく復元されたことを確認 🔵
+          final restoredSettings =
+              await container.read(settingsNotifierProvider.future);
+          expect(restoredSettings.ttsSpeed,
+              speed); // 【確認内容】: 再起動後に正しく復元されたことを確認 🔵
 
           container.dispose();
         }
@@ -263,7 +279,9 @@ void main() {
       /// 優先度: P1（高優先度）
       /// 関連要件: EDGE-1
       /// 検証内容: 並行処理の安全性を確認
-      test('TC-049-017: 読み上げ中に速度を変更した場合、現在の読み上げは元の速度で継続し、次回の読み上げから新しい速度が適用されることを確認', () async {
+      test(
+          'TC-049-017: 読み上げ中に速度を変更した場合、現在の読み上げは元の速度で継続し、次回の読み上げから新しい速度が適用されることを確認',
+          () async {
         // 【テスト目的】: 並行処理の安全性を確認 🟡
         // 【テスト内容】: 読み上げ中に速度を変更しても、現在の読み上げは元の速度で継続することを検証
         // 【期待される動作】: 現在の読み上げは元の速度で継続、次回の読み上げから新しい速度が適用される
@@ -281,7 +299,8 @@ void main() {
 
         // SettingsNotifierとTTSNotifierを取得
         await container.read(settingsNotifierProvider.future);
-        final settingsNotifier = container.read(settingsNotifierProvider.notifier);
+        final settingsNotifier =
+            container.read(settingsNotifierProvider.notifier);
 
         final ttsNotifier = container.read(ttsProvider.notifier);
         await ttsNotifier.initialize();
@@ -303,8 +322,10 @@ void main() {
         // Then: 【結果検証】: 次回の読み上げから新しい速度が適用されたことを確認
         // 【期待値確認】: requirements.md（286-296行目）のEDGE-1に基づく
         // 【品質保証】: 並行処理の安全性を確認
-        verify(() => mockFlutterTts.setSpeechRate(1.3)).called(greaterThanOrEqualTo(1)); // 【確認内容】: 新しい速度が設定されたことを確認 🟡
-        verify(() => mockFlutterTts.speak('次のテキスト')).called(1); // 【確認内容】: 次回の読み上げが開始されたことを確認 🟡
+        verify(() => mockFlutterTts.setSpeechRate(1.3))
+            .called(greaterThanOrEqualTo(1)); // 【確認内容】: 新しい速度が設定されたことを確認 🟡
+        verify(() => mockFlutterTts.speak('次のテキスト'))
+            .called(1); // 【確認内容】: 次回の読み上げが開始されたことを確認 🟡
 
         // 【確認ポイント】: 読み上げ中の速度変更が安全に処理される
         // 【確認ポイント】: 状態遷移が正しく管理される

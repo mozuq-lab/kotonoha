@@ -29,8 +29,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-001, FR-006
-      testWidgets('TC-QRB-001: 「はい」ボタンが正しいラベルで表示される',
-          (tester) async {
+      testWidgets('TC-QRB-001: 「はい」ボタンが正しいラベルで表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -51,8 +50,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-001, FR-006
-      testWidgets('TC-QRB-002: 「いいえ」ボタンが正しいラベルで表示される',
-          (tester) async {
+      testWidgets('TC-QRB-002: 「いいえ」ボタンが正しいラベルで表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -73,8 +71,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-001, FR-006
-      testWidgets('TC-QRB-003: 「わからない」ボタンが正しいラベルで表示される',
-          (tester) async {
+      testWidgets('TC-QRB-003: 「わからない」ボタンが正しいラベルで表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -100,8 +97,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-003
-      testWidgets('TC-QRB-004: ボタン高さがデフォルトで60px以上である',
-          (tester) async {
+      testWidgets('TC-QRB-004: ボタン高さがデフォルトで60px以上である', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -123,8 +119,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-004
-      testWidgets('TC-QRB-005: ボタン幅がデフォルトで100px以上である',
-          (tester) async {
+      testWidgets('TC-QRB-005: ボタン幅がデフォルトで100px以上である', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -222,8 +217,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-203
-      testWidgets('TC-QRB-009: タップ時にonPressedコールバックが呼ばれる',
-          (tester) async {
+      testWidgets('TC-QRB-009: タップ時にonPressedコールバックが呼ばれる', (tester) async {
         // Arrange
         bool tapped = false;
 
@@ -302,8 +296,7 @@ void main() {
       });
 
       /// TC-QRB-010c: 「わからない」タップ時にonTTSSpeakが「わからない」で呼ばれる
-      testWidgets(
-          'TC-QRB-010c: 「わからない」タップ時にonTTSSpeakが「わからない」で呼ばれる',
+      testWidgets('TC-QRB-010c: 「わからない」タップ時にonTTSSpeakが「わからない」で呼ばれる',
           (tester) async {
         // Arrange
         String? spokenText;
@@ -400,14 +393,15 @@ void main() {
         );
 
         // Assert - デフォルトの背景色が青/緑系であることを確認
-        final button =
-            tester.widget<QuickResponseButton>(find.byType(QuickResponseButton));
+        final button = tester
+            .widget<QuickResponseButton>(find.byType(QuickResponseButton));
         expect(button.responseType, equals(QuickResponseType.yes));
         // 実装時に適切な色が設定されていることを確認
         // 青/緑系であることを確認（green成分が高い）
         // Note: Color.g returns normalized value (0.0-1.0), not 0-255
         // Convert to 0-255 range: (color.g * 255).round()
-        expect((QuickResponseButtonColors.yes.g * 255).round(), greaterThan(100));
+        expect(
+            (QuickResponseButtonColors.yes.g * 255).round(), greaterThan(100));
       });
 
       /// TC-QRB-014: 「いいえ」ボタンの背景色が赤系である
@@ -437,8 +431,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: NFR-U003
-      testWidgets('TC-QRB-015: 「わからない」ボタンの背景色がグレー系である',
-          (tester) async {
+      testWidgets('TC-QRB-015: 「わからない」ボタンの背景色がグレー系である', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -519,8 +512,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-007
-      testWidgets('TC-QRB-018: フォントサイズ「小」でラベルが16pxで表示される',
-          (tester) async {
+      testWidgets('TC-QRB-018: フォントサイズ「小」でラベルが16pxで表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -544,8 +536,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-007
-      testWidgets('TC-QRB-019: フォントサイズ「中」でラベルが20pxで表示される',
-          (tester) async {
+      testWidgets('TC-QRB-019: フォントサイズ「中」でラベルが20pxで表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -569,8 +560,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-007
-      testWidgets('TC-QRB-020: フォントサイズ「大」でラベルが24pxで表示される',
-          (tester) async {
+      testWidgets('TC-QRB-020: フォントサイズ「大」でラベルが24pxで表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -645,8 +635,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-103, FR-202
-      testWidgets('TC-TH-003: 高コントラストモードで適切な配色で表示される',
-          (tester) async {
+      testWidgets('TC-TH-003: 高コントラストモードで適切な配色で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -663,7 +652,8 @@ void main() {
         // Assert
         final context = tester.element(find.byType(QuickResponseButton));
         final theme = Theme.of(context);
-        expect(theme.colorScheme.primary, equals(AppColors.primaryHighContrast));
+        expect(
+            theme.colorScheme.primary, equals(AppColors.primaryHighContrast));
       });
     });
 
@@ -813,8 +803,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: EDGE-003
-      testWidgets('TC-EDGE-008: onTTSSpeakがnullでもボタンタップが動作する',
-          (tester) async {
+      testWidgets('TC-EDGE-008: onTTSSpeakがnullでもボタンタップが動作する', (tester) async {
         // Arrange
         bool tapped = false;
 

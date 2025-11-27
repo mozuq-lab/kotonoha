@@ -187,7 +187,8 @@ void main() {
       // 【結果検証】: 削除コールバックが呼び出されていないことを確認
       expect(deleteConfirmed, isFalse); // 【確認内容】: 削除コールバック未発火 🔵
       expect(cancelCalled, isTrue); // 【確認内容】: キャンセルコールバック発火 🔵
-      expect(find.byType(PhraseDeleteDialog), findsNothing); // 【確認内容】: ダイアログが閉じている 🔵
+      expect(find.byType(PhraseDeleteDialog),
+          findsNothing); // 【確認内容】: ダイアログが閉じている 🔵
     });
   });
 
@@ -238,7 +239,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // 【結果検証】: ダイアログがまだ表示されていることを確認
-      expect(find.byType(PhraseDeleteDialog), findsOneWidget); // 【確認内容】: ダイアログ状態 🔵
+      expect(find.byType(PhraseDeleteDialog),
+          findsOneWidget); // 【確認内容】: ダイアログ状態 🔵
     });
   });
 }

@@ -107,7 +107,8 @@ void main() {
     });
 
     /// TC-053-011: Rotation center is screen center (Alignment.center)
-    testWidgets('TC-053-011: Rotation center is screen center (Alignment.center)',
+    testWidgets(
+        'TC-053-011: Rotation center is screen center (Alignment.center)',
         (WidgetTester tester) async {
       const testText = 'Test';
 
@@ -133,7 +134,8 @@ void main() {
     });
 
     /// Additional test: Child widget renders correctly after rotation
-    testWidgets('Additional test: Child widget renders correctly after rotation',
+    testWidgets(
+        'Additional test: Child widget renders correctly after rotation',
         (WidgetTester tester) async {
       const testText = 'Rotation test';
 

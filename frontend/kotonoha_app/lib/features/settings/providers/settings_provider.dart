@@ -68,7 +68,8 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       // 【TTS速度復元】: SharedPreferencesからTTS速度のname値を読み込む
       // 【null安全性】: getString()がnullを返した場合はデフォルト値（normal.name）を使用
       // 🔵 青信号: TC-049-015（境界値テスト）、TC-049-013（null安全性）に対応
-      final ttsSpeedName = _prefs!.getString('tts_speed') ?? TTSSpeed.normal.name;
+      final ttsSpeedName =
+          _prefs!.getString('tts_speed') ?? TTSSpeed.normal.name;
 
       // 【TTS速度変換】: enum nameから対応するTTSSpeed値を取得
       // 【不正値フォールバック】: 不正な値の場合はデフォルト値（normal）を使用

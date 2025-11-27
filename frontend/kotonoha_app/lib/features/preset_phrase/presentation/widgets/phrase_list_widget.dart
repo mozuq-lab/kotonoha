@@ -157,8 +157,9 @@ class PhraseListWidget extends StatelessWidget {
           (phrase) => PhraseListItem(
             phrase: phrase,
             onTap: () => onPhraseSelected(phrase),
-            onFavoriteToggle:
-                onFavoriteToggle != null ? () => onFavoriteToggle!(phrase) : null,
+            onFavoriteToggle: onFavoriteToggle != null
+                ? () => onFavoriteToggle!(phrase)
+                : null,
           ),
         ),
       ],

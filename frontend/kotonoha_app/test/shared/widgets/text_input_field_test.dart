@@ -187,7 +187,8 @@ void main() {
         await tester.enterText(find.byType(TextField), text);
 
         // Assert
-        expect(controller.text.length, lessThanOrEqualTo(AppSizes.maxInputLength));
+        expect(
+            controller.text.length, lessThanOrEqualTo(AppSizes.maxInputLength));
         expect(controller.text.length, lessThanOrEqualTo(1000));
       });
     });

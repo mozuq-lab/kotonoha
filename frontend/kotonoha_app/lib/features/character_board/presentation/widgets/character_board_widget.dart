@@ -222,7 +222,8 @@ class CharacterButton extends StatelessWidget {
                       ? theme.colorScheme.outline
                       : theme.colorScheme.outline.withValues(alpha: 0.3),
                 ),
-                borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                borderRadius:
+                    BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
               alignment: Alignment.center,
               child: Text(

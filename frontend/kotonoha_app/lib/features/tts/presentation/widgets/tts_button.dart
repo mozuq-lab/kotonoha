@@ -114,7 +114,8 @@ class TTSButton extends ConsumerWidget {
                 vertical: AppSizes.paddingSmall,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                borderRadius:
+                    BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
             ),
             icon: Icon(icon),

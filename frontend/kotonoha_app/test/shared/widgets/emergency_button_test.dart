@@ -47,7 +47,8 @@ void main() {
         );
 
         // Assert
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         final shape = button.style?.shape?.resolve({});
         expect(shape, isA<CircleBorder>());
       });
@@ -77,7 +78,8 @@ void main() {
         );
 
         // Assert
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         final bgColor = button.style?.backgroundColor?.resolve({});
         expect(bgColor, equals(AppColors.emergency));
         expect(bgColor, equals(const Color(0xFFD32F2F)));
@@ -168,7 +170,8 @@ void main() {
         );
 
         // Assert
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         final fgColor = button.style?.foregroundColor?.resolve({});
         expect(fgColor, equals(Colors.white));
       });

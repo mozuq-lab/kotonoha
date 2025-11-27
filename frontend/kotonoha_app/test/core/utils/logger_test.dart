@@ -83,7 +83,8 @@ void main() {
 
   group('Error Log Tests', () {
     // TC-LOG-004: エラーログ出力テスト（例外情報なし）
-    test('TC-LOG-004: AppLogger.error should output error log without exception',
+    test(
+        'TC-LOG-004: AppLogger.error should output error log without exception',
         () {
       // Arrange
       const message = 'AI変換処理でエラーが発生';
@@ -138,7 +139,8 @@ void main() {
 
   group('Release Mode Debug Log Suppression Tests', () {
     // TC-LOG-006: 本番環境でのデバッグログ抑制テスト
-    test('TC-LOG-006: debug logs should be suppressed when suppressDebugLogs is true',
+    test(
+        'TC-LOG-006: debug logs should be suppressed when suppressDebugLogs is true',
         () {
       // Arrange
       AppLogger.suppressDebugLogs = true;

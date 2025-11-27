@@ -20,7 +20,8 @@ void main() {
       expect(exception.message, contains('接続エラー'));
     });
 
-    test('TC-ERR-001: NetworkException.toString should return meaningful string',
+    test(
+        'TC-ERR-001: NetworkException.toString should return meaningful string',
         () {
       // Arrange
       const message = '接続エラー';

@@ -36,7 +36,8 @@ void main() {
       // Then（検証フェーズ）
       // GoRouterインスタンスが正常に取得できることを確認
       expect(router, isNotNull, reason: 'GoRouterインスタンスはnullであってはならない');
-      expect(router, isA<GoRouter>(), reason: 'routerProviderはGoRouter型を返す必要がある');
+      expect(router, isA<GoRouter>(),
+          reason: 'routerProviderはGoRouter型を返す必要がある');
     });
 
     // TC-002: 初期ルート設定テスト（/）

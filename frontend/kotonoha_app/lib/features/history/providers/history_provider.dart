@@ -86,9 +86,7 @@ class HistoryNotifier extends StateNotifier<HistoryState> {
   List<History> searchHistory(String query) {
     if (query.isEmpty) return state.histories;
 
-    return state.histories
-        .where((h) => h.content.contains(query))
-        .toList();
+    return state.histories.where((h) => h.content.contains(query)).toList();
   }
 
   /// 【メソッド定義】: 履歴を読み込む

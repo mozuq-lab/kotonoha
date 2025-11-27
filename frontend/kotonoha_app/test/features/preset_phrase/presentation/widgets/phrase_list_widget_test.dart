@@ -50,7 +50,8 @@ void main() {
       (i) => createTestPhrase(
         id: 'test_$i',
         content: 'テスト定型文$i',
-        category: category ?? (i % 3 == 0 ? 'daily' : (i % 3 == 1 ? 'health' : 'other')),
+        category: category ??
+            (i % 3 == 0 ? 'daily' : (i % 3 == 1 ? 'health' : 'other')),
       ),
     );
   }
@@ -89,7 +90,8 @@ void main() {
       );
 
       // 【結果検証】: すべての定型文が表示されることを確認
-      expect(find.text('おはようございます'), findsOneWidget); // 【確認内容】: 日常カテゴリの定型文が表示 🔵
+      expect(
+          find.text('おはようございます'), findsOneWidget); // 【確認内容】: 日常カテゴリの定型文が表示 🔵
       expect(find.text('体調が悪いです'), findsOneWidget); // 【確認内容】: 体調カテゴリの定型文が表示 🔵
       expect(find.text('お願いします'), findsOneWidget); // 【確認内容】: その他カテゴリの定型文が表示 🔵
     });
@@ -109,9 +111,15 @@ void main() {
     testWidgets('TC-040-002: お気に入り定型文がリスト上部に優先表示される', (tester) async {
       // 【テストデータ準備】: お気に入り2件 + 通常1件
       final phrases = [
-        createTestPhrase(id: '1', content: '通常定型文', category: 'daily', isFavorite: false),
-        createTestPhrase(id: '2', content: 'お気に入り定型文1', category: 'daily', isFavorite: true),
-        createTestPhrase(id: '3', content: 'お気に入り定型文2', category: 'health', isFavorite: true),
+        createTestPhrase(
+            id: '1', content: '通常定型文', category: 'daily', isFavorite: false),
+        createTestPhrase(
+            id: '2', content: 'お気に入り定型文1', category: 'daily', isFavorite: true),
+        createTestPhrase(
+            id: '3',
+            content: 'お気に入り定型文2',
+            category: 'health',
+            isFavorite: true),
       ];
 
       await tester.pumpWidget(
@@ -126,7 +134,8 @@ void main() {
       );
 
       // 【結果検証】: お気に入りセクションが表示されることを確認
-      expect(find.text('お気に入り'), findsOneWidget); // 【確認内容】: お気に入りセクションヘッダーが表示 🔵
+      expect(
+          find.text('お気に入り'), findsOneWidget); // 【確認内容】: お気に入りセクションヘッダーが表示 🔵
 
       // 【結果検証】: お気に入り定型文が表示されることを確認
       expect(find.text('お気に入り定型文1'), findsOneWidget); // 【確認内容】: お気に入り1が表示 🔵
@@ -182,7 +191,8 @@ void main() {
     /// 信頼性レベル: 🔵 青信号
     /// 関連要件: AC-004
     /// 優先度: P0 必須
-    testWidgets('TC-040-004: 定型文タップでonPhraseSelectedコールバックが発火する', (tester) async {
+    testWidgets('TC-040-004: 定型文タップでonPhraseSelectedコールバックが発火する',
+        (tester) async {
       // 【テストデータ準備】: コールバック検証用変数
       PresetPhrase? selectedPhrase;
       int callCount = 0;
@@ -210,7 +220,8 @@ void main() {
       // 【結果検証】: コールバックが正しく呼び出されたことを確認
       expect(callCount, equals(1)); // 【確認内容】: コールバックが1回呼び出された 🔵
       expect(selectedPhrase?.id, equals('1')); // 【確認内容】: 正しい定型文が渡された 🔵
-      expect(selectedPhrase?.content, equals('タップテスト')); // 【確認内容】: contentが一致 🔵
+      expect(
+          selectedPhrase?.content, equals('タップテスト')); // 【確認内容】: contentが一致 🔵
     });
 
     // =========================================================================
@@ -241,7 +252,8 @@ void main() {
       );
 
       // 【結果検証】: ListViewが使用されていることを確認
-      expect(find.byType(ListView), findsOneWidget); // 【確認内容】: ListViewが使用されている 🟡
+      expect(
+          find.byType(ListView), findsOneWidget); // 【確認内容】: ListViewが使用されている 🟡
     });
   });
 
@@ -414,8 +426,7 @@ void main() {
       // 【結果検証】: Semanticsウィジェットが設定されていることを確認
       final semanticsFinder = find.byWidgetPredicate(
         (widget) =>
-            widget is Semantics &&
-            widget.properties.label == 'おはようございます',
+            widget is Semantics && widget.properties.label == 'おはようございます',
       );
       expect(semanticsFinder, findsOneWidget); // 【確認内容】: Semanticsラベル 🟡
     });
@@ -450,7 +461,8 @@ void main() {
       );
 
       // 【結果検証】: ウィジェットがエラーなく描画されることを確認
-      expect(find.byType(PhraseListWidget), findsOneWidget); // 【確認内容】: ライトテーマで描画 🔵
+      expect(find.byType(PhraseListWidget),
+          findsOneWidget); // 【確認内容】: ライトテーマで描画 🔵
       expect(find.text('ライトテーマテスト'), findsOneWidget); // 【確認内容】: テキスト表示 🔵
     });
 
@@ -482,7 +494,8 @@ void main() {
       );
 
       // 【結果検証】: ウィジェットがエラーなく描画されることを確認
-      expect(find.byType(PhraseListWidget), findsOneWidget); // 【確認内容】: ダークテーマで描画 🔵
+      expect(find.byType(PhraseListWidget),
+          findsOneWidget); // 【確認内容】: ダークテーマで描画 🔵
       expect(find.text('ダークテーマテスト'), findsOneWidget); // 【確認内容】: テキスト表示 🔵
     });
 
@@ -514,7 +527,8 @@ void main() {
       );
 
       // 【結果検証】: ウィジェットがエラーなく描画されることを確認
-      expect(find.byType(PhraseListWidget), findsOneWidget); // 【確認内容】: 高コントラストで描画 🔵
+      expect(find.byType(PhraseListWidget),
+          findsOneWidget); // 【確認内容】: 高コントラストで描画 🔵
       expect(find.text('高コントラストテスト'), findsOneWidget); // 【確認内容】: テキスト表示 🔵
     });
   });
@@ -534,8 +548,10 @@ void main() {
     /// 優先度: P0 必須
     testWidgets('TC-040-029: お気に入りとカテゴリの両方が正しい順序で表示される', (tester) async {
       final phrases = [
-        createTestPhrase(id: '1', content: 'お気に入り1', category: 'daily', isFavorite: true),
-        createTestPhrase(id: '2', content: 'お気に入り2', category: 'health', isFavorite: true),
+        createTestPhrase(
+            id: '1', content: 'お気に入り1', category: 'daily', isFavorite: true),
+        createTestPhrase(
+            id: '2', content: 'お気に入り2', category: 'health', isFavorite: true),
         createTestPhrase(id: '3', content: '日常1', category: 'daily'),
         createTestPhrase(id: '4', content: '体調1', category: 'health'),
         createTestPhrase(id: '5', content: 'その他1', category: 'other'),

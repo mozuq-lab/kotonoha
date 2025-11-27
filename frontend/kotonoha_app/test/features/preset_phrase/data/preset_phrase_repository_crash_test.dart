@@ -110,7 +110,8 @@ void main() {
       for (final phrase in loadedPhrases) {
         expect(phrase.id.isNotEmpty, true, reason: 'IDが正常');
         expect(phrase.content.isNotEmpty, true, reason: 'contentが正常');
-        expect(['daily', 'health', 'other'].contains(phrase.category), true, reason: 'categoryが正常');
+        expect(['daily', 'health', 'other'].contains(phrase.category), true,
+            reason: 'categoryが正常');
       }
     });
   });
@@ -144,7 +145,8 @@ void main() {
       // 注: 実際の容量不足をシミュレートするのは困難なため、
       // ここでは大量のデータを保存してディスク満杯エラーを誘発する
 
-      final presetBox = await Hive.openBox<PresetPhrase>('test_storage_presetPhrases');
+      final presetBox =
+          await Hive.openBox<PresetPhrase>('test_storage_presetPhrases');
       final repository = PresetPhraseRepository(box: presetBox);
 
       // When（実行フェーズ）

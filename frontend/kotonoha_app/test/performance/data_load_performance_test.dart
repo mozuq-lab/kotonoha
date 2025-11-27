@@ -132,7 +132,8 @@ void main() {
       // Then（検証フェーズ）
       // すべてのデータが1秒以内に読み込まれる
       final elapsedMs = stopwatch.elapsedMilliseconds;
-      expect(elapsedMs, lessThan(1000), reason: 'データ読み込みが1秒以内に完了する（実測: ${elapsedMs}ms）');
+      expect(elapsedMs, lessThan(1000),
+          reason: 'データ読み込みが1秒以内に完了する（実測: ${elapsedMs}ms）');
 
       // データの欠落がない
       expect(loadedPhrases.length, 100, reason: '定型文100件がすべて読み込まれる');
@@ -184,7 +185,8 @@ void main() {
       // Then（検証フェーズ）
       // 200件でも2秒以内に読み込まれる（余裕を持った基準）
       final elapsedMs = stopwatch.elapsedMilliseconds;
-      expect(elapsedMs, lessThan(2000), reason: '200件のデータが2秒以内に読み込まれる（実測: ${elapsedMs}ms）');
+      expect(elapsedMs, lessThan(2000),
+          reason: '200件のデータが2秒以内に読み込まれる（実測: ${elapsedMs}ms）');
 
       expect(loadedPhrases.length, 200, reason: '200件すべて読み込まれる');
 

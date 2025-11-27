@@ -68,7 +68,8 @@ void main() {
         expect(button, isNotNull);
 
         // ボタンサイズが正方形（円形の前提条件）であることを確認
-        final size = tester.getSize(find.byType(EmergencyButtonWithConfirmation));
+        final size =
+            tester.getSize(find.byType(EmergencyButtonWithConfirmation));
         expect(size.width, equals(size.height));
       });
 
@@ -98,8 +99,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-004
-      testWidgets('TC-045-004: notifications_activeアイコンが表示される',
-          (tester) async {
+      testWidgets('TC-045-004: notifications_activeアイコンが表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -132,7 +132,8 @@ void main() {
         );
 
         // Assert
-        final icon = tester.widget<Icon>(find.byIcon(Icons.notifications_active));
+        final icon =
+            tester.widget<Icon>(find.byIcon(Icons.notifications_active));
         expect(icon.color, equals(Colors.white));
       });
 
@@ -179,7 +180,8 @@ void main() {
         );
 
         // Assert
-        final size = tester.getSize(find.byType(EmergencyButtonWithConfirmation));
+        final size =
+            tester.getSize(find.byType(EmergencyButtonWithConfirmation));
         expect(size.width, equals(AppSizes.recommendedTapTarget)); // 60px
         expect(size.height, equals(AppSizes.recommendedTapTarget)); // 60px
       });
@@ -202,7 +204,8 @@ void main() {
         );
 
         // Assert
-        final size = tester.getSize(find.byType(EmergencyButtonWithConfirmation));
+        final size =
+            tester.getSize(find.byType(EmergencyButtonWithConfirmation));
         expect(size.width, equals(80.0));
         expect(size.height, equals(80.0));
       });
@@ -225,7 +228,8 @@ void main() {
         );
 
         // Assert - 最小サイズ（44px）が保証される
-        final size = tester.getSize(find.byType(EmergencyButtonWithConfirmation));
+        final size =
+            tester.getSize(find.byType(EmergencyButtonWithConfirmation));
         expect(size.width, greaterThanOrEqualTo(AppSizes.minTapTarget));
         expect(size.height, greaterThanOrEqualTo(AppSizes.minTapTarget));
       });
@@ -248,7 +252,8 @@ void main() {
         );
 
         // Assert
-        final size = tester.getSize(find.byType(EmergencyButtonWithConfirmation));
+        final size =
+            tester.getSize(find.byType(EmergencyButtonWithConfirmation));
         expect(size.width, equals(AppSizes.minTapTarget));
         expect(size.height, equals(AppSizes.minTapTarget));
       });
@@ -286,8 +291,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: FR-102
-      testWidgets('TC-045-012: タップ時に視覚的フィードバックが発生する',
-          (tester) async {
+      testWidgets('TC-045-012: タップ時に視覚的フィードバックが発生する', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -344,8 +348,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-105, REQ-302
-      testWidgets('TC-045-014: 確認ダイアログで「いいえ」タップ後、ダイアログが閉じる',
-          (tester) async {
+      testWidgets('TC-045-014: 確認ダイアログで「いいえ」タップ後、ダイアログが閉じる', (tester) async {
         // Arrange
         await tester.pumpWidget(
           MaterialApp(
@@ -412,8 +415,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-007, NFR-A001
-      testWidgets('TC-045-016: Semanticsラベルが「緊急呼び出しボタン」である',
-          (tester) async {
+      testWidgets('TC-045-016: Semanticsラベルが「緊急呼び出しボタン」である', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -475,7 +477,8 @@ void main() {
         );
 
         // Assert
-        final size = tester.getSize(find.byType(EmergencyButtonWithConfirmation));
+        final size =
+            tester.getSize(find.byType(EmergencyButtonWithConfirmation));
         expect(size.width, greaterThanOrEqualTo(AppSizes.minTapTarget));
         expect(size.height, greaterThanOrEqualTo(AppSizes.minTapTarget));
       });
@@ -523,7 +526,8 @@ void main() {
         );
 
         // Assert
-        final context = tester.element(find.byType(EmergencyButtonWithConfirmation));
+        final context =
+            tester.element(find.byType(EmergencyButtonWithConfirmation));
         expect(Theme.of(context).brightness, equals(Brightness.light));
         // 実装時: backgroundColor = Color(0xFFD32F2F) であることを検証
       });
@@ -546,7 +550,8 @@ void main() {
         );
 
         // Assert
-        final context = tester.element(find.byType(EmergencyButtonWithConfirmation));
+        final context =
+            tester.element(find.byType(EmergencyButtonWithConfirmation));
         expect(Theme.of(context).brightness, equals(Brightness.dark));
         // 実装時: backgroundColor = Color(0xFFEF5350) であることを検証
       });
@@ -555,8 +560,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-103, REQ-803, REQ-5006
-      testWidgets('TC-045-022: 高コントラストモードで純粋な赤色で表示される',
-          (tester) async {
+      testWidgets('TC-045-022: 高コントラストモードで純粋な赤色で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -570,7 +574,8 @@ void main() {
         );
 
         // Assert
-        final context = tester.element(find.byType(EmergencyButtonWithConfirmation));
+        final context =
+            tester.element(find.byType(EmergencyButtonWithConfirmation));
         expect(
           Theme.of(context).colorScheme.primary,
           equals(AppColors.primaryHighContrast),
@@ -582,8 +587,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-202, REQ-5006
-      testWidgets('TC-045-023: 高コントラストモードでコントラスト比4.5:1以上を確保',
-          (tester) async {
+      testWidgets('TC-045-023: 高コントラストモードでコントラスト比4.5:1以上を確保', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -597,7 +601,8 @@ void main() {
         );
 
         // Assert - 白アイコン on 赤背景でコントラスト比を確認
-        final icon = tester.widget<Icon>(find.byIcon(Icons.notifications_active));
+        final icon =
+            tester.widget<Icon>(find.byIcon(Icons.notifications_active));
         expect(icon.color, equals(Colors.white));
         // 実装時: 背景色と前景色のコントラスト比が4.5:1以上であることを検証
       });
@@ -611,8 +616,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: EDGE-001
-      testWidgets('TC-045-024: 連続タップ時に複数のダイアログが表示されない',
-          (tester) async {
+      testWidgets('TC-045-024: 連続タップ時に複数のダイアログが表示されない', (tester) async {
         // Arrange
         await tester.pumpWidget(
           MaterialApp(
@@ -647,8 +651,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: EDGE-001
-      testWidgets('TC-045-025: ダイアログ表示中に緊急ボタンをタップしても無視される',
-          (tester) async {
+      testWidgets('TC-045-025: ダイアログ表示中に緊急ボタンをタップしても無視される', (tester) async {
         // Arrange
         await tester.pumpWidget(
           MaterialApp(
@@ -686,7 +689,8 @@ void main() {
                     title: const Text('カスタムダイアログ'),
                     actions: [
                       TextButton(onPressed: onConfirm, child: const Text('OK')),
-                      TextButton(onPressed: onCancel, child: const Text('キャンセル')),
+                      TextButton(
+                          onPressed: onCancel, child: const Text('キャンセル')),
                     ],
                   );
                 },
@@ -821,8 +825,7 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: FR-104, REQ-5002, AC-011, EDGE-001
       /// 検証内容: ボタン連続タップ時にダイアログが1つのみ表示されることを詳細検証
-      testWidgets(
-          'TC-046-019: 緊急ボタン連続タップで複数のダイアログが表示されない（詳細版）',
+      testWidgets('TC-046-019: 緊急ボタン連続タップで複数のダイアログが表示されない（詳細版）',
           (tester) async {
         // Arrange
         int dialogShowCount = 0;
@@ -864,8 +867,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-105, REQ-5002, AC-012
-      testWidgets('TC-046-020: ダイアログ表示中に緊急ボタン領域タップが遮断される',
-          (tester) async {
+      testWidgets('TC-046-020: ダイアログ表示中に緊急ボタン領域タップが遮断される', (tester) async {
         // Arrange
         int dialogShowCount = 0;
 
@@ -909,8 +911,7 @@ void main() {
       /// 関連要件: AC-013, EDGE-003
       /// 検証内容: ダイアログが閉じる前に連続タップしてもコールバックが1回のみ呼ばれる
       /// 【TDD Red】: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
-      testWidgets('TC-046-021: 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる',
-          (tester) async {
+      testWidgets('TC-046-021: 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる', (tester) async {
         // Arrange
         int callbackCount = 0;
 
@@ -1015,8 +1016,7 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: FR-102
       /// 検証内容: キャンセル後に再度タップで確認ダイアログが表示される
-      testWidgets('TC-046-015: 「いいえ」タップ後に通常状態に戻る（再タップで再表示可能）',
-          (tester) async {
+      testWidgets('TC-046-015: 「いいえ」タップ後に通常状態に戻る（再タップで再表示可能）', (tester) async {
         // Arrange
         await tester.pumpWidget(
           MaterialApp(

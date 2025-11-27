@@ -155,8 +155,7 @@ void main() {
           ProviderScope(
             overrides: [
               emergencyStateProvider.overrideWith(
-                (ref) =>
-                    EmergencyStateNotifier(audioService: mockAudioService),
+                (ref) => EmergencyStateNotifier(audioService: mockAudioService),
               ),
             ],
             child: MaterialApp(
@@ -289,8 +288,7 @@ void main() {
           ProviderScope(
             overrides: [
               emergencyStateProvider.overrideWith(
-                (ref) =>
-                    EmergencyStateNotifier(audioService: mockAudioService),
+                (ref) => EmergencyStateNotifier(audioService: mockAudioService),
               ),
             ],
             child: MaterialApp(
@@ -333,17 +331,17 @@ void main() {
       /// 優先度: P0（必須）
       test('TC-047-069: EmergencyStateEnumが正しく使用される', () {
         // Assert - Enumの値が正しいことを確認
-        expect(EmergencyStateEnum.values.length, equals(3)); // normal, alertActive, resetting
+        expect(EmergencyStateEnum.values.length,
+            equals(3)); // normal, alertActive, resetting
         expect(EmergencyStateEnum.values, contains(EmergencyStateEnum.normal));
-        expect(
-            EmergencyStateEnum.values, contains(EmergencyStateEnum.alertActive));
+        expect(EmergencyStateEnum.values,
+            contains(EmergencyStateEnum.alertActive));
       });
 
       /// TC-047-070: 状態がalertActiveの時に緊急画面が表示される
       ///
       /// 優先度: P0（必須）
-      testWidgets('TC-047-070: 状態がalertActiveの時に緊急画面が表示される',
-          (tester) async {
+      testWidgets('TC-047-070: 状態がalertActiveの時に緊急画面が表示される', (tester) async {
         // Arrange
         await tester.pumpWidget(
           ProviderScope(
@@ -503,8 +501,7 @@ void main() {
           ProviderScope(
             overrides: [
               emergencyStateProvider.overrideWith(
-                (ref) =>
-                    EmergencyStateNotifier(audioService: mockAudioService),
+                (ref) => EmergencyStateNotifier(audioService: mockAudioService),
               ),
             ],
             child: MaterialApp(

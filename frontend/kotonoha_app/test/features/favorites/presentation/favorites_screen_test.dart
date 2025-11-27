@@ -22,7 +22,8 @@ void main() {
     // 対応要件: FR-005（画面スケルトン作成）
     // 対応受け入れ基準: AC-005
     // 青信号: タスクファイルでFavoritesScreen作成が明示
-    testWidgets('TC-009: FavoritesScreenが正常に表示される', (WidgetTester tester) async {
+    testWidgets('TC-009: FavoritesScreenが正常に表示される',
+        (WidgetTester tester) async {
       // Given（準備フェーズ）
       // MaterialApp内でFavoritesScreenをラップ
 

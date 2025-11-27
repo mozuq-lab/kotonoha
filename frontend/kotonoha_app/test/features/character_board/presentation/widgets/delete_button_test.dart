@@ -167,8 +167,7 @@ void main() {
       );
 
       // Assert - ElevatedButtonが無効状態であることを確認
-      final button =
-          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNull);
     });
 
@@ -189,8 +188,7 @@ void main() {
     /// 信頼性レベル: 🔵 青信号
     /// 関連要件: AC-005, EDGE-1, AC-011
     /// 優先度: P0 必須
-    testWidgets(
-        'TC-039-005: enabled: falseの場合、タップしてもコールバックが実行されないことを確認',
+    testWidgets('TC-039-005: enabled: falseの場合、タップしてもコールバックが実行されないことを確認',
         (tester) async {
       // Arrange
       bool tapped = false;
@@ -271,8 +269,7 @@ void main() {
     /// 信頼性レベル: 🟡 黄信号
     /// 関連要件: NFR-202
     /// 優先度: P1 重要
-    testWidgets(
-        'TC-039-007: DeleteButtonにアクセシビリティ用のSemanticsラベルが設定されていることを確認',
+    testWidgets('TC-039-007: DeleteButtonにアクセシビリティ用のSemanticsラベルが設定されていることを確認',
         (tester) async {
       // Arrange & Act
       await tester.pumpWidget(
@@ -365,8 +362,7 @@ void main() {
     /// 信頼性レベル: 🔵 青信号
     /// 関連要件: AC-005, EDGE-1
     /// 優先度: P0 必須
-    testWidgets('TC-039-029: 入力バッファが空の場合、削除ボタンが無効化されることを確認',
-        (tester) async {
+    testWidgets('TC-039-029: 入力バッファが空の場合、削除ボタンが無効化されることを確認', (tester) async {
       // Arrange
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -395,8 +391,7 @@ void main() {
       );
 
       // Assert - ボタンが無効状態であることを確認
-      final button =
-          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNull);
     });
 
@@ -417,8 +412,7 @@ void main() {
     /// 信頼性レベル: 🔵 青信号
     /// 関連要件: AC-005
     /// 優先度: P0 必須
-    testWidgets('TC-039-030: 入力バッファに文字がある場合、削除ボタンが有効化されることを確認',
-        (tester) async {
+    testWidgets('TC-039-030: 入力バッファに文字がある場合、削除ボタンが有効化されることを確認', (tester) async {
       // Arrange
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -448,8 +442,7 @@ void main() {
       );
 
       // Assert - ボタンが有効状態であることを確認
-      final button =
-          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNotNull);
     });
   });
@@ -534,8 +527,7 @@ void main() {
     /// 信頼性レベル: 🔵 青信号
     /// 関連要件: AC-011
     /// 優先度: P0 必須
-    testWidgets('TC-039-036: 空バッファで削除ボタンをタップしてもエラーにならないことを確認',
-        (tester) async {
+    testWidgets('TC-039-036: 空バッファで削除ボタンをタップしてもエラーにならないことを確認', (tester) async {
       // Arrange
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -564,8 +556,7 @@ void main() {
       );
 
       // Assert - ボタンが無効状態であることを確認
-      final button =
-          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNull);
 
       // 状態が変わっていないことを確認
@@ -661,8 +652,7 @@ void main() {
     /// 信頼性レベル: 🟡 黄信号
     /// 関連要件: REQ-803, REQ-5006, AC-009
     /// 優先度: P1 重要
-    testWidgets('TC-039-039: 高コントラストテーマで削除ボタンが適切に表示されることを確認',
-        (tester) async {
+    testWidgets('TC-039-039: 高コントラストテーマで削除ボタンが適切に表示されることを確認', (tester) async {
       // Arrange & Act
       await tester.pumpWidget(
         MaterialApp(

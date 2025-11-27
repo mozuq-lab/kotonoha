@@ -33,7 +33,8 @@ void main() {
     });
 
     // TC-001: 初期状態テスト
-    test('TC-001: SettingsNotifierの初期状態がデフォルト値（medium、light）であることを確認', () async {
+    test('TC-001: SettingsNotifierの初期状態がデフォルト値（medium、light）であることを確認',
+        () async {
       // 【テスト目的】: SettingsNotifierの初期状態がデフォルト値であることを確認
       // 【テスト内容】: SharedPreferencesが空の状態でbuild()を実行し、デフォルト値が返されることを検証
       // 【期待される動作】: fontSize=medium、theme=lightが設定される
@@ -60,7 +61,8 @@ void main() {
 
       // 【検証項目】: フォントサイズがmediumであること
       // 🔵 青信号: interfaces.dartのデフォルト値定義に基づく
-      expect(settings.fontSize, FontSize.medium); // 【確認内容】: デフォルト値が正しく設定されていることを確認
+      expect(
+          settings.fontSize, FontSize.medium); // 【確認内容】: デフォルト値が正しく設定されていることを確認
 
       // 【検証項目】: テーマがlightであること
       // 🔵 青信号: interfaces.dartのデフォルト値定義に基づく
@@ -68,7 +70,8 @@ void main() {
     });
 
     // TC-002: フォントサイズ変更（small）
-    test('TC-002: setFontSize(FontSize.small)でフォントサイズが「小」に変更されることを確認', () async {
+    test('TC-002: setFontSize(FontSize.small)でフォントサイズが「小」に変更されることを確認',
+        () async {
       // 【テスト目的】: フォントサイズを「小」に変更し、状態が正しく更新されること
       // 【テスト内容】: setFontSize(FontSize.small)呼び出し後、stateが更新され、SharedPreferencesに永続化されること
       // 【期待される動作】: fontSize=smallに更新され、SharedPreferencesに保存される
@@ -98,16 +101,19 @@ void main() {
 
       // 【検証項目】: フォントサイズがsmallに変更されていること
       // 🔵 青信号: REQ-801の3段階選択要件に基づく
-      expect(settings.fontSize, FontSize.small); // 【確認内容】: フォントサイズが正しく更新されていることを確認
+      expect(
+          settings.fontSize, FontSize.small); // 【確認内容】: フォントサイズが正しく更新されていることを確認
 
       // 【検証項目】: SharedPreferencesに保存されていること
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('fontSize'), FontSize.small.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+      expect(prefs.getInt('fontSize'),
+          FontSize.small.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-004: フォントサイズ変更（large）
-    test('TC-004: setFontSize(FontSize.large)でフォントサイズが「大」に変更されることを確認', () async {
+    test('TC-004: setFontSize(FontSize.large)でフォントサイズが「大」に変更されることを確認',
+        () async {
       // 【テスト目的】: フォントサイズを「大」に変更し、状態が正しく更新されること
       // 【テスト内容】: setFontSize(FontSize.large)呼び出し後、stateが更新され、SharedPreferencesに永続化されること
       // 【期待される動作】: fontSize=largeに更新され、SharedPreferencesに保存される
@@ -137,12 +143,14 @@ void main() {
 
       // 【検証項目】: フォントサイズがlargeに変更されていること
       // 🔵 青信号: REQ-801の3段階選択要件に基づく
-      expect(settings.fontSize, FontSize.large); // 【確認内容】: 最大フォントサイズに正しく更新されていることを確認
+      expect(settings.fontSize,
+          FontSize.large); // 【確認内容】: 最大フォントサイズに正しく更新されていることを確認
 
       // 【検証項目】: SharedPreferencesに保存されていること
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('fontSize'), FontSize.large.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+      expect(prefs.getInt('fontSize'),
+          FontSize.large.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-005: テーマモード変更（light）
@@ -181,7 +189,8 @@ void main() {
       // 【検証項目】: SharedPreferencesに保存されていること
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('theme'), AppTheme.light.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+      expect(prefs.getInt('theme'),
+          AppTheme.light.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-006: テーマモード変更（dark）
@@ -220,11 +229,13 @@ void main() {
       // 【検証項目】: SharedPreferencesに保存されていること
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('theme'), AppTheme.dark.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+      expect(prefs.getInt('theme'),
+          AppTheme.dark.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-007: テーマモード変更（highContrast）
-    test('TC-007: setTheme(AppTheme.highContrast)でテーマが「高コントラストモード」に変更されることを確認', () async {
+    test('TC-007: setTheme(AppTheme.highContrast)でテーマが「高コントラストモード」に変更されることを確認',
+        () async {
       // 【テスト目的】: テーマを「高コントラストモード」に変更し、状態が正しく更新されること
       // 【テスト内容】: setTheme(AppTheme.highContrast)呼び出し後、stateが更新され、SharedPreferencesに永続化されること
       // 【期待される動作】: theme=highContrastに更新され、SharedPreferencesに保存される
@@ -254,12 +265,16 @@ void main() {
 
       // 【検証項目】: テーマがhighContrastに変更されていること
       // 🔵 青信号: REQ-803で定義された高コントラストモード
-      expect(settings.theme, AppTheme.highContrast); // 【確認内容】: 高コントラストモードに正しく更新されていることを確認
+      expect(settings.theme,
+          AppTheme.highContrast); // 【確認内容】: 高コントラストモードに正しく更新されていることを確認
 
       // 【検証項目】: SharedPreferencesに保存されていること
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('theme'), AppTheme.highContrast.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+      expect(
+          prefs.getInt('theme'),
+          AppTheme
+              .highContrast.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-008: アプリ再起動後の設定復元（フォントサイズ）
@@ -290,7 +305,8 @@ void main() {
 
       // 【検証項目】: フォントサイズがlargeに復元されていること
       // 🔵 青信号: REQ-5003の永続化要件に基づく
-      expect(settings.fontSize, FontSize.large); // 【確認内容】: 保存されたフォントサイズが正しく復元されていることを確認
+      expect(settings.fontSize,
+          FontSize.large); // 【確認内容】: 保存されたフォントサイズが正しく復元されていることを確認
     });
 
     // TC-009: アプリ再起動後の設定復元（テーマモード）
@@ -335,7 +351,8 @@ void main() {
     });
 
     // TC-011: SharedPreferences初期化失敗時のエラーハンドリング
-    test('TC-011: SharedPreferences初期化失敗時、AsyncValue.errorまたはデフォルト値を返すことを確認', () async {
+    test('TC-011: SharedPreferences初期化失敗時、AsyncValue.errorまたはデフォルト値を返すことを確認',
+        () async {
       // 【テスト目的】: SharedPreferences初期化失敗時のエラーハンドリング確認
       // 【テスト内容】: SharedPreferences.getInstance()が失敗した場合の挙動を検証
       // 【期待される動作】: AsyncValue.errorを返すか、デフォルト値でフォールバック
@@ -367,7 +384,8 @@ void main() {
     });
 
     // TC-012: SharedPreferences書き込み失敗時の楽観的更新
-    test('TC-012: setFontSize()でSharedPreferences書き込みが失敗しても、状態更新は成功することを確認', () async {
+    test('TC-012: setFontSize()でSharedPreferences書き込みが失敗しても、状態更新は成功することを確認',
+        () async {
       // 【テスト目的】: SharedPreferences書き込み失敗時の楽観的更新動作確認
       // 【テスト内容】: setInt()が失敗しても、Riverpod stateは更新される
       // 【期待される動作】: UI反応性を維持しつつ、再起動時は古い設定に戻る可能性をユーザーに通知
@@ -403,7 +421,9 @@ void main() {
     });
 
     // TC-014: SharedPreferencesがnullを返す場合のデフォルト値使用
-    test('TC-014: SharedPreferences.getInt()がnullを返す場合、デフォルト値（medium、light）を使用することを確認', () async {
+    test(
+        'TC-014: SharedPreferences.getInt()がnullを返す場合、デフォルト値（medium、light）を使用することを確認',
+        () async {
       // 【テスト目的】: null安全性の確認、Dart Null Safetyへの準拠
       // 【テスト内容】: 保存データが存在しない（初回起動と同じ状態）
       // 【期待される動作】: デフォルト値（medium、light）が使用される
@@ -446,7 +466,9 @@ void main() {
     });
 
     // TC-015: FontSize enumの全値テスト（small, medium, large）
-    test('TC-015: FontSize enumのすべての値（small=0, medium=1, large=2）が正しくSharedPreferencesに保存・復元されることを確認', () async {
+    test(
+        'TC-015: FontSize enumのすべての値（small=0, medium=1, large=2）が正しくSharedPreferencesに保存・復元されることを確認',
+        () async {
       // 【テスト目的】: 全選択肢の網羅的確認
       // 【テスト内容】: enum indexの最小値（0）から最大値（2）までをすべてテスト
       // 【期待される動作】: 3段階すべてが正常動作することを確認
@@ -484,14 +506,17 @@ void main() {
         // 【検証項目】: SharedPreferencesに正しく保存されていること
         // 🔵 青信号: enum境界値の安全性
         final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getInt('fontSize'), fontSize.index); // 【確認内容】: index値が正しく保存されていることを確認
+        expect(prefs.getInt('fontSize'),
+            fontSize.index); // 【確認内容】: index値が正しく保存されていることを確認
 
         container.dispose();
       }
     });
 
     // TC-016: AppTheme enumの全値テスト（light, dark, highContrast）
-    test('TC-016: AppTheme enumのすべての値（light=0, dark=1, highContrast=2）が正しくSharedPreferencesに保存・復元されることを確認', () async {
+    test(
+        'TC-016: AppTheme enumのすべての値（light=0, dark=1, highContrast=2）が正しくSharedPreferencesに保存・復元されることを確認',
+        () async {
       // 【テスト目的】: 全テーマの網羅的確認
       // 【テスト内容】: enum indexの最小値（0）から最大値（2）まで
       // 【期待される動作】: 3種類すべてが正常動作することを確認
@@ -529,7 +554,8 @@ void main() {
         // 【検証項目】: SharedPreferencesに正しく保存されていること
         // 🔵 青信号: WCAG準拠含むすべてのテーマが動作
         final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getInt('theme'), theme.index); // 【確認内容】: index値が正しく保存されていることを確認
+        expect(prefs.getInt('theme'),
+            theme.index); // 【確認内容】: index値が正しく保存されていることを確認
 
         container.dispose();
       }

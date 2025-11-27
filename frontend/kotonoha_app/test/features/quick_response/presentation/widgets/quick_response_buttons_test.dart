@@ -120,8 +120,8 @@ void main() {
         );
 
         // Assert
-        final buttons =
-            tester.widgetList<QuickResponseButton>(find.byType(QuickResponseButton));
+        final buttons = tester
+            .widgetList<QuickResponseButton>(find.byType(QuickResponseButton));
         final buttonList = buttons.toList();
         expect(buttonList.length, equals(3));
 
@@ -162,7 +162,8 @@ void main() {
         // Assert
         final containerSize = tester.getSize(find.byType(QuickResponseButtons));
         final screenWidth =
-            tester.element(find.byType(QuickResponseButtons)).size?.width ?? 800;
+            tester.element(find.byType(QuickResponseButtons)).size?.width ??
+                800;
 
         expect(containerSize.width, lessThanOrEqualTo(screenWidth));
       });
@@ -224,8 +225,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets('TC-QRBs-008: 「はい」タップでonResponseがyesで呼ばれる',
-          (tester) async {
+      testWidgets('TC-QRBs-008: 「はい」タップでonResponseがyesで呼ばれる', (tester) async {
         // Arrange
         QuickResponseType? receivedType;
 
@@ -251,8 +251,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets('TC-QRBs-009: 「いいえ」タップでonResponseがnoで呼ばれる',
-          (tester) async {
+      testWidgets('TC-QRBs-009: 「いいえ」タップでonResponseがnoで呼ばれる', (tester) async {
         // Arrange
         QuickResponseType? receivedType;
 
@@ -305,8 +304,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets('TC-QRBs-011: タップ時にonTTSSpeakコールバックが呼ばれる',
-          (tester) async {
+      testWidgets('TC-QRBs-011: タップ時にonTTSSpeakコールバックが呼ばれる', (tester) async {
         // Arrange
         String? spokenText;
 
@@ -355,8 +353,7 @@ void main() {
       });
 
       /// TC-QRBs-011c: 「わからない」タップ時にonTTSSpeakが「わからない」で呼ばれる
-      testWidgets(
-          'TC-QRBs-011c: 「わからない」タップ時にonTTSSpeakが「わからない」で呼ばれる',
+      testWidgets('TC-QRBs-011c: 「わからない」タップ時にonTTSSpeakが「わからない」で呼ばれる',
           (tester) async {
         // Arrange
         String? spokenText;
@@ -421,8 +418,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-202
-      testWidgets('TC-TH-004: 高コントラストモードでコントラスト比4.5:1以上',
-          (tester) async {
+      testWidgets('TC-TH-004: 高コントラストモードでコントラスト比4.5:1以上', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -438,7 +434,8 @@ void main() {
         // Assert
         final context = tester.element(find.byType(QuickResponseButtons));
         final theme = Theme.of(context);
-        expect(theme.colorScheme.primary, equals(AppColors.primaryHighContrast));
+        expect(
+            theme.colorScheme.primary, equals(AppColors.primaryHighContrast));
       });
     });
 
@@ -613,8 +610,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: EDGE-004
-      testWidgets('TC-EDGE-003: 連続タップ時にonResponseが1回だけ呼ばれる',
-          (tester) async {
+      testWidgets('TC-EDGE-003: 連続タップ時にonResponseが1回だけ呼ばれる', (tester) async {
         // Arrange
         int callCount = 0;
 

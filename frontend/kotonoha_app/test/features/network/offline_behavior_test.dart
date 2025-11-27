@@ -41,8 +41,7 @@ void main() {
 
         // Then: NetworkProviderが正しく初期化される
         expect(state, isNotNull, reason: 'NetworkProviderは初期化されている必要がある');
-        expect(state, NetworkState.checking,
-            reason: '初期状態はcheckingである必要がある');
+        expect(state, NetworkState.checking, reason: '初期状態はcheckingである必要がある');
       });
 
       /// TC-058-002: NetworkStateがonline状態に遷移
@@ -153,8 +152,7 @@ void main() {
         final isAvailable = notifier.isAIConversionAvailable;
 
         // Then: isAIConversionAvailableがfalseを返す
-        expect(isAvailable, false,
-            reason: 'checking状態ではAI変換が無効である必要がある');
+        expect(isAvailable, false, reason: 'checking状態ではAI変換が無効である必要がある');
       });
 
       /// TC-058-007: NetworkProviderのDispose処理が正常動作
@@ -171,8 +169,7 @@ void main() {
 
         // Then: メモリリークが発生しない（テストが正常完了）
         // dispose後のアクセスは例外をスローする
-        expect(
-            () => testContainer.read(networkProvider), throwsStateError,
+        expect(() => testContainer.read(networkProvider), throwsStateError,
             reason: 'dispose後のProviderアクセスは例外をスローする必要がある');
       });
     });
@@ -189,8 +186,7 @@ void main() {
       /// 信頼性レベル: 🔵
       ///
       /// 注: このテストは実際のウィジェット実装後に動作します（TDD Red）
-      test('TC-058-008: オフライン時も文字盤タップで文字入力可能（統合テスト）',
-          () async {
+      test('TC-058-008: オフライン時も文字盤タップで文字入力可能（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
         await notifier.setOffline();
@@ -208,8 +204,7 @@ void main() {
       /// 優先度: P0
       /// 関連要件: REQ-1001, REQ-101
       /// 信頼性レベル: 🔵
-      test('TC-058-012: オフライン時も定型文一覧が表示される（統合テスト）',
-          () async {
+      test('TC-058-012: オフライン時も定型文一覧が表示される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
         await notifier.setOffline();
@@ -226,8 +221,7 @@ void main() {
       /// 優先度: P0
       /// 関連要件: REQ-1001, REQ-401, NFR-001
       /// 信頼性レベル: 🔵
-      test('TC-058-023: オフライン時もTTS読み上げが1秒以内に開始される（統合テスト）',
-          () async {
+      test('TC-058-023: オフライン時もTTS読み上げが1秒以内に開始される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
         await notifier.setOffline();
@@ -250,8 +244,7 @@ void main() {
       /// 優先度: P0
       /// 関連要件: REQ-1002, REQ-3004
       /// 信頼性レベル: 🔵
-      test('TC-058-026: オフライン時にAI変換ボタンがグレーアウト表示（統合テスト）',
-          () async {
+      test('TC-058-026: オフライン時にAI変換ボタンがグレーアウト表示（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
         await notifier.setOffline();
@@ -269,8 +262,7 @@ void main() {
       /// 優先度: P0
       /// 関連要件: REQ-1002, REQ-3004
       /// 信頼性レベル: 🔵
-      test('TC-058-027: オフライン時にAI変換ボタンがタップ不可（統合テスト）',
-          () async {
+      test('TC-058-027: オフライン時にAI変換ボタンがタップ不可（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
         await notifier.setOffline();
@@ -303,8 +295,7 @@ void main() {
       /// 優先度: P0
       /// 関連要件: REQ-1002
       /// 信頼性レベル: 🔵
-      test('TC-058-031: ネットワーク状態切り替えでAI変換ボタンが動的に有効/無効化',
-          () async {
+      test('TC-058-031: ネットワーク状態切り替えでAI変換ボタンが動的に有効/無効化', () async {
         // Given: NetworkStateがonline
         final notifier = container.read(networkProvider.notifier);
         await notifier.setOnline();
@@ -336,8 +327,7 @@ void main() {
       /// 優先度: P1
       /// 関連要件: REQ-1001, REQ-5003, NFR-101
       /// 信頼性レベル: 🔵
-      test('TC-058-039: オフライン時も定型文がHiveに保存される（統合テスト）',
-          () async {
+      test('TC-058-039: オフライン時も定型文がHiveに保存される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
         await notifier.setOffline();
@@ -354,8 +344,7 @@ void main() {
       /// 優先度: P1
       /// 関連要件: REQ-1001, NFR-101
       /// 信頼性レベル: 🔵
-      test('TC-058-040: オフライン時も設定がshared_preferencesに保存される（統合テスト）',
-          () async {
+      test('TC-058-040: オフライン時も設定がshared_preferencesに保存される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
         await notifier.setOffline();
@@ -421,8 +410,7 @@ void main() {
       /// 優先度: P1
       /// 関連要件: REQ-1002
       /// 信頼性レベル: 🟡
-      test('TC-058-052: NetworkState.checking状態でAI変換ボタンが無効化',
-          () async {
+      test('TC-058-052: NetworkState.checking状態でAI変換ボタンが無効化', () async {
         // Given: アプリが起動したばかり（NetworkState.checking）
         final notifier = container.read(networkProvider.notifier);
         await notifier.setChecking();
@@ -431,8 +419,7 @@ void main() {
         final isAvailable = notifier.isAIConversionAvailable;
 
         // Then: isAIConversionAvailableがfalseを返す
-        expect(isAvailable, false,
-            reason: 'checking状態ではAI変換が無効である必要がある');
+        expect(isAvailable, false, reason: 'checking状態ではAI変換が無効である必要がある');
       });
     });
   });

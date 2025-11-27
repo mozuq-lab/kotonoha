@@ -77,7 +77,8 @@ void main() {
       final result = Validators.validateInputText(text);
 
       // Assert
-      expect(result, isNull, reason: 'Null input is allowed (treated as empty)');
+      expect(result, isNull,
+          reason: 'Null input is allowed (treated as empty)');
     });
   });
 
@@ -146,7 +147,8 @@ void main() {
     });
 
     // TC-VAL-012: 定型文空白のみテスト
-    test('TC-VAL-012: whitespace-only template phrase should fail validation (half-width)',
+    test(
+        'TC-VAL-012: whitespace-only template phrase should fail validation (half-width)',
         () {
       // Arrange
       const text = '   '; // Whitespace only (half-width)
@@ -159,7 +161,8 @@ void main() {
       expect(result, contains('定型文を入力してください'));
     });
 
-    test('TC-VAL-012: whitespace-only template phrase should fail validation (full-width)',
+    test(
+        'TC-VAL-012: whitespace-only template phrase should fail validation (full-width)',
         () {
       // Arrange
       const text = '\u3000'; // Full-width space only
@@ -256,13 +259,15 @@ void main() {
 
       // Assert
       expect(result, isFalse,
-          reason: 'Whitespace-only should not be convertible (empty after sanitize)');
+          reason:
+              'Whitespace-only should not be convertible (empty after sanitize)');
     });
   });
 
   group('Sanitization Tests', () {
     // TC-VAL-019: 入力テキストサニタイズテスト（前後空白除去）
-    test('TC-VAL-019: should remove leading and trailing half-width spaces', () {
+    test('TC-VAL-019: should remove leading and trailing half-width spaces',
+        () {
       // Arrange
       const text = '  こんにちは  '; // Leading/trailing half-width spaces
 
@@ -274,7 +279,8 @@ void main() {
     });
 
     // TC-VAL-020: 入力テキストサニタイズテスト（全角スペース除去）
-    test('TC-VAL-020: should remove leading and trailing full-width spaces', () {
+    test('TC-VAL-020: should remove leading and trailing full-width spaces',
+        () {
       // Arrange
       const text = '\u3000こんにちは\u3000'; // Full-width spaces (U+3000)
 
@@ -286,7 +292,8 @@ void main() {
     });
 
     // TC-VAL-021: 入力テキストサニタイズテスト（タブ・改行除去）
-    test('TC-VAL-021: should remove leading and trailing tabs and newlines', () {
+    test('TC-VAL-021: should remove leading and trailing tabs and newlines',
+        () {
       // Arrange
       const text = '\n\tこんにちは\t\n'; // Tabs and newlines
 

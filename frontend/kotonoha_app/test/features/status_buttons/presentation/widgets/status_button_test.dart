@@ -269,8 +269,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: FR-201
-      testWidgets('TC-SB-013: カスタムサイズ指定時も最小サイズが保証される',
-          (tester) async {
+      testWidgets('TC-SB-013: カスタムサイズ指定時も最小サイズが保証される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -298,8 +297,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-203
-      testWidgets('TC-SB-014: タップ時にonPressedコールバックが呼ばれる',
-          (tester) async {
+      testWidgets('TC-SB-014: タップ時にonPressedコールバックが呼ばれる', (tester) async {
         bool tapped = false;
 
         await tester.pumpWidget(
@@ -360,7 +358,8 @@ void main() {
           ),
         );
 
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         expect(button.onPressed, isNull);
       });
 
@@ -368,8 +367,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: FR-102
-      testWidgets('TC-SB-017: タップ時に視覚的フィードバックが発生する',
-          (tester) async {
+      testWidgets('TC-SB-017: タップ時に視覚的フィードバックが発生する', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -394,8 +392,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets('TC-SB-018: 「痛い」タップでonTTSSpeakが「痛い」で呼ばれる',
-          (tester) async {
+      testWidgets('TC-SB-018: 「痛い」タップでonTTSSpeakが「痛い」で呼ばれる', (tester) async {
         String? spokenText;
 
         await tester.pumpWidget(
@@ -420,8 +417,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets('TC-SB-019: 「トイレ」タップでonTTSSpeakが「トイレ」で呼ばれる',
-          (tester) async {
+      testWidgets('TC-SB-019: 「トイレ」タップでonTTSSpeakが「トイレ」で呼ばれる', (tester) async {
         String? spokenText;
 
         await tester.pumpWidget(
@@ -446,8 +442,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets('TC-SB-020: 「助けて」タップでonTTSSpeakが「助けて」で呼ばれる',
-          (tester) async {
+      testWidgets('TC-SB-020: 「助けて」タップでonTTSSpeakが「助けて」で呼ばれる', (tester) async {
         String? spokenText;
 
         await tester.pumpWidget(
@@ -511,8 +506,7 @@ void main() {
       ///
       /// 注: このテストはDateTime.now()を使用したデバウンスロジックをテストするため、
       /// 実際の時間経過を待つ必要があります。
-      testWidgets('TC-SB-022: デバウンス期間経過後は再度タップが有効になる',
-          (tester) async {
+      testWidgets('TC-SB-022: デバウンス期間経過後は再度タップが有効になる', (tester) async {
         int callCount = 0;
 
         await tester.pumpWidget(
@@ -547,8 +541,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: EDGE-004
-      testWidgets('TC-SB-023: 連続タップでonTTSSpeakが1回だけ呼ばれる',
-          (tester) async {
+      testWidgets('TC-SB-023: 連続タップでonTTSSpeakが1回だけ呼ばれる', (tester) async {
         int callCount = 0;
 
         await tester.pumpWidget(
@@ -583,8 +576,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-006
-      testWidgets('TC-SB-024: フォントサイズ「小」でラベルが適切なサイズで表示される',
-          (tester) async {
+      testWidgets('TC-SB-024: フォントサイズ「小」でラベルが適切なサイズで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -605,8 +597,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-006
-      testWidgets('TC-SB-025: フォントサイズ「中」でラベルが適切なサイズで表示される',
-          (tester) async {
+      testWidgets('TC-SB-025: フォントサイズ「中」でラベルが適切なサイズで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -627,8 +618,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-006
-      testWidgets('TC-SB-026: フォントサイズ「大」でラベルが適切なサイズで表示される',
-          (tester) async {
+      testWidgets('TC-SB-026: フォントサイズ「大」でラベルが適切なサイズで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -696,8 +686,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-103, FR-202
-      testWidgets('TC-TH-003: 高コントラストモードで適切な配色で表示される',
-          (tester) async {
+      testWidgets('TC-TH-003: 高コントラストモードで適切な配色で表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             theme: highContrastTheme,
@@ -844,8 +833,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: EDGE-003
-      testWidgets('TC-EDGE-009: onTTSSpeakがnullでもボタンタップが動作する',
-          (tester) async {
+      testWidgets('TC-EDGE-009: onTTSSpeakがnullでもボタンタップが動作する', (tester) async {
         bool tapped = false;
 
         await tester.pumpWidget(
@@ -870,8 +858,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: EDGE-003
-      testWidgets('TC-EDGE-011: onTTSSpeak未設定でもonPressedは動作する',
-          (tester) async {
+      testWidgets('TC-EDGE-011: onTTSSpeak未設定でもonPressedは動作する', (tester) async {
         bool onPressedCalled = false;
 
         await tester.pumpWidget(

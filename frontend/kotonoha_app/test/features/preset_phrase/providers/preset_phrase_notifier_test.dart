@@ -52,7 +52,8 @@ void main() {
       final state = container.read(presetPhraseNotifierProvider);
       expect(state.phrases.length, equals(1)); // 【確認内容】: 状態の変化 🔵
       expect(state.phrases.first.content, equals(content)); // 【確認内容】: 内容が正しい 🔵
-      expect(state.phrases.first.category, equals(category)); // 【確認内容】: カテゴリが正しい 🔵
+      expect(state.phrases.first.category,
+          equals(category)); // 【確認内容】: カテゴリが正しい 🔵
     });
 
     // =========================================================================
@@ -117,7 +118,8 @@ void main() {
 
       // createdAtが適切な範囲内であることを確認
       expect(
-        phrase.createdAt.isAfter(beforeAdd.subtract(const Duration(seconds: 1))),
+        phrase.createdAt
+            .isAfter(beforeAdd.subtract(const Duration(seconds: 1))),
         isTrue,
       ); // 【確認内容】: createdAtの値 🟡
       expect(
@@ -127,7 +129,8 @@ void main() {
 
       // updatedAtも同様に設定されていることを確認
       expect(
-        phrase.updatedAt.isAfter(beforeAdd.subtract(const Duration(seconds: 1))),
+        phrase.updatedAt
+            .isAfter(beforeAdd.subtract(const Duration(seconds: 1))),
         isTrue,
       ); // 【確認内容】: updatedAtの値 🟡
     });
@@ -160,7 +163,8 @@ void main() {
 
       // 【結果検証】: 内容が更新されていることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.first.content, equals(newContent)); // 【確認内容】: 更新後のcontent 🔵
+      expect(updatedState.phrases.first.content,
+          equals(newContent)); // 【確認内容】: 更新後のcontent 🔵
     });
 
     // =========================================================================
@@ -189,7 +193,8 @@ void main() {
 
       // 【結果検証】: カテゴリが更新されていることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.first.category, equals(newCategory)); // 【確認内容】: 更新後のcategory 🟡
+      expect(updatedState.phrases.first.category,
+          equals(newCategory)); // 【確認内容】: 更新後のcategory 🟡
     });
   });
 
@@ -220,7 +225,8 @@ void main() {
 
       // 【結果検証】: 削除されていることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.length, equals(0)); // 【確認内容】: 状態から削除されていること 🔵
+      expect(
+          updatedState.phrases.length, equals(0)); // 【確認内容】: 状態から削除されていること 🔵
     });
   });
 
@@ -249,7 +255,8 @@ void main() {
 
       // 【結果検証】: フラグが反転していることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.first.isFavorite, isTrue); // 【確認内容】: isFavoriteの値 🔵
+      expect(updatedState.phrases.first.isFavorite,
+          isTrue); // 【確認内容】: isFavoriteの値 🔵
     });
 
     // =========================================================================
@@ -280,7 +287,8 @@ void main() {
 
       // 【結果検証】: フラグが反転していることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.first.isFavorite, isFalse); // 【確認内容】: isFavoriteの値 🔵
+      expect(updatedState.phrases.first.isFavorite,
+          isFalse); // 【確認内容】: isFavoriteの値 🔵
     });
 
     // =========================================================================
@@ -308,7 +316,8 @@ void main() {
 
       // 【結果検証】: お気に入りが上部に表示されることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.first.content, equals('定型文2')); // 【確認内容】: 並び順 🔵
+      expect(
+          updatedState.phrases.first.content, equals('定型文2')); // 【確認内容】: 並び順 🔵
       expect(updatedState.phrases.first.isFavorite, isTrue);
     });
   });
@@ -397,7 +406,8 @@ void main() {
 
       // 【結果検証】: 50個以上の定型文があることを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, greaterThanOrEqualTo(50)); // 【確認内容】: REQ-107 🔵
+      expect(
+          state.phrases.length, greaterThanOrEqualTo(50)); // 【確認内容】: REQ-107 🔵
       expect(state.phrases.length, lessThanOrEqualTo(100)); // 【確認内容】: 100個以下 🔵
     });
 
@@ -505,7 +515,8 @@ void main() {
 
       // 【結果検証】: 数が一致することを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, equals(DefaultPhrases.totalCount)); // 【確認内容】: 数の一致 🔵
+      expect(state.phrases.length,
+          equals(DefaultPhrases.totalCount)); // 【確認内容】: 数の一致 🔵
     });
 
     // =========================================================================
@@ -530,7 +541,8 @@ void main() {
 
       // 【結果検証】: 初期データに戻っていることを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, equals(DefaultPhrases.totalCount)); // 【確認内容】: リセット成功 🔵
+      expect(state.phrases.length,
+          equals(DefaultPhrases.totalCount)); // 【確認内容】: リセット成功 🔵
 
       // 手動追加のデータがないことを確認
       final manualPhrases = state.phrases.where(

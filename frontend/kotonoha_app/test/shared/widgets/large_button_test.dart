@@ -230,7 +230,8 @@ void main() {
         );
 
         // Assert
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         expect(button.onPressed, isNull);
       });
     });
@@ -269,7 +270,8 @@ void main() {
         );
 
         // Assert
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         final style = button.style;
         expect(style?.backgroundColor?.resolve({}), equals(customColor));
       });
@@ -304,7 +306,8 @@ void main() {
         );
 
         // Assert
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         final style = button.style;
         expect(style?.foregroundColor?.resolve({}), equals(customColor));
       });
@@ -405,7 +408,8 @@ void main() {
         // Assert
         final context = tester.element(find.byType(LargeButton));
         final theme = Theme.of(context);
-        expect(theme.colorScheme.primary, equals(AppColors.primaryHighContrast));
+        expect(
+            theme.colorScheme.primary, equals(AppColors.primaryHighContrast));
       });
     });
 
@@ -440,7 +444,8 @@ void main() {
 
         // Assert
         // ElevatedButtonが内部でボタンセマンティクスを設定している
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         expect(button, isNotNull);
         // ElevatedButtonは自動的にボタンセマンティクスを持つ
         expect(find.byType(ElevatedButton), findsOneWidget);

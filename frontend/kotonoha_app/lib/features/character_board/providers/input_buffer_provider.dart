@@ -28,8 +28,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// // 文字の追加
 /// ref.read(inputBufferProvider.notifier).addCharacter('あ');
 /// ```
-final inputBufferProvider =
-    StateNotifierProvider<InputBufferNotifier, String>(
+final inputBufferProvider = StateNotifierProvider<InputBufferNotifier, String>(
   (ref) => InputBufferNotifier(),
 );
 

@@ -94,7 +94,8 @@ void main() {
 
       // 【検証項目】: createdAtフィールドが一致すること
       // 🔵 青信号: 日時型の正確な保存・復元
-      expect(retrieved.createdAt, DateTime(2025, 11, 21, 10, 30)); // 【確認内容】: 日時が正確に保存されている
+      expect(retrieved.createdAt,
+          DateTime(2025, 11, 21, 10, 30)); // 【確認内容】: 日時が正確に保存されている
 
       // 【検証項目】: typeフィールドが一致すること
       // 🔵 青信号: 履歴種別の保持
@@ -158,15 +159,21 @@ void main() {
 
       // 【検証項目】: 各アイテムのcontentが含まれていること
       // 🔵 青信号: データの独立性確認
-      expect(allHistory.any((item) => item.content == 'ありがとう'), true); // 【確認内容】: 1件目が存在する
-      expect(allHistory.any((item) => item.content == 'お願いします'), true); // 【確認内容】: 2件目が存在する
-      expect(allHistory.any((item) => item.content == '助けてください'), true); // 【確認内容】: 3件目が存在する
+      expect(allHistory.any((item) => item.content == 'ありがとう'),
+          true); // 【確認内容】: 1件目が存在する
+      expect(allHistory.any((item) => item.content == 'お願いします'),
+          true); // 【確認内容】: 2件目が存在する
+      expect(allHistory.any((item) => item.content == '助けてください'),
+          true); // 【確認内容】: 3件目が存在する
 
       // 【検証項目】: 異なるHistoryTypeが混在して保存できること
       // 🔵 青信号: dataflow.mdの履歴管理フローに基づく
-      expect(allHistory.any((item) => item.type == 'manualInput'), true); // 【確認内容】: 文字盤入力が保存されている
-      expect(allHistory.any((item) => item.type == 'preset'), true); // 【確認内容】: 定型文が保存されている
-      expect(allHistory.any((item) => item.type == 'aiConverted'), true); // 【確認内容】: AI変換結果が保存されている
+      expect(allHistory.any((item) => item.type == 'manualInput'),
+          true); // 【確認内容】: 文字盤入力が保存されている
+      expect(allHistory.any((item) => item.type == 'preset'),
+          true); // 【確認内容】: 定型文が保存されている
+      expect(allHistory.any((item) => item.type == 'aiConverted'),
+          true); // 【確認内容】: AI変換結果が保存されている
     });
 
     // TC-006: HistoryItem削除テスト
@@ -189,7 +196,8 @@ void main() {
       await historyBox.put(item.id, item);
 
       // 削除前の確認
-      expect(historyBox.get('uuid-001'), isNotNull); // 【確認内容】: 削除前にデータが存在することを確認
+      expect(
+          historyBox.get('uuid-001'), isNotNull); // 【確認内容】: 削除前にデータが存在することを確認
 
       // When（実行フェーズ）
       // 【実際の処理実行】: historyBox.delete()で削除

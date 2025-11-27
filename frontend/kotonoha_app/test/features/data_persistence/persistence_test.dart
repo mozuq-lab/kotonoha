@@ -171,16 +171,21 @@ void main() {
       // Then（検証フェーズ）
       // 定型文5件がすべて保持されている
       expect(loadedPhrases.length, 5, reason: '定型文5件がすべて保持されている');
-      expect(loadedPhrases.map((p) => p.id).toSet(), {'test-001', 'test-002', 'test-003', 'test-004', 'test-005'});
-      expect(loadedPhrases.firstWhere((p) => p.id == 'test-001').content, 'こんにちは');
-      expect(loadedPhrases.firstWhere((p) => p.id == 'test-002').content, 'お水をください');
+      expect(loadedPhrases.map((p) => p.id).toSet(),
+          {'test-001', 'test-002', 'test-003', 'test-004', 'test-005'});
+      expect(
+          loadedPhrases.firstWhere((p) => p.id == 'test-001').content, 'こんにちは');
+      expect(loadedPhrases.firstWhere((p) => p.id == 'test-002').content,
+          'お水をください');
 
       // フォントサイズ設定が「大（large）」のまま保持されている
-      expect(loadedSettings.fontSize, FontSize.large, reason: 'フォントサイズ設定が保持されている');
+      expect(loadedSettings.fontSize, FontSize.large,
+          reason: 'フォントサイズ設定が保持されている');
 
       // 履歴3件がすべて保持されている
       expect(loadedHistories.length, 3, reason: '履歴3件がすべて保持されている');
-      expect(loadedHistories.map((h) => h.id).toSet(), {'hist-001', 'hist-002', 'hist-003'});
+      expect(loadedHistories.map((h) => h.id).toSet(),
+          {'hist-001', 'hist-002', 'hist-003'});
     });
   });
 
@@ -208,7 +213,8 @@ void main() {
 
       // 入力バッファをshared_preferencesに保存
       await prefs.setString('input_buffer', 'こんにちは');
-      await prefs.setString('input_buffer_timestamp', DateTime.now().toIso8601String());
+      await prefs.setString(
+          'input_buffer_timestamp', DateTime.now().toIso8601String());
 
       // When（実行フェーズ）
       // ProviderContainerを破棄（アプリクラッシュをシミュレート）
@@ -446,14 +452,16 @@ void main() {
       expect(favPhrase.isFavorite, true, reason: 'お気に入りフラグがtrueで保存されている');
 
       // フォントサイズが「大（large）」のまま保持されている
-      expect(loadedSettings.fontSize, FontSize.large, reason: 'フォントサイズが保持されている');
+      expect(loadedSettings.fontSize, FontSize.large,
+          reason: 'フォントサイズが保持されている');
 
       // 履歴に「お水をください」が保存されている
       expect(loadedHistories.length, 1, reason: '履歴が保存されている');
       expect(loadedHistories.first.content, 'お水をください', reason: '履歴の内容が保持されている');
 
       // すべてのデータが整合性を保っている
-      expect(loadedPhrases.every((p) => p.id.isNotEmpty), true, reason: 'データの整合性が保たれている');
+      expect(loadedPhrases.every((p) => p.id.isNotEmpty), true,
+          reason: 'データの整合性が保たれている');
     });
   });
 }

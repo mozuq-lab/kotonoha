@@ -182,7 +182,8 @@ void main() {
     /// 優先度: P0 必須
     testWidgets('セクション内定型文タップでonPhraseSelectedが発火する', (tester) async {
       PresetPhrase? selectedPhrase;
-      final phrase = createTestPhrase(id: '1', content: 'タップテスト', category: 'daily');
+      final phrase =
+          createTestPhrase(id: '1', content: 'タップテスト', category: 'daily');
 
       await tester.pumpWidget(
         MaterialApp(

@@ -55,7 +55,9 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-5003, REQ-2007
       /// 検証内容: TTS速度設定の永続化
-      test('TC-049-005: setTTSSpeed()メソッドを呼び出すと、shared_preferencesに速度設定が保存されることを確認', () async {
+      test(
+          'TC-049-005: setTTSSpeed()メソッドを呼び出すと、shared_preferencesに速度設定が保存されることを確認',
+          () async {
         // 【テスト目的】: TTS速度設定がshared_preferencesに保存されることを確認 🔵
         // 【テスト内容】: setTTSSpeed(TTSSpeed.fast)を呼び出し、shared_preferencesに保存されることを検証
         // 【期待される動作】: shared_preferencesに'tts_speed': 'fast'が保存され、状態も即座に更新される
@@ -84,7 +86,8 @@ void main() {
 
         // 【検証項目】: SharedPreferencesに保存されていること
         final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getString('tts_speed'), 'fast'); // 【確認内容】: SharedPreferencesに正しく保存されたことを確認 🔵
+        expect(prefs.getString('tts_speed'),
+            'fast'); // 【確認内容】: SharedPreferencesに正しく保存されたことを確認 🔵
       });
 
       /// TC-049-006: SettingsNotifier.setTTSSpeed()でTTSNotifier.setSpeed()が呼ばれる
@@ -92,7 +95,9 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-404
       /// 検証内容: 設定変更とTTS速度変更の連携
-      test('TC-049-006: setTTSSpeed()を呼び出すと、TTSNotifier.setSpeed()が呼ばれ、TTSエンジンに速度が反映されることを確認', () async {
+      test(
+          'TC-049-006: setTTSSpeed()を呼び出すと、TTSNotifier.setSpeed()が呼ばれ、TTSエンジンに速度が反映されることを確認',
+          () async {
         // 【テスト目的】: 設定変更がTTSエンジンに正しく伝達されることを確認 🔵
         // 【テスト内容】: setTTSSpeed(TTSSpeed.slow)を呼び出し、TTSNotifier.setSpeed()が呼ばれることを検証
         // 【期待される動作】: TTSNotifier.setSpeed()が1回呼ばれ、引数はTTSSpeed.slow
@@ -149,7 +154,8 @@ void main() {
         // Then: 【結果検証】: 速度が「速い」に復元されたことを確認
         // 【期待値確認】: REQ-5003（設定永続化）に基づく
         // 【品質保証】: アプリ再起動後も設定が失われないことを確認
-        expect(settings.ttsSpeed, TTSSpeed.fast); // 【確認内容】: 保存された速度が正しく復元されたことを確認 🔵
+        expect(settings.ttsSpeed,
+            TTSSpeed.fast); // 【確認内容】: 保存された速度が正しく復元されたことを確認 🔵
       });
     });
 
@@ -162,7 +168,9 @@ void main() {
       /// 優先度: P1（高優先度）
       /// 関連要件: REQ-2007, NFR-304, EDGE-2
       /// 検証内容: 楽観的更新パターンの動作確認
-      test('TC-049-012: shared_preferences.setString()が失敗した場合でも、AppSettingsの状態は更新されることを確認', () async {
+      test(
+          'TC-049-012: shared_preferences.setString()が失敗した場合でも、AppSettingsの状態は更新されることを確認',
+          () async {
         // 【テスト目的】: 楽観的更新パターンの動作確認 🟡
         // 【テスト内容】: shared_preferences保存失敗時でも状態更新は成功することを検証
         // 【期待される動作】: UI応答性を維持し、状態は更新される
@@ -191,7 +199,8 @@ void main() {
         final state = container.read(settingsNotifierProvider);
         final settings = state.requireValue;
 
-        expect(settings.ttsSpeed, TTSSpeed.fast); // 【確認内容】: 状態更新は成功していることを確認（楽観的更新） 🟡
+        expect(settings.ttsSpeed,
+            TTSSpeed.fast); // 【確認内容】: 状態更新は成功していることを確認（楽観的更新） 🟡
       });
 
       /// TC-049-013: TTS初期化前に速度を設定してもエラーにならない
@@ -199,7 +208,8 @@ void main() {
       /// 優先度: P1（高優先度）
       /// 関連要件: NFR-301, ERROR-1
       /// 検証内容: 初期化順序に依存しない堅牢な実装
-      test('TC-049-013: TTSServiceが初期化される前にsetTTSSpeed()を呼んでも、エラーが発生しないことを確認', () async {
+      test('TC-049-013: TTSServiceが初期化される前にsetTTSSpeed()を呼んでも、エラーが発生しないことを確認',
+          () async {
         // 【テスト目的】: 初期化タイミングに関わらず安全に動作することを確認 🟡
         // 【テスト内容】: TTS初期化前に速度設定を行ってもエラーが発生しないことを検証
         // 【期待される動作】: 速度値は保存され、TTS初期化後に適用される
@@ -234,7 +244,8 @@ void main() {
       /// 優先度: P1（高優先度）
       /// 関連要件: NFR-301, ERROR-2
       /// 検証内容: TTSエンジンエラーに対する堅牢性
-      test('TC-049-014: flutter_ttsの速度設定が失敗した場合でも、エラーログを出力してアプリは継続動作することを確認', () async {
+      test('TC-049-014: flutter_ttsの速度設定が失敗した場合でも、エラーログを出力してアプリは継続動作することを確認',
+          () async {
         // 【テスト目的】: TTSエンジンエラーに対する堅牢性を確認 🟡
         // 【テスト内容】: flutter_ttsの速度設定失敗時でもアプリが継続動作することを検証
         // 【期待される動作】: エラーログが出力され、状態には反映される

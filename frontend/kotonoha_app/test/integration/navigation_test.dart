@@ -230,7 +230,8 @@ void main() {
     // 対応要件: FR-003（主要ルート定義）
     // 対応受け入れ基準: AC-007
     // 青信号: 名前付きルーティング対応が要件として明示
-    testWidgets('goNamed("settings")で設定画面へナビゲートできる', (WidgetTester tester) async {
+    testWidgets('goNamed("settings")で設定画面へナビゲートできる',
+        (WidgetTester tester) async {
       // Given（準備フェーズ）
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
@@ -252,7 +253,8 @@ void main() {
     // 対応要件: FR-003（主要ルート定義）
     // 対応受け入れ基準: AC-007
     // 青信号: 名前付きルーティング対応が要件として明示
-    testWidgets('goNamed("history")で履歴画面へナビゲートできる', (WidgetTester tester) async {
+    testWidgets('goNamed("history")で履歴画面へナビゲートできる',
+        (WidgetTester tester) async {
       // Given（準備フェーズ）
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
@@ -274,7 +276,8 @@ void main() {
     // 対応要件: FR-003（主要ルート定義）
     // 対応受け入れ基準: AC-007
     // 青信号: 名前付きルーティング対応が要件として明示
-    testWidgets('goNamed("favorites")でお気に入り画面へナビゲートできる', (WidgetTester tester) async {
+    testWidgets('goNamed("favorites")でお気に入り画面へナビゲートできる',
+        (WidgetTester tester) async {
       // Given（準備フェーズ）
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();

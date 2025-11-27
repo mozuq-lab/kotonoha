@@ -64,10 +64,12 @@ void main() {
 
       // Then（検証フェーズ）
       // すべての設定が正しく保存されている
-      expect(loadedSettings.fontSize, FontSize.large, reason: 'フォントサイズが保存されている');
+      expect(loadedSettings.fontSize, FontSize.large,
+          reason: 'フォントサイズが保存されている');
       expect(loadedSettings.theme, AppTheme.dark, reason: 'テーマが保存されている');
       expect(loadedSettings.ttsSpeed, TtsSpeed.fast, reason: 'TTS速度が保存されている');
-      expect(loadedSettings.politenessLevel, PolitenessLevel.polite, reason: '丁寧さレベルが保存されている');
+      expect(loadedSettings.politenessLevel, PolitenessLevel.polite,
+          reason: '丁寧さレベルが保存されている');
 
       // データの整合性が保たれている（部分的な保存がない）
       // 例: 「fontSize: large、theme: light（デフォルト）」のような状態にならない
@@ -141,12 +143,14 @@ void main() {
 
       // Then（検証フェーズ）
       // 個別に保存した設定が正しく保存されている
-      expect(loadedSettings.fontSize, FontSize.large, reason: 'フォントサイズが保存されている');
+      expect(loadedSettings.fontSize, FontSize.large,
+          reason: 'フォントサイズが保存されている');
       expect(loadedSettings.theme, AppTheme.dark, reason: 'テーマが保存されている');
 
       // 他の設定はデフォルト値のまま
       expect(loadedSettings.ttsSpeed, TtsSpeed.normal, reason: 'TTS速度はデフォルト');
-      expect(loadedSettings.politenessLevel, PolitenessLevel.normal, reason: '丁寧さレベルはデフォルト');
+      expect(loadedSettings.politenessLevel, PolitenessLevel.normal,
+          reason: '丁寧さレベルはデフォルト');
     });
   });
 
@@ -171,13 +175,17 @@ void main() {
 
       // Then（検証フェーズ）
       // 無効な値はデフォルト値にフォールバックする
-      expect(loadedSettings.fontSize, FontSize.medium, reason: '無効なfontSizeはデフォルトに戻る');
+      expect(loadedSettings.fontSize, FontSize.medium,
+          reason: '無効なfontSizeはデフォルトに戻る');
       expect(loadedSettings.theme, AppTheme.light, reason: '無効なthemeはデフォルトに戻る');
-      expect(loadedSettings.ttsSpeed, TtsSpeed.normal, reason: '無効なttsSpeedはデフォルトに戻る');
-      expect(loadedSettings.politenessLevel, PolitenessLevel.normal, reason: '無効なpolitenessLevelはデフォルトに戻る');
+      expect(loadedSettings.ttsSpeed, TtsSpeed.normal,
+          reason: '無効なttsSpeedはデフォルトに戻る');
+      expect(loadedSettings.politenessLevel, PolitenessLevel.normal,
+          reason: '無効なpolitenessLevelはデフォルトに戻る');
 
       // アプリはクラッシュせず、安全にデフォルト値で動作する
-      expect(loadedSettings, isA<AppSettings>(), reason: 'AppSettingsオブジェクトが正常に生成される');
+      expect(loadedSettings, isA<AppSettings>(),
+          reason: 'AppSettingsオブジェクトが正常に生成される');
     });
   });
 }

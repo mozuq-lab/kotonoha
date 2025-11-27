@@ -54,7 +54,8 @@ void main() {
     /// 関連要件: CRUD-004, CRUD-005, AC-003
     /// 優先度: P0 必須
     testWidgets('TC-041-022: PhraseEditDialogが現在の定型文内容を初期表示する', (tester) async {
-      final phrase = createTestPhrase(id: '1', content: 'こんにちは', category: 'daily');
+      final phrase =
+          createTestPhrase(id: '1', content: 'こんにちは', category: 'daily');
 
       await tester.pumpWidget(
         MaterialApp(
@@ -99,7 +100,8 @@ void main() {
     /// 関連要件: AC-004
     /// 優先度: P0 必須
     testWidgets('TC-041-023: 定型文を編集して保存ボタンで更新できる', (tester) async {
-      final phrase = createTestPhrase(id: '1', content: 'こんにちは', category: 'daily');
+      final phrase =
+          createTestPhrase(id: '1', content: 'こんにちは', category: 'daily');
       PresetPhrase? savedPhrase;
 
       await tester.pumpWidget(
@@ -156,7 +158,8 @@ void main() {
     /// 関連要件: CRUD-004
     /// 優先度: P0 必須
     testWidgets('TC-041-024: カテゴリを変更して保存できる', (tester) async {
-      final phrase = createTestPhrase(id: '1', content: 'テスト', category: 'daily');
+      final phrase =
+          createTestPhrase(id: '1', content: 'テスト', category: 'daily');
       PresetPhrase? savedPhrase;
 
       await tester.pumpWidget(
@@ -195,7 +198,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // 【結果検証】: カテゴリが更新されていることを確認
-      expect(savedPhrase?.category, equals('health')); // 【確認内容】: コールバックのcategory引数 🔵
+      expect(savedPhrase?.category,
+          equals('health')); // 【確認内容】: コールバックのcategory引数 🔵
     });
 
     // =========================================================================
@@ -257,8 +261,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // 【結果検証】: updatedAtが更新されていることを確認
-      expect(savedPhrase?.updatedAt.isAfter(oldDate), isTrue); // 【確認内容】: updatedAtの値 🟡
-      expect(savedPhrase?.createdAt, equals(oldDate)); // 【確認内容】: createdAtは変更されない 🟡
+      expect(savedPhrase?.updatedAt.isAfter(oldDate),
+          isTrue); // 【確認内容】: updatedAtの値 🟡
+      expect(savedPhrase?.createdAt,
+          equals(oldDate)); // 【確認内容】: createdAtは変更されない 🟡
     });
   });
 
@@ -276,7 +282,8 @@ void main() {
     /// 関連要件: CRUD-105
     /// 優先度: P0 必須
     testWidgets('TC-041-026: 既存の内容を空にして保存しようとするとエラー表示', (tester) async {
-      final phrase = createTestPhrase(id: '1', content: 'テスト', category: 'daily');
+      final phrase =
+          createTestPhrase(id: '1', content: 'テスト', category: 'daily');
 
       await tester.pumpWidget(
         MaterialApp(
@@ -325,7 +332,8 @@ void main() {
     /// 関連要件: EDGE-014
     /// 優先度: P0 必須
     testWidgets('TC-041-027: 編集中にキャンセルすると変更が破棄される', (tester) async {
-      final phrase = createTestPhrase(id: '1', content: 'テスト', category: 'daily');
+      final phrase =
+          createTestPhrase(id: '1', content: 'テスト', category: 'daily');
       bool saveCallbackCalled = false;
 
       await tester.pumpWidget(
@@ -365,7 +373,8 @@ void main() {
 
       // 【結果検証】: コールバックが呼び出されていないことを確認
       expect(saveCallbackCalled, isFalse); // 【確認内容】: コールバック未発火 🔵
-      expect(find.byType(PhraseEditDialog), findsNothing); // 【確認内容】: ダイアログが閉じている 🔵
+      expect(find.byType(PhraseEditDialog),
+          findsNothing); // 【確認内容】: ダイアログが閉じている 🔵
     });
   });
 }

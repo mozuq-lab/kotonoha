@@ -149,7 +149,8 @@ class _StatusButtonState extends State<StatusButton> with DebounceMixin {
                 vertical: AppSizes.paddingXSmall,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                borderRadius:
+                    BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
             ),
             child: Text(

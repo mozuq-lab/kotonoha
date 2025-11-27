@@ -301,8 +301,7 @@ void main() {
 
         // Then: 「AI変換が利用可能です」メッセージが表示される
         expect(find.textContaining('AI変換が利用可能です'), findsOneWidget,
-            reason:
-                'オンライン復帰時は「AI変換が利用可能です」メッセージが表示される必要がある');
+            reason: 'オンライン復帰時は「AI変換が利用可能です」メッセージが表示される必要がある');
 
         // Cleanup
         container.dispose();
@@ -397,9 +396,8 @@ void main() {
                         key: const Key('ai_conversion_button'),
                         onPressed: isAIAvailable ? () {} : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isAIAvailable
-                              ? Colors.blue
-                              : Colors.grey,
+                          backgroundColor:
+                              isAIAvailable ? Colors.blue : Colors.grey,
                         ),
                         child: const Text('AI変換'),
                       );
@@ -444,16 +442,14 @@ void main() {
                     builder: (context, ref, child) {
                       // ref.watch()を使用してNetworkStateの変更を監視
                       final networkState = ref.watch(networkProvider);
-                      final isAIAvailable =
-                          networkState == NetworkState.online;
+                      final isAIAvailable = networkState == NetworkState.online;
 
                       return ElevatedButton(
                         key: const Key('ai_conversion_button'),
                         onPressed: isAIAvailable ? () {} : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isAIAvailable
-                              ? Colors.blue
-                              : Colors.grey,
+                          backgroundColor:
+                              isAIAvailable ? Colors.blue : Colors.grey,
                         ),
                         child: const Text('AI変換'),
                       );
@@ -499,16 +495,14 @@ void main() {
                     builder: (context, ref, child) {
                       // ref.watch()を使用してNetworkStateの変更を監視
                       final networkState = ref.watch(networkProvider);
-                      final isAIAvailable =
-                          networkState == NetworkState.online;
+                      final isAIAvailable = networkState == NetworkState.online;
 
                       return ElevatedButton(
                         key: const Key('ai_conversion_button'),
                         onPressed: isAIAvailable ? () {} : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isAIAvailable
-                              ? Colors.blue
-                              : Colors.grey,
+                          backgroundColor:
+                              isAIAvailable ? Colors.blue : Colors.grey,
                         ),
                         child: const Text('AI変換'),
                       );

@@ -35,7 +35,8 @@ void main() {
 
       // モックのデフォルト動作を設定
       when(() => mockFlutterTts.setLanguage(any())).thenAnswer((_) async => 1);
-      when(() => mockFlutterTts.setSpeechRate(any())).thenAnswer((_) async => 1);
+      when(() => mockFlutterTts.setSpeechRate(any()))
+          .thenAnswer((_) async => 1);
       when(() => mockFlutterTts.speak(any())).thenAnswer((_) async => 1);
       when(() => mockFlutterTts.stop()).thenAnswer((_) async => 1);
 
@@ -83,8 +84,10 @@ void main() {
 
         // Then: 【結果検証】: flutter_ttsのspeak()が呼ばれることを確認
         // 【期待値確認】: speak()が呼ばれ、状態がspeakingになる
-        verify(() => mockFlutterTts.speak(testText)).called(1); // 【確認内容】: 1000文字のテキストで読み上げが開始されたことを確認 🔵
-        expect(container.read(ttsProvider).state, TTSState.speaking); // 【確認内容】: 状態がspeakingになったことを確認 🔵
+        verify(() => mockFlutterTts.speak(testText))
+            .called(1); // 【確認内容】: 1000文字のテキストで読み上げが開始されたことを確認 🔵
+        expect(container.read(ttsProvider).state,
+            TTSState.speaking); // 【確認内容】: 状態がspeakingになったことを確認 🔵
       });
 
       /// TC-048-017: 特殊文字（絵文字、記号）が含まれるテキストの読み上げ
@@ -110,8 +113,10 @@ void main() {
 
         // Then: 【結果検証】: flutter_ttsのspeak()が呼ばれることを確認
         // 【期待値確認】: speak()が呼ばれ、状態がspeakingになる
-        verify(() => mockFlutterTts.speak(testText)).called(1); // 【確認内容】: 特殊文字を含むテキストで読み上げが開始されたことを確認 🟡
-        expect(container.read(ttsProvider).state, TTSState.speaking); // 【確認内容】: 状態がspeakingになったことを確認 🟡
+        verify(() => mockFlutterTts.speak(testText))
+            .called(1); // 【確認内容】: 特殊文字を含むテキストで読み上げが開始されたことを確認 🟡
+        expect(container.read(ttsProvider).state,
+            TTSState.speaking); // 【確認内容】: 状態がspeakingになったことを確認 🟡
       });
 
       /// TC-048-018: 読み上げ速度の境界値（0.7、1.0、1.3）が正しく設定される
@@ -138,21 +143,24 @@ void main() {
         await notifier.setSpeed(TTSSpeed.slow);
 
         // Then: 【結果検証】: setSpeechRate(0.7)が呼ばれることを確認
-        verify(() => mockFlutterTts.setSpeechRate(0.7)).called(1); // 【確認内容】: 速度0.7が設定されたことを確認 🔵
+        verify(() => mockFlutterTts.setSpeechRate(0.7))
+            .called(1); // 【確認内容】: 速度0.7が設定されたことを確認 🔵
 
         // When: 【実際の処理実行】: TTSSpeed.normalを設定
         // 【処理内容】: 速度を「普通」に設定
         await notifier.setSpeed(TTSSpeed.normal);
 
         // Then: 【結果検証】: setSpeechRate(1.0)が呼ばれることを確認
-        verify(() => mockFlutterTts.setSpeechRate(1.0)).called(1); // 【確認内容】: 速度1.0が設定されたことを確認 🔵
+        verify(() => mockFlutterTts.setSpeechRate(1.0))
+            .called(1); // 【確認内容】: 速度1.0が設定されたことを確認 🔵
 
         // When: 【実際の処理実行】: TTSSpeed.fastを設定
         // 【処理内容】: 速度を「速い」に設定
         await notifier.setSpeed(TTSSpeed.fast);
 
         // Then: 【結果検証】: setSpeechRate(1.3)が呼ばれることを確認
-        verify(() => mockFlutterTts.setSpeechRate(1.3)).called(1); // 【確認内容】: 速度1.3が設定されたことを確認 🔵
+        verify(() => mockFlutterTts.setSpeechRate(1.3))
+            .called(1); // 【確認内容】: 速度1.3が設定されたことを確認 🔵
       });
 
       /// TC-048-019: 読み上げ中に新しいテキストの読み上げを開始すると前の読み上げが停止する
@@ -178,9 +186,12 @@ void main() {
 
         // Then: 【結果検証】: stop()が呼ばれてから新しいspeak()が呼ばれることを確認
         // 【期待値確認】: stop()とspeak('新しいテキストB')が呼ばれる
-        verify(() => mockFlutterTts.stop()).called(1); // 【確認内容】: 前の読み上げが停止されたことを確認 🔵
-        verify(() => mockFlutterTts.speak('新しいテキストB')).called(1); // 【確認内容】: 新しいテキストで読み上げが開始されたことを確認 🔵
-        expect(container.read(ttsProvider).state, TTSState.speaking); // 【確認内容】: 状態がspeakingのまま維持されていることを確認 🔵
+        verify(() => mockFlutterTts.stop())
+            .called(1); // 【確認内容】: 前の読み上げが停止されたことを確認 🔵
+        verify(() => mockFlutterTts.speak('新しいテキストB'))
+            .called(1); // 【確認内容】: 新しいテキストで読み上げが開始されたことを確認 🔵
+        expect(container.read(ttsProvider).state,
+            TTSState.speaking); // 【確認内容】: 状態がspeakingのまま維持されていることを確認 🔵
       });
     });
 
@@ -204,7 +215,8 @@ void main() {
 
         // Then: 【結果検証】: 状態オブジェクトが取得できることを確認
         // 【期待値確認】: 状態オブジェクトがTTSServiceState型である
-        expect(state, isA<TTSServiceState>()); // 【確認内容】: 状態がTTSServiceState型であることを確認 🔵
+        expect(state,
+            isA<TTSServiceState>()); // 【確認内容】: 状態がTTSServiceState型であることを確認 🔵
         expect(state.state, TTSState.idle); // 【確認内容】: 初期状態がidleであることを確認 🔵
       });
 
@@ -238,7 +250,8 @@ void main() {
 
         // Then: 【結果検証】: 状態変更リストにspeakingが記録されることを確認
         // 【期待値確認】: idle→speakingの遷移が記録される
-        expect(stateChanges, contains(TTSState.speaking)); // 【確認内容】: 状態変更がリスナーに通知されたことを確認 🔵
+        expect(stateChanges,
+            contains(TTSState.speaking)); // 【確認内容】: 状態変更がリスナーに通知されたことを確認 🔵
       });
     });
 
@@ -261,14 +274,16 @@ void main() {
         final service = TTSService(tts: mockFlutterTts);
 
         // Then: 【結果検証】: モックが正しく注入されていることを確認
-        expect(mockFlutterTts, isA<MockFlutterTts>()); // 【確認内容】: モックがMockFlutterTts型であることを確認 🔵
+        expect(mockFlutterTts,
+            isA<MockFlutterTts>()); // 【確認内容】: モックがMockFlutterTts型であることを確認 🔵
 
         // When: 【実際の処理実行】: initialize()を呼び出す
         // 【処理内容】: 初期化を実行
         await service.initialize();
 
         // Then: 【結果検証】: モックのメソッドが呼び出されることを確認
-        verify(() => mockFlutterTts.setLanguage(any())).called(1); // 【確認内容】: モックのメソッドが呼び出されたことを確認 🔵
+        verify(() => mockFlutterTts.setLanguage(any()))
+            .called(1); // 【確認内容】: モックのメソッドが呼び出されたことを確認 🔵
       });
 
       /// TC-048-026: FlutterTtsの各メソッドが正しい順序で呼ばれる
@@ -327,7 +342,8 @@ void main() {
 
         // Then: 【結果検証】: エラーが発生しないことを確認
         // 【期待値確認】: 状態がstoppedのまま維持される
-        expect(container.read(ttsProvider).state, TTSState.stopped); // 【確認内容】: 状態がstoppedのまま維持されることを確認 🟡
+        expect(container.read(ttsProvider).state,
+            TTSState.stopped); // 【確認内容】: 状態がstoppedのまま維持されることを確認 🟡
       });
     });
 
@@ -356,7 +372,8 @@ void main() {
 
         // Then: 【結果検証】: FlutterTtsのstop()が呼ばれることを確認
         // 【期待値確認】: stop()が呼ばれ、リソースが解放される
-        verify(() => mockFlutterTts.stop()).called(1); // 【確認内容】: stop()が呼ばれたことを確認（FlutterTtsはdispose()の代わりにstop()を使用） 🔵
+        verify(() => mockFlutterTts.stop()).called(
+            1); // 【確認内容】: stop()が呼ばれたことを確認（FlutterTtsはdispose()の代わりにstop()を使用） 🔵
       });
     });
   });

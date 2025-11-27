@@ -267,8 +267,7 @@ void main() {
       ///
       /// 優先度: P2（中優先度）
       /// 検証内容: 最小の1文字でも正しく表示されること
-      testWidgets('1文字のテキストが正しく表示されることを確認',
-          (WidgetTester tester) async {
+      testWidgets('1文字のテキストが正しく表示されることを確認', (WidgetTester tester) async {
         // 【テスト目的】: 最小の1文字でも正しく表示されることを確認 🟡
         // 【テスト内容】: 1文字のテキストを渡し、表示を検証
         // 【期待される動作】: 1文字でも大きく中央に表示される
@@ -308,8 +307,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 検証内容: スクリーンリーダー対応
-      testWidgets('Semanticsラベルが設定されていることを確認',
-          (WidgetTester tester) async {
+      testWidgets('Semanticsラベルが設定されていることを確認', (WidgetTester tester) async {
         // 【テスト目的】: スクリーンリーダーで読み上げられることを確認 🟡
         // 【テスト内容】: Semanticsが適切に設定されていることを検証
         // 【期待される動作】: Semanticsラベルが設定されている
@@ -332,7 +330,8 @@ void main() {
 
         // Then: 【結果検証】: Semanticsが設定されていることを確認
         // 【期待値確認】: アクセシビリティ対応
-        final semantics = tester.getSemantics(find.byType(FaceToFaceTextDisplay));
+        final semantics =
+            tester.getSemantics(find.byType(FaceToFaceTextDisplay));
         expect(semantics, isNotNull); // 【確認内容】: Semanticsが設定されていることを確認 🟡
       });
     });

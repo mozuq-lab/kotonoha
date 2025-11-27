@@ -109,8 +109,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: FR-002
-      testWidgets('TC-SBs-005: オプションボタン追加時に最大12個まで表示される',
-          (tester) async {
+      testWidgets('TC-SBs-005: オプションボタン追加時に最大12個まで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -135,8 +134,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-007
-      testWidgets('TC-SBs-006: ボタンがグリッド形式（横4列）で配置される',
-          (tester) async {
+      testWidgets('TC-SBs-006: ボタンがグリッド形式（横4列）で配置される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -326,8 +324,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets(
-          'TC-SBs-013: 「トイレ」ボタンタップでonStatusコールバックがtoiletで呼ばれる',
+      testWidgets('TC-SBs-013: 「トイレ」ボタンタップでonStatusコールバックがtoiletで呼ばれる',
           (tester) async {
         StatusButtonType? tappedType;
 
@@ -423,8 +420,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets(
-          'TC-SBs-017: 「眠い」ボタンタップでonStatusコールバックがsleepyで呼ばれる',
+      testWidgets('TC-SBs-017: 「眠い」ボタンタップでonStatusコールバックがsleepyで呼ばれる',
           (tester) async {
         StatusButtonType? tappedType;
 
@@ -448,8 +444,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets(
-          'TC-SBs-018: 「助けて」ボタンタップでonStatusコールバックがhelpで呼ばれる',
+      testWidgets('TC-SBs-018: 「助けて」ボタンタップでonStatusコールバックがhelpで呼ばれる',
           (tester) async {
         StatusButtonType? tappedType;
 
@@ -473,8 +468,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets(
-          'TC-SBs-019: 「待って」ボタンタップでonStatusコールバックがwaitで呼ばれる',
+      testWidgets('TC-SBs-019: 「待って」ボタンタップでonStatusコールバックがwaitで呼ばれる',
           (tester) async {
         StatusButtonType? tappedType;
 
@@ -498,8 +492,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-101
-      testWidgets('TC-SBs-020: タップ時にonTTSSpeakコールバックが呼ばれる',
-          (tester) async {
+      testWidgets('TC-SBs-020: タップ時にonTTSSpeakコールバックが呼ばれる', (tester) async {
         String? spokenText;
 
         await tester.pumpWidget(
@@ -528,8 +521,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: EDGE-004
-      testWidgets('TC-EDGE-001: 同じボタンを連続タップした場合デバウンスが機能する',
-          (tester) async {
+      testWidgets('TC-EDGE-001: 同じボタンを連続タップした場合デバウンスが機能する', (tester) async {
         int callCount = 0;
 
         await tester.pumpWidget(
@@ -559,8 +551,7 @@ void main() {
       ///
       /// 優先度: P1（高優先度）
       /// 関連要件: EDGE-004
-      testWidgets('TC-EDGE-003: 連続タップ時にonStatusが1回だけ呼ばれる',
-          (tester) async {
+      testWidgets('TC-EDGE-003: 連続タップ時にonStatusが1回だけ呼ばれる', (tester) async {
         int callCount = 0;
 
         await tester.pumpWidget(
@@ -589,8 +580,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: EDGE-005, FR-201
-      testWidgets('TC-EDGE-004: 狭い画面幅（320px）でもボタンが44px以上を維持',
-          (tester) async {
+      testWidgets('TC-EDGE-004: 狭い画面幅（320px）でもボタンが44px以上を維持', (tester) async {
         // 狭い画面サイズを設定
         tester.view.physicalSize = const Size(320, 568);
         tester.view.devicePixelRatio = 1.0;

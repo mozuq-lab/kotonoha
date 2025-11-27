@@ -68,7 +68,8 @@ void main() {
         // 🔵 青信号: volume-warning-requirements.md「出力値」セクションに基づく
 
         // Given: 【テストデータ準備】: 音量0.5を返すように設定
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 0.5);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 0.5);
 
         // When: 【実際の処理実行】: isVolumeZeroを確認
         final result = await service.isVolumeZero();
@@ -89,7 +90,8 @@ void main() {
         // 🔵 青信号: volume-warning-requirements.md「出力値」セクションに基づく
 
         // Given: 【テストデータ準備】: 音量0.0を返すように設定
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 0.0);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 0.0);
 
         // When: 【実際の処理実行】: isVolumeZeroを確認
         final result = await service.isVolumeZero();
@@ -110,7 +112,8 @@ void main() {
         // 🔵 青信号: volume-warning-requirements.md「出力値」セクションに基づく
 
         // Given: 【テストデータ準備】: 音量0.75を返すように設定
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 0.75);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 0.75);
 
         // When: 【実際の処理実行】: getCurrentVolumeを呼び出す
         final result = await service.getCurrentVolume();
@@ -187,7 +190,8 @@ void main() {
         // 🔵 青信号: volume-warning-requirements.md「出力値」セクションに基づく
 
         // Given: 【テストデータ準備】: 音量0.0を返すように設定
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 0.0);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 0.0);
 
         // When: 【実際の処理実行】: isVolumeZeroを呼び出す
         final result = await service.isVolumeZero();
@@ -208,7 +212,8 @@ void main() {
         // 🔵 青信号: volume-warning-requirements.md「出力値」セクションに基づく
 
         // Given: 【テストデータ準備】: 音量0.01を返すように設定
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 0.01);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 0.01);
 
         // When: 【実際の処理実行】: isVolumeZeroを呼び出す
         final result = await service.isVolumeZero();
@@ -229,7 +234,8 @@ void main() {
         // 🔵 青信号: volume-warning-requirements.md「出力値」セクションに基づく
 
         // Given: 【テストデータ準備】: 音量1.0を返すように設定
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 1.0);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 1.0);
 
         // When: 【実際の処理実行】: isVolumeZeroを呼び出す
         final result = await service.isVolumeZero();
@@ -250,7 +256,8 @@ void main() {
         // 🟡 黄信号: volume-warning-requirements.md「パフォーマンス要件」セクションに基づく
 
         // Given: 【テストデータ準備】: モックは即座に応答
-        when(() => mockVolumeController.getVolume()).thenAnswer((_) async => 0.5);
+        when(() => mockVolumeController.getVolume())
+            .thenAnswer((_) async => 0.5);
 
         // When: 【実際の処理実行】: isVolumeZeroを呼び出し、実行時間を計測
         final stopwatch = Stopwatch()..start();

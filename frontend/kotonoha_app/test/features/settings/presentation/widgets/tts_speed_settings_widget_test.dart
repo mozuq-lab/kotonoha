@@ -32,7 +32,8 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-404
       /// 検証内容: 設定画面にTTS速度設定セクションが表示されること
-      testWidgets('TC-049-018: 設定画面にTTS速度設定セクションが表示されることを確認', (WidgetTester tester) async {
+      testWidgets('TC-049-018: 設定画面にTTS速度設定セクションが表示されることを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: 設定画面にTTS速度設定のウィジェットが含まれることを確認 🔵
         // 【テスト内容】: 設定画面をレンダリングし、TTS速度設定のUI要素が表示されることを検証
         // 【期待される動作】: 「読み上げ速度」ラベルと3つの選択肢（遅い/普通/速い）が表示される
@@ -56,12 +57,16 @@ void main() {
         // 【品質保証】: ユーザーが速度を選択できることを保証
 
         // 【検証項目】: 「読み上げ速度」ラベルが表示されていること
-        expect(find.text('読み上げ速度'), findsOneWidget); // 【確認内容】: セクションラベルが表示されていることを確認 🔵
+        expect(find.text('読み上げ速度'),
+            findsOneWidget); // 【確認内容】: セクションラベルが表示されていることを確認 🔵
 
         // 【検証項目】: 3つの選択肢（遅い/普通/速い）が表示されていること
-        expect(find.text('遅い'), findsOneWidget); // 【確認内容】: 「遅い」選択肢が表示されていることを確認 🔵
-        expect(find.text('普通'), findsOneWidget); // 【確認内容】: 「普通」選択肢が表示されていることを確認 🔵
-        expect(find.text('速い'), findsOneWidget); // 【確認内容】: 「速い」選択肢が表示されていることを確認 🔵
+        expect(
+            find.text('遅い'), findsOneWidget); // 【確認内容】: 「遅い」選択肢が表示されていることを確認 🔵
+        expect(
+            find.text('普通'), findsOneWidget); // 【確認内容】: 「普通」選択肢が表示されていることを確認 🔵
+        expect(
+            find.text('速い'), findsOneWidget); // 【確認内容】: 「速い」選択肢が表示されていることを確認 🔵
 
         // 【確認ポイント】: すべての選択肢が表示されている
         // 【確認ポイント】: アクセシビリティを考慮した表示（最小タップサイズ44px以上）
@@ -72,7 +77,8 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-404
       /// 検証内容: 現在のTTS速度設定がUIでハイライト表示されること
-      testWidgets('TC-049-019: 現在のTTS速度設定がUIでハイライト表示されることを確認', (WidgetTester tester) async {
+      testWidgets('TC-049-019: 現在のTTS速度設定がUIでハイライト表示されることを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: 現在の速度設定（fast）がUI上で選択状態として表示されることを確認 🔵
         // 【テスト内容】: 速度を「速い」に設定した状態で設定画面をレンダリングし、選択状態が視覚的に区別されることを検証
         // 【期待される動作】: 「速い」ボタンが視覚的に区別される（背景色、ボーダー等）
@@ -122,7 +128,8 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-2007, REQ-404
       /// 検証内容: ユーザー操作に対する応答
-      testWidgets('TC-049-020: ユーザーが「遅い」ボタンをタップすると、速度が変更されることを確認', (WidgetTester tester) async {
+      testWidgets('TC-049-020: ユーザーが「遅い」ボタンをタップすると、速度が変更されることを確認',
+          (WidgetTester tester) async {
         // 【テスト目的】: ユーザー操作（タップ）に対する応答を確認 🔵
         // 【テスト内容】: 「遅い」ボタンをタップし、AppSettings状態が更新されることを検証
         // 【期待される動作】: タップ後、AppSettings.ttsSpeedがTTSSpeed.slowに更新される
@@ -155,7 +162,8 @@ void main() {
 
         // 【検証項目】: AppSettings.ttsSpeedがslowに更新されたこと
         final state = container.read(settingsNotifierProvider);
-        expect(state.requireValue.ttsSpeed, TTSSpeed.slow); // 【確認内容】: 状態が更新されたことを確認 🔵
+        expect(state.requireValue.ttsSpeed,
+            TTSSpeed.slow); // 【確認内容】: 状態が更新されたことを確認 🔵
 
         // 【検証項目】: UIが更新され、「遅い」が選択状態になること
         // Note: 実装により検証方法が異なるため、ウィジェットの種類に応じて適切な検証を行う

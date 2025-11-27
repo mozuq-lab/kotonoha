@@ -144,7 +144,8 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
 
   /// 背景色を取得
   Color get _backgroundColor =>
-      widget.backgroundColor ?? QuickResponseButtonColors.getColor(widget.responseType);
+      widget.backgroundColor ??
+      QuickResponseButtonColors.getColor(widget.responseType);
 
   /// テキスト色を取得
   Color get _textColor => widget.textColor ?? Colors.white;
@@ -184,7 +185,8 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
                 vertical: AppSizes.paddingSmall,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                borderRadius:
+                    BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
             ),
             child: Text(
