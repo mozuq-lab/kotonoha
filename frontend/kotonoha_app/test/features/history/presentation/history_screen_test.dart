@@ -22,6 +22,8 @@ import 'package:kotonoha_app/features/history/providers/history_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
+import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
+import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 
 // =========================================================================
 // テストヘルパー関数
@@ -65,7 +67,53 @@ List<History> createTestHistories(int count, {HistoryType? type}) {
 class MockHistoryNotifier extends Mock implements HistoryNotifier {}
 
 /// TTSNotifierのモック
-class MockTTSNotifier extends Mock implements TTSNotifier {}
+class MockTTSNotifier extends Mock implements TTSNotifier {
+  MockTTSNotifier() {
+    // 初期状態を設定
+    _currentState = const TTSServiceState(
+      state: TTSState.idle,
+      currentSpeed: TTSSpeed.normal,
+    );
+  }
+
+  late TTSServiceState _currentState;
+  final List<void Function(TTSServiceState)> _listeners = [];
+
+  @override
+  TTSServiceState get state => _currentState;
+
+  @override
+  set state(TTSServiceState newState) {
+    _currentState = newState;
+    // リスナーに状態変更を通知
+    for (final listener in _listeners) {
+      listener(newState);
+    }
+  }
+
+  @override
+  void Function() addListener(
+    void Function(TTSServiceState value) listener, {
+    bool fireImmediately = false,
+  }) {
+    _listeners.add(listener);
+    if (fireImmediately) {
+      listener(_currentState);
+    }
+    return () {
+      _listeners.remove(listener);
+    };
+  }
+
+  void removeListener(void Function(TTSServiceState value) listener) {
+    _listeners.remove(listener);
+  }
+
+  @override
+  bool updateShouldNotify(TTSServiceState old, TTSServiceState current) {
+    return old != current;
+  }
+}
 
 // =========================================================================
 // テストヘルパー - プロバイダーオーバーライド
@@ -308,7 +356,7 @@ void main() {
         // 【期待される動作】: EmptyHistoryWidgetが表示される
 
         // Given: 空の履歴リストを準備する
-        final mockState = HistoryState(histories: []);
+        const mockState = HistoryState(histories: []);
 
         await tester.pumpWidget(
           ProviderScope(
@@ -363,6 +411,7 @@ void main() {
         // TTSプロバイダーをモック化する
         final mockTTSNotifier = MockTTSNotifier();
         when(() => mockTTSNotifier.speak(any())).thenAnswer((_) async {});
+        when(() => mockTTSNotifier.stop()).thenAnswer((_) async {});
 
         await tester.pumpWidget(
           ProviderScope(

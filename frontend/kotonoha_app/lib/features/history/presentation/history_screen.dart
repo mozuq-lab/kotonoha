@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/history_provider.dart';
 import '../../tts/providers/tts_provider.dart';
+import '../../tts/domain/models/tts_state.dart';
 import 'widgets/history_item_card.dart';
 import 'widgets/empty_history_widget.dart';
 import 'constants/history_ui_constants.dart';
@@ -42,6 +43,21 @@ class HistoryScreen extends ConsumerWidget {
     final historyState = ref.watch(historyProvider);
     final histories = historyState.histories;
 
+    // TTS状態を監視
+    final ttsState = ref.watch(ttsProvider);
+
+    // エラーメッセージを表示（FR-063-009）
+    ref.listen<TTSServiceState>(ttsProvider, (previous, next) {
+      if (next.state == TTSState.error && next.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(HistoryUIConstants.screenTitle),
@@ -65,8 +81,10 @@ class HistoryScreen extends ConsumerWidget {
                 return HistoryItemCard(
                   key: Key('history_item_card_${history.id}'),
                   history: history,
+                  isSpeaking: ttsState.state == TTSState.speaking,
                   onTap: () => _onHistoryTap(ref, history.content),
                   onDelete: () => _showDeleteDialog(context, ref, history.id),
+                  onStop: () => ref.read(ttsProvider.notifier).stop(),
                 );
               },
             ),
@@ -76,7 +94,13 @@ class HistoryScreen extends ConsumerWidget {
   /// 履歴項目タップ時の処理
   ///
   /// FR-061-006: 履歴項目をタップすると再読み上げを実行
+  /// FR-063-008: 空文字列の読み上げを防止
   void _onHistoryTap(WidgetRef ref, String content) {
+    // 空文字列の場合は読み上げを実行しない
+    if (content.isEmpty) {
+      return;
+    }
+
     final ttsNotifier = ref.read(ttsProvider.notifier);
     ttsNotifier.speak(content);
   }

@@ -63,7 +63,7 @@ void main() {
 
     testWidgets('TC-061-005: 空状態メッセージが表示される', (WidgetTester tester) async {
       // Given
-      final mockState = HistoryState(histories: []);
+      const mockState = HistoryState(histories: []);
 
       // When
       await tester.pumpWidget(

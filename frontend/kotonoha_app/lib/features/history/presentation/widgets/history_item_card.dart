@@ -32,6 +32,8 @@ class HistoryItemCard extends StatelessWidget {
     required this.history,
     required this.onTap,
     required this.onDelete,
+    this.isSpeaking = false,
+    this.onStop,
     super.key,
   });
 
@@ -43,6 +45,12 @@ class HistoryItemCard extends StatelessWidget {
 
   /// 削除ボタンタップ時のコールバック
   final VoidCallback onDelete;
+
+  /// 読み上げ中フラグ
+  final bool isSpeaking;
+
+  /// 停止ボタンタップ時のコールバック
+  final VoidCallback? onStop;
 
   /// 日時フォーマッター（パフォーマンス最適化のため静的）
   static final DateFormat _dateFormatter =
@@ -68,11 +76,15 @@ class HistoryItemCard extends StatelessWidget {
             padding: const EdgeInsets.all(HistoryUIConstants.cardPadding),
             child: Row(
               children: [
-                // 種類アイコン
+                // 種類アイコンまたは読み上げ中インジケーター
                 Icon(
-                  _getIconForType(history.type),
+                  isSpeaking
+                      ? Icons.volume_up
+                      : _getIconForType(history.type),
                   size: HistoryUIConstants.historyIconSize,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: isSpeaking
+                      ? Theme.of(context).colorScheme.secondary
+                      : Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: HistoryUIConstants.iconTextSpacing),
                 // テキストと日時
@@ -102,16 +114,27 @@ class HistoryItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // 削除ボタン
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: onDelete,
-                  tooltip: HistoryUIConstants.deleteTooltip,
-                  constraints: const BoxConstraints(
-                    minWidth: HistoryUIConstants.minTapTargetSize,
-                    minHeight: HistoryUIConstants.minTapTargetSize,
+                // 読み上げ中は停止ボタン、それ以外は削除ボタン
+                if (isSpeaking && onStop != null)
+                  IconButton(
+                    icon: const Icon(Icons.stop),
+                    onPressed: onStop,
+                    tooltip: '停止',
+                    constraints: const BoxConstraints(
+                      minWidth: HistoryUIConstants.minTapTargetSize,
+                      minHeight: HistoryUIConstants.minTapTargetSize,
+                    ),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: onDelete,
+                    tooltip: HistoryUIConstants.deleteTooltip,
+                    constraints: const BoxConstraints(
+                      minWidth: HistoryUIConstants.minTapTargetSize,
+                      minHeight: HistoryUIConstants.minTapTargetSize,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
