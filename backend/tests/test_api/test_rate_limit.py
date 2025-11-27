@@ -18,7 +18,6 @@ from httpx import ASGITransport, AsyncClient
 from app.core.rate_limit import limiter
 from app.main import app
 
-
 # AIクライアントモックのデフォルトレスポンス
 MOCK_CONVERT_RESPONSE = ("変換されたテキスト", 1000)
 MOCK_REGENERATE_RESPONSE = ("再変換されたテキスト", 1000)

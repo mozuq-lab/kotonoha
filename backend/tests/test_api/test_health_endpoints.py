@@ -15,10 +15,8 @@ from datetime import datetime
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.main import app
-
 
 # ================================================================================
 # カテゴリA: ルートエンドポイント（GET /）
@@ -283,7 +281,6 @@ async def test_health_endpoint_database_connection_failure_returns_500():
     # 【テストデータ準備】: データベース接続失敗を模擬
     # 【初期条件設定】: データベースサーバーがダウンしている、ネットワーク障害を想定
     # 🔵 testcases.md B-5（line 227-232）、NFR-304に基づく
-    from unittest.mock import AsyncMock, patch
 
     # 【モックの作成】: データベース接続失敗をシミュレート
     # 【実装方針】: get_db依存性をオーバーライドし、接続エラーを発生させる
@@ -304,8 +301,8 @@ async def test_health_endpoint_database_connection_failure_returns_500():
     # 【依存性オーバーライド】: get_db依存性をモックで置き換え
     # 【実装方針】: FastAPIの依存性注入をオーバーライドし、エラーを発生させる
     # 🟡 FastAPIの依存性オーバーライド機能を使用（妥当な推測）
-    from app.main import app as test_app
     from app.db.session import get_db
+    from app.main import app as test_app
 
     test_app.dependency_overrides[get_db] = mock_failing_db
 
@@ -393,8 +390,8 @@ async def test_health_endpoint_ai_provider_with_mock():
     async def mock_get_db():
         yield mock_session
 
-    from app.main import app as test_app
     from app.db.session import get_db
+    from app.main import app as test_app
 
     test_app.dependency_overrides[get_db] = mock_get_db
 
@@ -431,8 +428,8 @@ async def test_health_endpoint_ai_provider_openai_with_mock():
     async def mock_get_db():
         yield mock_session
 
-    from app.main import app as test_app
     from app.db.session import get_db
+    from app.main import app as test_app
 
     test_app.dependency_overrides[get_db] = mock_get_db
 
@@ -466,8 +463,8 @@ async def test_health_endpoint_ai_provider_none_with_mock():
     async def mock_get_db():
         yield mock_session
 
-    from app.main import app as test_app
     from app.db.session import get_db
+    from app.main import app as test_app
 
     test_app.dependency_overrides[get_db] = mock_get_db
 

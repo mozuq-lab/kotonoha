@@ -24,8 +24,8 @@ from app.core.exceptions import (
     global_exception_handler,
     validation_exception_handler,
 )
-from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.logging_config import get_logger, setup_logging
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.db.session import get_db
 from app.schemas.health import HealthErrorResponse, HealthResponse, RootResponse
 
@@ -184,4 +184,4 @@ async def health_check(
             version=settings.VERSION,
             timestamp=error_timestamp,
         )
-        raise HTTPException(status_code=500, detail=error_response.model_dump())
+        raise HTTPException(status_code=500, detail=error_response.model_dump()) from e

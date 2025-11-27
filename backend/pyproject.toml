@@ -7,9 +7,19 @@ select = ["E", "F", "I", "N", "W", "B", "ANN", "S", "C90"]
 ignore = ["S101"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "ANN"]
+# テストファイル: assert使用、型注釈省略、日本語docstringの行長、日本語関数名を許容
+"tests/*" = ["S101", "ANN", "E501", "N802"]
 # FastAPIのDepends()パターンはB008の例外として許容
 "app/api/*" = ["B008"]
+# main.py: FastAPIのDepends()パターン、日本語docstringの行長を許容
+"app/main.py" = ["B008", "E501"]
+# モデル・スキーマ: 日本語コメント・docstringの行長を許容
+"app/models/*" = ["E501"]
+"app/schemas/*" = ["E501"]
+# AIクライアント: 日本語文字列の行長を許容
+"app/utils/ai_client.py" = ["E501"]
+# Alembicマイグレーション: 自動生成コードの行長とimport順序を許容
+"alembic/*" = ["E501", "E402"]
 
 [tool.black]
 line-length = 100

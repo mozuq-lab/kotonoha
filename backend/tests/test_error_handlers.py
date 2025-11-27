@@ -181,8 +181,9 @@ async def test_global_exception_handler_response_format():
     【期待される動作】: 500エラーと統一フォーマットのレスポンスを返す
     🔵 TASK-0031に基づくテスト
     """
-    from app.core.exceptions import global_exception_handler
     from unittest.mock import MagicMock
+
+    from app.core.exceptions import global_exception_handler
 
     # モックリクエストを作成
     mock_request = MagicMock()
@@ -211,9 +212,11 @@ async def test_database_exception_handler_response_format():
     【期待される動作】: 503エラーと統一フォーマットのレスポンスを返す
     🔵 TASK-0031に基づくテスト
     """
-    from app.core.exceptions import database_exception_handler
-    from sqlalchemy.exc import SQLAlchemyError
     from unittest.mock import MagicMock
+
+    from sqlalchemy.exc import SQLAlchemyError
+
+    from app.core.exceptions import database_exception_handler
 
     # モックリクエストを作成
     mock_request = MagicMock()
@@ -242,9 +245,11 @@ async def test_validation_exception_handler_response_format():
     【期待される動作】: 422エラーと統一フォーマットのレスポンスを返す
     🔵 TASK-0031に基づくテスト
     """
-    from app.core.exceptions import validation_exception_handler
-    from fastapi.exceptions import RequestValidationError
     from unittest.mock import MagicMock
+
+    from fastapi.exceptions import RequestValidationError
+
+    from app.core.exceptions import validation_exception_handler
 
     # モックリクエストを作成
     mock_request = MagicMock()

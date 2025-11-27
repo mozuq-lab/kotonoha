@@ -36,8 +36,8 @@ import enum
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, Enum, Index, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID as PostgreSQL_UUID
+from sqlalchemy import DateTime, Enum, Index, Integer, Text
+from sqlalchemy.dialects.postgresql import UUID as PostgreSQL_UUID  # noqa: N811
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 

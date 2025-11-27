@@ -10,7 +10,6 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy import select
 
-
 # ================================================================================
 # カテゴリB: AI変換履歴モデルのインスタンス化テスト
 # ================================================================================
@@ -500,8 +499,9 @@ async def test_transaction_rollback(db_session):
     🔵 この内容は要件定義書（line 234-251, line 388-391, NFR-304）に基づく
     """
     # 【テストデータ準備】: トランザクション途中でエラーを発生させるためのデータ
-    from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
     from sqlalchemy.exc import IntegrityError
+
+    from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
 
     # 【実際の処理実行】: トランザクション内で正常レコードと不正レコードを追加
     # 【処理内容】: NOT NULL制約違反を発生させる

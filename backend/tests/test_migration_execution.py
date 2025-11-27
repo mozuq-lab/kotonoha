@@ -9,9 +9,7 @@ TASK-0009: 初回マイグレーション実行・DB接続テスト（Redフェ�
 """
 
 import pytest
-from sqlalchemy import text, inspect
-from sqlalchemy.exc import OperationalError
-
+from sqlalchemy import text
 
 # ================================================================================
 # カテゴリB: マイグレーション実行テスト

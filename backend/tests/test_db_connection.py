@@ -100,8 +100,9 @@ async def test_session_close():
     """
     # 【テストデータ準備】: セッションクローズのテスト
     # 【初期条件設定】: test_session_makerが利用可能な状態
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
     from tests.conftest import TEST_DATABASE_URL
-    from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
     # 【実際の処理実行】: セッションを作成し、クローズを確認
     # 【処理内容】: async withブロックでセッションを使用

@@ -11,7 +11,6 @@ TASK-0028: AI再変換エンドポイント実装（POST /api/v1/ai/regenerate�
 """
 
 import hashlib
-import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -25,7 +24,6 @@ from app.models.ai_conversion_logs import AIConversionLog
 from app.utils.exceptions import (
     AIConversionException,
     AIProviderException,
-    AIRateLimitException,
     AITimeoutException,
 )
 

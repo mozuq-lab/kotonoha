@@ -26,7 +26,7 @@ class Base:
     # 【実装方針】: 明示的に__tablename__を指定しない場合、自動的に生成される
     # 🔵 要件定義書（line 45-50）に基づく実装
     @declared_attr.directive
-    def __tablename__(cls) -> str:
+    def __tablename__(self) -> str:
         """
         【機能概要】: クラス名からテーブル名を自動生成
         【実装方針】: クラス名を小文字に変換（例: AIConversionHistory -> ai_conversion_history）
@@ -35,4 +35,4 @@ class Base:
         """
         # 【テーブル名変換ロジック】: クラス名をスネークケースに変換
         # 【注意】: 実際のテーブル名は各モデルクラスで明示的に指定することを推奨
-        return cls.__name__.lower()
+        return self.__name__.lower()

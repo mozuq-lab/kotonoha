@@ -31,8 +31,7 @@ void main() {
       // CircularProgressIndicator（無限アニメーション）を回避
       container = ProviderContainer(
         overrides: [
-          settingsNotifierProvider
-              .overrideWith(() => _MockSettingsNotifier()),
+          settingsNotifierProvider.overrideWith(() => _MockSettingsNotifier()),
         ],
       );
       router = container.read(routerProvider);
@@ -222,8 +221,7 @@ void main() {
       // CircularProgressIndicator（無限アニメーション）を回避
       container = ProviderContainer(
         overrides: [
-          settingsNotifierProvider
-              .overrideWith(() => _MockSettingsNotifier()),
+          settingsNotifierProvider.overrideWith(() => _MockSettingsNotifier()),
         ],
       );
       router = container.read(routerProvider);
@@ -349,8 +347,7 @@ void main() {
       // CircularProgressIndicator（無限アニメーション）を回避
       container = ProviderContainer(
         overrides: [
-          settingsNotifierProvider
-              .overrideWith(() => _MockSettingsNotifier()),
+          settingsNotifierProvider.overrideWith(() => _MockSettingsNotifier()),
         ],
       );
       router = container.read(routerProvider);

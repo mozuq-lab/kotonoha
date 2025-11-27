@@ -21,7 +21,7 @@ ALGORITHM = "HS256"
 
 
 def create_access_token(
-    subject: str | Any, expires_delta: timedelta | None = None
+    subject: str | Any, expires_delta: timedelta | None = None  # noqa: ANN401
 ) -> str:
     """
     【機能概要】: アクセストークンを生成する

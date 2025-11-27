@@ -12,7 +12,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-
 # ============================================================
 # 1. 単体テスト: AIClient初期化
 # ============================================================
@@ -181,7 +180,7 @@ class TestProviderSelection:
         """
         from app.utils.ai_client import AIClient
 
-        client = AIClient()
+        AIClient()
         # プロバイダー選択ロジックのテスト
         # 実装後にモックを使用して検証
 
@@ -195,7 +194,7 @@ class TestProviderSelection:
         """
         from app.utils.ai_client import AIClient
 
-        client = AIClient()
+        AIClient()
         # 実装後にモックを使用して検証
 
     @pytest.mark.asyncio
@@ -269,7 +268,7 @@ class TestClaudeAPIConversion:
         """
         from app.utils.ai_client import AIClient
 
-        client = AIClient()
+        AIClient()
         # 実装後にモックを使用して検証
 
     @pytest.mark.asyncio
@@ -374,9 +373,8 @@ class TestTimeoutHandling:
         🔵 NFR-002に基づく（30秒タイムアウト）
         """
         from app.utils.ai_client import AIClient
-        from app.utils.exceptions import AITimeoutException
 
-        client = AIClient()
+        AIClient()
         # タイムアウトのモック
         # 実装後に検証
 
@@ -390,9 +388,8 @@ class TestTimeoutHandling:
         🔵 NFR-002に基づく
         """
         from app.utils.ai_client import AIClient
-        from app.utils.exceptions import AITimeoutException
 
-        client = AIClient()
+        AIClient()
         # タイムアウトのモック
         # 実装後に検証
 
@@ -469,7 +466,7 @@ class TestProcessingTimeMeasurement:
         """
         from app.utils.ai_client import AIClient
 
-        client = AIClient()
+        AIClient()
         # モックを使用して処理時間測定をテスト
         # 実装後に検証
 

@@ -6,7 +6,7 @@
 """
 
 
-class AppException(Exception):
+class AppException(Exception):  # noqa: N818
     """
     【機能概要】: アプリケーション基底例外クラス
     【実装方針】: 全てのカスタム例外の基底クラス
@@ -16,7 +16,7 @@ class AppException(Exception):
         status_code: HTTPステータスコード
     """
 
-    def __init__(self, message: str, status_code: int = 400):
+    def __init__(self, message: str, status_code: int = 400) -> None:
         self.message = message
         self.status_code = status_code
         super().__init__(self.message)
@@ -30,7 +30,7 @@ class NetworkException(AppException):
     HTTPステータスコード: 503 Service Unavailable
     """
 
-    def __init__(self, message: str = "Network error occurred"):
+    def __init__(self, message: str = "Network error occurred") -> None:
         super().__init__(message, status_code=503)
 
 
@@ -42,7 +42,7 @@ class TimeoutException(AppException):
     HTTPステータスコード: 504 Gateway Timeout
     """
 
-    def __init__(self, message: str = "Request timeout"):
+    def __init__(self, message: str = "Request timeout") -> None:
         super().__init__(message, status_code=504)
 
 
@@ -54,7 +54,7 @@ class AIServiceException(AppException):
     HTTPステータスコード: 503 Service Unavailable
     """
 
-    def __init__(self, message: str = "AI service error"):
+    def __init__(self, message: str = "AI service error") -> None:
         super().__init__(message, status_code=503)
 
 
@@ -66,7 +66,7 @@ class RateLimitException(AppException):
     HTTPステータスコード: 429 Too Many Requests
     """
 
-    def __init__(self, message: str = "Rate limit exceeded"):
+    def __init__(self, message: str = "Rate limit exceeded") -> None:
         super().__init__(message, status_code=429)
 
 
@@ -84,7 +84,7 @@ class AIConversionException(AppException):
     🔵 REQ-901に基づく
     """
 
-    def __init__(self, message: str = "AI conversion error"):
+    def __init__(self, message: str = "AI conversion error") -> None:
         super().__init__(message, status_code=500)
 
 
@@ -97,7 +97,7 @@ class AITimeoutException(AIConversionException):
     🔵 NFR-002に基づく（30秒タイムアウト）
     """
 
-    def __init__(self, message: str = "AI API timeout"):
+    def __init__(self, message: str = "AI API timeout") -> None:
         # AIConversionExceptionを継承しつつ、status_codeを504に変更
         AppException.__init__(self, message, status_code=504)
 
@@ -111,7 +111,7 @@ class AIRateLimitException(AIConversionException):
     🔵 NFR-101に基づく
     """
 
-    def __init__(self, message: str = "AI API rate limit exceeded"):
+    def __init__(self, message: str = "AI API rate limit exceeded") -> None:
         AppException.__init__(self, message, status_code=429)
 
 
@@ -124,5 +124,5 @@ class AIProviderException(AIConversionException):
     🔵 EDGE-001に基づく
     """
 
-    def __init__(self, message: str = "AI provider error"):
+    def __init__(self, message: str = "AI provider error") -> None:
         AppException.__init__(self, message, status_code=503)

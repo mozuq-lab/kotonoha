@@ -77,7 +77,7 @@ class Settings(BaseSettings):
         )
 
     @property
-    def CORS_ORIGINS_LIST(self) -> list[str]:
+    def CORS_ORIGINS_LIST(self) -> list[str]:  # noqa: N802
         """CORS許可オリジンのリスト"""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 

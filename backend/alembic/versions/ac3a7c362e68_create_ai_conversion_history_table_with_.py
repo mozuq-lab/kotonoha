@@ -1,15 +1,15 @@
 """Create ai_conversion_history table with indexes
 
 Revision ID: ac3a7c362e68
-Revises: 
+Revises:
 Create Date: 2025-11-20 18:31:36.150310
 
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = 'ac3a7c362e68'

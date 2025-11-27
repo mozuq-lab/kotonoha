@@ -122,8 +122,8 @@ async def test_client_with_db(test_engine, test_session_maker, db_session):
     Yields:
         FastAPI: テスト用データベースに接続するFastAPIアプリケーション
     """
-    from app.main import app
     from app.api.deps import get_db_session
+    from app.main import app
 
     # 【依存性オーバーライド関数】: db_sessionと同じセッションを使用
     # テストで作成されたデータをdb_sessionから参照可能にする

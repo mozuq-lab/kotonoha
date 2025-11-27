@@ -85,7 +85,7 @@ async def test_invalid_politeness_level_enum_value():
     """
     # 【テストデータ準備】: 無効なEnum値を使用
     # 【初期条件設定】: PolitenessLevel Enumが正しく定義されている
-    from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
+    from app.models.ai_conversion_history import PolitenessLevel
 
     # 【実際の処理実行】: 不正なEnum値でインスタンスを作成
     # 【処理内容】: 'super_polite'はEnum定義に存在しないため、エラーが発生
@@ -94,7 +94,7 @@ async def test_invalid_politeness_level_enum_value():
         # 文字列をEnum値として直接設定することはできないため、
         # Enum値として存在しない値を使用しようとするとエラーが発生
         # ここではPolitenessLevel("super_polite")を試みる
-        invalid_level = PolitenessLevel("super_polite")
+        PolitenessLevel("super_polite")
 
     # 【結果検証】: ValueError or AttributeErrorが発生したことを確認
 
@@ -120,7 +120,7 @@ async def test_enum_string_assignment_prevention():
     # 【注意】: Pydantic等のバリデーションがある場合はエラーになる可能性
     # このテストは実装依存のため、実際の動作を確認する
     try:
-        record = AIConversionHistory(
+        AIConversionHistory(
             input_text="テスト",
             converted_text="テストです",
             politeness_level="normal",  # 文字列で代入
@@ -128,7 +128,6 @@ async def test_enum_string_assignment_prevention():
         # SQLAlchemyのEnumフィールドは文字列を受け入れる可能性があるため、
         # この場合はエラーが発生しないかもしれない
         # 【検証項目】: 文字列が受け入れられる場合は、Enum値に自動変換されるか
-        from app.models.ai_conversion_history import PolitenessLevel
         # 文字列が受け入れられた場合、Enum値に変換されているか確認
         # または、そのまま文字列として保存されるか確認
         # 🟡 実装依存の動作
@@ -276,7 +275,7 @@ async def test_insert_fails_with_invalid_enum_value_after_migration(db_session):
     # 【エラー処理の重要性】: Enum型バリデーションにより、不正な値の保存を防ぐ
     with pytest.raises((ValueError, AttributeError)) as exc_info:
         # 【実際の処理実行】: 存在しないEnum値を使用しようとする
-        invalid_level = PolitenessLevel("super_polite")
+        PolitenessLevel("super_polite")
 
     # 【結果検証】: ValueError or AttributeErrorが発生したことを確認
     # 【期待値確認】: 不正なEnum値がデータベースに保存されない

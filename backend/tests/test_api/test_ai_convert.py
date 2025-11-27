@@ -12,7 +12,7 @@ TASK-0027: AI変換エンドポイント実装（POST /api/v1/ai/convert）
 
 import hashlib
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -57,7 +57,7 @@ class TestAIConvertSuccess:
         request_body = {"input_text": "水 ぬるく", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("お水をぬるめでお願いします", 1500)
             )
@@ -90,7 +90,7 @@ class TestAIConvertSuccess:
         request_body = {"input_text": "ありがとう", "politeness_level": "casual"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("サンキュー", 1200)
             )
@@ -116,7 +116,7 @@ class TestAIConvertSuccess:
         request_body = {"input_text": "これ ほしい", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("これをいただけますか", 1300)
             )
@@ -141,7 +141,7 @@ class TestAIConvertSuccess:
         request_body = {"input_text": "ありがとう", "politeness_level": "polite"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("誠にありがとうございます", 1400)
             )
@@ -167,7 +167,7 @@ class TestAIConvertSuccess:
         request_body = {"input_text": "テスト入力", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("変換済みテスト", 1000)
             )
@@ -199,7 +199,7 @@ class TestAIConvertSuccess:
         request_body = {"input_text": "処理時間テスト", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("変換済み", 2500)
             )
@@ -229,7 +229,7 @@ class TestAIConvertSuccess:
         request_body = {"input_text": "  こんにちは  ", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("こんにちは", 800)
             )
@@ -265,7 +265,7 @@ class TestAIConvertValidation:
         request_body = {"input_text": "こん", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("こんにちは", 500)
             )
@@ -290,7 +290,7 @@ class TestAIConvertValidation:
         request_body = {"input_text": input_text, "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("変換済み" * 100, 3000)
             )
@@ -450,7 +450,7 @@ class TestAIConvertRateLimit:
         request_body = {"input_text": "レート制限テスト", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("変換済み", 1000)
             )
@@ -479,7 +479,7 @@ class TestAIConvertRateLimit:
         request_body = {"input_text": "レート制限テスト", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("変換済み", 1000)
             )
@@ -512,7 +512,7 @@ class TestAIConvertRateLimit:
         request_body = {"input_text": "レート制限テスト", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("変換済み", 1000)
             )
@@ -553,7 +553,7 @@ class TestAIConvertErrorHandling:
         request_body = {"input_text": "タイムアウトテスト", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 side_effect=AITimeoutException("AI API timeout")
             )
@@ -582,7 +582,7 @@ class TestAIConvertErrorHandling:
         request_body = {"input_text": "プロバイダーエラーテスト", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 side_effect=AIProviderException("Anthropic API key is not configured")
             )
@@ -611,7 +611,7 @@ class TestAIConvertErrorHandling:
         request_body = {"input_text": "一般エラーテスト", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 side_effect=AIConversionException("AI conversion failed")
             )
@@ -641,7 +641,7 @@ class TestAIConvertErrorHandling:
         request_body = {"input_text": "AIレート制限テスト", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 side_effect=AIRateLimitException("AI API rate limit exceeded")
             )
@@ -670,7 +670,7 @@ class TestAIConvertErrorHandling:
         request_body = {"input_text": "エラー形式テスト", "politeness_level": "normal"}
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock) as mock_log:
+             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
             mock_ai_client.convert_text = AsyncMock(
                 side_effect=AIConversionException("Test error")
             )

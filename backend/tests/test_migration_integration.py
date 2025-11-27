@@ -9,9 +9,7 @@ TASK-0009: 初回マイグレーション実行・DB接続テスト（Redフェ�
 
 from uuid import uuid4
 
-import pytest
 from sqlalchemy import select
-
 
 # ================================================================================
 # カテゴリF: CRUD操作テスト（統合テスト）
