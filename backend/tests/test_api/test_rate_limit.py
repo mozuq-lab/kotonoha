@@ -201,7 +201,7 @@ async def test_tc004_ip別制限テスト(mock_ai_client):
 
 
 @pytest.mark.asyncio
-async def test_tc005_非ai系エンドポイント除外テスト():
+async def test_tc005_非ai系エンドポイント除外テスト(test_client_with_db):
     """
     【テスト目的】: 非AI系エンドポイントはレート制限対象外であることを確認
     【テスト内容】: /healthなどのエンドポイントにレート制限が適用されないことを検証
@@ -217,7 +217,9 @@ async def test_tc005_非ai系エンドポイント除外テスト():
     # 【初期条件設定】: レート制限対象外のエンドポイントをテスト
     # 🔵 testcases.md TC-005（line 108-112）に基づく
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=test_client_with_db), base_url="http://test"
+    ) as client:
         # 【実際の処理実行】: 10回連続でヘルスチェックリクエスト
         # 【処理内容】: レート制限が適用されないことを確認
         responses = []

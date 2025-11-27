@@ -210,7 +210,7 @@ async def test_health_endpoint_returns_iso8601_timestamp(test_client_with_db):
 
 
 @pytest.mark.asyncio
-async def test_health_endpoint_responds_within_1_second():
+async def test_health_endpoint_responds_within_1_second(test_client_with_db):
     """
     【テスト目的】: ヘルスチェックエンドポイントが1秒以内に応答することを確認
     【テスト内容】: パフォーマンス要件（NFR-002）を満たすことを検証
@@ -225,7 +225,9 @@ async def test_health_endpoint_responds_within_1_second():
     # 【テストデータ準備】: HTTPクライアントと時間計測の準備
     # 【初期条件設定】: 軽量なSELECT 1クエリのみを実行するヘルスチェック
     # 🔵 testcases.md B-3（line 201-206）、NFR-002に基づく
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=test_client_with_db), base_url="http://test"
+    ) as client:
         # 【実際の処理実行】: レスポンス時間を計測
         # 【処理内容】: パフォーマンス要件を満たすかを検証
         start_time = time.perf_counter()
