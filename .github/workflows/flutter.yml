@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload Web build artifacts
         if: matrix.target == 'web'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: web-build
           path: ./frontend/kotonoha_app/build/web
@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload APK build artifacts
         if: matrix.target == 'apk'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: apk-build
           path: ./frontend/kotonoha_app/build/app/outputs/flutter-apk/*.apk
