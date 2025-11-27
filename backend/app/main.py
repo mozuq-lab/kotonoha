@@ -172,9 +172,7 @@ async def health_check(
         )
     except Exception as e:
         error_message = (
-            str(e)
-            if settings.ENVIRONMENT == "development"
-            else "Database connection failed"
+            str(e) if settings.ENVIRONMENT == "development" else "Database connection failed"
         )
         error_timestamp = get_current_timestamp()
         error_response = HealthErrorResponse(

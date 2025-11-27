@@ -764,8 +764,9 @@ class TestPrivacyProtection:
         assert secret_text not in log.input_text_hash, "Plain text should not be in hash"
 
         # モデルにinput_text属性が存在しない（またはNone）
-        assert not hasattr(log, "input_text") or getattr(log, "input_text", None) is None, \
-            "Model should not have input_text attribute"
+        assert (
+            not hasattr(log, "input_text") or getattr(log, "input_text", None) is None
+        ), "Model should not have input_text attribute"
 
         # ハッシュ値は64文字の16進数
         assert len(log.input_text_hash) == 64
@@ -956,6 +957,7 @@ class TestModelRegistration:
 
         # __all__の確認（オプション）
         from app.db import base
+
         if hasattr(base, "__all__"):
             assert "AIConversionLog" in base.__all__
             assert "ErrorLog" in base.__all__

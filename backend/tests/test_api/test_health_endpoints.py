@@ -39,9 +39,7 @@ async def test_root_endpoint_returns_success():
     # 【テストデータ準備】: HTTPクライアントを作成し、FastAPIアプリケーションにアクセス
     # 【初期条件設定】: ルートエンドポイントへの最も基本的なリクエストを送信
     # 🔵 testcases.md A-1（line 76-77）に基づく
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: GET /にリクエストを送信
         # 【処理内容】: アプリケーション稼働確認のための最も基本的なエンドポイントを呼び出す
         response = await client.get("/")
@@ -55,7 +53,9 @@ async def test_root_endpoint_returns_success():
         response_json = response.json()
         assert "message" in response_json  # 【確認内容】: messageフィールドが存在する 🔵
         assert "version" in response_json  # 【確認内容】: versionフィールドが存在する 🔵
-        assert response_json["message"] == "kotonoha API is running"  # 【確認内容】: メッセージ内容が正しい 🔵
+        assert (
+            response_json["message"] == "kotonoha API is running"
+        )  # 【確認内容】: メッセージ内容が正しい 🔵
         assert response_json["version"] == "1.0.0"  # 【確認内容】: バージョン情報が正しい 🔵
 
 
@@ -75,9 +75,7 @@ async def test_root_endpoint_sets_correct_content_type():
     # 【テストデータ準備】: HTTPクライアントを作成
     # 【初期条件設定】: APIクライアントがレスポンス形式を判断するための情報を確認
     # 🔵 testcases.md A-2（line 93-96）に基づく
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: GET /にリクエストを送信
         # 【処理内容】: レスポンスヘッダーの内容を確認するためのリクエスト
         response = await client.get("/")
@@ -85,7 +83,9 @@ async def test_root_endpoint_sets_correct_content_type():
         # 【結果検証】: Content-Typeヘッダーが正しく設定されていることを確認
         # 【期待値確認】: JSON APIの標準仕様（NFR-504）に準拠
         assert response.status_code == 200  # 【確認内容】: HTTPステータスコード200 🔵
-        assert "application/json" in response.headers["content-type"]  # 【確認内容】: Content-Typeヘッダーがapplication/jsonを含む 🔵
+        assert (
+            "application/json" in response.headers["content-type"]
+        )  # 【確認内容】: Content-Typeヘッダーがapplication/jsonを含む 🔵
 
 
 @pytest.mark.asyncio
@@ -104,9 +104,7 @@ async def test_root_endpoint_responds_within_100ms():
     # 【テストデータ準備】: HTTPクライアントと時間計測の準備
     # 【初期条件設定】: データベースアクセスなしの最軽量エンドポイントをテスト
     # 🔵 testcases.md A-3（line 105-109）、NFR-003に基づく
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: レスポンス時間を計測
         # 【処理内容】: パフォーマンス要件を満たすかを検証
         start_time = time.perf_counter()
@@ -157,9 +155,15 @@ async def test_health_endpoint_returns_database_connected(test_client_with_db):
         # 【期待値確認】: status, database, ai_provider, version, timestampフィールドを含むことを検証
         response_json = response.json()
         assert response_json["status"] == "ok"  # 【確認内容】: statusフィールドが"ok" 🔵
-        assert response_json["database"] == "connected"  # 【確認内容】: databaseフィールドが"connected" 🔵
+        assert (
+            response_json["database"] == "connected"
+        )  # 【確認内容】: databaseフィールドが"connected" 🔵
         assert "ai_provider" in response_json  # 【確認内容】: ai_providerフィールドが存在する 🔵
-        assert response_json["ai_provider"] in ["anthropic", "openai", "none"]  # 【確認内容】: ai_providerが有効な値 🔵
+        assert response_json["ai_provider"] in [
+            "anthropic",
+            "openai",
+            "none",
+        ]  # 【確認内容】: ai_providerが有効な値 🔵
         assert response_json["version"] == "1.0.0"  # 【確認内容】: versionフィールドが"1.0.0" 🔵
         assert "timestamp" in response_json  # 【確認内容】: timestampフィールドが存在する 🔵
 
@@ -200,7 +204,9 @@ async def test_health_endpoint_returns_iso8601_timestamp(test_client_with_db):
             parsed_time = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
             assert parsed_time is not None  # 【確認内容】: ISO 8601形式でパース可能 🔵
         except ValueError:
-            pytest.fail("Timestamp is not in ISO 8601 format")  # 【エラー処理】: パース失敗時はテスト失敗 🔵
+            pytest.fail(
+                "Timestamp is not in ISO 8601 format"
+            )  # 【エラー処理】: パース失敗時はテスト失敗 🔵
 
 
 @pytest.mark.asyncio
@@ -219,9 +225,7 @@ async def test_health_endpoint_responds_within_1_second():
     # 【テストデータ準備】: HTTPクライアントと時間計測の準備
     # 【初期条件設定】: 軽量なSELECT 1クエリのみを実行するヘルスチェック
     # 🔵 testcases.md B-3（line 201-206）、NFR-002に基づく
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: レスポンス時間を計測
         # 【処理内容】: パフォーマンス要件を満たすかを検証
         start_time = time.perf_counter()
@@ -287,6 +291,7 @@ async def test_health_endpoint_database_connection_failure_returns_500():
     # 🔵 testcases.md B-5（line 227-246）に基づく
     class MockFailingSession:
         """データベース接続失敗をシミュレートするモックセッション"""
+
         async def execute(self, *args, **kwargs):
             """executeメソッドでエラーを発生させる"""
             # 【エラー発生】: データベース接続エラーを発生させる
@@ -321,7 +326,9 @@ async def test_health_endpoint_database_connection_failure_returns_500():
             assert "detail" in response_json  # 【確認内容】: detailフィールドが存在する 🔵
             detail = response_json["detail"]
             assert detail["status"] == "error"  # 【確認内容】: statusフィールドが"error" 🔵
-            assert detail["database"] == "disconnected"  # 【確認内容】: databaseフィールドが"disconnected" 🔵
+            assert (
+                detail["database"] == "disconnected"
+            )  # 【確認内容】: databaseフィールドが"disconnected" 🔵
             assert "error" in detail  # 【確認内容】: errorフィールドが存在する 🔵
     finally:
         # 【テスト後処理】: 依存性オーバーライドをクリア
@@ -358,7 +365,9 @@ async def test_health_endpoint_handles_multiple_requests(test_client_with_db):
         # 【結果検証】: 全てのリクエストが正常に応答することを確認
         # 【期待値確認】: NFR-005要件（同時利用者数10人以下）を満たすことを検証
         for response in responses:
-            assert response.status_code == 200  # 【確認内容】: 全リクエストがHTTPステータスコード200 🔵
+            assert (
+                response.status_code == 200
+            )  # 【確認内容】: 全リクエストがHTTPステータスコード200 🔵
             response_json = response.json()
             assert response_json["status"] == "ok"  # 【確認内容】: 全リクエストのstatusが"ok" 🔵
 

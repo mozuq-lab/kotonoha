@@ -58,8 +58,10 @@ class TestAIRegenerateSuccess:
             "previous_result": "お水をぬるめでお願いいたします",
         }
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             # 前回と異なる結果を返すようにモック設定
             mock_ai_client.regenerate_text = AsyncMock(
                 return_value=("ぬるいお水をいただけますでしょうか", 1800)
@@ -99,11 +101,11 @@ class TestAIRegenerateSuccess:
             "previous_result": "サンキュー",
         }
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.regenerate_text = AsyncMock(
-                return_value=("ありがとね", 1200)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.regenerate_text = AsyncMock(return_value=("ありがとね", 1200))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -129,11 +131,11 @@ class TestAIRegenerateSuccess:
             "previous_result": "これをいただけますか",
         }
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.regenerate_text = AsyncMock(
-                return_value=("これがほしいです", 1300)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.regenerate_text = AsyncMock(return_value=("これがほしいです", 1300))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -158,8 +160,10 @@ class TestAIRegenerateSuccess:
             "previous_result": "誠にありがとうございます",
         }
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             mock_ai_client.regenerate_text = AsyncMock(
                 return_value=("心より感謝申し上げます", 1400)
             )
@@ -187,11 +191,11 @@ class TestAIRegenerateSuccess:
             "previous_result": "変換済みテスト",
         }
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.regenerate_text = AsyncMock(
-                return_value=("新しい変換テスト", 1000)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.regenerate_text = AsyncMock(return_value=("新しい変換テスト", 1000))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -227,9 +231,7 @@ class TestAIRegenerateValidation:
             "previous_result": "前回結果",
         }
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/regenerate", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -248,9 +250,7 @@ class TestAIRegenerateValidation:
             "previous_result": "",
         }
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/regenerate", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -271,9 +271,7 @@ class TestAIRegenerateValidation:
             "previous_result": "前回結果",
         }
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/regenerate", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -292,9 +290,7 @@ class TestAIRegenerateValidation:
             "previous_result": "前回結果",
         }
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/regenerate", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -312,9 +308,7 @@ class TestAIRegenerateValidation:
             "politeness_level": "normal",
         }
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/regenerate", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -342,11 +336,11 @@ class TestAIRegenerateRateLimit:
             "previous_result": "前回結果",
         }
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.regenerate_text = AsyncMock(
-                return_value=("変換済み", 1000)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.regenerate_text = AsyncMock(return_value=("変換済み", 1000))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -383,8 +377,10 @@ class TestAIRegenerateErrorHandling:
             "previous_result": "前回結果",
         }
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             mock_ai_client.regenerate_text = AsyncMock(
                 side_effect=AITimeoutException("AI API timeout")
             )
@@ -415,8 +411,10 @@ class TestAIRegenerateErrorHandling:
             "previous_result": "前回結果",
         }
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             mock_ai_client.regenerate_text = AsyncMock(
                 side_effect=AIProviderException("Anthropic API key is not configured")
             )
@@ -447,8 +445,10 @@ class TestAIRegenerateErrorHandling:
             "previous_result": "前回結果",
         }
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             mock_ai_client.regenerate_text = AsyncMock(
                 side_effect=AIConversionException("AI conversion failed")
             )
@@ -498,9 +498,7 @@ class TestAIRegenerateLogging:
         count_before = len(logs_before)
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client:
-            mock_ai_client.regenerate_text = AsyncMock(
-                return_value=("再変換ログテスト出力", 1500)
-            )
+            mock_ai_client.regenerate_text = AsyncMock(return_value=("再変換ログテスト出力", 1500))
 
             async with AsyncClient(
                 transport=ASGITransport(app=test_client_with_db), base_url="http://test"

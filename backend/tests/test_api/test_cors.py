@@ -35,9 +35,7 @@ async def test_cors_allows_localhost_3000_origin():
     # 【テストデータ準備】: HTTPクライアントを作成し、Originヘッダーを設定
     # 【初期条件設定】: Flutter Webアプリからのアクセス（開発環境）を想定
     # 🔵 testcases.md C-1（line 348-352）に基づく
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: Originヘッダーを含むリクエストを送信
         # 【処理内容】: Flutter Webアプリからの安全なアクセスを可能にするCORS設定を検証
         response = await client.get("/", headers={"Origin": "http://localhost:3000"})
@@ -49,8 +47,12 @@ async def test_cors_allows_localhost_3000_origin():
         # 【結果検証】: Access-Control-Allow-Originヘッダーが設定されていることを確認
         # 【期待値確認】: CORS設定が正しく機能し、許可されたオリジンを返すことを検証
         # NOTE: 現在の実装にはCORS設定がないため、このテストは失敗する
-        assert "access-control-allow-origin" in response.headers  # 【確認内容】: CORSヘッダーが存在する 🔵
-        assert response.headers["access-control-allow-origin"] == "http://localhost:3000"  # 【確認内容】: 許可されたオリジンが返される 🔵
+        assert (
+            "access-control-allow-origin" in response.headers
+        )  # 【確認内容】: CORSヘッダーが存在する 🔵
+        assert (
+            response.headers["access-control-allow-origin"] == "http://localhost:3000"
+        )  # 【確認内容】: 許可されたオリジンが返される 🔵
 
 
 @pytest.mark.asyncio
@@ -69,9 +71,7 @@ async def test_cors_handles_preflight_request():
     # 【テストデータ準備】: HTTPクライアントを作成し、プリフライトリクエストを準備
     # 【初期条件設定】: ブラウザがクロスオリジンリクエスト前に送信するプリフライトリクエストを想定
     # 🔵 testcases.md C-2（line 361-370）に基づく
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: OPTIONSメソッドでプリフライトリクエストを送信
         # 【処理内容】: ブラウザのプリフライトリクエストを正しく処理するかを検証
         response = await client.options(
@@ -90,9 +90,15 @@ async def test_cors_handles_preflight_request():
 
         # 【結果検証】: CORSヘッダーが設定されていることを確認
         # 【期待値確認】: プリフライトリクエストに対する適切なCORSヘッダーを検証
-        assert "access-control-allow-origin" in response.headers  # 【確認内容】: Access-Control-Allow-Originヘッダーが存在する 🔵
-        assert "access-control-allow-methods" in response.headers  # 【確認内容】: Access-Control-Allow-Methodsヘッダーが存在する 🔵
-        assert "access-control-allow-headers" in response.headers  # 【確認内容】: Access-Control-Allow-Headersヘッダーが存在する 🔵
+        assert (
+            "access-control-allow-origin" in response.headers
+        )  # 【確認内容】: Access-Control-Allow-Originヘッダーが存在する 🔵
+        assert (
+            "access-control-allow-methods" in response.headers
+        )  # 【確認内容】: Access-Control-Allow-Methodsヘッダーが存在する 🔵
+        assert (
+            "access-control-allow-headers" in response.headers
+        )  # 【確認内容】: Access-Control-Allow-Headersヘッダーが存在する 🔵
 
 
 @pytest.mark.asyncio
@@ -111,9 +117,7 @@ async def test_cors_allows_multiple_origins():
     # 【テストデータ準備】: HTTPクライアントを作成し、別のオリジンを設定
     # 【初期条件設定】: Vite開発サーバーからのアクセス（Flutter Webの別ポート）を想定
     # 🔵 testcases.md C-3（line 378-383）に基づく
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 別のオリジンからのリクエストを送信
         # 【処理内容】: 複数の開発環境ポートからのアクセスを許可することを検証
         response = await client.get("/", headers={"Origin": "http://localhost:5173"})
@@ -125,8 +129,12 @@ async def test_cors_allows_multiple_origins():
         # 【結果検証】: Access-Control-Allow-Originヘッダーが設定されていることを確認
         # 【期待値確認】: 複数の許可されたオリジンに対応することを検証
         # NOTE: 現在の実装にはCORS設定がないため、このテストは失敗する
-        assert "access-control-allow-origin" in response.headers  # 【確認内容】: CORSヘッダーが存在する 🔵
-        assert response.headers["access-control-allow-origin"] == "http://localhost:5173"  # 【確認内容】: 許可されたオリジンが返される 🔵
+        assert (
+            "access-control-allow-origin" in response.headers
+        )  # 【確認内容】: CORSヘッダーが存在する 🔵
+        assert (
+            response.headers["access-control-allow-origin"] == "http://localhost:5173"
+        )  # 【確認内容】: 許可されたオリジンが返される 🔵
 
 
 @pytest.mark.asyncio
@@ -145,9 +153,7 @@ async def test_cors_rejects_unauthorized_origin():
     # 【テストデータ準備】: HTTPクライアントを作成し、不正なオリジンを設定
     # 【初期条件設定】: 許可リストに含まれていないオリジンからのアクセスを想定
     # 🔵 testcases.md C-4（line 391-398）、NFR-104に基づく
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 不正なオリジンからのリクエストを送信
         # 【処理内容】: セキュリティ要件（NFR-104）を満たし、不正なオリジンを拒否することを検証
         response = await client.get("/", headers={"Origin": "http://malicious-site.com"})
@@ -159,7 +165,9 @@ async def test_cors_rejects_unauthorized_origin():
         # または、FastAPIのCORSMiddlewareが403 Forbiddenを返す可能性がある
         if "access-control-allow-origin" in response.headers:
             # CORSヘッダーが設定されている場合、不正なオリジンでないことを確認
-            assert response.headers["access-control-allow-origin"] != "http://malicious-site.com"  # 【確認内容】: 不正なオリジンが許可されていない 🔵
+            assert (
+                response.headers["access-control-allow-origin"] != "http://malicious-site.com"
+            )  # 【確認内容】: 不正なオリジンが許可されていない 🔵
         else:
             # CORSヘッダーが設定されていない場合は正常（ブラウザがCORSエラーを表示）
             assert True  # 【確認内容】: CORSヘッダーが設定されていない 🔵
@@ -181,9 +189,7 @@ async def test_cors_handles_requests_without_origin_header():
     # 【テストデータ準備】: HTTPクライアントを作成し、Originヘッダーなしでリクエスト
     # 【初期条件設定】: curlコマンド、Postman、サーバー間通信を想定
     # 🟡 testcases.md C-5（line 408-413）に基づく
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: Originヘッダーなしでリクエストを送信
         # 【処理内容】: Originヘッダーの有無に関わらずサービス継続することを検証
         response = await client.get("/")

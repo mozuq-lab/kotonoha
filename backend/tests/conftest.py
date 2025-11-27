@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 # 🔵 NFR-105（環境変数をアプリ内にハードコードせず、安全に管理）に基づく
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
-    "postgresql+asyncpg://kotonoha_user:your_secure_password_here@localhost:5432/kotonoha_test"
+    "postgresql+asyncpg://kotonoha_user:your_secure_password_here@localhost:5432/kotonoha_test",
 )
 
 

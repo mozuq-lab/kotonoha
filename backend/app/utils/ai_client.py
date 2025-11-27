@@ -182,15 +182,11 @@ class AIClient:
 
             # タイムアウト判定
             if "timeout" in error_message.lower():
-                raise AITimeoutException(
-                    f"Claude API timeout: {error_message}"
-                ) from e
+                raise AITimeoutException(f"Claude API timeout: {error_message}") from e
 
             # レート制限判定
             if "rate" in error_message.lower() or "429" in error_message:
-                raise AIRateLimitException(
-                    f"Claude API rate limit: {error_message}"
-                ) from e
+                raise AIRateLimitException(f"Claude API rate limit: {error_message}") from e
 
             # その他のエラー
             raise AIConversionException(f"Claude API error: {error_message}") from e
@@ -266,15 +262,11 @@ class AIClient:
 
             # タイムアウト判定
             if "timeout" in error_message.lower():
-                raise AITimeoutException(
-                    f"OpenAI API timeout: {error_message}"
-                ) from e
+                raise AITimeoutException(f"OpenAI API timeout: {error_message}") from e
 
             # レート制限判定
             if "rate" in error_message.lower() or "429" in error_message:
-                raise AIRateLimitException(
-                    f"OpenAI API rate limit: {error_message}"
-                ) from e
+                raise AIRateLimitException(f"OpenAI API rate limit: {error_message}") from e
 
             # その他のエラー
             raise AIConversionException(f"OpenAI API error: {error_message}") from e
@@ -315,7 +307,6 @@ class AIClient:
             return await self.convert_text_openai(input_text, politeness_level)
         else:
             raise AIProviderException(f"Unknown AI provider: {provider}")
-
 
     async def regenerate_text(
         self,
@@ -415,15 +406,11 @@ class AIClient:
 
             # タイムアウト判定
             if "timeout" in error_message.lower():
-                raise AITimeoutException(
-                    f"AI API timeout: {error_message}"
-                ) from e
+                raise AITimeoutException(f"AI API timeout: {error_message}") from e
 
             # レート制限判定
             if "rate" in error_message.lower() or "429" in error_message:
-                raise AIRateLimitException(
-                    f"AI API rate limit: {error_message}"
-                ) from e
+                raise AIRateLimitException(f"AI API rate limit: {error_message}") from e
 
             # その他のエラー
             raise AIConversionException(f"AI API error: {error_message}") from e

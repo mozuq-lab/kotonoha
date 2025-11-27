@@ -54,9 +54,7 @@ limiter = Limiter(
 )
 
 
-async def rate_limit_exceeded_handler(
-    request: Request, exc: RateLimitExceeded
-) -> JSONResponse:
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
     """
     【機能概要】: レート制限超過時のエラーハンドラー
     【実装方針】: 統一されたエラーレスポンス形式で429エラーを返す

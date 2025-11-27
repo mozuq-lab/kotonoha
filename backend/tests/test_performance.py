@@ -35,6 +35,7 @@ async def test_ai_conversion_response_time_with_mock():
     【期待される動作】: 平均応答時間が3秒以内
     🔵 NFR-002に基づくパフォーマンステスト
     """
+
     async def mock_convert_text_with_delay(input_text: str, politeness_level: str):
         """実際のAI呼び出しをシミュレート（100ms遅延）"""
         await asyncio.sleep(0.1)  # 100ms遅延をシミュレート
@@ -191,8 +192,15 @@ async def test_sequential_requests_response_consistency():
             data = response.json()
 
             # レスポンスが正しい構造を持つことを確認
-            required_fields = {"converted_text", "original_text", "politeness_level", "processing_time_ms"}
-            assert required_fields.issubset(data.keys()), f"Missing fields in response: {data.keys()}"
+            required_fields = {
+                "converted_text",
+                "original_text",
+                "politeness_level",
+                "processing_time_ms",
+            }
+            assert required_fields.issubset(
+                data.keys()
+            ), f"Missing fields in response: {data.keys()}"
 
 
 @pytest.mark.asyncio

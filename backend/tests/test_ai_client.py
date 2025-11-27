@@ -243,9 +243,7 @@ class TestClaudeAPIConversion:
         mock_response = MagicMock()
         mock_response.content = [MagicMock(text="ありがとうございます")]
 
-        with patch.object(
-            client, "anthropic_client", create=True
-        ) as mock_anthropic:
+        with patch.object(client, "anthropic_client", create=True) as mock_anthropic:
             mock_anthropic.messages = MagicMock()
             mock_anthropic.messages.create = AsyncMock(return_value=mock_response)
 
@@ -318,9 +316,7 @@ class TestOpenAIAPIConversion:
         mock_response = MagicMock()
         mock_response.choices = [MagicMock(message=MagicMock(content="ありがとうございます"))]
 
-        with patch.object(
-            client, "openai_client", create=True
-        ) as mock_openai:
+        with patch.object(client, "openai_client", create=True) as mock_openai:
             mock_openai.chat = MagicMock()
             mock_openai.chat.completions = MagicMock()
             mock_openai.chat.completions.create = AsyncMock(return_value=mock_response)

@@ -81,9 +81,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     error_message = str(exc)
     stack_trace = traceback.format_exc()
 
-    logger.error(
-        f"Unhandled exception: {error_type} - {error_message}\n{stack_trace}"
-    )
+    logger.error(f"Unhandled exception: {error_type} - {error_message}\n{stack_trace}")
 
     # エラーログをデータベースに保存
     await log_error_to_db(

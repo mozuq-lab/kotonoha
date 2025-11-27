@@ -435,9 +435,7 @@ async def test_limit_records(db_session):
     # 【実際の処理実行】: LIMIT 10でレコードを取得
     # 【処理内容】: 最新の10件を取得
     result = await db_session.execute(
-        select(AIConversionHistory)
-        .order_by(AIConversionHistory.created_at.desc())
-        .limit(10)
+        select(AIConversionHistory).order_by(AIConversionHistory.created_at.desc()).limit(10)
     )
     limited_records = result.scalars().all()
 

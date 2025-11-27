@@ -111,11 +111,15 @@ async def test_query_inserted_record_after_migration(db_session):
 
     # 【検証項目】: converted_textが一致するか
     # 🔵 要件定義書（line 55）に基づく検証
-    assert retrieved_record.converted_text == "お水をいただけますか"  # 【確認内容】: converted_textが一致する
+    assert (
+        retrieved_record.converted_text == "お水をいただけますか"
+    )  # 【確認内容】: converted_textが一致する
 
     # 【検証項目】: politeness_levelが一致するか
     # 🔵 要件定義書（line 57）に基づく検証
-    assert retrieved_record.politeness_level == PolitenessLevel.NORMAL  # 【確認内容】: politeness_levelが一致する
+    assert (
+        retrieved_record.politeness_level == PolitenessLevel.NORMAL
+    )  # 【確認内容】: politeness_levelが一致する
 
 
 async def test_insert_multiple_records_and_sort_by_created_at(db_session):
@@ -161,9 +165,7 @@ async def test_insert_multiple_records_and_sort_by_created_at(db_session):
     # 【実際の処理実行】: created_at降順でレコードを取得
     # 【処理内容】: ORDER BY created_at DESC で検索
     result = await db_session.execute(
-        select(AIConversionHistory)
-        .order_by(AIConversionHistory.created_at.desc())
-        .limit(3)
+        select(AIConversionHistory).order_by(AIConversionHistory.created_at.desc()).limit(3)
     )
     sorted_records = result.scalars().all()
 
@@ -176,13 +178,19 @@ async def test_insert_multiple_records_and_sort_by_created_at(db_session):
 
     # 【検証項目】: 最初のレコードが最新（"最新レコード"）であるか
     # 🔵 要件定義書（line 149）に基づくインデックスソートの検証
-    assert sorted_records[0].input_text == "最新レコード"  # 【確認内容】: 最新のレコードが先頭に来る
+    assert (
+        sorted_records[0].input_text == "最新レコード"
+    )  # 【確認内容】: 最新のレコードが先頭に来る
 
     # 【検証項目】: 2番目のレコードが"中間レコード"であるか
-    assert sorted_records[1].input_text == "中間レコード"  # 【確認内容】: 中間のレコードが2番目に来る
+    assert (
+        sorted_records[1].input_text == "中間レコード"
+    )  # 【確認内容】: 中間のレコードが2番目に来る
 
     # 【検証項目】: 3番目のレコードが最も古い（"古いレコード"）であるか
-    assert sorted_records[2].input_text == "古いレコード"  # 【確認内容】: 最も古いレコードが3番目に来る
+    assert (
+        sorted_records[2].input_text == "古いレコード"
+    )  # 【確認内容】: 最も古いレコードが3番目に来る
 
 
 async def test_filter_by_user_session_id_after_migration(db_session):
@@ -239,7 +247,9 @@ async def test_filter_by_user_session_id_after_migration(db_session):
 
     # 【検証項目】: 取得したレコードのinput_textが"セッションA"であるか
     # 🔵 要件定義書（line 150）に基づくインデックス検索の検証
-    assert filtered_records[0].input_text == "セッションA"  # 【確認内容】: 正しいセッションのレコードが取得される
+    assert (
+        filtered_records[0].input_text == "セッションA"
+    )  # 【確認内容】: 正しいセッションのレコードが取得される
 
     # 【検証項目】: 取得したレコードのuser_session_idがUUID_Aであるか
     assert filtered_records[0].user_session_id == uuid_a  # 【確認内容】: セッションIDが一致する

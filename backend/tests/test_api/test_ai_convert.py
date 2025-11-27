@@ -56,8 +56,10 @@ class TestAIConvertSuccess:
         """
         request_body = {"input_text": "水 ぬるく", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             mock_ai_client.convert_text = AsyncMock(
                 return_value=("お水をぬるめでお願いします", 1500)
             )
@@ -89,11 +91,11 @@ class TestAIConvertSuccess:
         """
         request_body = {"input_text": "ありがとう", "politeness_level": "casual"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("サンキュー", 1200)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("サンキュー", 1200))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -115,11 +117,11 @@ class TestAIConvertSuccess:
         """
         request_body = {"input_text": "これ ほしい", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("これをいただけますか", 1300)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("これをいただけますか", 1300))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -140,11 +142,11 @@ class TestAIConvertSuccess:
         """
         request_body = {"input_text": "ありがとう", "politeness_level": "polite"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("誠にありがとうございます", 1400)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("誠にありがとうございます", 1400))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -166,11 +168,11 @@ class TestAIConvertSuccess:
         """
         request_body = {"input_text": "テスト入力", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("変換済みテスト", 1000)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換済みテスト", 1000))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -198,11 +200,11 @@ class TestAIConvertSuccess:
         """
         request_body = {"input_text": "処理時間テスト", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("変換済み", 2500)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換済み", 2500))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -228,11 +230,11 @@ class TestAIConvertSuccess:
         # 前後に空白を含む入力
         request_body = {"input_text": "  こんにちは  ", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("こんにちは", 800)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("こんにちは", 800))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -264,11 +266,11 @@ class TestAIConvertValidation:
         """
         request_body = {"input_text": "こん", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("こんにちは", 500)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("こんにちは", 500))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -289,11 +291,11 @@ class TestAIConvertValidation:
         input_text = "あ" * 500
         request_body = {"input_text": input_text, "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("変換済み" * 100, 3000)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換済み" * 100, 3000))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -312,9 +314,7 @@ class TestAIConvertValidation:
         """
         request_body = {"input_text": "あ", "politeness_level": "normal"}
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/convert", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -332,9 +332,7 @@ class TestAIConvertValidation:
         input_text = "あ" * 501
         request_body = {"input_text": input_text, "politeness_level": "normal"}
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/convert", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -350,9 +348,7 @@ class TestAIConvertValidation:
         """
         request_body = {"input_text": "   ", "politeness_level": "normal"}
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/convert", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -368,9 +364,7 @@ class TestAIConvertValidation:
         """
         request_body = {"input_text": "", "politeness_level": "normal"}
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/convert", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -386,9 +380,7 @@ class TestAIConvertValidation:
         """
         request_body = {"input_text": "こんにちは", "politeness_level": "invalid"}
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/convert", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -404,9 +396,7 @@ class TestAIConvertValidation:
         """
         request_body = {"politeness_level": "normal"}
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/convert", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -422,9 +412,7 @@ class TestAIConvertValidation:
         """
         request_body = {"input_text": "こんにちは"}
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/convert", json=request_body)
 
             # 【結果検証】: 422エラーが返されることを確認
@@ -449,11 +437,11 @@ class TestAIConvertRateLimit:
         """
         request_body = {"input_text": "レート制限テスト", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("変換済み", 1000)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換済み", 1000))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -478,11 +466,11 @@ class TestAIConvertRateLimit:
         """
         request_body = {"input_text": "レート制限テスト", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("変換済み", 1000)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換済み", 1000))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -511,11 +499,11 @@ class TestAIConvertRateLimit:
         """
         request_body = {"input_text": "レート制限テスト", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("変換済み", 1000)
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換済み", 1000))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -552,8 +540,10 @@ class TestAIConvertErrorHandling:
         """
         request_body = {"input_text": "タイムアウトテスト", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             mock_ai_client.convert_text = AsyncMock(
                 side_effect=AITimeoutException("AI API timeout")
             )
@@ -581,8 +571,10 @@ class TestAIConvertErrorHandling:
         """
         request_body = {"input_text": "プロバイダーエラーテスト", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             mock_ai_client.convert_text = AsyncMock(
                 side_effect=AIProviderException("Anthropic API key is not configured")
             )
@@ -610,8 +602,10 @@ class TestAIConvertErrorHandling:
         """
         request_body = {"input_text": "一般エラーテスト", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             mock_ai_client.convert_text = AsyncMock(
                 side_effect=AIConversionException("AI conversion failed")
             )
@@ -628,7 +622,9 @@ class TestAIConvertErrorHandling:
                 response_json = response.json()
                 assert response_json["success"] is False
                 assert response_json["error"]["code"] == "AI_API_ERROR"
-                assert "AI変換APIからのレスポンスに失敗しました" in response_json["error"]["message"]
+                assert (
+                    "AI変換APIからのレスポンスに失敗しました" in response_json["error"]["message"]
+                )
 
     @pytest.mark.asyncio
     async def test_tc304_aiレート制限エラー429テスト(self):
@@ -640,8 +636,10 @@ class TestAIConvertErrorHandling:
         """
         request_body = {"input_text": "AIレート制限テスト", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
             mock_ai_client.convert_text = AsyncMock(
                 side_effect=AIRateLimitException("AI API rate limit exceeded")
             )
@@ -669,11 +667,11 @@ class TestAIConvertErrorHandling:
         """
         request_body = {"input_text": "エラー形式テスト", "politeness_level": "normal"}
 
-        with patch("app.utils.ai_client.ai_client") as mock_ai_client, \
-             patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock):
-            mock_ai_client.convert_text = AsyncMock(
-                side_effect=AIConversionException("Test error")
-            )
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
+        ):
+            mock_ai_client.convert_text = AsyncMock(side_effect=AIConversionException("Test error"))
 
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -727,9 +725,7 @@ class TestAIConvertLogging:
         count_before = len(logs_before)
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client:
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("ログテスト出力", 1500)
-            )
+            mock_ai_client.convert_text = AsyncMock(return_value=("ログテスト出力", 1500))
 
             async with AsyncClient(
                 transport=ASGITransport(app=test_client_with_db), base_url="http://test"
@@ -746,7 +742,9 @@ class TestAIConvertLogging:
                 count_after = len(logs_after)
 
                 # 【結果検証】: ログ数が1つ増えていることを確認
-                assert count_after == count_before + 1, f"Expected new log to be created. Before: {count_before}, After: {count_after}"
+                assert (
+                    count_after == count_before + 1
+                ), f"Expected new log to be created. Before: {count_before}, After: {count_after}"
 
                 # 【結果検証】: 最新のログレコードの内容を確認
                 result = await db_session.execute(
@@ -803,7 +801,9 @@ class TestAIConvertLogging:
                 assert len(log.error_message) > 0
 
     @pytest.mark.asyncio
-    async def test_tc403_ログのハッシュ化検証テスト(self, test_client_with_db, db_session: AsyncSession):
+    async def test_tc403_ログのハッシュ化検証テスト(
+        self, test_client_with_db, db_session: AsyncSession
+    ):
         """
         【テスト目的】: 入力テキストがハッシュ化されてログに記録されることを確認
         【テスト内容】: input_text_hashがSHA-256ハッシュであり、復元不可能であることを検証
@@ -817,9 +817,7 @@ class TestAIConvertLogging:
         expected_hash = hashlib.sha256(input_text.encode("utf-8")).hexdigest()
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client:
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("変換済み秘密", 1000)
-            )
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換済み秘密", 1000))
 
             async with AsyncClient(
                 transport=ASGITransport(app=test_client_with_db), base_url="http://test"
@@ -844,7 +842,9 @@ class TestAIConvertLogging:
                 assert log.input_text_hash != input_text
 
     @pytest.mark.asyncio
-    async def test_tc404_セッションid生成検証テスト(self, test_client_with_db, db_session: AsyncSession):
+    async def test_tc404_セッションid生成検証テスト(
+        self, test_client_with_db, db_session: AsyncSession
+    ):
         """
         【テスト目的】: セッションIDが正しく生成されることを確認
         【テスト内容】: 各リクエストで一意のsession_idが生成されることを検証
@@ -871,9 +871,7 @@ class TestAIConvertLogging:
         count_before2 = len(result_before2.scalars().all())
 
         with patch("app.utils.ai_client.ai_client") as mock_ai_client:
-            mock_ai_client.convert_text = AsyncMock(
-                return_value=("変換済み", 1000)
-            )
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換済み", 1000))
 
             async with AsyncClient(
                 transport=ASGITransport(app=test_client_with_db), base_url="http://test"
@@ -901,8 +899,12 @@ class TestAIConvertLogging:
                 count_after2 = len(result_after2.scalars().all())
 
                 # 【結果検証】: 各リクエストで1つずつログが増えていることを確認
-                assert count_after1 == count_before1 + 1, f"Expected log 1 to be created. Before: {count_before1}, After: {count_after1}"
-                assert count_after2 == count_before2 + 1, f"Expected log 2 to be created. Before: {count_before2}, After: {count_after2}"
+                assert (
+                    count_after1 == count_before1 + 1
+                ), f"Expected log 1 to be created. Before: {count_before1}, After: {count_after1}"
+                assert (
+                    count_after2 == count_before2 + 1
+                ), f"Expected log 2 to be created. Before: {count_before2}, After: {count_after2}"
 
                 # 【結果検証】: 両方のログを取得
                 result1 = await db_session.execute(

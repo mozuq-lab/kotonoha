@@ -68,9 +68,7 @@ async def test_tc001_正常リクエストテスト_制限内(mock_ai_client):
     # 🔵 testcases.md TC-001（line 43-45）に基づく
     request_body = {"input_text": "水 ぬるく", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: AI変換エンドポイントにリクエスト送信
         # 【処理内容】: レート制限内の正常なリクエストを検証
         response = await client.post("/api/v1/ai/convert", json=request_body)
@@ -98,18 +96,22 @@ async def test_tc002_x_ratelimit_ヘッダーテスト(mock_ai_client):
     # 🔵 testcases.md TC-002（line 58-60）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: AI変換エンドポイントにリクエスト送信
         # 【処理内容】: レスポンスヘッダーの内容を確認
         response = await client.post("/api/v1/ai/convert", json=request_body)
 
         # 【結果検証】: X-RateLimit-*ヘッダーが存在することを確認
         # 【期待値確認】: クライアントがレート制限状況を把握するため
-        assert "x-ratelimit-limit" in response.headers  # 【確認内容】: X-RateLimit-Limitヘッダーが存在する 🔵
-        assert "x-ratelimit-remaining" in response.headers  # 【確認内容】: X-RateLimit-Remainingヘッダーが存在する 🔵
-        assert "x-ratelimit-reset" in response.headers  # 【確認内容】: X-RateLimit-Resetヘッダーが存在する 🔵
+        assert (
+            "x-ratelimit-limit" in response.headers
+        )  # 【確認内容】: X-RateLimit-Limitヘッダーが存在する 🔵
+        assert (
+            "x-ratelimit-remaining" in response.headers
+        )  # 【確認内容】: X-RateLimit-Remainingヘッダーが存在する 🔵
+        assert (
+            "x-ratelimit-reset" in response.headers
+        )  # 【確認内容】: X-RateLimit-Resetヘッダーが存在する 🔵
 
         # 【結果検証】: ヘッダー値が正しいことを確認
         # 【期待値確認】: 制限回数1、リクエスト後の残り0
@@ -137,9 +139,7 @@ async def test_tc003_制限リセットテスト(mock_ai_client):
     # 🔵 testcases.md TC-003（line 76-78）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 1回目のリクエスト
         # 【処理内容】: 制限カウンターをインクリメント
         response1 = await client.post("/api/v1/ai/convert", json=request_body)
@@ -177,9 +177,7 @@ async def test_tc004_ip別制限テスト(mock_ai_client):
     # 🔵 testcases.md TC-004（line 92-95）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: IP Aからのリクエスト
         # 【処理内容】: X-Forwarded-ForヘッダーでクライアントIPを指定
         response_ip_a = await client.post(
@@ -219,9 +217,7 @@ async def test_tc005_非ai系エンドポイント除外テスト():
     # 【初期条件設定】: レート制限対象外のエンドポイントをテスト
     # 🔵 testcases.md TC-005（line 108-112）に基づく
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 10回連続でヘルスチェックリクエスト
         # 【処理内容】: レート制限が適用されないことを確認
         responses = []
@@ -232,11 +228,15 @@ async def test_tc005_非ai系エンドポイント除外テスト():
         # 【結果検証】: 全リクエストが正常に応答することを確認
         # 【期待値確認】: AI変換以外のエンドポイントは制限対象外
         for i, response in enumerate(responses):
-            assert response.status_code == 200, f"Request {i+1} failed"  # 【確認内容】: 全リクエストが成功 🔵
+            assert (
+                response.status_code == 200
+            ), f"Request {i+1} failed"  # 【確認内容】: 全リクエストが成功 🔵
 
         # 【結果検証】: X-RateLimitヘッダーが含まれないことを確認
         # 【期待値確認】: 制限対象外のエンドポイント
-        assert "x-ratelimit-limit" not in responses[0].headers  # 【確認内容】: レート制限ヘッダーが存在しない 🔵
+        assert (
+            "x-ratelimit-limit" not in responses[0].headers
+        )  # 【確認内容】: レート制限ヘッダーが存在しない 🔵
 
 
 # ================================================================================
@@ -262,9 +262,7 @@ async def test_tc101_レート制限超過テスト(mock_ai_client):
     # 🔵 testcases.md TC-101（line 130-133）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 1回目のリクエスト
         # 【処理内容】: レート制限カウンターをインクリメント
         response1 = await client.post("/api/v1/ai/convert", json=request_body)
@@ -297,9 +295,7 @@ async def test_tc102_retry_after_ヘッダーテスト(mock_ai_client):
     # 🔵 testcases.md TC-102（line 148-151）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 1回目のリクエスト（制限に達する）
         await client.post("/api/v1/ai/convert", json=request_body)
 
@@ -335,9 +331,7 @@ async def test_tc103_エラーレスポンス形式テスト(mock_ai_client):
     # 🔵 testcases.md TC-103（line 166-169）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 1回目のリクエスト（制限に達する）
         await client.post("/api/v1/ai/convert", json=request_body)
 
@@ -356,7 +350,9 @@ async def test_tc103_エラーレスポンス形式テスト(mock_ai_client):
 
         error = response_json["error"]
         assert error["code"] == "RATE_LIMIT_EXCEEDED"  # 【確認内容】: エラーコードが正しい 🔵
-        assert "リクエスト数が上限に達しました" in error["message"]  # 【確認内容】: 日本語エラーメッセージ 🔵
+        assert (
+            "リクエスト数が上限に達しました" in error["message"]
+        )  # 【確認内容】: 日本語エラーメッセージ 🔵
         assert error["status_code"] == 429  # 【確認内容】: ステータスコードが429 🔵
         assert "retry_after" in error  # 【確認内容】: retry_afterフィールドが存在する 🔵
 
@@ -389,9 +385,7 @@ async def test_tc104_複数エンドポイントでの独立レート制限テ�
         "previous_result": "前回の結果",
     }
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: /convertで制限に達する
         response1 = await client.post("/api/v1/ai/convert", json=convert_request)
         assert response1.status_code == 200  # 【確認内容】: /convertは成功 🟡
@@ -432,9 +426,7 @@ async def test_tc201_境界値テスト_ちょうど制限内(mock_ai_client):
     # 🔵 testcases.md TC-201（line 216-218）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 1回目のリクエスト
         response = await client.post("/api/v1/ai/convert", json=request_body)
 
@@ -461,9 +453,7 @@ async def test_tc202_境界値テスト_制限超過(mock_ai_client):
     # 🔵 testcases.md TC-202（line 234-237）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 1回目のリクエスト
         response1 = await client.post("/api/v1/ai/convert", json=request_body)
         assert response1.status_code == 200  # 【確認内容】: 1回目は成功 🔵
@@ -498,9 +488,7 @@ async def test_tc203_境界値テスト_ウィンドウリセット境界(mock_a
     # このテストは時間モックを使用して実装する必要がある
     # 実際のテスト実装では freezegun や pytest-freezegun を使用
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 1回目のリクエスト
         response1 = await client.post("/api/v1/ai/convert", json=request_body)
         assert response1.status_code == 200  # 【確認内容】: 1回目は成功 🟡
@@ -535,9 +523,7 @@ async def test_tc204_境界値テスト_retry_after値の範囲(mock_ai_client):
     # 🟡 testcases.md TC-204（line 270-273）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 1回目のリクエスト（制限に達する）
         await client.post("/api/v1/ai/convert", json=request_body)
 
@@ -577,9 +563,7 @@ async def test_tc301_x_forwarded_for_ヘッダーテスト(mock_ai_client):
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
     client_ip = "192.168.1.100"
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: X-Forwarded-Forヘッダー付きで1回目のリクエスト
         response1 = await client.post(
             "/api/v1/ai/convert",
@@ -617,9 +601,7 @@ async def test_tc302_不正ipフォールバックテスト(mock_ai_client):
     # 🟡 testcases.md TC-302（line 307-310）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 不正なIP形式でリクエスト
         # 【処理内容】: システムがクラッシュしないことを確認
         response = await client.post(
@@ -654,9 +636,7 @@ async def test_tc303_複数x_forwarded_for_ヘッダーテスト(mock_ai_client)
     forwarded_for_multiple = "192.168.1.100, 10.0.0.1, 172.16.0.1"
     forwarded_for_first = "192.168.1.100"
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 複数IPを含むX-Forwarded-Forで1回目のリクエスト
         response1 = await client.post(
             "/api/v1/ai/convert",
@@ -696,9 +676,7 @@ async def test_tc304_高頻度リクエストテスト(mock_ai_client):
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
     num_requests = 100
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 【実際の処理実行】: 100連続リクエスト
         responses = []
         for _ in range(num_requests):
@@ -710,7 +688,9 @@ async def test_tc304_高頻度リクエストテスト(mock_ai_client):
 
         # 【結果検証】: 2回目以降は全て429
         for i, response in enumerate(responses[1:], start=2):
-            assert response.status_code == 429, f"Request {i} should be 429"  # 【確認内容】: 2回目以降は全て429 🟡
+            assert (
+                response.status_code == 429
+            ), f"Request {i} should be 429"  # 【確認内容】: 2回目以降は全て429 🟡
 
         # 【結果検証】: システムがクラッシュせずに全リクエストに応答
         assert len(responses) == num_requests  # 【確認内容】: 全リクエストに応答 🟡

@@ -192,13 +192,11 @@ async def test_global_exception_handler_response_format():
 
     # エラーログ保存をモック
     with patch("app.core.exceptions.log_error_to_db", new_callable=AsyncMock):
-        response = await global_exception_handler(
-            mock_request,
-            Exception("Test exception")
-        )
+        response = await global_exception_handler(mock_request, Exception("Test exception"))
 
         assert response.status_code == 500
         import json
+
         data = json.loads(response.body)
         assert data["error_code"] == "INTERNAL_ERROR"
         assert "error" in data
@@ -226,12 +224,12 @@ async def test_database_exception_handler_response_format():
     # エラーログ保存をモック
     with patch("app.core.exceptions.log_error_to_db", new_callable=AsyncMock):
         response = await database_exception_handler(
-            mock_request,
-            SQLAlchemyError("Test database error")
+            mock_request, SQLAlchemyError("Test database error")
         )
 
         assert response.status_code == 503
         import json
+
         data = json.loads(response.body)
         assert data["error_code"] == "DATABASE_ERROR"
         assert "error" in data
@@ -264,6 +262,7 @@ async def test_validation_exception_handler_response_format():
 
     assert response.status_code == 422
     import json
+
     data = json.loads(response.body)
     assert data["error_code"] == "VALIDATION_ERROR"
     assert "error" in data
