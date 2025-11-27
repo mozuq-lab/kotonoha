@@ -506,6 +506,7 @@ void main() {
       ///
       /// 注: このテストはDateTime.now()を使用したデバウンスロジックをテストするため、
       /// 実際の時間経過を待つ必要があります。
+      /// Flutter widget testではtester.binding.delayed()を使用して実際の時間を経過させます。
       testWidgets('TC-SB-022: デバウンス期間経過後は再度タップが有効になる', (tester) async {
         int callCount = 0;
 
@@ -526,7 +527,9 @@ void main() {
         await tester.pump();
 
         // 実際の時間経過を待つ（DateTime.now()ベースのデバウンス）
-        await Future<void>.delayed(const Duration(milliseconds: 350));
+        // Flutter test frameworkでは、tester.binding.delayed()を使用して
+        // 実際のシステム時間を経過させる
+        await tester.binding.delayed(const Duration(milliseconds: 350));
         await tester.pump();
 
         // 2回目のタップ
