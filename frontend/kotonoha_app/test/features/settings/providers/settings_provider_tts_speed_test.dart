@@ -13,9 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
-import 'package:kotonoha_app/features/settings/models/app_settings.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
-import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 
 /// TTSNotifierのモック
 class MockTTSNotifier extends Mock {

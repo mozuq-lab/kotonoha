@@ -35,6 +35,7 @@ void main() {
       testWidgets('TC-CB-001: 基本五十音が正しく表示される', (tester) async {
         // 【テストデータ準備】: 基本五十音の代表的な文字をテスト
         // 【初期条件設定】: デフォルト状態で文字盤を表示
+        // ignore: unused_local_variable
         String? tappedCharacter;
 
         // Arrange & Act

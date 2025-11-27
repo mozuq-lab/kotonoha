@@ -59,7 +59,6 @@ void main() {
 
       // When（実行フェーズ）
       // 定型文を10件追加する処理を開始し、5件追加した時点でクラッシュ
-      var savedCount = 0;
       try {
         for (var i = 0; i < 10; i++) {
           final phrase = PresetPhrase(
@@ -72,7 +71,6 @@ void main() {
             updatedAt: DateTime.now(),
           );
           await repository.save(phrase);
-          savedCount = i + 1;
 
           if (i == 4) {
             // 5件追加した時点でHiveを強制クローズ（クラッシュシミュレート）

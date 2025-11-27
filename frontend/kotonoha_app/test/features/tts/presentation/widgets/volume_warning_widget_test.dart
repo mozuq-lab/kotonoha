@@ -32,6 +32,7 @@ void main() {
 
         // Given: 【テストデータ準備】: isVisible=trueでVolumeWarningWidgetを構築
         // 【初期条件設定】: 音量0が検出された状態
+        // ignore: unused_local_variable
         var dismissCalled = false;
 
         await tester.pumpWidget(

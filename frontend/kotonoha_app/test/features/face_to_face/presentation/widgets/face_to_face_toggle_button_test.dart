@@ -32,6 +32,7 @@ void main() {
 
         // Given: 【テストデータ準備】: FaceToFaceToggleButtonを構築
         // 【初期条件設定】: 通常状態（モード無効）
+        // ignore: unused_local_variable
         var onTapCalled = false;
 
         await tester.pumpWidget(
