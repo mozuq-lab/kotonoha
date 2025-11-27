@@ -17,6 +17,8 @@ import 'package:go_router/go_router.dart';
 // テスト対象のプロバイダーとウィジェット
 import 'package:kotonoha_app/core/router/app_router.dart';
 import 'package:kotonoha_app/core/router/error_screen.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
+import 'package:kotonoha_app/features/settings/models/app_settings.dart';
 
 void main() {
   group('ナビゲーション統合テスト', () {
@@ -25,7 +27,14 @@ void main() {
     late GoRouter router;
 
     setUp(() {
-      container = ProviderContainer();
+      // settingsNotifierProviderをモックでオーバーライドして
+      // CircularProgressIndicator（無限アニメーション）を回避
+      container = ProviderContainer(
+        overrides: [
+          settingsNotifierProvider
+              .overrideWith(() => _MockSettingsNotifier()),
+        ],
+      );
       router = container.read(routerProvider);
     });
 
@@ -66,8 +75,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Then（検証フェーズ）
+      // Note: SettingsScreenは実装済みで、TTSSpeedSettingsWidgetを含むため
+      // プレースホルダー「設定画面」ではなく、実際のコンテンツ「読み上げ速度」を確認
       expect(
-        find.text('設定画面'),
+        find.text('読み上げ速度'),
         findsOneWidget,
         reason: '/settingsへのナビゲーション後、設定画面が表示される必要がある',
       );
@@ -88,7 +99,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('設定画面'),
+        find.text('読み上げ速度'),
         findsOneWidget,
         reason: '設定画面に遷移済みである必要がある',
       );
@@ -207,7 +218,14 @@ void main() {
     late GoRouter router;
 
     setUp(() {
-      container = ProviderContainer();
+      // settingsNotifierProviderをモックでオーバーライドして
+      // CircularProgressIndicator（無限アニメーション）を回避
+      container = ProviderContainer(
+        overrides: [
+          settingsNotifierProvider
+              .overrideWith(() => _MockSettingsNotifier()),
+        ],
+      );
       router = container.read(routerProvider);
     });
 
@@ -241,8 +259,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Then（検証フェーズ）
+      // Note: SettingsScreenは実装済みで「読み上げ速度」ラベルを含む
       expect(
-        find.text('設定画面'),
+        find.text('読み上げ速度'),
         findsOneWidget,
         reason: 'goNamed("settings")で設定画面へ遷移できる必要がある',
       );
@@ -305,7 +324,7 @@ void main() {
       router.go('/settings');
       await tester.pumpAndSettle();
 
-      expect(find.text('設定画面'), findsOneWidget);
+      expect(find.text('読み上げ速度'), findsOneWidget);
 
       // When（実行フェーズ）
       router.goNamed('home');
@@ -326,7 +345,14 @@ void main() {
     late GoRouter router;
 
     setUp(() {
-      container = ProviderContainer();
+      // settingsNotifierProviderをモックでオーバーライドして
+      // CircularProgressIndicator（無限アニメーション）を回避
+      container = ProviderContainer(
+        overrides: [
+          settingsNotifierProvider
+              .overrideWith(() => _MockSettingsNotifier()),
+        ],
+      );
       router = container.read(routerProvider);
     });
 
@@ -355,7 +381,7 @@ void main() {
       // ホーム -> 設定
       router.go('/settings');
       await tester.pumpAndSettle();
-      expect(find.text('設定画面'), findsOneWidget);
+      expect(find.text('読み上げ速度'), findsOneWidget);
 
       // 設定 -> 履歴
       router.go('/history');
@@ -377,4 +403,18 @@ void main() {
       );
     });
   });
+}
+
+/// テスト用のモックSettingsNotifier
+///
+/// ローディング状態を回避するため、build()で即座にデフォルト設定を返す。
+/// これにより、SettingsScreenのTTSSpeedSettingsWidgetで
+/// CircularProgressIndicator（無限アニメーション）が表示されず、
+/// pumpAndSettle()がタイムアウトしなくなる。
+class _MockSettingsNotifier extends SettingsNotifier {
+  @override
+  Future<AppSettings> build() async {
+    // 即座にデフォルト設定を返す（SharedPreferencesの初期化をスキップ）
+    return const AppSettings();
+  }
 }

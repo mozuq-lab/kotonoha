@@ -64,7 +64,7 @@ async def health_check(
 ) -> HealthResponse:
     """
     【機能概要】: ヘルスチェックエンドポイント - システム稼働状況とデータベース接続確認
-    【実装方針】: データベース接続確認（SELECT 1実行）、AIプロバイダー確認、タイムスタンプ、バージョン情報を含む
+    【実装方針】: DB接続確認、AIプロバイダー確認、タイムスタンプ、バージョン情報を含む
 
     Args:
         db: データベースセッション（依存性注入）
@@ -105,4 +105,6 @@ async def health_check(
             version=settings.VERSION,
             timestamp=error_timestamp,
         )
-        raise HTTPException(status_code=500, detail=error_response.model_dump())
+        raise HTTPException(
+            status_code=500, detail=error_response.model_dump()
+        ) from e

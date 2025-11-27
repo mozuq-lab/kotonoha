@@ -11,9 +11,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// テスト対象のウィジェット（実装後にコメント解除）
+// テスト対象のウィジェット
 import 'package:kotonoha_app/features/settings/presentation/settings_screen.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
+import 'package:kotonoha_app/features/settings/models/app_settings.dart';
 
 void main() {
   group('SettingsScreen表示テスト', () {
@@ -24,14 +27,22 @@ void main() {
     // 青信号: タスクファイルでSettingsScreen作成が明示
     testWidgets('TC-007: SettingsScreenが正常に表示される', (WidgetTester tester) async {
       // Given（準備フェーズ）
-      // MaterialApp内でSettingsScreenをラップ
+      // ProviderScope内でSettingsScreenをラップ
 
       // When（実行フェーズ）
       await tester.pumpWidget(
-        const MaterialApp(
-          home: SettingsScreen(),
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
         ),
       );
+      // AsyncNotifierのビルドを完了させる
+      await tester.pump();
 
       // Then（検証フェーズ）
       // SettingsScreenウィジェットが存在することを確認
@@ -55,11 +66,13 @@ void main() {
         reason: 'SettingsScreenはAppBarを持つ必要がある',
       );
 
-      // 画面識別テキストが表示されることを確認
+      // 画面識別テキスト（AppBarタイトル「設定」または設定コンテンツ「読み上げ速度」）を確認
+      // Note: SettingsScreenは実装済みで、AppBarタイトルは「設定」、
+      // 本体にはTTSSpeedSettingsWidgetの「読み上げ速度」ラベルが表示される
       expect(
-        find.text('設定画面'),
+        find.text('読み上げ速度'),
         findsOneWidget,
-        reason: 'SettingsScreenには「設定画面」という識別テキストが表示される必要がある',
+        reason: 'SettingsScreenには「読み上げ速度」設定が表示される必要がある',
       );
     });
 
@@ -68,8 +81,14 @@ void main() {
     testWidgets('SettingsScreenはconstコンストラクタを持つ', (WidgetTester tester) async {
       // Given/When（準備・実行フェーズ）
       await tester.pumpWidget(
-        const MaterialApp(
-          home: SettingsScreen(),
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
         ),
       );
 
@@ -85,8 +104,14 @@ void main() {
 
       // When（実行フェーズ）
       await tester.pumpWidget(
-        const MaterialApp(
-          home: SettingsScreen(key: testKey),
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(key: testKey),
+          ),
         ),
       );
 
@@ -98,4 +123,18 @@ void main() {
       );
     });
   });
+}
+
+/// テスト用のモックSettingsNotifier
+///
+/// ローディング状態を回避するため、build()で即座にデフォルト設定を返す。
+/// これにより、SettingsScreenのTTSSpeedSettingsWidgetで
+/// CircularProgressIndicator（無限アニメーション）が表示されず、
+/// テストが正常に動作する。
+class _MockSettingsNotifier extends SettingsNotifier {
+  @override
+  Future<AppSettings> build() async {
+    // 即座にデフォルト設定を返す（SharedPreferencesの初期化をスキップ）
+    return const AppSettings();
+  }
 }

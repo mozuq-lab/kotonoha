@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # API設定
     SECRET_KEY: str
-    API_HOST: str = "0.0.0.0"
+    API_HOST: str = "0.0.0.0"  # noqa: S104
     API_PORT: int = 8000
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "kotonoha API"
@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     )
 
     @property
-    def DATABASE_URL(self) -> str:
+    def DATABASE_URL(self) -> str:  # noqa: N802
         """データベース接続URL（非同期用）"""
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
@@ -69,7 +69,7 @@ class Settings(BaseSettings):
         )
 
     @property
-    def DATABASE_URL_SYNC(self) -> str:
+    def DATABASE_URL_SYNC(self) -> str:  # noqa: N802
         """データベース接続URL（同期用、Alembicマイグレーション用）"""
         return (
             f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
