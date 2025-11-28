@@ -1,4 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:kotonoha_app/shared/models/favorite_item.dart';
+import 'package:kotonoha_app/shared/models/favorite_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/history_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
@@ -65,4 +67,28 @@ Future<void> initHive() async {
   // 【テスト対応】: TC-001の検証項目
   // 🔵 信頼性レベル: 青信号 - REQ-104（定型文機能）の実現
   await Hive.openBox<PresetPhrase>('presetPhrases');
+
+  // 【TypeAdapter登録】: FavoriteItemAdapterの登録
+  // 【実装内容】: typeId 2としてFavoriteItemAdapterを登録（重複登録時はtry-catchで無視）
+  // 【テスト対応】: TASK-0065
+  // 🔵 信頼性レベル: 青信号 - REQ-701（お気に入り機能）の基盤
+  try {
+    // 【既登録確認】: typeId 2が未登録の場合のみ登録
+    // 【冪等性保証】: Hot Restart時の重複登録エラーを防ぐ
+    // 🟡 黄信号: NFR-301、NFR-304から類推、Hiveの一般的なエラーケース
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter(FavoriteItemAdapter());
+    }
+  } catch (e) {
+    // 【エラーハンドリング】: 重複登録エラーを無視（アプリの安定性維持）
+    // 【実装方針】: エラーが発生しても処理を継続
+    // 🟡 黄信号: NFR-301（基本機能継続）を満たすための実装
+    // ignore: empty_catches
+  }
+
+  // 【ボックスオープン】: favoritesボックスのオープン
+  // 【実装内容】: 'favorites'という名前でFavoriteItem用のボックスをオープン
+  // 【テスト対応】: TASK-0065
+  // 🔵 信頼性レベル: 青信号 - REQ-701（お気に入り機能）の実現
+  await Hive.openBox<FavoriteItem>('favorites');
 }
