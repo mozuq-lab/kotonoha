@@ -421,32 +421,28 @@ void main() {
         expect(service.state, TTSState.idle); // 【確認内容】: 状態がidleのままであることを確認 🟡
       });
 
-      /// TC-048-014: 初期化前にspeak()を呼んでもエラーハンドリングされる
+      /// TC-048-014: 初期化前にspeak()を呼ぶと自動初期化される
       ///
       /// 優先度: P1（高優先度）
-      /// 検証内容: initialize()を呼ばずにspeak()を呼び出した場合のエラーハンドリングを確認
-      test('TC-048-014: 初期化前にspeak()を呼んでもエラーハンドリングされる', () async {
-        // 【テスト目的】: initialize()を呼ばずにspeak()を呼び出した場合のエラーハンドリングを確認 🟡
-        // 【テスト内容】: 初期化前にspeak()を呼び出し、適切にエラーハンドリングされることを確認
-        // 【期待される動作】: エラーが発生する、または何も起こらない（安全に無視）
+      /// 検証内容: initialize()を呼ばずにspeak()を呼び出した場合、自動初期化されることを確認
+      test('TC-048-014: 初期化前にspeak()を呼ぶと自動初期化される', () async {
+        // 【テスト目的】: initialize()を呼ばずにspeak()を呼び出した場合、自動初期化されることを確認 🟡
+        // 【テスト内容】: 初期化前にspeak()を呼び出し、自動初期化されて読み上げが開始されることを確認
+        // 【期待される動作】: 自動初期化が実行され、正常に読み上げが開始される
         // 🟡 黄信号: NFR-301（基本機能は継続動作）の原則を適用
 
         // When: 【実際の処理実行】: 初期化せずにspeak()を呼び出す
-        // 【処理内容】: 初期化前に読み上げを試行
+        // 【処理内容】: 初期化前に読み上げを試行（自動初期化が実行される）
         await service.speak('テスト');
 
-        // Then: 【結果検証】: 状態がerrorまたはidleであることを確認
-        // 【期待値確認】: 状態がerrorまたはidleで、エラーメッセージが設定される
-        expect(
-            service.state,
-            isIn([
-              TTSState.error,
-              TTSState.idle
-            ])); // 【確認内容】: 状態がerrorまたはidleであることを確認 🟡
-        if (service.state == TTSState.error) {
-          expect(service.errorMessage,
-              isNotNull); // 【確認内容】: エラーメッセージが設定されたことを確認 🟡
-        }
+        // Then: 【結果検証】: 自動初期化が実行され、読み上げが開始されることを確認
+        // 【期待値確認】: 状態がspeakingになり、setLanguageとspeakが呼ばれる
+        expect(service.state,
+            TTSState.speaking); // 【確認内容】: 自動初期化後にspeaking状態になることを確認 🟡
+        verify(() => mockFlutterTts.setLanguage('ja-JP'))
+            .called(1); // 【確認内容】: 自動初期化で日本語が設定されたことを確認 🟡
+        verify(() => mockFlutterTts.speak('テスト'))
+            .called(1); // 【確認内容】: 読み上げが実行されたことを確認 🟡
       });
     });
 

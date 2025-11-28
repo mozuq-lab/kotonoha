@@ -1,8 +1,8 @@
 // HomeScreen表示確認 TDDテスト（Redフェーズ）
 // TASK-0015: go_routerナビゲーション設定・ルーティング実装
 //
-// テストフレームワーク: flutter_test
-// 対象: HomeScreen（文字盤画面スケルトン）
+// テストフレームワーク: flutter_test + flutter_riverpod
+// 対象: HomeScreen（文字盤画面）
 //
 // 信頼性レベル凡例:
 // - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
@@ -11,8 +11,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// テスト対象のウィジェット（実装後にコメント解除）
+// テスト対象のウィジェット
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 
 void main() {
@@ -24,14 +25,19 @@ void main() {
     // 青信号: タスクファイルでHomeScreen作成が明示
     testWidgets('TC-006: HomeScreenが正常に表示される', (WidgetTester tester) async {
       // Given（準備フェーズ）
-      // MaterialApp内でHomeScreenをラップ
+      // ProviderScope内でHomeScreenをラップ
 
       // When（実行フェーズ）
       await tester.pumpWidget(
-        const MaterialApp(
-          home: HomeScreen(),
+        const ProviderScope(
+          child: MaterialApp(
+            home: HomeScreen(),
+          ),
         ),
       );
+
+      // 初期化を待つ
+      await tester.pumpAndSettle();
 
       // Then（検証フェーズ）
       // HomeScreenウィジェットが存在することを確認
@@ -55,11 +61,11 @@ void main() {
         reason: 'HomeScreenはAppBarを持つ必要がある',
       );
 
-      // 画面識別テキストが表示されることを確認
+      // 入力プレースホルダーが表示されることを確認
       expect(
-        find.text('ホーム画面'),
+        find.text('入力してください...'),
         findsOneWidget,
-        reason: 'HomeScreenには「ホーム画面」という識別テキストが表示される必要がある',
+        reason: 'HomeScreenには入力プレースホルダーが表示される必要がある',
       );
     });
 
@@ -69,10 +75,14 @@ void main() {
       // Given/When（準備・実行フェーズ）
       // constコンストラクタでHomeScreenを生成
       await tester.pumpWidget(
-        const MaterialApp(
-          home: HomeScreen(),
+        const ProviderScope(
+          child: MaterialApp(
+            home: HomeScreen(),
+          ),
         ),
       );
+
+      await tester.pumpAndSettle();
 
       // Then（検証フェーズ）
       // constコンストラクタが使用可能であれば、上記のコードがコンパイルされる
@@ -88,10 +98,14 @@ void main() {
 
       // When（実行フェーズ）
       await tester.pumpWidget(
-        const MaterialApp(
-          home: HomeScreen(key: testKey),
+        const ProviderScope(
+          child: MaterialApp(
+            home: HomeScreen(key: testKey),
+          ),
         ),
       );
+
+      await tester.pumpAndSettle();
 
       // Then（検証フェーズ）
       // 指定したキーでウィジェットが見つかることを確認
