@@ -138,7 +138,7 @@ void main() {
 
       // Then（検証フェーズ）
       expect(
-        find.text('履歴画面'),
+        find.text('履歴'),
         findsOneWidget,
         reason: '/historyへのナビゲーション後、履歴画面が表示される必要がある',
       );
@@ -166,7 +166,7 @@ void main() {
 
       // Then（検証フェーズ）
       expect(
-        find.text('お気に入り画面'),
+        find.text('お気に入り'),
         findsOneWidget,
         reason: '/favoritesへのナビゲーション後、お気に入り画面が表示される必要がある',
       );
@@ -282,7 +282,7 @@ void main() {
 
       // Then（検証フェーズ）
       expect(
-        find.text('履歴画面'),
+        find.text('履歴'),
         findsOneWidget,
         reason: 'goNamed("history")で履歴画面へ遷移できる必要がある',
       );
@@ -305,7 +305,7 @@ void main() {
 
       // Then（検証フェーズ）
       expect(
-        find.text('お気に入り画面'),
+        find.text('お気に入り'),
         findsOneWidget,
         reason: 'goNamed("favorites")でお気に入り画面へ遷移できる必要がある',
       );
@@ -383,12 +383,12 @@ void main() {
       // 設定 -> 履歴
       router.go('/history');
       await tester.pumpAndSettle();
-      expect(find.text('履歴画面'), findsOneWidget);
+      expect(find.text('履歴'), findsOneWidget);
 
       // 履歴 -> お気に入り
       router.go('/favorites');
       await tester.pumpAndSettle();
-      expect(find.text('お気に入り画面'), findsOneWidget);
+      expect(find.text('お気に入り'), findsOneWidget);
 
       // お気に入り -> ホーム
       router.go('/');
