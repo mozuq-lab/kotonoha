@@ -28,7 +28,8 @@ class EmptyHistoryWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '${HistoryUIConstants.emptyStateTitle}。${HistoryUIConstants.emptyStateHint}',
+      label:
+          '${HistoryUIConstants.emptyStateTitle}。${HistoryUIConstants.emptyStateHint}',
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -47,11 +48,8 @@ class EmptyHistoryWidget extends StatelessWidget {
             Text(
               HistoryUIConstants.emptyStateTitle,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(
-                            alpha: HistoryUIConstants.emptyStateTitleOpacity),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(
+                        alpha: HistoryUIConstants.emptyStateTitleOpacity),
                   ),
             ),
             const SizedBox(height: HistoryUIConstants.emptyStateTextSpacing),
@@ -59,11 +57,8 @@ class EmptyHistoryWidget extends StatelessWidget {
             Text(
               HistoryUIConstants.emptyStateHint,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(
-                            alpha: HistoryUIConstants.emptyStateHintOpacity),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(
+                        alpha: HistoryUIConstants.emptyStateHintOpacity),
                   ),
               textAlign: TextAlign.center,
             ),

@@ -28,7 +28,8 @@ class EmptyFavoriteWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '${FavoriteUIConstants.emptyStateTitle}。${FavoriteUIConstants.emptyStateHint}',
+      label:
+          '${FavoriteUIConstants.emptyStateTitle}。${FavoriteUIConstants.emptyStateHint}',
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -47,11 +48,8 @@ class EmptyFavoriteWidget extends StatelessWidget {
             Text(
               FavoriteUIConstants.emptyStateTitle,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(
-                            alpha: FavoriteUIConstants.emptyStateTitleOpacity),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(
+                        alpha: FavoriteUIConstants.emptyStateTitleOpacity),
                   ),
             ),
             const SizedBox(height: FavoriteUIConstants.emptyStateTextSpacing),
@@ -59,11 +57,8 @@ class EmptyFavoriteWidget extends StatelessWidget {
             Text(
               FavoriteUIConstants.emptyStateHint,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(
-                            alpha: FavoriteUIConstants.emptyStateHintOpacity),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(
+                        alpha: FavoriteUIConstants.emptyStateHintOpacity),
                   ),
               textAlign: TextAlign.center,
             ),

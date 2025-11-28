@@ -173,8 +173,6 @@ class FavoriteRepository {
   int _getMaxDisplayOrder() {
     final favorites = _box.values.toList();
     if (favorites.isEmpty) return -1;
-    return favorites
-        .map((f) => f.displayOrder)
-        .reduce((a, b) => a > b ? a : b);
+    return favorites.map((f) => f.displayOrder).reduce((a, b) => a > b ? a : b);
   }
 }

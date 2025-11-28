@@ -49,7 +49,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            historyProvider.overrideWith((ref) => TestHistoryNotifier(mockState)),
+            historyProvider
+                .overrideWith((ref) => TestHistoryNotifier(mockState)),
           ],
           child: const MaterialApp(
             home: HistoryScreen(),
@@ -69,7 +70,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            historyProvider.overrideWith((ref) => TestHistoryNotifier(mockState)),
+            historyProvider
+                .overrideWith((ref) => TestHistoryNotifier(mockState)),
           ],
           child: const MaterialApp(
             home: HistoryScreen(),

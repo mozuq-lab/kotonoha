@@ -208,7 +208,8 @@ void main() {
       await repository.delete('delete-test');
 
       // Then（検証フェーズ）
-      expect(await repository.getById('delete-test'), isNull); // 【確認内容】: 削除されている
+      expect(
+          await repository.getById('delete-test'), isNull); // 【確認内容】: 削除されている
     });
 
     // =========================================================================
@@ -320,8 +321,7 @@ void main() {
       final histories = await repository.loadAll();
       expect(histories.length, 50); // 【確認内容】: 50件に維持される
       expect(await repository.getById('h0'), isNull); // 【確認内容】: 最古の'h0'が削除
-      expect(
-          await repository.getById('h50'), isNotNull); // 【確認内容】: 最新の'h50'は存在
+      expect(await repository.getById('h50'), isNotNull); // 【確認内容】: 最新の'h50'は存在
     });
 
     // =========================================================================
@@ -346,8 +346,7 @@ void main() {
 
       // When & Then（実行・検証フェーズ）
       expect((await repository.loadAll()).length, 50);
-      expect(await repository.getById('edge-0'),
-          isNotNull); // 【確認内容】: 最古も残る
+      expect(await repository.getById('edge-0'), isNotNull); // 【確認内容】: 最古も残る
     });
   });
 
@@ -674,8 +673,8 @@ void main() {
 
       // Then（検証フェーズ）
       expect(histories.length, 50);
-      expect(stopwatch.elapsedMilliseconds,
-          lessThan(1000)); // 【確認内容】: 1秒以内に読み込み
+      expect(
+          stopwatch.elapsedMilliseconds, lessThan(1000)); // 【確認内容】: 1秒以内に読み込み
     });
   });
 
@@ -831,8 +830,7 @@ void main() {
       // Then（検証フェーズ）
       final histories = await repository.loadAll();
       expect(histories.length, 3); // 【確認内容】: 1, 3, 4が残る
-      expect(await repository.getById('combo-2'),
-          isNull); // 【確認内容】: 2件目は削除済み
+      expect(await repository.getById('combo-2'), isNull); // 【確認内容】: 2件目は削除済み
     });
   });
 }

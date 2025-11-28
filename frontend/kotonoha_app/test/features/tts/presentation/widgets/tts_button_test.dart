@@ -69,8 +69,8 @@ void main() {
         // 【初期条件設定】: アプリ起動直後の初期状態
         final container = ProviderContainer(
           overrides: [
-            ttsProvider.overrideWith(
-                (ref) => createTestTTSNotifier(mockFlutterTts)),
+            ttsProvider
+                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -115,8 +115,8 @@ void main() {
         // 【初期条件設定】: 読み上げ中の状態
         final container = ProviderContainer(
           overrides: [
-            ttsProvider.overrideWith(
-                (ref) => createTestTTSNotifier(mockFlutterTts)),
+            ttsProvider
+                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -165,8 +165,8 @@ void main() {
         // 【初期条件設定】: 読み上げ完了後の状態
         final container = ProviderContainer(
           overrides: [
-            ttsProvider.overrideWith(
-                (ref) => createTestTTSNotifier(mockFlutterTts)),
+            ttsProvider
+                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -211,8 +211,8 @@ void main() {
         // 【初期条件設定】: 標準表示状態
         final container = ProviderContainer(
           overrides: [
-            ttsProvider.overrideWith(
-                (ref) => createTestTTSNotifier(mockFlutterTts)),
+            ttsProvider
+                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -262,8 +262,8 @@ void main() {
         // 【初期条件設定】: 標準表示状態
         final container = ProviderContainer(
           overrides: [
-            ttsProvider.overrideWith(
-                (ref) => createTestTTSNotifier(mockFlutterTts)),
+            ttsProvider
+                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -315,8 +315,8 @@ void main() {
         var onSpeakCalled = false;
         final container = ProviderContainer(
           overrides: [
-            ttsProvider.overrideWith(
-                (ref) => createTestTTSNotifier(mockFlutterTts)),
+            ttsProvider
+                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -371,8 +371,8 @@ void main() {
         // 【初期条件設定】: 読み上げ中の状態
         final container = ProviderContainer(
           overrides: [
-            ttsProvider.overrideWith(
-                (ref) => createTestTTSNotifier(mockFlutterTts)),
+            ttsProvider
+                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -431,8 +431,8 @@ void main() {
         // 【初期条件設定】: 読み上げ中の状態
         final container = ProviderContainer(
           overrides: [
-            ttsProvider.overrideWith(
-                (ref) => createTestTTSNotifier(mockFlutterTts)),
+            ttsProvider
+                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -489,8 +489,8 @@ void main() {
         // 【初期条件設定】: 状態変更監視の準備
         final container = ProviderContainer(
           overrides: [
-            ttsProvider.overrideWith(
-                (ref) => createTestTTSNotifier(mockFlutterTts)),
+            ttsProvider
+                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 

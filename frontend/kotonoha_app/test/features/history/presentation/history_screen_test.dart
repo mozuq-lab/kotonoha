@@ -310,8 +310,7 @@ void main() {
       /// 優先度: P0 必須
       /// 関連要件: FR-061-005
       /// 検証内容: ListView.builderによるスクロール可能なリスト実装
-      testWidgets('TC-061-004: 履歴一覧がスクロール可能であること',
-          (WidgetTester tester) async {
+      testWidgets('TC-061-004: 履歴一覧がスクロール可能であること', (WidgetTester tester) async {
         // 【テスト目的】: スクロール機能の確認 🔵
         // 【テスト内容】: ListView.builderによるスクロール可能なリスト実装
         // 【期待される動作】: 履歴が多数ある場合にスクロール可能

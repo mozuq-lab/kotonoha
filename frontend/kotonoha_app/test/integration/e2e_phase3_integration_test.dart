@@ -602,12 +602,11 @@ void main() {
           // When（実行フェーズ）
           // 【実際の処理実行】: 51件目を追加（最古を削除してから追加をシミュレート）
           // 【処理内容】: 履歴上限管理のロジックをシミュレート
-          final oldestKey =
-              historyBox.keys.cast<String>().reduce((a, b) {
-                final histA = historyBox.get(a)!;
-                final histB = historyBox.get(b)!;
-                return histA.createdAt.isBefore(histB.createdAt) ? a : b;
-              });
+          final oldestKey = historyBox.keys.cast<String>().reduce((a, b) {
+            final histA = historyBox.get(a)!;
+            final histB = historyBox.get(b)!;
+            return histA.createdAt.isBefore(histB.createdAt) ? a : b;
+          });
 
           // 最古を削除
           await historyBox.delete(oldestKey);

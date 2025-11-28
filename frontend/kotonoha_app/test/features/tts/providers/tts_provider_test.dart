@@ -49,8 +49,8 @@ void main() {
       container = ProviderContainer(
         overrides: [
           // TTSNotifierにモックされたサービスを注入
-          ttsProvider.overrideWith(
-              (ref) => createTestTTSNotifier(mockFlutterTts)),
+          ttsProvider
+              .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
         ],
       );
     });

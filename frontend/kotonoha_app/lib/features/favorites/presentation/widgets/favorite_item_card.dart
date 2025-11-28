@@ -84,7 +84,8 @@ class FavoriteItemCard extends StatelessWidget {
                         maxLines: FavoriteUIConstants.maxTextLines,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: FavoriteUIConstants.textDateSpacing),
+                      const SizedBox(
+                          height: FavoriteUIConstants.textDateSpacing),
                       // 作成日時
                       Text(
                         formattedDate,
@@ -93,7 +94,8 @@ class FavoriteItemCard extends StatelessWidget {
                                   .colorScheme
                                   .onSurface
                                   .withValues(
-                                      alpha: FavoriteUIConstants.dateTextOpacity),
+                                      alpha:
+                                          FavoriteUIConstants.dateTextOpacity),
                             ),
                       ),
                     ],

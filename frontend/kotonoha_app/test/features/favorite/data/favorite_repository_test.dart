@@ -281,8 +281,7 @@ void main() {
 
     setUp(() async {
       await Hive.close();
-      tempDir =
-          await Directory.systemTemp.createTemp('hive_favorite_order_');
+      tempDir = await Directory.systemTemp.createTemp('hive_favorite_order_');
       Hive.init(tempDir.path);
 
       if (!Hive.isAdapterRegistered(2)) {
@@ -445,8 +444,7 @@ void main() {
 
     setUp(() async {
       await Hive.close();
-      tempDir =
-          await Directory.systemTemp.createTemp('hive_favorite_from_');
+      tempDir = await Directory.systemTemp.createTemp('hive_favorite_from_');
       Hive.init(tempDir.path);
 
       if (!Hive.isAdapterRegistered(2)) {
@@ -529,8 +527,7 @@ void main() {
 
     setUp(() async {
       await Hive.close();
-      tempDir =
-          await Directory.systemTemp.createTemp('hive_favorite_edge_');
+      tempDir = await Directory.systemTemp.createTemp('hive_favorite_edge_');
       Hive.init(tempDir.path);
 
       if (!Hive.isAdapterRegistered(2)) {
@@ -723,8 +720,7 @@ void main() {
         Hive.registerAdapter(FavoriteItemAdapter());
       }
 
-      var favoriteBox =
-          await Hive.openBox<FavoriteItem>('persistence_test');
+      var favoriteBox = await Hive.openBox<FavoriteItem>('persistence_test');
       var repository = FavoriteRepository(box: favoriteBox);
 
       await repository.save(FavoriteItem(
@@ -765,8 +761,7 @@ void main() {
 
     setUp(() async {
       await Hive.close();
-      tempDir =
-          await Directory.systemTemp.createTemp('hive_favorite_perf_');
+      tempDir = await Directory.systemTemp.createTemp('hive_favorite_perf_');
       Hive.init(tempDir.path);
 
       if (!Hive.isAdapterRegistered(2)) {
@@ -824,8 +819,7 @@ void main() {
 
     setUp(() async {
       await Hive.close();
-      tempDir =
-          await Directory.systemTemp.createTemp('hive_favorite_combo_');
+      tempDir = await Directory.systemTemp.createTemp('hive_favorite_combo_');
       Hive.init(tempDir.path);
 
       if (!Hive.isAdapterRegistered(2)) {

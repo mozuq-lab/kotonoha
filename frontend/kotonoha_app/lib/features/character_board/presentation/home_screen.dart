@@ -92,14 +92,18 @@ class HomeScreen extends ConsumerWidget {
                 border: Border.all(
                   color: Theme.of(context).colorScheme.outline,
                 ),
-                borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                borderRadius:
+                    BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
               constraints: const BoxConstraints(minHeight: 80),
               child: Text(
                 inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: inputBuffer.isEmpty
-                          ? Theme.of(context).colorScheme.onSurface.withAlpha(128)
+                          ? Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withAlpha(128)
                           : Theme.of(context).colorScheme.onSurface,
                     ),
               ),
@@ -118,7 +122,9 @@ class HomeScreen extends ConsumerWidget {
                       DeleteButton(
                         enabled: inputBuffer.isNotEmpty,
                         onPressed: () {
-                          ref.read(inputBufferProvider.notifier).deleteLastCharacter();
+                          ref
+                              .read(inputBufferProvider.notifier)
+                              .deleteLastCharacter();
                         },
                       ),
                       const SizedBox(width: AppSizes.paddingSmall),
@@ -150,7 +156,9 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 child: CharacterBoardWidget(
                   onCharacterTap: (character) {
-                    ref.read(inputBufferProvider.notifier).addCharacter(character);
+                    ref
+                        .read(inputBufferProvider.notifier)
+                        .addCharacter(character);
                   },
                   fontSize: fontSize,
                 ),
@@ -170,6 +178,8 @@ class HomeScreen extends ConsumerWidget {
 
   /// 履歴に保存
   void _saveToHistory(WidgetRef ref, String text) {
-    ref.read(historyProvider.notifier).addHistory(text, HistoryType.manualInput);
+    ref
+        .read(historyProvider.notifier)
+        .addHistory(text, HistoryType.manualInput);
   }
 }

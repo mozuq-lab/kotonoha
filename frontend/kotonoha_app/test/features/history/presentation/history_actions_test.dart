@@ -279,7 +279,8 @@ void main() {
 
         // 空文字列を表示する代わりにプレースホルダーが表示される想定
         // カードは表示されるが、空文字列の表示はない
-        final cardFinder = find.byKey(const Key('history_item_card_test_empty'));
+        final cardFinder =
+            find.byKey(const Key('history_item_card_test_empty'));
 
         // When: 空文字列の履歴項目をタップする（カードが存在する場合）
         if (tester.any(cardFinder)) {
@@ -352,8 +353,7 @@ void main() {
       /// 優先度: P1 重要
       /// 関連要件: FR-063-002
       /// 検証内容: 読み上げ中に停止ボタンが表示されること
-      testWidgets('TC-063-005: 読み上げ中に停止ボタンが表示される',
-          (WidgetTester tester) async {
+      testWidgets('TC-063-005: 読み上げ中に停止ボタンが表示される', (WidgetTester tester) async {
         // 【テスト目的】: 読み上げ中に停止ボタンが表示されることを検証 🟡
         // 【テスト内容】: TTSState.speakingの場合に停止ボタンが表示される
         // 【期待される動作】: アイドル状態では停止ボタンが非表示または無効

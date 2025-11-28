@@ -78,9 +78,7 @@ class HistoryItemCard extends StatelessWidget {
               children: [
                 // 種類アイコンまたは読み上げ中インジケーター
                 Icon(
-                  isSpeaking
-                      ? Icons.volume_up
-                      : _getIconForType(history.type),
+                  isSpeaking ? Icons.volume_up : _getIconForType(history.type),
                   size: HistoryUIConstants.historyIconSize,
                   color: isSpeaking
                       ? Theme.of(context).colorScheme.secondary
@@ -99,7 +97,8 @@ class HistoryItemCard extends StatelessWidget {
                         maxLines: HistoryUIConstants.maxTextLines,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: HistoryUIConstants.textDateSpacing),
+                      const SizedBox(
+                          height: HistoryUIConstants.textDateSpacing),
                       // 作成日時
                       Text(
                         formattedDate,
@@ -108,7 +107,8 @@ class HistoryItemCard extends StatelessWidget {
                                   .colorScheme
                                   .onSurface
                                   .withValues(
-                                      alpha: HistoryUIConstants.dateTextOpacity),
+                                      alpha:
+                                          HistoryUIConstants.dateTextOpacity),
                             ),
                       ),
                     ],
