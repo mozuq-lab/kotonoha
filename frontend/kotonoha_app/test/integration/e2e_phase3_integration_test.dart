@@ -31,6 +31,12 @@ import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
 
 import '../mocks/mock_flutter_tts.dart';
 
+/// TTSNotifierを作成するヘルパー関数（テスト用）
+TTSNotifier createTestTTSNotifier(MockFlutterTts mockFlutterTts) {
+  final service = TTSService(tts: mockFlutterTts);
+  return TTSNotifier(service: service);
+}
+
 void main() {
   group('Phase 3 統合テスト - E2E', () {
     late ProviderContainer container;
@@ -104,8 +110,8 @@ void main() {
 
           container = ProviderContainer(
             overrides: [
-              ttsServiceProvider.overrideWithValue(
-                TTSService(tts: mockFlutterTts),
+              ttsProvider.overrideWith(
+                (ref) => createTestTTSNotifier(mockFlutterTts),
               ),
             ],
           );
@@ -219,8 +225,8 @@ void main() {
           // 【テストデータ準備】: ProviderContainerを作成し、TTSモックを注入
           container = ProviderContainer(
             overrides: [
-              ttsServiceProvider.overrideWithValue(
-                TTSService(tts: mockFlutterTts),
+              ttsProvider.overrideWith(
+                (ref) => createTestTTSNotifier(mockFlutterTts),
               ),
             ],
           );

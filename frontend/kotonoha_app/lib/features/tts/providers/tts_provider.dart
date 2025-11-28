@@ -77,11 +77,22 @@ class TTSNotifier extends StateNotifier<TTSServiceState> {
   /// コンストラクタ
   ///
   /// TTSServiceを内部で作成し、状態変更コールバックを登録する。
-  TTSNotifier() : super(TTSServiceState.initial()) {
-    _service = TTSService(
-      tts: FlutterTts(),
-      onStateChanged: _onServiceStateChanged,
-    );
+  /// [service] を指定した場合はそのサービスを使用（テスト用）。
+  ///
+  /// テスト時は以下のようにTTSServiceを作成して渡す:
+  /// ```dart
+  /// final service = TTSService(
+  ///   tts: mockFlutterTts,
+  ///   onStateChanged: () { /* 状態変更ハンドラ */ },
+  /// );
+  /// final notifier = TTSNotifier(service: service);
+  /// ```
+  TTSNotifier({TTSService? service}) : super(TTSServiceState.initial()) {
+    _service = service ??
+        TTSService(
+          tts: FlutterTts(),
+          onStateChanged: _onServiceStateChanged,
+        );
   }
 
   /// TTSServiceインスタンス

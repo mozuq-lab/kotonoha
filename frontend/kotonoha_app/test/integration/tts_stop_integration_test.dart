@@ -18,6 +18,12 @@ import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
 import '../mocks/mock_flutter_tts.dart';
 
+/// TTSNotifierを作成するヘルパー関数（テスト用）
+TTSNotifier createTestTTSNotifier(MockFlutterTts mockFlutterTts) {
+  final service = TTSService(tts: mockFlutterTts);
+  return TTSNotifier(service: service);
+}
+
 void main() {
   group('TTS読み上げ中断機能 統合テスト', () {
     late MockFlutterTts mockFlutterTts;
@@ -60,8 +66,8 @@ void main() {
         // 【初期条件設定】: 読み上げ中でない状態
         final container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -102,8 +108,8 @@ void main() {
         // 【初期条件設定】: 読み上げ中の状態
         final container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -145,8 +151,8 @@ void main() {
 
         final container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -195,8 +201,8 @@ void main() {
         // 【初期条件設定】: 正常な状態
         final container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -240,8 +246,8 @@ void main() {
         // 【初期条件設定】: 最大文字数のテキストを読み上げ中
         final container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -288,8 +294,8 @@ void main() {
         // 【初期条件設定】: 正常な状態
         final container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -337,8 +343,8 @@ void main() {
         // 【初期条件設定】: 読み上げ中の状態
         final container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -397,8 +403,8 @@ void main() {
         // 【初期条件設定】: アプリ起動直後の初期状態
         final container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );

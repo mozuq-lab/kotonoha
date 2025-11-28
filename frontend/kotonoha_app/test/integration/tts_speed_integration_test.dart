@@ -18,6 +18,12 @@ import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import '../mocks/mock_flutter_tts.dart';
 
+/// TTSNotifierを作成するヘルパー関数（テスト用）
+TTSNotifier createTestTTSNotifier(MockFlutterTts mockFlutterTts) {
+  final service = TTSService(tts: mockFlutterTts);
+  return TTSNotifier(service: service);
+}
+
 void main() {
   group('TTS速度設定 統合テスト', () {
     late ProviderContainer container;
@@ -71,8 +77,8 @@ void main() {
         // 【初期条件設定】: アプリ起動時の状態
         container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -120,8 +126,8 @@ void main() {
         // 【初期条件設定】: アプリ起動時の状態
         container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -169,8 +175,8 @@ void main() {
         // 【初期条件設定】: アプリ起動時の状態
         container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -231,8 +237,8 @@ void main() {
 
           container = ProviderContainer(
             overrides: [
-              ttsServiceProvider.overrideWithValue(
-                TTSService(tts: mockFlutterTts),
+              ttsProvider.overrideWith(
+                (ref) => createTestTTSNotifier(mockFlutterTts),
               ),
             ],
           );
@@ -291,8 +297,8 @@ void main() {
         // 【初期条件設定】: 速度「普通」で読み上げ中の状態
         container = ProviderContainer(
           overrides: [
-            ttsServiceProvider.overrideWithValue(
-              TTSService(tts: mockFlutterTts),
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );

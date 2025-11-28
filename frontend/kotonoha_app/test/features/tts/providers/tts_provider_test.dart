@@ -17,6 +17,12 @@ import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import '../../../mocks/mock_flutter_tts.dart';
 
+/// TTSNotifierを作成するヘルパー関数（テスト用）
+TTSNotifier createTestTTSNotifier(MockFlutterTts mockFlutterTts) {
+  final service = TTSService(tts: mockFlutterTts);
+  return TTSNotifier(service: service);
+}
+
 void main() {
   group('TTSProvider', () {
     late ProviderContainer container;
@@ -42,10 +48,9 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
-          // TTSServiceのモックを注入
-          ttsServiceProvider.overrideWithValue(
-            TTSService(tts: mockFlutterTts),
-          ),
+          // TTSNotifierにモックされたサービスを注入
+          ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts)),
         ],
       );
     });
