@@ -24,6 +24,6 @@ void main() {
 
     // Verify that the home screen is displayed with the app title
     expect(find.text('kotonoha'), findsOneWidget);
-    expect(find.text('ホーム画面'), findsOneWidget);
+    expect(find.text('入力してください...'), findsOneWidget);
   });
 }

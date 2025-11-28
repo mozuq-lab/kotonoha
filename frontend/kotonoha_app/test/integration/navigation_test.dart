@@ -61,9 +61,9 @@ void main() {
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
 
-      // 初期画面がホーム画面であることを確認
+      // 初期画面がホーム画面であることを確認（文字盤UIの存在で検証）
       expect(
-        find.text('ホーム画面'),
+        find.text('入力してください...'),
         findsOneWidget,
         reason: '初期表示はホーム画面である必要がある',
       );
@@ -110,7 +110,7 @@ void main() {
 
       // Then（検証フェーズ）
       expect(
-        find.text('ホーム画面'),
+        find.text('入力してください...'),
         findsOneWidget,
         reason: '/への遷移後、ホーム画面が表示される必要がある',
       );
@@ -127,7 +127,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('ホーム画面'),
+        find.text('入力してください...'),
         findsOneWidget,
         reason: '初期表示はホーム画面である必要がある',
       );
@@ -155,7 +155,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('ホーム画面'),
+        find.text('入力してください...'),
         findsOneWidget,
         reason: '初期表示はホーム画面である必要がある',
       );
@@ -330,7 +330,7 @@ void main() {
 
       // Then（検証フェーズ）
       expect(
-        find.text('ホーム画面'),
+        find.text('入力してください...'),
         findsOneWidget,
         reason: 'goNamed("home")でホーム画面へ遷移できる必要がある',
       );
@@ -394,7 +394,7 @@ void main() {
       router.go('/');
       await tester.pumpAndSettle();
       expect(
-        find.text('ホーム画面'),
+        find.text('入力してください...'),
         findsOneWidget,
         reason: '連続ナビゲーション後も正常にホーム画面へ戻れる必要がある',
       );
