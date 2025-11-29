@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kotonoha_app/core/router/error_screen.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/favorites/presentation/favorites_screen.dart';
+import 'package:kotonoha_app/features/help/presentation/screens/help_screen.dart';
 import 'package:kotonoha_app/features/history/presentation/history_screen.dart';
 import 'package:kotonoha_app/features/settings/presentation/settings_screen.dart';
 
@@ -29,6 +30,9 @@ abstract final class AppRoutes {
 
   /// お気に入り画面
   static const String favorites = '/favorites';
+
+  /// ヘルプ画面
+  static const String help = '/help';
 }
 
 /// GoRouterプロバイダー
@@ -62,6 +66,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.favorites,
         name: 'favorites',
         builder: (context, state) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.help,
+        name: 'help',
+        builder: (context, state) => const HelpScreen(),
       ),
     ],
     errorBuilder: (context, state) => ErrorScreen(error: state.error),
