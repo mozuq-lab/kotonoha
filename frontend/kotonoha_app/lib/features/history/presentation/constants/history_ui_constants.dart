@@ -46,4 +46,9 @@ class HistoryUIConstants {
   static const String emptyStateTitle = '履歴がありません';
   static const String emptyStateHint = '読み上げた内容が履歴として保存されます';
   static const String dateTimeFormat = 'MM/dd HH:mm';
+
+  // お気に入り追加関連
+  static const String addToFavoriteLabel = 'お気に入りに追加';
+  static const String addToFavoriteSuccess = 'お気に入りに追加しました';
+  static const String addToFavoriteDuplicate = '既にお気に入りに登録されています';
 }

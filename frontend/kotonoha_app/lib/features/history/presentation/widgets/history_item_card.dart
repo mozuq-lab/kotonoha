@@ -1,10 +1,11 @@
 /// HistoryItemCard ウィジェット
 ///
 /// TASK-0061: 履歴一覧UI実装
+/// TASK-0066: お気に入り追加・削除・並び替え機能
 /// 【TDD Refactorフェーズ】: 定数抽出・constコンストラクタ・アクセシビリティ改善
 ///
 /// 信頼性レベル: 🔵 青信号（要件定義書ベース）
-/// 関連要件: FR-061-002, FR-061-003, NFR-061-004
+/// 関連要件: FR-061-002, FR-061-003, NFR-061-004, REQ-701
 library;
 
 import 'package:flutter/material.dart';
@@ -34,6 +35,7 @@ class HistoryItemCard extends StatelessWidget {
     required this.onDelete,
     this.isSpeaking = false,
     this.onStop,
+    this.onLongPress,
     super.key,
   });
 
@@ -51,6 +53,9 @@ class HistoryItemCard extends StatelessWidget {
 
   /// 停止ボタンタップ時のコールバック
   final VoidCallback? onStop;
+
+  /// 長押し時のコールバック（お気に入り追加メニュー表示用）
+  final VoidCallback? onLongPress;
 
   /// 日時フォーマッター（パフォーマンス最適化のため静的）
   static final DateFormat _dateFormatter =
@@ -72,6 +77,7 @@ class HistoryItemCard extends StatelessWidget {
         ),
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           child: Padding(
             padding: const EdgeInsets.all(HistoryUIConstants.cardPadding),
             child: Row(

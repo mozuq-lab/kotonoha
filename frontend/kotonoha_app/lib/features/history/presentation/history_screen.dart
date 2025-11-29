@@ -1,15 +1,17 @@
 /// History screen widget
 ///
 /// TASK-0061: 履歴一覧UI実装
+/// TASK-0066: お気に入り追加・削除・並び替え機能
 /// 【TDD Refactorフェーズ】: 定数抽出・ダイアログ分離・アクセシビリティ改善
 ///
 /// 信頼性レベル: 🔵 青信号（要件定義書ベース）
-/// 関連要件: FR-061-001〜015, AC-061-001〜008
+/// 関連要件: FR-061-001〜015, AC-061-001〜008, REQ-701
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/history_provider.dart';
+import '../../favorite/providers/favorite_provider.dart';
 import '../../tts/providers/tts_provider.dart';
 import '../../tts/domain/models/tts_state.dart';
 import 'widgets/history_item_card.dart';
@@ -26,6 +28,7 @@ import 'constants/history_ui_constants.dart';
 /// - 個別削除機能
 /// - 全削除機能
 /// - 空状態表示
+/// - お気に入り追加機能（REQ-701）
 ///
 /// 実装要件:
 /// - FR-061-001: 履歴を時系列順（新しい順）に表示
@@ -33,6 +36,7 @@ import 'constants/history_ui_constants.dart';
 /// - FR-061-007〜010: 削除機能（個別・全削除）
 /// - NFR-061-001: 50件を1秒以内に表示
 /// - NFR-061-004: タップターゲット44px以上
+/// - REQ-701: お気に入り追加機能
 class HistoryScreen extends ConsumerWidget {
   /// 履歴画面を作成する。
   const HistoryScreen({super.key});
@@ -85,6 +89,8 @@ class HistoryScreen extends ConsumerWidget {
                   onTap: () => _onHistoryTap(ref, history.content),
                   onDelete: () => _showDeleteDialog(context, ref, history.id),
                   onStop: () => ref.read(ttsProvider.notifier).stop(),
+                  onLongPress: () =>
+                      _showContextMenu(context, ref, history.content),
                 );
               },
             ),
@@ -145,6 +151,59 @@ class HistoryScreen extends ConsumerWidget {
         );
       },
     );
+  }
+
+  /// コンテキストメニューを表示
+  ///
+  /// REQ-701: 履歴からお気に入りに追加
+  void _showContextMenu(BuildContext context, WidgetRef ref, String content) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.favorite_border),
+                title: const Text(HistoryUIConstants.addToFavoriteLabel),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _addToFavorite(context, ref, content);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// お気に入りに追加
+  ///
+  /// REQ-701: お気に入り追加機能
+  void _addToFavorite(BuildContext context, WidgetRef ref, String content) {
+    final favoriteState = ref.read(favoriteProvider);
+    final isDuplicate =
+        favoriteState.favorites.any((f) => f.content == content);
+
+    if (isDuplicate) {
+      // 重複の場合
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(HistoryUIConstants.addToFavoriteDuplicate),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } else {
+      // 追加成功
+      ref.read(favoriteProvider.notifier).addFavorite(content);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(HistoryUIConstants.addToFavoriteSuccess),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+    }
   }
 }
 
