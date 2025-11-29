@@ -18,7 +18,8 @@ void main() {
     test('should have 4 status values', () {
       expect(AIConversionStatus.values.length, 4);
       expect(AIConversionStatus.values, contains(AIConversionStatus.idle));
-      expect(AIConversionStatus.values, contains(AIConversionStatus.converting));
+      expect(
+          AIConversionStatus.values, contains(AIConversionStatus.converting));
       expect(AIConversionStatus.values, contains(AIConversionStatus.success));
       expect(AIConversionStatus.values, contains(AIConversionStatus.error));
     });
@@ -48,7 +49,8 @@ void main() {
 
     group('ヘルパープロパティ', () {
       // TC-070-022: isConvertingプロパティ
-      test('isConverting should return true only when status is converting', () {
+      test('isConverting should return true only when status is converting',
+          () {
         expect(const AIConversionState().isConverting, false);
         expect(
           const AIConversionState(status: AIConversionStatus.idle).isConverting,
@@ -65,7 +67,8 @@ void main() {
           false,
         );
         expect(
-          const AIConversionState(status: AIConversionStatus.error).isConverting,
+          const AIConversionState(status: AIConversionStatus.error)
+              .isConverting,
           false,
         );
       });

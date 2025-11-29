@@ -20,8 +20,7 @@ void main() {
     // =========================================================================
 
     group('表示テスト', () {
-      testWidgets('TC-077-007: オフライン→オンラインで復帰通知が表示される',
-          (tester) async {
+      testWidgets('TC-077-007: オフライン→オンラインで復帰通知が表示される', (tester) async {
         // Given: オフライン状態のProviderContainer
         final container = ProviderContainer();
         final notifier = container.read(networkProvider.notifier);
@@ -56,8 +55,7 @@ void main() {
         container.dispose();
       });
 
-      testWidgets('TC-077-008: オンライン→オンラインでは通知が表示されない',
-          (tester) async {
+      testWidgets('TC-077-008: オンライン→オンラインでは通知が表示されない', (tester) async {
         // Given: オンライン状態のProviderContainer
         final container = ProviderContainer();
         final notifier = container.read(networkProvider.notifier);
@@ -88,8 +86,7 @@ void main() {
         container.dispose();
       });
 
-      testWidgets('TC-077-009: checking→オンラインでは通知が表示されない',
-          (tester) async {
+      testWidgets('TC-077-009: checking→オンラインでは通知が表示されない', (tester) async {
         // Given: チェック中状態のProviderContainer
         final container = ProviderContainer();
         final notifier = container.read(networkProvider.notifier);
@@ -126,8 +123,7 @@ void main() {
     // =========================================================================
 
     group('自動非表示テスト', () {
-      testWidgets('TC-077-010: 復帰通知が一定時間後に自動で非表示になる',
-          (tester) async {
+      testWidgets('TC-077-010: 復帰通知が一定時間後に自動で非表示になる', (tester) async {
         // Given: オフライン状態のProviderContainer
         final container = ProviderContainer();
         final notifier = container.read(networkProvider.notifier);

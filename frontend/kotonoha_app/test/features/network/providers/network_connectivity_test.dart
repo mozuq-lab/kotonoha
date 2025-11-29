@@ -30,7 +30,8 @@ void main() {
 
     setUp(() {
       mockService = MockConnectivityService();
-      connectivityController = StreamController<List<ConnectivityResult>>.broadcast();
+      connectivityController =
+          StreamController<List<ConnectivityResult>>.broadcast();
 
       when(() => mockService.onConnectivityChanged)
           .thenAnswer((_) => connectivityController.stream);
@@ -141,8 +142,8 @@ void main() {
       });
 
       test('TC-076-007: 複数の接続タイプがある場合はオンライン', () async {
-        when(() => mockService.checkConnectivity())
-            .thenAnswer((_) async => [ConnectivityResult.wifi, ConnectivityResult.mobile]);
+        when(() => mockService.checkConnectivity()).thenAnswer(
+            (_) async => [ConnectivityResult.wifi, ConnectivityResult.mobile]);
 
         final notifier = container.read(networkProvider.notifier);
         await notifier.initializeWithConnectivity();

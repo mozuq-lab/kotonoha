@@ -109,9 +109,8 @@ class MockTestData {
         'id': 'favorite-$index',
         'text': 'お気に入り $index',
         'displayOrder': index,
-        'createdAt': DateTime.now()
-            .subtract(Duration(days: index))
-            .toIso8601String(),
+        'createdAt':
+            DateTime.now().subtract(Duration(days: index)).toIso8601String(),
       };
     });
   }

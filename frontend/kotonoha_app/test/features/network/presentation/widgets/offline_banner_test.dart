@@ -100,8 +100,7 @@ void main() {
     // =========================================================================
 
     group('状態変更テスト', () {
-      testWidgets('TC-077-004: オンラインからオフラインへの変更でバナーが表示される',
-          (tester) async {
+      testWidgets('TC-077-004: オンラインからオフラインへの変更でバナーが表示される', (tester) async {
         // Given: オンライン状態のProviderContainer
         final container = ProviderContainer();
         final notifier = container.read(networkProvider.notifier);
@@ -132,8 +131,7 @@ void main() {
         container.dispose();
       });
 
-      testWidgets('TC-077-005: オフラインからオンラインへの変更でバナーが非表示になる',
-          (tester) async {
+      testWidgets('TC-077-005: オフラインからオンラインへの変更でバナーが非表示になる', (tester) async {
         // Given: オフライン状態のProviderContainer
         final container = ProviderContainer();
         final notifier = container.read(networkProvider.notifier);

@@ -20,8 +20,7 @@ void main() {
     // =========================================================================
 
     group('基本表示テスト', () {
-      testWidgets('TC-078-001: エラーダイアログにタイトルとメッセージが表示される',
-          (tester) async {
+      testWidgets('TC-078-001: エラーダイアログにタイトルとメッセージが表示される', (tester) async {
         // When: エラーダイアログを表示
         await tester.pumpWidget(
           MaterialApp(
@@ -112,8 +111,7 @@ void main() {
         expect(find.text('再試行'), findsOneWidget);
       });
 
-      testWidgets('TC-078-004: 再試行ボタンタップでコールバックが呼ばれる',
-          (tester) async {
+      testWidgets('TC-078-004: 再試行ボタンタップでコールバックが呼ばれる', (tester) async {
         var retryPressed = false;
 
         await tester.pumpWidget(
@@ -264,8 +262,7 @@ void main() {
       expect(find.text('元のテキストを使用'), findsOneWidget);
     });
 
-    testWidgets('TC-078-009: 元のテキストを使用ボタンでコールバックが呼ばれる',
-        (tester) async {
+    testWidgets('TC-078-009: 元のテキストを使用ボタンでコールバックが呼ばれる', (tester) async {
       var useOriginalPressed = false;
 
       await tester.pumpWidget(

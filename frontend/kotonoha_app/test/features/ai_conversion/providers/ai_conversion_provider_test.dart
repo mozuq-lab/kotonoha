@@ -432,7 +432,8 @@ void main() {
       });
 
       // TC-070-012: 結果がない状態でregenerateを呼び出した場合
-      test('should do nothing when regenerate is called without previous result',
+      test(
+          'should do nothing when regenerate is called without previous result',
           () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -481,8 +482,8 @@ void main() {
         );
 
         // success状態を確認
-        expect(
-            container.read(aiConversionProvider).status, AIConversionStatus.success);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.success);
 
         // clear
         notifier.clear();
@@ -516,7 +517,8 @@ void main() {
         );
 
         // error状態を確認
-        expect(container.read(aiConversionProvider).status, AIConversionStatus.error);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.error);
 
         // clear
         notifier.clear();
@@ -530,7 +532,8 @@ void main() {
 
     group('状態遷移', () {
       // TC-070-016: idle → converting → success → idle (clear)
-      test('should transition: idle -> converting -> success -> idle', () async {
+      test('should transition: idle -> converting -> success -> idle',
+          () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
 
@@ -549,19 +552,21 @@ void main() {
         final notifier = container.read(aiConversionProvider.notifier);
 
         // 初期状態: idle
-        expect(container.read(aiConversionProvider).status, AIConversionStatus.idle);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.idle);
 
         // 変換 → success
         await notifier.convert(
           inputText: 'テスト',
           politenessLevel: PolitenessLevel.polite,
         );
-        expect(
-            container.read(aiConversionProvider).status, AIConversionStatus.success);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.success);
 
         // clear → idle
         notifier.clear();
-        expect(container.read(aiConversionProvider).status, AIConversionStatus.idle);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.idle);
       });
 
       // TC-070-017: idle → converting → error → idle (clear)
@@ -580,18 +585,21 @@ void main() {
         final notifier = container.read(aiConversionProvider.notifier);
 
         // 初期状態: idle
-        expect(container.read(aiConversionProvider).status, AIConversionStatus.idle);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.idle);
 
         // 変換エラー → error
         await notifier.convert(
           inputText: 'テスト',
           politenessLevel: PolitenessLevel.polite,
         );
-        expect(container.read(aiConversionProvider).status, AIConversionStatus.error);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.error);
 
         // clear → idle
         notifier.clear();
-        expect(container.read(aiConversionProvider).status, AIConversionStatus.idle);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.idle);
       });
 
       // TC-070-018: success → converting → success (regenerate)
@@ -619,8 +627,8 @@ void main() {
         );
 
         // success状態
-        expect(
-            container.read(aiConversionProvider).status, AIConversionStatus.success);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.success);
 
         when(() => mockApiClient.regenerate(
               inputText: any(named: 'inputText'),
@@ -637,8 +645,8 @@ void main() {
 
         // regenerate → success
         await notifier.regenerate();
-        expect(
-            container.read(aiConversionProvider).status, AIConversionStatus.success);
+        expect(container.read(aiConversionProvider).status,
+            AIConversionStatus.success);
       });
     });
 

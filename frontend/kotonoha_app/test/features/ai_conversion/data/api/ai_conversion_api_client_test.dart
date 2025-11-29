@@ -42,7 +42,8 @@ void main() {
 
       test('connectTimeoutが10秒に設定される', () {
         // 【テストデータ準備】: 実際のAPIクライアント（baseUrl指定）
-        final realClient = AIConversionApiClient(baseUrl: 'http://localhost:8000');
+        final realClient =
+            AIConversionApiClient(baseUrl: 'http://localhost:8000');
 
         // 【結果検証】: connectTimeoutが10秒であること 🔵
         expect(
@@ -53,7 +54,8 @@ void main() {
 
       test('receiveTimeoutが10秒に設定される', () {
         // 【テストデータ準備】: 実際のAPIクライアント
-        final realClient = AIConversionApiClient(baseUrl: 'http://localhost:8000');
+        final realClient =
+            AIConversionApiClient(baseUrl: 'http://localhost:8000');
 
         // 【結果検証】: receiveTimeoutが10秒であること 🔵
         expect(
@@ -75,7 +77,8 @@ void main() {
 
       test('Content-Typeがapplication/jsonに設定される', () {
         // 【テストデータ準備】: 実際のAPIクライアント
-        final realClient = AIConversionApiClient(baseUrl: 'http://localhost:8000');
+        final realClient =
+            AIConversionApiClient(baseUrl: 'http://localhost:8000');
 
         // 【結果検証】: Content-Typeヘッダーが正しいこと 🔵
         expect(
@@ -86,7 +89,8 @@ void main() {
 
       test('Acceptがapplication/jsonに設定される', () {
         // 【テストデータ準備】: 実際のAPIクライアント
-        final realClient = AIConversionApiClient(baseUrl: 'http://localhost:8000');
+        final realClient =
+            AIConversionApiClient(baseUrl: 'http://localhost:8000');
 
         // 【結果検証】: Acceptヘッダーが正しいこと 🔵
         expect(
@@ -97,7 +101,8 @@ void main() {
 
       test('baseUrlが正しく設定される', () {
         // 【テストデータ準備】: 実際のAPIクライアント
-        final realClient = AIConversionApiClient(baseUrl: 'http://localhost:8000');
+        final realClient =
+            AIConversionApiClient(baseUrl: 'http://localhost:8000');
 
         // 【結果検証】: baseUrlが正しいこと
         expect(realClient.dio.options.baseUrl, 'http://localhost:8000');
@@ -386,7 +391,9 @@ void main() {
           type: DioExceptionType.badResponse,
           response: Response(
             statusCode: 500,
-            data: {'error': {'code': 'AI_API_ERROR', 'message': 'Internal error'}},
+            data: {
+              'error': {'code': 'AI_API_ERROR', 'message': 'Internal error'}
+            },
             requestOptions: RequestOptions(path: '/api/v1/ai/convert'),
           ),
           requestOptions: RequestOptions(path: '/api/v1/ai/convert'),
@@ -425,7 +432,12 @@ void main() {
           type: DioExceptionType.badResponse,
           response: Response(
             statusCode: 429,
-            data: {'error': {'code': 'RATE_LIMIT_EXCEEDED', 'message': 'Too many requests'}},
+            data: {
+              'error': {
+                'code': 'RATE_LIMIT_EXCEEDED',
+                'message': 'Too many requests'
+              }
+            },
             requestOptions: RequestOptions(path: '/api/v1/ai/convert'),
           ),
           requestOptions: RequestOptions(path: '/api/v1/ai/convert'),
@@ -464,7 +476,9 @@ void main() {
           type: DioExceptionType.badResponse,
           response: Response(
             statusCode: 400,
-            data: {'error': {'code': 'VALIDATION_ERROR', 'message': 'Invalid input'}},
+            data: {
+              'error': {'code': 'VALIDATION_ERROR', 'message': 'Invalid input'}
+            },
             requestOptions: RequestOptions(path: '/api/v1/ai/convert'),
           ),
           requestOptions: RequestOptions(path: '/api/v1/ai/convert'),
@@ -500,7 +514,7 @@ void main() {
               any(),
               data: any(named: 'data'),
             )).thenAnswer((_) async => Response(
-              data: 'invalid json',  // 文字列として返される場合
+              data: 'invalid json', // 文字列として返される場合
               statusCode: 200,
               requestOptions: RequestOptions(path: '/api/v1/ai/convert'),
             ));

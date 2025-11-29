@@ -146,7 +146,9 @@ void main() {
     group('3. アプリ状態復元テスト', () {
       test('TC-080-007: 入力中テキストが保存・復元される', () async {
         // Given: セッション状態を保存
-        await container.read(appSessionProvider.notifier).saveDraftText('テスト入力');
+        await container
+            .read(appSessionProvider.notifier)
+            .saveDraftText('テスト入力');
 
         // When: 新しいコンテナで復元
         SharedPreferences.setMockInitialValues({
@@ -163,7 +165,9 @@ void main() {
 
       test('TC-080-008: 最後のルートが保存・復元される', () async {
         // Given: セッション状態を保存
-        await container.read(appSessionProvider.notifier).saveLastRoute('/settings');
+        await container
+            .read(appSessionProvider.notifier)
+            .saveLastRoute('/settings');
 
         // When: 新しいコンテナで復元
         SharedPreferences.setMockInitialValues({
@@ -246,7 +250,8 @@ void main() {
 
         // When: 新しいコンテナで初期化
         final newContainer = ProviderContainer();
-        final settings = await newContainer.read(settingsNotifierProvider.future);
+        final settings =
+            await newContainer.read(settingsNotifierProvider.future);
 
         // Then: 設定が復元される
         expect(settings.theme, AppTheme.dark);

@@ -120,7 +120,8 @@ void main() {
       expect(
         routeNames,
         containsAll(['home', 'settings', 'history', 'favorites', 'help']),
-        reason: '名前付きルート（home, settings, history, favorites, help）がすべて定義されている必要がある',
+        reason:
+            '名前付きルート（home, settings, history, favorites, help）がすべて定義されている必要がある',
       );
     });
 

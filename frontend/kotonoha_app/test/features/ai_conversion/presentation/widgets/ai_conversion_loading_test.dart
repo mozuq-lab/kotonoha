@@ -49,7 +49,8 @@ void main() {
         );
 
         // 初期状態: メッセージ非表示
-        expect(find.text('AI変換中...'), findsNothing); // 【確認内容】: 初期状態ではメッセージ非表示 🔵
+        expect(
+            find.text('AI変換中...'), findsNothing); // 【確認内容】: 初期状態ではメッセージ非表示 🔵
         expect(find.byType(CircularProgressIndicator),
             findsOneWidget); // 【確認内容】: インジケーターは表示 🔵
 
@@ -59,8 +60,7 @@ void main() {
 
         // Then: 【結果検証】: ローディングメッセージが表示されることを確認
         // 【期待値確認】: REQ-2006「3秒超過時のローディング表示」に基づく
-        expect(find.text('AI変換中...'),
-            findsOneWidget); // 【確認内容】: メッセージ表示 🔵
+        expect(find.text('AI変換中...'), findsOneWidget); // 【確認内容】: メッセージ表示 🔵
         expect(find.byType(CircularProgressIndicator),
             findsOneWidget); // 【確認内容】: インジケーターも継続表示 🔵
       });
@@ -93,15 +93,16 @@ void main() {
 
         // 2秒時点: メッセージ非表示
         await tester.pump(const Duration(seconds: 2));
-        expect(find.text('AI変換中...'), findsNothing); // 【確認内容】: 2秒時点ではメッセージ非表示 🔵
+        expect(
+            find.text('AI変換中...'), findsNothing); // 【確認内容】: 2秒時点ではメッセージ非表示 🔵
 
         // When: 【時間経過シミュレート】: ちょうど3秒経過（残り1秒）
         await tester.pump(const Duration(seconds: 1));
 
         // Then: 【結果検証】: 3秒ジャストでメッセージが表示されることを確認
         // 【期待値確認】: REQ-2006「3秒閾値」に基づく
-        expect(find.text('AI変換中...'),
-            findsOneWidget); // 【確認内容】: ちょうど3秒でメッセージ表示 🔵
+        expect(
+            find.text('AI変換中...'), findsOneWidget); // 【確認内容】: ちょうど3秒でメッセージ表示 🔵
       });
 
       /// TC-068-016: ローディングタイマーが正しく動作する
@@ -143,7 +144,8 @@ void main() {
 
         // 3秒経過
         await tester.pump(const Duration(seconds: 1));
-        expect(find.text('AI変換中...'), findsOneWidget); // 【確認内容】: 3秒時点でメッセージあり 🔵
+        expect(
+            find.text('AI変換中...'), findsOneWidget); // 【確認内容】: 3秒時点でメッセージあり 🔵
       });
     });
 

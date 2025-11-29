@@ -342,8 +342,7 @@ void main() {
         expect(
           contrastRatio,
           greaterThanOrEqualTo(4.5),
-          reason:
-              '高コントラストモードはWCAG 2.1 AAレベル（4.5:1以上）を満たす必要があります',
+          reason: '高コントラストモードはWCAG 2.1 AAレベル（4.5:1以上）を満たす必要があります',
         );
 
         // 追加検証: 実際には21:1（最大コントラスト）

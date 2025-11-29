@@ -180,8 +180,7 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-801
       /// 検証内容: フォントサイズ「小」が正しく設定・適用されること
-      testWidgets('TC-072-005: フォントサイズ「小」の設定と適用',
-          (WidgetTester tester) async {
+      testWidgets('TC-072-005: フォントサイズ「小」の設定と適用', (WidgetTester tester) async {
         // 【テスト目的】: フォントサイズ「小」が正しく設定・適用されることを確認 🔵
         // 🔵 青信号: REQ-801「小/中/大の3段階」
 
@@ -235,8 +234,7 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-801
       /// 検証内容: フォントサイズ「大」が正しく設定・適用されること
-      testWidgets('TC-072-007: フォントサイズ「大」の設定と適用',
-          (WidgetTester tester) async {
+      testWidgets('TC-072-007: フォントサイズ「大」の設定と適用', (WidgetTester tester) async {
         // 【テスト目的】: フォントサイズ「大」が正しく設定・適用されることを確認 🔵
         // 🔵 青信号: REQ-801「小/中/大の3段階」
 
@@ -297,8 +295,7 @@ void main() {
       /// 優先度: P1（高優先度）
       /// 関連要件: NFR-301, EDGE-201
       /// 検証内容: 設定の非同期読み込み中にUIが表示される場合
-      testWidgets('TC-072-009: 設定読み込み中のデフォルト値使用',
-          (WidgetTester tester) async {
+      testWidgets('TC-072-009: 設定読み込み中のデフォルト値使用', (WidgetTester tester) async {
         // 【テスト目的】: ローディング中もアプリが動作することを確認 🟡
         // 🟡 黄信号: EDGE-201、NFR-301から推測
 
@@ -324,8 +321,7 @@ void main() {
       /// 優先度: P1（高優先度）
       /// 関連要件: NFR-301
       /// 検証内容: SharedPreferencesに不正な値が保存されている場合
-      testWidgets('TC-072-010: 不正な保存値のフォールバック',
-          (WidgetTester tester) async {
+      testWidgets('TC-072-010: 不正な保存値のフォールバック', (WidgetTester tester) async {
         // 【テスト目的】: 設定ファイルの破損時もアプリが起動することを確認 🟡
         // 🟡 黄信号: NFR-301「基本機能継続」から推測
 
@@ -416,8 +412,7 @@ void main() {
       /// 優先度: P1（高優先度）
       /// 関連要件: 一般的なUI動作
       /// 検証内容: 状態遷移の連続性
-      testWidgets('TC-072-013: フォントサイズ切り替えの連続操作',
-          (WidgetTester tester) async {
+      testWidgets('TC-072-013: フォントサイズ切り替えの連続操作', (WidgetTester tester) async {
         // 【テスト目的】: 連続した変更が正常に処理されることを確認 🟡
         // 🟡 黄信号: 一般的なUI動作から推測
 

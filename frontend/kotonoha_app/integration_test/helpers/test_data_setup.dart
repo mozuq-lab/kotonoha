@@ -158,7 +158,8 @@ class TestDataSetup {
         'id': 'favorite-$i',
         'content': 'お気に入り $i',
         'displayOrder': i,
-        'createdAt': DateTime.now().subtract(Duration(days: i)).toIso8601String(),
+        'createdAt':
+            DateTime.now().subtract(Duration(days: i)).toIso8601String(),
       });
     }
   }

@@ -284,8 +284,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
               ),
               decoration: BoxDecoration(
                 color: _getPrimaryButtonColor(theme).withValues(alpha: 0.2),
-                borderRadius:
-                    BorderRadius.circular(AppSizes.borderRadiusSmall),
+                borderRadius: BorderRadius.circular(AppSizes.borderRadiusSmall),
               ),
               child: Text(
                 widget.politenessLevel.displayName,
@@ -330,8 +329,9 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
       width: double.infinity,
       height: AppSizes.recommendedTapTarget,
       child: ElevatedButton(
-        onPressed:
-            _isProcessing ? null : () => _handleTap(() => widget.onAdopt(widget.convertedText)),
+        onPressed: _isProcessing
+            ? null
+            : () => _handleTap(() => widget.onAdopt(widget.convertedText)),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: Colors.white,
@@ -350,8 +350,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
     return SizedBox(
       height: AppSizes.minTapTarget,
       child: ElevatedButton(
-        onPressed:
-            _isProcessing ? null : () => _handleTap(widget.onRegenerate),
+        onPressed: _isProcessing ? null : () => _handleTap(widget.onRegenerate),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: textColor,
@@ -370,8 +369,9 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
     return SizedBox(
       height: AppSizes.minTapTarget,
       child: OutlinedButton(
-        onPressed:
-            _isProcessing ? null : () => _handleTap(() => widget.onUseOriginal(widget.originalText)),
+        onPressed: _isProcessing
+            ? null
+            : () => _handleTap(() => widget.onUseOriginal(widget.originalText)),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(
             AppSizes.dialogButtonMinWidth,

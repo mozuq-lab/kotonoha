@@ -99,10 +99,8 @@ void main() {
         // 【品質保証】: ユーザーが丁寧さレベルを認識できることを保証
         expect(find.text('カジュアル'),
             findsOneWidget); // 【確認内容】: カジュアルオプションが表示されている 🔵
-        expect(find.text('普通'),
-            findsOneWidget); // 【確認内容】: 普通オプションが表示されている 🔵
-        expect(find.text('丁寧'),
-            findsOneWidget); // 【確認内容】: 丁寧オプションが表示されている 🔵
+        expect(find.text('普通'), findsOneWidget); // 【確認内容】: 普通オプションが表示されている 🔵
+        expect(find.text('丁寧'), findsOneWidget); // 【確認内容】: 丁寧オプションが表示されている 🔵
       });
 
       /// TC-068-003: 丁寧さレベルを変更できる
@@ -181,7 +179,8 @@ void main() {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Text('AI変換'),
                       ),
@@ -324,7 +323,8 @@ void main() {
         expect(buttonPressed, false); // 【確認内容】: ボタンタップが無視されている 🔵
 
         // ボタンが無効状態であることを確認
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         expect(button.onPressed, isNull); // 【確認内容】: onPressedがnull（無効状態） 🔵
 
         container.dispose();
@@ -362,8 +362,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Then: 【結果検証】: 「オフライン」が表示されていることを確認
-        expect(find.text('オフライン'),
-            findsOneWidget); // 【確認内容】: オフライン表示がある 🔵
+        expect(find.text('オフライン'), findsOneWidget); // 【確認内容】: オフライン表示がある 🔵
 
         container.dispose();
       });
@@ -406,7 +405,8 @@ void main() {
 
         // Then: 【結果検証】: ボタンが無効化されていることを確認
         // 【期待値確認】: EDGE-105、API仕様の最小文字数2文字
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         expect(button.onPressed, isNull); // 【確認内容】: onPressedがnull（無効状態） 🟡
 
         container.dispose();
@@ -450,8 +450,10 @@ void main() {
 
         // Then: 【結果検証】: ボタンが無効状態であることを確認
         // 【期待値確認】: REQ-5002から推測
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
-        expect(button.onPressed, isNull); // 【確認内容】: onPressedがnull（無効状態）でタップ無視 🟡
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        expect(
+            button.onPressed, isNull); // 【確認内容】: onPressedがnull（無効状態）でタップ無視 🟡
       });
 
       /// TC-068-011: ネットワーク状態変化でボタン状態が更新される
@@ -550,8 +552,10 @@ void main() {
 
         // Then: 【結果検証】: ボタンが有効化されていることを確認
         // 【期待値確認】: API仕様の最小文字数2文字
-        final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
-        expect(button.onPressed, isNotNull); // 【確認内容】: onPressedがnon-null（有効状態） 🔵
+        final button =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        expect(
+            button.onPressed, isNotNull); // 【確認内容】: onPressedがnon-null（有効状態） 🔵
 
         container.dispose();
       });
@@ -593,7 +597,8 @@ void main() {
 
         // Then: 【結果検証】: ボタンサイズが44px以上であることを確認
         final buttonBox = tester.getRect(find.byType(ElevatedButton));
-        expect(buttonBox.height, greaterThanOrEqualTo(44.0)); // 【確認内容】: 高さが44px以上 🟡
+        expect(buttonBox.height,
+            greaterThanOrEqualTo(44.0)); // 【確認内容】: 高さが44px以上 🟡
 
         container.dispose();
       });

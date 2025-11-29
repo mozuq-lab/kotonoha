@@ -24,8 +24,7 @@ void main() {
     // 対応要件: FR-005（画面スケルトン作成）
     // 対応受け入れ基準: AC-003
     // 青信号: タスクファイルでSettingsScreen作成が明示
-    testWidgets('TC-007: SettingsScreenが正常に表示される',
-        (WidgetTester tester) async {
+    testWidgets('TC-007: SettingsScreenが正常に表示される', (WidgetTester tester) async {
       // Given（準備フェーズ）
       // ProviderScope内でSettingsScreenをラップ
 
@@ -78,8 +77,7 @@ void main() {
 
     // SettingsScreenがconstコンストラクタを持つことを確認
     // 青信号: CLAUDE.mdで「constコンストラクタを可能な限り使用」が明示
-    testWidgets('SettingsScreenはconstコンストラクタを持つ',
-        (WidgetTester tester) async {
+    testWidgets('SettingsScreenはconstコンストラクタを持つ', (WidgetTester tester) async {
       // Given/When（準備・実行フェーズ）
       await tester.pumpWidget(
         ProviderScope(
@@ -99,8 +97,7 @@ void main() {
 
     // SettingsScreenがkeyパラメータを受け取れることを確認
     // 青信号: CLAUDE.mdで「ウィジェットはkeyパラメータを持つ」が明示
-    testWidgets('SettingsScreenはkeyパラメータを受け取れる',
-        (WidgetTester tester) async {
+    testWidgets('SettingsScreenはkeyパラメータを受け取れる', (WidgetTester tester) async {
       // Given（準備フェーズ）
       const testKey = Key('settings_screen_test_key');
 
@@ -128,8 +125,7 @@ void main() {
 
   group('TASK-0071: 設定画面セクション表示テスト', () {
     // TC-071-004: 「表示設定」セクションが表示される
-    testWidgets('TC-071-004: 表示設定セクションが表示される',
-        (WidgetTester tester) async {
+    testWidgets('TC-071-004: 表示設定セクションが表示される', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -151,8 +147,7 @@ void main() {
     });
 
     // TC-071-005: 「音声設定」セクションが表示される
-    testWidgets('TC-071-005: 音声設定セクションが表示される',
-        (WidgetTester tester) async {
+    testWidgets('TC-071-005: 音声設定セクションが表示される', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -174,8 +169,7 @@ void main() {
     });
 
     // TC-071-006: 「AI設定」セクションが表示される
-    testWidgets('TC-071-006: AI設定セクションが表示される',
-        (WidgetTester tester) async {
+    testWidgets('TC-071-006: AI設定セクションが表示される', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -199,8 +193,7 @@ void main() {
 
   group('TASK-0071: 表示設定セクションテスト', () {
     // TC-071-008: フォントサイズ設定項目が表示される
-    testWidgets('TC-071-008: フォントサイズ設定項目が表示される',
-        (WidgetTester tester) async {
+    testWidgets('TC-071-008: フォントサイズ設定項目が表示される', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -243,8 +236,7 @@ void main() {
     });
 
     // TC-071-010: テーマ設定項目が表示される
-    testWidgets('TC-071-010: テーマ設定項目が表示される',
-        (WidgetTester tester) async {
+    testWidgets('TC-071-010: テーマ設定項目が表示される', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -266,8 +258,7 @@ void main() {
     });
 
     // TC-071-011: テーマ選択肢が3つ表示される
-    testWidgets('TC-071-011: テーマ選択肢が3つ表示される',
-        (WidgetTester tester) async {
+    testWidgets('TC-071-011: テーマ選択肢が3つ表示される', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -289,8 +280,7 @@ void main() {
 
   group('TASK-0071: AI設定セクションテスト', () {
     // TC-071-014: AI丁寧さレベル設定項目が表示される
-    testWidgets('TC-071-014: AI丁寧さレベル設定項目が表示される',
-        (WidgetTester tester) async {
+    testWidgets('TC-071-014: AI丁寧さレベル設定項目が表示される', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -312,8 +302,7 @@ void main() {
     });
 
     // TC-071-015: AI丁寧さレベル選択肢が3つ表示される
-    testWidgets('TC-071-015: AI丁寧さレベル選択肢が3つ表示される',
-        (WidgetTester tester) async {
+    testWidgets('TC-071-015: AI丁寧さレベル選択肢が3つ表示される', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [

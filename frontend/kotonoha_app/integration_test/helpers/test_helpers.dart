@@ -122,7 +122,8 @@ Future<void> tapCharacterOnBoard(
   String character,
 ) async {
   final finder = find.text(character);
-  expect(finder, findsOneWidget, reason: 'Character "$character" not found on board');
+  expect(finder, findsOneWidget,
+      reason: 'Character "$character" not found on board');
   await tester.tap(finder);
   await tester.pump();
 }
