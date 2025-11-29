@@ -24,6 +24,7 @@ void main() {
       // Mocktailのフォールバック値を登録
       registerFallbackValue('');
       registerFallbackValue(0.0);
+      registerFallbackValue(() {}); // VoidCallback用
     });
 
     setUp(() {
@@ -67,6 +68,25 @@ void main() {
             .called(1); // 【確認内容】: 日本語が設定されたことを確認 🔵
         verify(() => mockFlutterTts.setSpeechRate(1.0))
             .called(1); // 【確認内容】: 標準速度が設定されたことを確認 🔵
+      });
+
+      /// TC-048-001a: 初期化時にCompletionHandlerが登録される
+      ///
+      /// 優先度: P1（高優先度）
+      /// 関連要件: REQ-401, AC-001
+      /// 検証内容: initialize()呼び出し時にsetCompletionHandlerが登録されることを確認
+      test('TC-048-001a: 初期化時にCompletionHandlerが登録される', () async {
+        // 【テスト目的】: initialize()時にsetCompletionHandlerが呼ばれることを確認 🔵
+        // 【テスト内容】: initialize()後、CompletionHandlerが設定されていることを確認
+        // 【期待される動作】: setCompletionHandler()が1回呼ばれる
+        // 🔵 青信号: 読み上げ完了時にボタン状態を戻す機能の要件に基づく
+
+        // When: 【実際の処理実行】: initialize()を呼び出す
+        await service.initialize();
+
+        // Then: 【結果検証】: setCompletionHandlerが呼ばれることを確認
+        verify(() => mockFlutterTts.setCompletionHandler(any()))
+            .called(1); // 【確認内容】: CompletionHandlerが登録されたことを確認 🔵
       });
 
       /// TC-048-002: テキストを渡すと読み上げが開始される

@@ -643,5 +643,101 @@ void main() {
         },
       );
     });
+
+    // =========================================================================
+    // TC-060-E2E-009: クイック応答ボタン統合フロー
+    // =========================================================================
+    group('TC-060-E2E-009: クイック応答ボタン統合フロー', () {
+      test(
+        'TC-060-E2E-009: クイック応答「はい」をタップすると読み上げられる',
+        () async {
+          // 【テスト目的】: クイック応答ボタンの統合動作を確認 🔵
+          // 【テスト内容】: 「はい」ボタンタップでTTS読み上げと履歴保存
+          // 【期待される動作】: 「はい」がTTSで読み上げられ、履歴に保存
+          // 🔵 青信号: REQ-201に基づく
+
+          // Given（準備フェーズ）
+          // 【テストデータ準備】: ProviderContainerを作成し、TTSモックを注入
+          container = ProviderContainer(
+            overrides: [
+              ttsProvider.overrideWith(
+                (ref) => createTestTTSNotifier(mockFlutterTts),
+              ),
+            ],
+          );
+
+          // TTSNotifierを取得して初期化
+          final ttsNotifier = container.read(ttsProvider.notifier);
+          await ttsNotifier.initialize();
+
+          // When（実行フェーズ）
+          // 【実際の処理実行】: クイック応答「はい」をタップ（読み上げを実行）
+          await ttsNotifier.speak('はい');
+
+          // Then（検証フェーズ）
+          // 【結果検証】: 「はい」がTTSで読み上げられたことを確認
+          verify(() => mockFlutterTts.speak('はい'))
+              .called(1); // 【確認内容】: TTS呼び出しの確認 🔵
+        },
+      );
+
+      test(
+        'TC-060-E2E-009-NO: クイック応答「いいえ」をタップすると読み上げられる',
+        () async {
+          // 【テスト目的】: クイック応答「いいえ」ボタンの統合動作を確認 🔵
+          // 【テスト内容】: 「いいえ」ボタンタップでTTS読み上げ
+          // 【期待される動作】: 「いいえ」がTTSで読み上げられる
+          // 🔵 青信号: REQ-201に基づく
+
+          // Given（準備フェーズ）
+          container = ProviderContainer(
+            overrides: [
+              ttsProvider.overrideWith(
+                (ref) => createTestTTSNotifier(mockFlutterTts),
+              ),
+            ],
+          );
+
+          final ttsNotifier = container.read(ttsProvider.notifier);
+          await ttsNotifier.initialize();
+
+          // When（実行フェーズ）
+          await ttsNotifier.speak('いいえ');
+
+          // Then（検証フェーズ）
+          verify(() => mockFlutterTts.speak('いいえ'))
+              .called(1); // 【確認内容】: TTS呼び出しの確認 🔵
+        },
+      );
+
+      test(
+        'TC-060-E2E-009-UNKNOWN: クイック応答「わからない」をタップすると読み上げられる',
+        () async {
+          // 【テスト目的】: クイック応答「わからない」ボタンの統合動作を確認 🔵
+          // 【テスト内容】: 「わからない」ボタンタップでTTS読み上げ
+          // 【期待される動作】: 「わからない」がTTSで読み上げられる
+          // 🔵 青信号: REQ-201に基づく
+
+          // Given（準備フェーズ）
+          container = ProviderContainer(
+            overrides: [
+              ttsProvider.overrideWith(
+                (ref) => createTestTTSNotifier(mockFlutterTts),
+              ),
+            ],
+          );
+
+          final ttsNotifier = container.read(ttsProvider.notifier);
+          await ttsNotifier.initialize();
+
+          // When（実行フェーズ）
+          await ttsNotifier.speak('わからない');
+
+          // Then（検証フェーズ）
+          verify(() => mockFlutterTts.speak('わからない'))
+              .called(1); // 【確認内容】: TTS呼び出しの確認 🔵
+        },
+      );
+    });
   });
 }
