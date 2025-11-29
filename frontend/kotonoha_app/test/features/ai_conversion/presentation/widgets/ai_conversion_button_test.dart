@@ -427,15 +427,13 @@ void main() {
         // Given: 【テストデータ準備】: ローディング状態のAI変換ボタンを構築
         // 【初期条件設定】: AI変換処理実行中
         // スタブ実装で重複タップ防止をテスト
-        int tapCount = 0;
-        const isLoading = true; // 処理中状態
-
+        // 処理中状態（isLoading = true）のためボタンは無効化される
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: Center(
                 child: ElevatedButton(
-                  onPressed: isLoading ? null : () => tapCount++,
+                  onPressed: null, // ローディング中は無効化
                   child: const Text('変換中...'),
                 ),
               ),
@@ -450,13 +448,10 @@ void main() {
         await tester.tap(find.byType(ElevatedButton));
         await tester.pump();
 
-        // Then: 【結果検証】: タップが無視されていることを確認
+        // Then: 【結果検証】: ボタンが無効状態であることを確認
         // 【期待値確認】: REQ-5002から推測
-        expect(tapCount, 0); // 【確認内容】: タップカウントが増加していない 🟡
-
-        // ボタンが無効状態であることを確認
         final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
-        expect(button.onPressed, isNull); // 【確認内容】: onPressedがnull（無効状態） 🟡
+        expect(button.onPressed, isNull); // 【確認内容】: onPressedがnull（無効状態）でタップ無視 🟡
       });
 
       /// TC-068-011: ネットワーク状態変化でボタン状態が更新される

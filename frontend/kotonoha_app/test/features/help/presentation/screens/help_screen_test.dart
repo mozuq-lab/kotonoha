@@ -138,8 +138,6 @@ void main() {
 
   group('HelpScreen navigation', () {
     testWidgets('戻るボタンで前の画面に戻れる', (tester) async {
-      bool navigatedBack = false;
-
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
