@@ -1,13 +1,12 @@
-// SettingsScreen表示確認 TDDテスト（Redフェーズ）
-// TASK-0015: go_routerナビゲーション設定・ルーティング実装
-//
-// テストフレームワーク: flutter_test
-// 対象: SettingsScreen（設定画面スケルトン）
-//
-// 信頼性レベル凡例:
-// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-// - 黄信号: 要件定義書から妥当な推測によるテスト
-// - 赤信号: 要件定義書にない推測によるテスト
+/// SettingsScreen表示確認 TDDテスト
+/// TASK-0015: go_routerナビゲーション設定・ルーティング実装
+/// TASK-0071: 設定画面UI実装
+///
+/// テストフレームワーク: flutter_test
+/// 対象: SettingsScreen（設定画面）
+///
+/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,7 +24,8 @@ void main() {
     // 対応要件: FR-005（画面スケルトン作成）
     // 対応受け入れ基準: AC-003
     // 青信号: タスクファイルでSettingsScreen作成が明示
-    testWidgets('TC-007: SettingsScreenが正常に表示される', (WidgetTester tester) async {
+    testWidgets('TC-007: SettingsScreenが正常に表示される',
+        (WidgetTester tester) async {
       // Given（準備フェーズ）
       // ProviderScope内でSettingsScreenをラップ
 
@@ -78,7 +78,8 @@ void main() {
 
     // SettingsScreenがconstコンストラクタを持つことを確認
     // 青信号: CLAUDE.mdで「constコンストラクタを可能な限り使用」が明示
-    testWidgets('SettingsScreenはconstコンストラクタを持つ', (WidgetTester tester) async {
+    testWidgets('SettingsScreenはconstコンストラクタを持つ',
+        (WidgetTester tester) async {
       // Given/When（準備・実行フェーズ）
       await tester.pumpWidget(
         ProviderScope(
@@ -98,7 +99,8 @@ void main() {
 
     // SettingsScreenがkeyパラメータを受け取れることを確認
     // 青信号: CLAUDE.mdで「ウィジェットはkeyパラメータを持つ」が明示
-    testWidgets('SettingsScreenはkeyパラメータを受け取れる', (WidgetTester tester) async {
+    testWidgets('SettingsScreenはkeyパラメータを受け取れる',
+        (WidgetTester tester) async {
       // Given（準備フェーズ）
       const testKey = Key('settings_screen_test_key');
 
@@ -121,6 +123,214 @@ void main() {
         findsOneWidget,
         reason: 'SettingsScreenは指定されたkeyで識別可能である必要がある',
       );
+    });
+  });
+
+  group('TASK-0071: 設定画面セクション表示テスト', () {
+    // TC-071-004: 「表示設定」セクションが表示される
+    testWidgets('TC-071-004: 表示設定セクションが表示される',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('表示設定'),
+        findsOneWidget,
+        reason: '「表示設定」セクションが表示される必要がある',
+      );
+    });
+
+    // TC-071-005: 「音声設定」セクションが表示される
+    testWidgets('TC-071-005: 音声設定セクションが表示される',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('音声設定'),
+        findsOneWidget,
+        reason: '「音声設定」セクションが表示される必要がある',
+      );
+    });
+
+    // TC-071-006: 「AI設定」セクションが表示される
+    testWidgets('TC-071-006: AI設定セクションが表示される',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('AI設定'),
+        findsOneWidget,
+        reason: '「AI設定」セクションが表示される必要がある',
+      );
+    });
+  });
+
+  group('TASK-0071: 表示設定セクションテスト', () {
+    // TC-071-008: フォントサイズ設定項目が表示される
+    testWidgets('TC-071-008: フォントサイズ設定項目が表示される',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('フォントサイズ'),
+        findsOneWidget,
+        reason: 'フォントサイズ設定項目が表示される必要がある',
+      );
+    });
+
+    // TC-071-009: フォントサイズ選択肢が3つ表示される
+    testWidgets('TC-071-009: フォントサイズ選択肢が3つ表示される（小/中/大）',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('小'), findsOneWidget);
+      expect(find.text('中'), findsOneWidget);
+      expect(find.text('大'), findsOneWidget);
+    });
+
+    // TC-071-010: テーマ設定項目が表示される
+    testWidgets('TC-071-010: テーマ設定項目が表示される',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('テーマ'),
+        findsOneWidget,
+        reason: 'テーマ設定項目が表示される必要がある',
+      );
+    });
+
+    // TC-071-011: テーマ選択肢が3つ表示される
+    testWidgets('TC-071-011: テーマ選択肢が3つ表示される',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('ライト'), findsOneWidget);
+      expect(find.text('ダーク'), findsOneWidget);
+      expect(find.text('高コントラスト'), findsOneWidget);
+    });
+  });
+
+  group('TASK-0071: AI設定セクションテスト', () {
+    // TC-071-014: AI丁寧さレベル設定項目が表示される
+    testWidgets('TC-071-014: AI丁寧さレベル設定項目が表示される',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('丁寧さレベル'),
+        findsOneWidget,
+        reason: 'AI丁寧さレベル設定項目が表示される必要がある',
+      );
+    });
+
+    // TC-071-015: AI丁寧さレベル選択肢が3つ表示される
+    testWidgets('TC-071-015: AI丁寧さレベル選択肢が3つ表示される',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider
+                .overrideWith(() => _MockSettingsNotifier()),
+          ],
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('カジュアル'), findsOneWidget);
+      // 「普通」はTTS速度設定にも存在するため、複数見つかる
+      expect(find.text('普通'), findsWidgets);
+      expect(find.text('丁寧'), findsOneWidget);
     });
   });
 }

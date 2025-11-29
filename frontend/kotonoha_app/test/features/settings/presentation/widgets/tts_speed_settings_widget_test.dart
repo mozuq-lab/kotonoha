@@ -63,8 +63,9 @@ void main() {
         // 【検証項目】: 3つの選択肢（遅い/普通/速い）が表示されていること
         expect(
             find.text('遅い'), findsOneWidget); // 【確認内容】: 「遅い」選択肢が表示されていることを確認 🔵
+        // Note: 「普通」はAI丁寧さレベル設定にも存在するため、findsWidgetsで検証
         expect(
-            find.text('普通'), findsOneWidget); // 【確認内容】: 「普通」選択肢が表示されていることを確認 🔵
+            find.text('普通'), findsWidgets); // 【確認内容】: 「普通」選択肢が表示されていることを確認 🔵
         expect(
             find.text('速い'), findsOneWidget); // 【確認内容】: 「速い」選択肢が表示されていることを確認 🔵
 

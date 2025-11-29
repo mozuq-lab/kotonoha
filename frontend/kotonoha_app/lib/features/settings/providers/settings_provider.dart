@@ -11,6 +11,7 @@ import '../models/font_size.dart';
 import '../models/app_theme.dart';
 import '../../tts/domain/models/tts_speed.dart';
 import '../../tts/providers/tts_provider.dart';
+import '../../ai_conversion/domain/models/politeness_level.dart';
 
 /// 【機能概要】: SettingsNotifierのプロバイダー定義
 /// 【実装方針】: AsyncNotifierProviderを使用して非同期状態管理
@@ -236,6 +237,33 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       // 【ログ記録】: エラー内容を記録（実装後にloggerを追加予定）
       // 【ユーザー通知】: 再起動時に設定が戻る可能性をユーザーに通知（将来実装）
       // 🟡 黄信号: 将来的な改善予定
+    }
+  }
+
+  /// 【機能概要】: AI丁寧さレベルを変更する
+  /// 【実装方針】: 楽観的更新でUI即座反映、SharedPreferencesに非同期保存
+  /// 【テスト対応】: TC-071-018（AI丁寧さレベル変更）
+  /// 🔵 信頼性レベル: REQ-903、REQ-5003に基づく
+  ///
+  /// パラメータ: `level` - 新しいAI丁寧さレベル
+  Future<void> setAIPoliteness(PolitenessLevel level) async {
+    // 【実装内容】: AI丁寧さレベルを変更し、SharedPreferencesに保存
+    // 【楽観的更新】: 保存完了を待たずにUI状態を更新
+    // 🔵 青信号: REQ-903（AI丁寧さレベル設定）、REQ-5003（永続化）に基づく
+
+    // 【現在の設定取得】: AsyncValueから現在の設定を取得
+    final currentSettings = state.valueOrNull;
+    if (currentSettings == null) return;
+
+    // 【状態更新】: copyWithで新しい設定を生成し、stateを更新
+    state = AsyncValue.data(currentSettings.copyWith(aiPoliteness: level));
+
+    // 【永続化】: SharedPreferencesにAI丁寧さレベルを保存
+    try {
+      await _prefs?.setString('ai_politeness', level.name);
+    } catch (e) {
+      // 【エラーハンドリング】: 保存失敗時の処理
+      // 【楽観的更新維持】: 保存失敗してもUI状態は更新済み
     }
   }
 }

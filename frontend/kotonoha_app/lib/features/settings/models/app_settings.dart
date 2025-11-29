@@ -1,5 +1,5 @@
-/// 【機能概要】: アプリ設定データモデル（フォントサイズ・テーマ）
-/// 【実装方針】: テストを通すために最小限の実装（フォントサイズとテーマのみ）
+/// 【機能概要】: アプリ設定データモデル（フォントサイズ・テーマ・TTS速度・AI丁寧さレベル）
+/// 【実装方針】: テストを通すために最小限の実装
 /// 【テスト対応】: TC-001からTC-016までの全テストケースで使用される設定モデル
 /// 🔵 信頼性レベル: interfaces.dartの定義に基づく確実な実装
 library;
@@ -7,9 +7,10 @@ library;
 import 'font_size.dart';
 import 'app_theme.dart';
 import '../../tts/domain/models/tts_speed.dart';
+import '../../ai_conversion/domain/models/politeness_level.dart';
 
 // 【実装内容】: アプリ設定を保持する不変オブジェクト
-// 【REQ-801, REQ-803, REQ-404対応】: フォントサイズ、テーマ、TTS速度の設定を管理
+// 【REQ-801, REQ-803, REQ-404, REQ-903対応】: フォントサイズ、テーマ、TTS速度、AI丁寧さレベルの設定を管理
 class AppSettings {
   // 【フォントサイズ設定】: 3段階（小・中・大）
   // 🔵 青信号: REQ-801のフォントサイズ要件に基づく
@@ -23,23 +24,29 @@ class AppSettings {
   // 🔵 青信号: REQ-404のTTS速度要件に基づく
   final TTSSpeed ttsSpeed;
 
-  // 【コンストラクタ】: デフォルト値を設定（medium、light、normal）
+  // 【AI丁寧さレベル設定】: 3段階（カジュアル・普通・丁寧）
+  // 🔵 青信号: REQ-903のAI変換丁寧さレベル要件に基づく
+  final PolitenessLevel aiPoliteness;
+
+  // 【コンストラクタ】: デフォルト値を設定（medium、light、normal、normal）
   // 【デフォルト値】: interfaces.dartで定義されたデフォルト値
-  // 🔵 青信号: REQ-801、REQ-803、REQ-404のデフォルト値定義に基づく
+  // 🔵 青信号: REQ-801、REQ-803、REQ-404、REQ-903のデフォルト値定義に基づく
   const AppSettings({
     this.fontSize = FontSize.medium,
     this.theme = AppTheme.light,
     this.ttsSpeed = TTSSpeed.normal,
+    this.aiPoliteness = PolitenessLevel.normal,
   });
 
   /// 【機能概要】: 設定の一部を変更した新しいインスタンスを生成
   /// 【実装方針】: 不変オブジェクトパターン（Dartの標準的な実装方法）
-  /// 【テスト対応】: setFontSize()、setTheme()、setTTSSpeed()で設定変更時に使用
+  /// 【テスト対応】: setFontSize()、setTheme()、setTTSSpeed()、setAIPoliteness()で設定変更時に使用
   /// 🔵 信頼性レベル: Dartの標準的なcopyWithパターン
   AppSettings copyWith({
     FontSize? fontSize,
     AppTheme? theme,
     TTSSpeed? ttsSpeed,
+    PolitenessLevel? aiPoliteness,
   }) {
     // 【実装内容】: 指定されたフィールドのみ更新し、それ以外は既存値を保持
     // 【null安全性】: Dart Null Safetyに準拠した実装
@@ -48,6 +55,7 @@ class AppSettings {
       fontSize: fontSize ?? this.fontSize,
       theme: theme ?? this.theme,
       ttsSpeed: ttsSpeed ?? this.ttsSpeed,
+      aiPoliteness: aiPoliteness ?? this.aiPoliteness,
     );
   }
 
@@ -64,6 +72,7 @@ class AppSettings {
       'font_size': fontSize.name,
       'theme': theme.name,
       'tts_speed': ttsSpeed.name,
+      'ai_politeness': aiPoliteness.name,
     };
   }
 
@@ -115,10 +124,24 @@ class AppSettings {
       ttsSpeed = TTSSpeed.normal;
     }
 
+    // 【AI丁寧さレベル復元】: enum nameから復元、不正値はnormalを使用
+    final aiPolitenessName =
+        json['ai_politeness'] as String? ?? PolitenessLevel.normal.name;
+    PolitenessLevel aiPoliteness;
+    try {
+      aiPoliteness = PolitenessLevel.values.firstWhere(
+        (e) => e.name == aiPolitenessName,
+        orElse: () => PolitenessLevel.normal,
+      );
+    } catch (_) {
+      aiPoliteness = PolitenessLevel.normal;
+    }
+
     return AppSettings(
       fontSize: fontSize,
       theme: theme,
       ttsSpeed: ttsSpeed,
+      aiPoliteness: aiPoliteness,
     );
   }
 }
