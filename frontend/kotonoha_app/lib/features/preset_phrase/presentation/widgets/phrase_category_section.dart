@@ -37,6 +37,14 @@ class PhraseCategorySection extends StatelessWidget {
   /// 🟡 信頼性レベル: 黄信号 - REQ-105から推測
   final void Function(PresetPhrase)? onFavoriteToggle;
 
+  /// 【パラメータ定義】: 編集時のコールバック
+  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  final void Function(PresetPhrase)? onEdit;
+
+  /// 【パラメータ定義】: 削除時のコールバック
+  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  final void Function(PresetPhrase)? onDelete;
+
   /// PhraseCategorySectionを作成する
   const PhraseCategorySection({
     super.key,
@@ -44,6 +52,8 @@ class PhraseCategorySection extends StatelessWidget {
     required this.phrases,
     this.onPhraseSelected,
     this.onFavoriteToggle,
+    this.onEdit,
+    this.onDelete,
   });
 
   /// 【機能概要】: カテゴリ識別子を日本語表示名に変換
@@ -95,6 +105,8 @@ class PhraseCategorySection extends StatelessWidget {
             phrase: phrase,
             onTap: () => onPhraseSelected?.call(phrase),
             onFavoriteToggle: () => onFavoriteToggle?.call(phrase),
+            onEdit: onEdit != null ? () => onEdit!(phrase) : null,
+            onDelete: onDelete != null ? () => onDelete!(phrase) : null,
           ),
         ),
       ],

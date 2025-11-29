@@ -12,6 +12,7 @@ import 'package:kotonoha_app/features/character_board/presentation/home_screen.d
 import 'package:kotonoha_app/features/favorites/presentation/favorites_screen.dart';
 import 'package:kotonoha_app/features/help/presentation/screens/help_screen.dart';
 import 'package:kotonoha_app/features/history/presentation/history_screen.dart';
+import 'package:kotonoha_app/features/preset_phrase/presentation/preset_phrase_screen.dart';
 import 'package:kotonoha_app/features/settings/presentation/settings_screen.dart';
 
 /// アプリケーションのルートパス定義
@@ -33,6 +34,9 @@ abstract final class AppRoutes {
 
   /// ヘルプ画面
   static const String help = '/help';
+
+  /// 定型文画面
+  static const String presetPhrases = '/preset-phrases';
 }
 
 /// GoRouterプロバイダー
@@ -71,6 +75,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.help,
         name: 'help',
         builder: (context, state) => const HelpScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.presetPhrases,
+        name: 'presetPhrases',
+        builder: (context, state) => const PresetPhraseScreen(),
       ),
     ],
     errorBuilder: (context, state) => ErrorScreen(error: state.error),

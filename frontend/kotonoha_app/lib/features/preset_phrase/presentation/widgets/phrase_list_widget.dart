@@ -40,12 +40,22 @@ class PhraseListWidget extends StatelessWidget {
   /// 🟡 信頼性レベル: 黄信号 - REQ-105から推測
   final void Function(PresetPhrase)? onFavoriteToggle;
 
+  /// 【パラメータ定義】: 編集時のコールバック（任意）
+  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  final void Function(PresetPhrase)? onEdit;
+
+  /// 【パラメータ定義】: 削除時のコールバック（任意）
+  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  final void Function(PresetPhrase)? onDelete;
+
   /// PhraseListWidgetを作成する
   const PhraseListWidget({
     super.key,
     required this.phrases,
     required this.onPhraseSelected,
     this.onFavoriteToggle,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -85,6 +95,8 @@ class PhraseListWidget extends StatelessWidget {
           phrases: dailyPhrases,
           onPhraseSelected: onPhraseSelected,
           onFavoriteToggle: onFavoriteToggle,
+          onEdit: onEdit,
+          onDelete: onDelete,
         ),
       );
     }
@@ -98,6 +110,8 @@ class PhraseListWidget extends StatelessWidget {
           phrases: healthPhrases,
           onPhraseSelected: onPhraseSelected,
           onFavoriteToggle: onFavoriteToggle,
+          onEdit: onEdit,
+          onDelete: onDelete,
         ),
       );
     }
@@ -111,6 +125,8 @@ class PhraseListWidget extends StatelessWidget {
           phrases: otherPhrases,
           onPhraseSelected: onPhraseSelected,
           onFavoriteToggle: onFavoriteToggle,
+          onEdit: onEdit,
+          onDelete: onDelete,
         ),
       );
     }
@@ -160,6 +176,8 @@ class PhraseListWidget extends StatelessWidget {
             onFavoriteToggle: onFavoriteToggle != null
                 ? () => onFavoriteToggle!(phrase)
                 : null,
+            onEdit: onEdit != null ? () => onEdit!(phrase) : null,
+            onDelete: onDelete != null ? () => onDelete!(phrase) : null,
           ),
         ),
       ],

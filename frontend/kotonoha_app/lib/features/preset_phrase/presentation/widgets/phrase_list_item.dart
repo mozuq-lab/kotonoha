@@ -36,12 +36,22 @@ class PhraseListItem extends StatelessWidget {
   /// 🟡 信頼性レベル: 黄信号 - REQ-105から推測
   final VoidCallback? onFavoriteToggle;
 
+  /// 【パラメータ定義】: 編集時のコールバック
+  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  final VoidCallback? onEdit;
+
+  /// 【パラメータ定義】: 削除時のコールバック
+  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  final VoidCallback? onDelete;
+
   /// PhraseListItemを作成する
   const PhraseListItem({
     super.key,
     required this.phrase,
     this.onTap,
     this.onFavoriteToggle,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -93,6 +103,28 @@ class PhraseListItem extends StatelessWidget {
                   onPressed: onFavoriteToggle,
                   tooltip: phrase.isFavorite ? 'お気に入りから削除' : 'お気に入りに追加',
                 ),
+                // 【編集アイコン】: 定型文を編集
+                // 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+                if (onEdit != null)
+                  IconButton(
+                    icon: Icon(
+                      Icons.edit,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: onEdit,
+                    tooltip: '編集',
+                  ),
+                // 【削除アイコン】: 定型文を削除
+                // 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+                if (onDelete != null)
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete_outline,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: onDelete,
+                    tooltip: '削除',
+                  ),
               ],
             ),
           ),

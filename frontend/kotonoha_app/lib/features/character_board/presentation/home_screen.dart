@@ -48,6 +48,11 @@ class HomeScreen extends ConsumerWidget {
         title: const Text('kotonoha'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.format_list_bulleted),
+            tooltip: '定型文',
+            onPressed: () => context.push(AppRoutes.presetPhrases),
+          ),
+          IconButton(
             icon: const Icon(Icons.history),
             tooltip: '履歴',
             onPressed: () => context.push(AppRoutes.history),
