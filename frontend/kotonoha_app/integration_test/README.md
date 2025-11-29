@@ -31,18 +31,17 @@ GitHub Actionsで自動実行されます。`.github/workflows/flutter-test.yml`
 
 ```
 integration_test/
-├── README.md                    # このファイル
-├── test_driver.dart             # テストドライバー
-├── app_startup_test.dart        # アプリ起動テスト
-├── helpers/
-│   ├── helpers.dart             # ヘルパーエクスポート
-│   ├── test_helpers.dart        # テストユーティリティ
-│   └── mock_api_server.dart     # モックAPIサーバー
-└── (今後追加予定)
-    ├── character_input_test.dart    # 文字入力テスト (TASK-0082)
-    ├── preset_phrase_test.dart      # 定型文テスト (TASK-0083)
-    ├── large_button_test.dart       # 大ボタンテスト (TASK-0084)
-    └── history_favorite_test.dart   # 履歴・お気に入りテスト (TASK-0085)
+├── README.md                        # このファイル
+├── test_driver.dart                 # テストドライバー
+├── app_startup_test.dart            # アプリ起動テスト
+├── character_input_tts_test.dart    # 文字入力・読み上げテスト (TASK-0082)
+├── preset_phrase_test.dart          # 定型文テスト (TASK-0083)
+├── large_emergency_buttons_test.dart # 大ボタン・緊急ボタンテスト (TASK-0084)
+├── history_favorite_test.dart       # 履歴・お気に入りテスト (TASK-0085)
+└── helpers/
+    ├── helpers.dart                 # ヘルパーエクスポート
+    ├── test_helpers.dart            # テストユーティリティ
+    └── mock_api_server.dart         # モックAPIサーバー
 ```
 
 ## パフォーマンス要件

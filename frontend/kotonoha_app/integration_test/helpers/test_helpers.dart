@@ -9,9 +9,12 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
+import 'package:kotonoha_app/shared/models/favorite_item.dart';
+import 'package:kotonoha_app/shared/models/history_item.dart';
 
 export 'package:flutter/material.dart' show Icons;
 
@@ -28,11 +31,18 @@ IntegrationTestWidgetsFlutterBinding initializeE2ETestBinding() {
 ///
 /// [tester]: WidgetTester
 /// [overrides]: Provider上書き設定（オプション）
+/// [clearData]: true の場合、履歴・お気に入りデータをクリア（デフォルト: true）
 Future<void> pumpApp(
   WidgetTester tester, {
   List<Override>? overrides,
+  bool clearData = true,
 }) async {
   await initHive();
+
+  // テスト用にデータをクリア
+  if (clearData) {
+    await clearHistoryAndFavorites();
+  }
 
   await tester.pumpWidget(
     ProviderScope(
@@ -43,6 +53,20 @@ Future<void> pumpApp(
 
   // 初期レンダリング完了を待つ
   await tester.pumpAndSettle();
+}
+
+/// 履歴・お気に入りデータをクリアするヘルパー
+///
+/// テスト間の独立性を確保するために使用。
+Future<void> clearHistoryAndFavorites() async {
+  if (Hive.isBoxOpen('history')) {
+    final historyBox = Hive.box<HistoryItem>('history');
+    await historyBox.clear();
+  }
+  if (Hive.isBoxOpen('favorites')) {
+    final favoritesBox = Hive.box<FavoriteItem>('favorites');
+    await favoritesBox.clear();
+  }
 }
 
 /// パフォーマンス計測用ストップウォッチ
