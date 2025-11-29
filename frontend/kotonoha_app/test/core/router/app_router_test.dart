@@ -75,12 +75,13 @@ void main() {
       );
     });
 
-    // TC-003: ルート定義数テスト（4ルート）
+    // TC-003: ルート定義数テスト（5ルート）
     // テストカテゴリ: Unit Test
     // 対応要件: FR-003（主要ルート定義）
     // 対応受け入れ基準: AC-003〜AC-006
-    // 青信号: タスクファイルで4つの主要ルートが明示
-    test('TC-003: 4つの主要ルートが定義されている', () {
+    // 青信号: タスクファイルで5つの主要ルートが明示
+    // TASK-0075: ヘルプルート追加
+    test('TC-003: 5つの主要ルートが定義されている', () {
       // Given（準備フェーズ）
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -90,11 +91,11 @@ void main() {
       final routes = router.configuration.routes;
 
       // Then（検証フェーズ）
-      // 4つの主要ルート（/, /settings, /history, /favorites）が定義されていることを確認
+      // 5つの主要ルート（/, /settings, /history, /favorites, /help）が定義されていることを確認
       expect(
         routes.length,
-        equals(4),
-        reason: '主要ルートは4つ（home, settings, history, favorites）である必要がある',
+        equals(5),
+        reason: '主要ルートは5つ（home, settings, history, favorites, help）である必要がある',
       );
     });
 
@@ -103,6 +104,7 @@ void main() {
     // 対応要件: FR-003（主要ルート定義）
     // 対応受け入れ基準: AC-007
     // 青信号: 名前付きルーティング対応が要件として明示
+    // TASK-0075: ヘルプルート追加
     test('TC-004: 名前付きルートが正しく定義されている', () {
       // Given（準備フェーズ）
       final container = ProviderContainer();
@@ -114,11 +116,11 @@ void main() {
       final routeNames = routes.map((r) => r.name).whereType<String>().toList();
 
       // Then（検証フェーズ）
-      // 4つの名前付きルートが存在することを確認
+      // 5つの名前付きルートが存在することを確認
       expect(
         routeNames,
-        containsAll(['home', 'settings', 'history', 'favorites']),
-        reason: '名前付きルート（home, settings, history, favorites）がすべて定義されている必要がある',
+        containsAll(['home', 'settings', 'history', 'favorites', 'help']),
+        reason: '名前付きルート（home, settings, history, favorites, help）がすべて定義されている必要がある',
       );
     });
 
