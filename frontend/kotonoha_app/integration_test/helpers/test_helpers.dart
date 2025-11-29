@@ -13,6 +13,8 @@ import 'package:integration_test/integration_test.dart';
 import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 
+export 'package:flutter/material.dart' show Icons;
+
 /// E2Eテスト用のバインディング初期化
 ///
 /// 各E2Eテストファイルの先頭で呼び出す。
@@ -151,6 +153,35 @@ Future<void> tapButton(
 ) async {
   final finder = find.text(text);
   expect(finder, findsOneWidget, reason: 'Button "$text" not found');
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+/// アイコンボタンをタップ
+///
+/// [tester]: WidgetTester
+/// [icon]: ボタンのアイコン
+Future<void> tapIconButton(
+  WidgetTester tester,
+  IconData icon,
+) async {
+  final finder = find.byIcon(icon);
+  expect(finder, findsOneWidget, reason: 'Icon button with $icon not found');
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+/// Semanticsラベルでボタンをタップ
+///
+/// [tester]: WidgetTester
+/// [label]: Semanticsラベル
+Future<void> tapButtonBySemanticsLabel(
+  WidgetTester tester,
+  String label,
+) async {
+  final finder = find.bySemanticsLabel(label);
+  expect(finder, findsOneWidget,
+      reason: 'Button with semantics label "$label" not found');
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
