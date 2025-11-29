@@ -99,6 +99,7 @@ class HomeScreen extends ConsumerWidget {
               child: Text(
                 inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontSize: _getFontSizeValue(fontSize),
                       color: inputBuffer.isEmpty
                           ? Theme.of(context)
                               .colorScheme
@@ -181,5 +182,20 @@ class HomeScreen extends ConsumerWidget {
     ref
         .read(historyProvider.notifier)
         .addHistory(text, HistoryType.manualInput);
+  }
+
+  /// FontSizeからフォントサイズ値を取得
+  ///
+  /// REQ-802: 入力欄のフォントサイズを設定に追従させる
+  /// 🔵 青信号: AppSizesの定義に基づく
+  double _getFontSizeValue(FontSize fontSize) {
+    switch (fontSize) {
+      case FontSize.small:
+        return AppSizes.fontSizeSmall;
+      case FontSize.medium:
+        return AppSizes.fontSizeMedium;
+      case FontSize.large:
+        return AppSizes.fontSizeLarge;
+    }
   }
 }
