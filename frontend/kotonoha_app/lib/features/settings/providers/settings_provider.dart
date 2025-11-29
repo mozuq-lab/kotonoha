@@ -66,24 +66,23 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       // 🔵 青信号: TC-009（テーマ復元）、TC-014（null安全性）に対応
       final themeIndex = _prefs!.getInt('theme') ?? AppTheme.light.index;
 
-      // 【TTS速度復元】: SharedPreferencesからTTS速度のname値を読み込む
-      // 【null安全性】: getString()がnullを返した場合はデフォルト値（normal.name）を使用
-      // 🔵 青信号: TC-049-015（境界値テスト）、TC-049-013（null安全性）に対応
-      final ttsSpeedName =
-          _prefs!.getString('tts_speed') ?? TTSSpeed.normal.name;
+      // 【TTS速度復元】: SharedPreferencesからTTS速度を安全に復元
+      // 【DRY改善】: 共通のenum復元パターンをヘルパーメソッドで実装
+      // 🔵 青信号: TC-049-013〜015（null安全性、不正値フォールバック、境界値テスト）に対応
+      final ttsSpeed = _restoreEnumFromName(
+        _prefs!.getString('tts_speed'),
+        TTSSpeed.values,
+        TTSSpeed.normal,
+      );
 
-      // 【TTS速度変換】: enum nameから対応するTTSSpeed値を取得
-      // 【不正値フォールバック】: 不正な値の場合はデフォルト値（normal）を使用
-      // 🔵 青信号: TC-049-014（不正値フォールバック）に対応
-      TTSSpeed ttsSpeed;
-      try {
-        ttsSpeed = TTSSpeed.values.firstWhere(
-          (e) => e.name == ttsSpeedName,
-          orElse: () => TTSSpeed.normal,
-        );
-      } catch (_) {
-        ttsSpeed = TTSSpeed.normal;
-      }
+      // 【AI丁寧さレベル復元】: SharedPreferencesからAI丁寧さレベルを安全に復元
+      // 【DRY改善】: 共通のenum復元パターンをヘルパーメソッドで実装
+      // 🔵 青信号: TC-074-012、TC-074-015（設定復元、不正値フォールバック）に対応
+      final aiPoliteness = _restoreEnumFromName(
+        _prefs!.getString('ai_politeness'),
+        PolitenessLevel.values,
+        PolitenessLevel.normal,
+      );
 
       // 【設定復元】: index値からenumに変換してAppSettingsインスタンスを生成
       // 【境界値チェック】: index値が範囲外の場合はデフォルト値を使用
@@ -92,6 +91,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
         fontSize: FontSize.values[fontSizeIndex],
         theme: AppTheme.values[themeIndex],
         ttsSpeed: ttsSpeed,
+        aiPoliteness: aiPoliteness,
       );
     } catch (e) {
       // 【エラーハンドリング】: SharedPreferences初期化失敗時の処理
@@ -104,6 +104,56 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       // 【デフォルト値返却】: アプリがクラッシュせず、デフォルト設定で動作継続
       // 🔵 青信号: REQ-801、REQ-803のデフォルト値定義に基づく
       return const AppSettings();
+    }
+  }
+
+  /// 【ヘルパー関数】: SharedPreferencesから読み込んだenum名を対応するenum値に安全に変換
+  /// 【再利用性】: TTS速度、AI丁寧さレベルなど、name保存されたenumの復元に共通利用
+  /// 【単一責任】: enum name文字列からenum値への変換とエラーハンドリングを担当
+  /// 【リファクタリング改善】: 重複していた復元ロジックをDRY原則に基づき共通化
+  /// 🔵 信頼性レベル: 既存の個別実装パターンを汎用化
+  ///
+  /// パラメータ:
+  /// - `savedName`: SharedPreferencesから読み込んだenum name文字列（nullの可能性あり）
+  /// - `enumValues`: 変換対象のenumのvaluesリスト（例: TTSSpeed.values）
+  /// - `defaultValue`: null/不正値時のデフォルト値（例: TTSSpeed.normal）
+  ///
+  /// 戻り値: 復元されたenum値、または不正値時はデフォルト値
+  ///
+  /// 【処理フロー】:
+  /// 1. savedNameがnullの場合 → デフォルト値を返す
+  /// 2. enumValues内でnameが一致する値を検索
+  /// 3. 見つからない場合や例外発生時 → デフォルト値を返す
+  ///
+  /// 【パフォーマンス】: firstWhereでO(n)の線形検索、enum値は通常3〜10個程度なので実用上問題なし
+  /// 【null安全性】: null入力、不正な文字列、予期しない例外すべてに対応
+  /// 【型制約】: T extends Enumにより、enum型のみを受け入れることを保証
+  T _restoreEnumFromName<T extends Enum>(
+    String? savedName,
+    List<T> enumValues,
+    T defaultValue,
+  ) {
+    // 【null安全性】: SharedPreferencesから読み込んだ値がnullの場合の対処
+    // 【早期リターン】: 不正な入力に対して早期にデフォルト値を返す
+    // 🔵 青信号: null安全性テストケース（TC-049-013、TC-074-012）に対応
+    if (savedName == null) {
+      return defaultValue;
+    }
+
+    try {
+      // 【enum検索】: name文字列と一致するenum値を検索
+      // 【型安全性】: T extends Enumにより、e.nameが型安全にアクセス可能
+      // 【不正値対応】: 一致する値が見つからない場合はorElseでデフォルト値を返す
+      // 🔵 青信号: 不正値フォールバックテスト（TC-049-014、TC-074-015）に対応
+      return enumValues.firstWhere(
+        (e) => e.name == savedName,
+        orElse: () => defaultValue,
+      );
+    } catch (_) {
+      // 【例外処理】: 予期しないエラーが発生した場合の安全策
+      // 【堅牢性】: どのような状況でもアプリがクラッシュしないよう保証
+      // 🟡 黄信号: 防御的プログラミング、極めて稀なケースを想定
+      return defaultValue;
     }
   }
 
