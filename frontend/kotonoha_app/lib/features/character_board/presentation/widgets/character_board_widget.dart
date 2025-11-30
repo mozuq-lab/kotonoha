@@ -135,18 +135,23 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
           itemBuilder: (context, index) {
             final character = characters[index];
             if (character.isEmpty) {
-              // 空のスペーサー
+              // 空のスペーサー（constで最適化）
               return const SizedBox.shrink();
             }
-            return CharacterButton(
-              key: ValueKey('character_button_$character'),
-              character: character,
-              onTap: widget.isEnabled
-                  ? () => widget.onCharacterTap(character)
-                  : null,
-              size: buttonSize,
-              isEnabled: widget.isEnabled,
-              fontSize: widget.fontSize,
+            // RepaintBoundaryで個別ボタンの再描画範囲を限定
+            // タップ時に該当ボタンのみ再描画し、他のボタンへの影響を最小化
+            // TASK-0089: 文字盤UI最適化 (REQ-OPT-002)
+            return RepaintBoundary(
+              child: CharacterButton(
+                key: ValueKey('character_button_$character'),
+                character: character,
+                onTap: widget.isEnabled
+                    ? () => widget.onCharacterTap(character)
+                    : null,
+                size: buttonSize,
+                isEnabled: widget.isEnabled,
+                fontSize: widget.fontSize,
+              ),
             );
           },
         );
@@ -198,6 +203,10 @@ class CharacterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textSize = _getTextSize();
+    // BorderRadiusを共通化してインスタンス生成を削減
+    const borderRadius = BorderRadius.all(
+      Radius.circular(AppSizes.borderRadiusMedium),
+    );
 
     return Semantics(
       label: character,
@@ -210,11 +219,11 @@ class CharacterButton extends StatelessWidget {
           color: isEnabled
               ? theme.colorScheme.surface
               : theme.colorScheme.surface.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-          elevation: isEnabled ? 2 : 0,
+          borderRadius: borderRadius,
+          elevation: isEnabled ? AppSizes.elevationSmall : 0,
           child: InkWell(
             onTap: isEnabled ? onTap : null,
-            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+            borderRadius: borderRadius,
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(
@@ -222,8 +231,7 @@ class CharacterButton extends StatelessWidget {
                       ? theme.colorScheme.outline
                       : theme.colorScheme.outline.withValues(alpha: 0.3),
                 ),
-                borderRadius:
-                    BorderRadius.circular(AppSizes.borderRadiusMedium),
+                borderRadius: borderRadius,
               ),
               alignment: Alignment.center,
               child: Text(
