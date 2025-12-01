@@ -93,6 +93,10 @@ class TTSNotifier extends StateNotifier<TTSServiceState> {
           tts: FlutterTts(),
           onStateChanged: _onServiceStateChanged,
         );
+    // バックグラウンドでTTS初期化を開始（TASK-0090: TTS最適化）
+    // コンストラクタ完了後に非同期で初期化を実行することで、
+    // 最初のspeak()呼び出し時の遅延を削減
+    Future.microtask(() => _service.initialize());
   }
 
   /// TTSServiceインスタンス
