@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    kotonoha Android backup rules
+    Configures what data to include/exclude from Android auto-backup
+    Privacy-focused: Only backup essential settings, not sensitive data
+-->
+<full-backup-content>
+    <!-- Include shared preferences (app settings) -->
+    <include domain="sharedpref" path="." />
+
+    <!-- Exclude Hive database files (local storage with potentially sensitive data) -->
+    <exclude domain="file" path="app_flutter/hive" />
+
+    <!-- Exclude cached data -->
+    <exclude domain="cache" path="." />
+
+    <!-- Exclude temporary files -->
+    <exclude domain="file" path="temp" />
+</full-backup-content>

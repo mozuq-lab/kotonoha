@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- kotonoha Android string resources (English - default) -->
+    <string name="app_name">kotonoha</string>
+    <string name="app_description">Communication support app using character board</string>
+</resources>

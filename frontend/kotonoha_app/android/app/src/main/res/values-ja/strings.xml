@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- kotonoha Android string resources (Japanese) -->
+    <string name="app_name">ことのは</string>
+    <string name="app_description">文字盤コミュニケーション支援アプリ</string>
+</resources>
