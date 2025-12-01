@@ -45,5 +45,33 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- アプリの説明（App Store用） -->
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2024 kotonoha. All rights reserved.</string>
+	<!-- 背景オーディオ再生（TTS、緊急音用） -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+	<!-- 日本語ローカライゼーション -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ja</string>
+		<string>en</string>
+	</array>
+	<!-- アプリのプライマリ言語 -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>ja</string>
+	<!-- ネットワーク利用説明（AI変換API用） -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<!-- 最小iOS バージョン -->
+	<key>MinimumOSVersion</key>
+	<string>14.0</string>
 </dict>
 </plist>

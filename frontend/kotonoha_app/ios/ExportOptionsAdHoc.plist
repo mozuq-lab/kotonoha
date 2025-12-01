@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Ad Hoc配布用設定（内部テスト用） -->
+	<key>method</key>
+	<string>ad-hoc</string>
+
+	<!-- 証明書・プロビジョニングは自動管理 -->
+	<key>signingStyle</key>
+	<string>automatic</string>
+
+	<!-- ビットコード無効化（Flutter標準設定） -->
+	<key>compileBitcode</key>
+	<false/>
+
+	<!-- アプリの削減（オンデマンドリソース） -->
+	<key>thinning</key>
+	<string>&lt;none&gt;</string>
+</dict>
+</plist>
