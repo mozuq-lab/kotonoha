@@ -1,38 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
+    kotonoha - 文字盤コミュニケーション支援アプリ
+    NFR-401: Chrome, Safari, Edge最新版対応
   -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <!-- iOS meta tags & icons -->
+  <!-- SEO / App Description -->
+  <meta name="description" content="kotonoha（ことのは）- 発話困難な方のための文字盤コミュニケーション支援アプリ。五十音文字盤、定型文、TTS読み上げで会話をサポートします。">
+  <meta name="keywords" content="コミュニケーション支援,文字盤,TTS,読み上げ,AAC,発話障害,ALS,筋萎縮性側索硬化症,脳梗塞">
+  <meta name="author" content="kotonoha">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="kotonoha - 文字盤コミュニケーション支援アプリ">
+  <meta property="og:description" content="発話困難な方のための文字盤コミュニケーション支援アプリ。五十音文字盤、定型文、TTS読み上げで会話をサポートします。">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="kotonoha - 文字盤コミュニケーション支援アプリ">
+  <meta name="twitter:description" content="発話困難な方のための文字盤コミュニケーション支援アプリ">
+
+  <!-- PWA / iOS meta tags -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="kotonoha_app">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ことのは">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/Icon-512.png">
+
+  <!-- Theme color for browser UI -->
+  <meta name="theme-color" content="#4A90A4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1A1A2E" media="(prefers-color-scheme: dark)">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon.png">
+  <link rel="shortcut icon" href="favicon.png">
 
-  <title>kotonoha_app</title>
+  <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
+
+  <title>kotonoha - 文字盤コミュニケーション支援アプリ</title>
+
+  <!-- Preload critical resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <style>
+    /* Loading screen styles */
+    :root {
+      --kotonoha-primary: #4A90A4;
+      --kotonoha-bg-light: #F5F5F5;
+      --kotonoha-bg-dark: #1A1A2E;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow: hidden;
+    }
+
+    /* Prevent text selection on app-like experience */
+    body.app-mode {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    /* Loading indicator */
+    #loading {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: var(--kotonoha-bg-light);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      #loading {
+        background-color: var(--kotonoha-bg-dark);
+        color: #ffffff;
+      }
+    }
+
+    #loading .spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid #e0e0e0;
+      border-top: 5px solid var(--kotonoha-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    #loading .app-name {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--kotonoha-primary);
+    }
+
+    #loading .loading-text {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      #loading .loading-text {
+        color: #aaa;
+      }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Hide loading when Flutter is ready */
+    .flutter-ready #loading {
+      display: none;
+    }
+  </style>
 </head>
 <body>
+  <!-- Loading screen -->
+  <div id="loading" aria-label="アプリを読み込み中">
+    <div class="spinner" role="progressbar" aria-label="読み込み中"></div>
+    <div class="app-name">ことのは</div>
+    <div class="loading-text">読み込み中...</div>
+  </div>
+
+  <!-- Flutter bootstrap -->
+  <script>
+    // Add app-mode class after Flutter loads for app-like experience
+    window.addEventListener('flutter-first-frame', function() {
+      document.body.classList.add('app-mode');
+      document.body.classList.add('flutter-ready');
+    });
+
+    // Service Worker is registered automatically by flutter.js (flutter_bootstrap.js)
+    // with the --pwa-strategy flag during build
+  </script>
   <script src="flutter_bootstrap.js" async></script>
+
+  <!-- Fallback for browsers without JavaScript -->
+  <noscript>
+    <style>
+      #loading { display: none !important; }
+    </style>
+    <div style="padding: 20px; text-align: center;">
+      <h1>kotonoha - 文字盤コミュニケーション支援アプリ</h1>
+      <p>このアプリケーションを利用するにはJavaScriptを有効にしてください。</p>
+      <p>Please enable JavaScript to use this application.</p>
+    </div>
+  </noscript>
 </body>
 </html>

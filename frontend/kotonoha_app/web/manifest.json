@@ -1,23 +1,29 @@
 {
-    "name": "kotonoha_app",
-    "short_name": "kotonoha_app",
+    "name": "kotonoha - 文字盤コミュニケーション支援アプリ",
+    "short_name": "ことのは",
+    "description": "発話困難な方のための文字盤コミュニケーション支援アプリ。五十音文字盤、定型文、TTS読み上げで会話をサポートします。",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#F5F5F5",
+    "theme_color": "#4A90A4",
+    "orientation": "any",
     "prefer_related_applications": false,
+    "lang": "ja",
+    "dir": "ltr",
+    "categories": ["accessibility", "communication", "health"],
+    "scope": "/",
     "icons": [
         {
             "src": "icons/Icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
             "src": "icons/Icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
             "src": "icons/Icon-maskable-192.png",
@@ -31,5 +37,24 @@
             "type": "image/png",
             "purpose": "maskable"
         }
-    ]
+    ],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "文字盤を開く",
+            "short_name": "文字盤",
+            "description": "五十音文字盤で入力を開始",
+            "url": "/?mode=keyboard",
+            "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "定型文を開く",
+            "short_name": "定型文",
+            "description": "定型文一覧を表示",
+            "url": "/?mode=phrases",
+            "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
+        }
+    ],
+    "related_applications": [],
+    "handle_links": "preferred"
 }

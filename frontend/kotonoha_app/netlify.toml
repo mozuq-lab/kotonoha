@@ -1,0 +1,112 @@
+# Netlify configuration for kotonoha Flutter Web App
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  # Build command is empty because Flutter build should be done separately
+  # or in CI/CD before deploying
+  command = "echo 'Flutter build should be done separately'"
+  publish = "build/web"
+
+# Redirect all requests to index.html for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Language = ["en", "ja"]}
+  force = false
+
+# Exclude static files from SPA redirect
+[[redirects]]
+  from = "/assets/*"
+  to = "/assets/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/canvaskit/*"
+  to = "/canvaskit/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/icons/*"
+  to = "/icons/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/flutter_service_worker.js"
+  to = "/flutter_service_worker.js"
+  status = 200
+
+[[redirects]]
+  from = "/main.dart.js"
+  to = "/main.dart.js"
+  status = 200
+
+[[redirects]]
+  from = "/manifest.json"
+  to = "/manifest.json"
+  status = 200
+
+[[redirects]]
+  from = "/favicon.png"
+  to = "/favicon.png"
+  status = 200
+
+[[redirects]]
+  from = "/version.json"
+  to = "/version.json"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Service Worker specific headers
+[[headers]]
+  for = "/flutter_service_worker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+    Service-Worker-Allowed = "/"
+
+# Cache static assets aggressively
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/canvaskit/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# JavaScript files
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+
+# WASM files (for CanvasKit)
+[[headers]]
+  for = "/*.wasm"
+  [headers.values]
+    Content-Type = "application/wasm"
+
+# Development context
+[context.deploy-preview]
+  # Enable branch deploys for preview
+  [context.deploy-preview.environment]
+    FLUTTER_WEB_CANVASKIT_URL = "/canvaskit/"
+
+[context.branch-deploy]
+  [context.branch-deploy.environment]
+    FLUTTER_WEB_CANVASKIT_URL = "/canvaskit/"
+
+# Production environment
+[context.production]
+  [context.production.environment]
+    FLUTTER_WEB_CANVASKIT_URL = "/canvaskit/"
