@@ -241,27 +241,11 @@ void main() {
   });
 
   group('統合パフォーマンステスト - キャッシュ効果', () {
-    late MockFlutterTts mockFlutterTts;
-    late TTSService ttsService;
     late Directory tempDir;
     late Box<PresetPhrase> presetBox;
     late PresetPhraseRepository repository;
 
-    setUpAll(() {
-      registerFallbackValue('');
-      registerFallbackValue(0.0);
-      registerFallbackValue(() {});
-    });
-
     setUp(() async {
-      mockFlutterTts = MockFlutterTts();
-      when(() => mockFlutterTts.setLanguage(any())).thenAnswer((_) async => 1);
-      when(() => mockFlutterTts.setSpeechRate(any()))
-          .thenAnswer((_) async => 1);
-      when(() => mockFlutterTts.speak(any())).thenAnswer((_) async => 1);
-      when(() => mockFlutterTts.stop()).thenAnswer((_) async => 1);
-      ttsService = TTSService(tts: mockFlutterTts);
-
       await Hive.close();
       tempDir = await Directory.systemTemp.createTemp('hive_cache_int_');
       Hive.init(tempDir.path);
