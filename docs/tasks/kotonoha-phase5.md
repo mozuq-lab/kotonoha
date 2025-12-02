@@ -678,9 +678,9 @@ pytest --cov=app --cov-report=html
 
 ---
 
-#### Day 18: TASK-0098 - ユーザードキュメント作成
+#### Day 18: TASK-0098 - ユーザードキュメント作成 ✅ **完了** (2025-12-03)
 
-- [ ] **タスク完了**
+- [x] **タスク完了**
 - **推定工数**: 8時間
 - **タスクタイプ**: DIRECT
 - **要件名**: kotonoha
@@ -689,18 +689,27 @@ pytest --cov=app --cov-report=html
 
 **実装詳細**:
 
-1. アプリ内ヘルプの最終確認
-2. iOS「ガイド付きアクセス」設定ガイド（NFR-205）
-3. Android「画面ピン留め」設定ガイド（NFR-205）
-4. よくある質問（FAQ）作成
-5. トラブルシューティングガイド作成
+1. アプリ内ヘルプの最終確認 ✅
+2. iOS「ガイド付きアクセス」設定ガイド（NFR-205）✅
+3. Android「画面ピン留め」設定ガイド（NFR-205）✅
+4. よくある質問（FAQ）作成 ✅
+5. トラブルシューティングガイド作成 ✅
+
+**成果物**:
+- `docs/user-guide/index.md` (ユーザーガイド目次)
+- `docs/user-guide/ios-guided-access.md` (iOS設定ガイド、113行)
+- `docs/user-guide/android-screen-pinning.md` (Android設定ガイド、139行)
+- `docs/user-guide/faq.md` (FAQ、47項目、233行)
+- `docs/user-guide/troubleshooting.md` (トラブルシューティング、25+項目、295行)
+- `docs/implements/kotonoha/TASK-0098/setup-report.md` (設定作業レポート)
+- `docs/implements/kotonoha/TASK-0098/verify-report.md` (検証レポート)
 
 **完了条件**:
 
-- アプリ内ヘルプが分かりやすい
-- iOS/Androidのガイド付きアクセス設定方法が記載されている
-- FAQが作成されている
-- トラブルシューティングガイドが作成されている
+- [x] アプリ内ヘルプが分かりやすい ✅
+- [x] iOS/Androidのガイド付きアクセス設定方法が記載されている ✅ NFR-205完全対応
+- [x] FAQが作成されている ✅ 47項目
+- [x] トラブルシューティングガイドが作成されている ✅ 25+項目
 
 ---
 
