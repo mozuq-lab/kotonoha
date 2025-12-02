@@ -1,0 +1,79 @@
+# Codecov configuration for kotonoha project
+# https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+
+  status:
+    project:
+      default:
+        # Target coverage: 80% overall
+        target: 80%
+        threshold: 2%
+        # Don't fail until we reach the target
+        informational: false
+
+      flutter:
+        paths:
+          - "frontend/**"
+        target: 80%
+        threshold: 2%
+        informational: false
+
+      python:
+        paths:
+          - "backend/**"
+        # Python backend target: 90% (business logic & API endpoints)
+        target: 90%
+        threshold: 2%
+        informational: false
+
+    patch:
+      default:
+        # New code should be at least 80% covered
+        target: 80%
+        threshold: 5%
+        informational: true
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: true
+  require_base: false
+  require_head: true
+
+flags:
+  flutter:
+    paths:
+      - frontend/
+    carryforward: true
+    after_n_builds: 1
+
+  python:
+    paths:
+      - backend/
+    carryforward: true
+    after_n_builds: 1
+
+ignore:
+  # Generated files
+  - "frontend/kotonoha_app/lib/**/*.g.dart"
+  - "frontend/kotonoha_app/lib/**/*.freezed.dart"
+  - "frontend/kotonoha_app/lib/gen/**"
+  # Test files (don't count test coverage of tests)
+  - "frontend/kotonoha_app/test/**"
+  - "frontend/kotonoha_app/integration_test/**"
+  - "backend/tests/**"
+  # Configuration files
+  - "backend/alembic/**"
+  - "infra/**"
