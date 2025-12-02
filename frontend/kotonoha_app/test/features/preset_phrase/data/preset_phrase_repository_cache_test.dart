@@ -321,8 +321,8 @@ void main() {
         Hive.registerAdapter(PresetPhraseAdapter());
       }
 
-      presetBox = await Hive.openBox<PresetPhrase>(
-          'test_cache_boundary_presetPhrases');
+      presetBox =
+          await Hive.openBox<PresetPhrase>('test_cache_boundary_presetPhrases');
       repository = PresetPhraseRepository(box: presetBox);
     });
 

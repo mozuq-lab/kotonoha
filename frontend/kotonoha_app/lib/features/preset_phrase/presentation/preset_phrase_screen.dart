@@ -41,7 +41,9 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen> {
     super.initState();
     // 初期データを読み込む
     Future.microtask(() {
-      ref.read(presetPhraseNotifierProvider.notifier).initializeDefaultPhrases();
+      ref
+          .read(presetPhraseNotifierProvider.notifier)
+          .initializeDefaultPhrases();
     });
   }
 
@@ -132,7 +134,9 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen> {
       builder: (dialogContext) => PhraseDeleteDialog(
         phrase: phrase,
         onConfirm: () {
-          ref.read(presetPhraseNotifierProvider.notifier).deletePhrase(phrase.id);
+          ref
+              .read(presetPhraseNotifierProvider.notifier)
+              .deletePhrase(phrase.id);
         },
       ),
     );

@@ -201,7 +201,8 @@ void main() {
         debugPrint('===== 連続入力パフォーマンスサマリー =====');
         debugPrint('入力文字数: ${characters.length}');
         debugPrint('平均応答時間: ${avgTime}ms');
-        debugPrint('最大応答時間: ${results.map((r) => r.elapsedMilliseconds).reduce((a, b) => a > b ? a : b)}ms');
+        debugPrint(
+            '最大応答時間: ${results.map((r) => r.elapsedMilliseconds).reduce((a, b) => a > b ? a : b)}ms');
         debugPrint('=========================================');
       },
     );
@@ -230,8 +231,7 @@ void main() {
 
         // 【結果検証】: TTS開始時間が1秒以内であること
         expect(result.passed, isTrue,
-            reason:
-                'TTS開始時間が1秒を超過: ${result.elapsedMilliseconds}ms'); // 🔵
+            reason: 'TTS開始時間が1秒を超過: ${result.elapsedMilliseconds}ms'); // 🔵
       },
     );
 
@@ -319,8 +319,7 @@ void main() {
 
         // 【結果検証】: TTS開始時間が1秒以内であること
         expect(result.passed, isTrue,
-            reason:
-                '長文TTS開始時間が1秒を超過: ${result.elapsedMilliseconds}ms'); // 🟡
+            reason: '長文TTS開始時間が1秒を超過: ${result.elapsedMilliseconds}ms'); // 🟡
       },
     );
 
@@ -376,8 +375,7 @@ void main() {
 
         // 【結果検証】: 表示時間が1秒以内であること
         expect(result.passed, isTrue,
-            reason:
-                '定型文表示時間が1秒を超過: ${result.elapsedMilliseconds}ms'); // 🔵
+            reason: '定型文表示時間が1秒を超過: ${result.elapsedMilliseconds}ms'); // 🔵
 
         // 【結果検証】: 定型文一覧が表示されていること
         // 定型文が少なくとも1つ表示されていることを確認
@@ -409,8 +407,7 @@ void main() {
 
         // 【結果検証】: 表示時間が2秒以内であること
         expect(result.passed, isTrue,
-            reason:
-                '定型文200件表示時間が2秒を超過: ${result.elapsedMilliseconds}ms'); // 🟡
+            reason: '定型文200件表示時間が2秒を超過: ${result.elapsedMilliseconds}ms'); // 🟡
       },
     );
   });

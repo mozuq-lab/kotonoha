@@ -96,7 +96,8 @@ void main() {
       expect(
         routes.length,
         equals(6),
-        reason: '主要ルートは6つ（home, settings, history, favorites, help, presetPhrases）である必要がある',
+        reason:
+            '主要ルートは6つ（home, settings, history, favorites, help, presetPhrases）である必要がある',
       );
     });
 
@@ -121,7 +122,14 @@ void main() {
       // 6つの名前付きルートが存在することを確認
       expect(
         routeNames,
-        containsAll(['home', 'settings', 'history', 'favorites', 'help', 'presetPhrases']),
+        containsAll([
+          'home',
+          'settings',
+          'history',
+          'favorites',
+          'help',
+          'presetPhrases'
+        ]),
         reason:
             '名前付きルート（home, settings, history, favorites, help, presetPhrases）がすべて定義されている必要がある',
       );

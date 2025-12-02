@@ -99,7 +99,8 @@ void main() {
         expect(tappedCharacters.join(), equals(characters));
 
         // 【期待結果】: 平均応答時間が50ms以下
-        final average = responseTimes.reduce((a, b) => a + b) / responseTimes.length;
+        final average =
+            responseTimes.reduce((a, b) => a + b) / responseTimes.length;
         expect(
           average,
           lessThan(50),
@@ -309,7 +310,8 @@ void main() {
         // CharacterButton -> Semantics -> SizedBox -> Material -> InkWell -> Container
         // この階層が最適化により削減されることを期待
         // （具体的な階層数は実装後に調整）
-        final firstButton = tester.widget<CharacterButton>(characterButtons.first);
+        final firstButton =
+            tester.widget<CharacterButton>(characterButtons.first);
         expect(firstButton, isNotNull);
       });
 
@@ -416,7 +418,8 @@ void main() {
         );
 
         for (final button in characterButtons) {
-          expect(button.key, isNotNull, reason: 'CharacterButtonにkeyが設定されている必要がある');
+          expect(button.key, isNotNull,
+              reason: 'CharacterButtonにkeyが設定されている必要がある');
         }
       });
     });

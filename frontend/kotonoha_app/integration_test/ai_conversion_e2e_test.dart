@@ -271,8 +271,7 @@ void main() {
 
         if (elevatedButton.evaluate().isNotEmpty) {
           final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNull,
-              reason: '1文字入力時はAI変換ボタンが無効であるべき');
+          expect(button.onPressed, isNull, reason: '1文字入力時はAI変換ボタンが無効であるべき');
         }
         // 【確認内容】: 入力が2文字未満でボタンが無効化される 🔵
       },
@@ -303,8 +302,7 @@ void main() {
 
         if (elevatedButton.evaluate().isNotEmpty) {
           final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNull,
-              reason: 'オフライン時はAI変換ボタンが無効であるべき');
+          expect(button.onPressed, isNull, reason: 'オフライン時はAI変換ボタンが無効であるべき');
         }
         // 【確認内容】: オフライン時にボタンが無効化される（REQ-3004） 🔵
       },
@@ -373,8 +371,7 @@ void main() {
 
         if (elevatedButton.evaluate().isNotEmpty) {
           final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNotNull,
-              reason: '2文字入力時はAI変換ボタンが有効であるべき');
+          expect(button.onPressed, isNotNull, reason: '2文字入力時はAI変換ボタンが有効であるべき');
         }
         // 【確認内容】: 最小値（2文字）でボタンが有効化される 🔵
       },
@@ -405,8 +402,7 @@ void main() {
 
         if (elevatedButton.evaluate().isNotEmpty) {
           final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNull,
-              reason: '1文字入力時はAI変換ボタンが無効であるべき');
+          expect(button.onPressed, isNull, reason: '1文字入力時はAI変換ボタンが無効であるべき');
         }
         // 【確認内容】: 最小値未満（1文字）でボタンが無効化される 🔵
       },
@@ -436,8 +432,7 @@ void main() {
 
         if (elevatedButton.evaluate().isNotEmpty) {
           final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNull,
-              reason: '空入力時はAI変換ボタンが無効であるべき');
+          expect(button.onPressed, isNull, reason: '空入力時はAI変換ボタンが無効であるべき');
         }
         // 【確認内容】: 空入力でボタンが無効化される 🟡
       },
