@@ -38,6 +38,8 @@ async def test_engine():
     Yields:
         AsyncEngine: テスト用の非同期データベースエンジン
     """
+    from app.db.base import Base
+
     # 【テストデータ準備】: テスト用データベース接続エンジンを作成
     # 【初期条件設定】: echo=False でSQL出力を抑制（必要に応じてTrueに変更可能）
     # 【パフォーマンス最適化】: pool_size=5 で接続プールを制限（テスト環境では少数で十分）
@@ -49,7 +51,15 @@ async def test_engine():
         max_overflow=5,  # 【追加接続数】: 必要に応じて追加接続を許可
     )
 
+    # 【テーブル作成】: テスト用DBに全テーブルを作成
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     yield engine
+
+    # 【テーブル削除】: テスト後にすべてのテーブルを削除してクリーンアップ
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
     # 【テスト後処理】: エンジンとすべての接続を適切にクローズ
     # 【リソースリーク防止】: イベントループクローズ前に接続プールをクリーンアップ
@@ -149,3 +159,45 @@ async def test_client_with_db(test_engine, test_session_maker):
 
     # 【テスト後処理】: 依存性オーバーライドをクリア
     app.dependency_overrides.clear()
+
+
+# ============================================================================
+# テストヘルパー関数
+# ============================================================================
+
+
+def create_test_hash(text: str) -> str:
+    """
+    テスト用のハッシュ値を生成
+
+    【目的】: 重複チェック用のハッシュ値を一貫した方法で生成
+    【使用場面】: AI変換ログテスト、履歴テストなど
+
+    Args:
+        text: ハッシュ化する文字列
+
+    Returns:
+        SHA-256ハッシュ値（16進数文字列）
+    """
+    import hashlib
+
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def create_test_conversion_request(
+    input_text: str = "水 ぬるく", politeness_level: str = "normal"
+) -> dict:
+    """
+    テスト用のAI変換リクエストボディを生成
+
+    【目的】: 標準的なリクエストボディを簡潔に作成
+    【使用場面】: AI変換エンドポイントテスト
+
+    Args:
+        input_text: 入力テキスト
+        politeness_level: 丁寧さレベル（casual, normal, polite）
+
+    Returns:
+        リクエストボディの辞書
+    """
+    return {"input_text": input_text, "politeness_level": politeness_level}

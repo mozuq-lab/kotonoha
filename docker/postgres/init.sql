@@ -1,6 +1,9 @@
 -- PostgreSQL Initialization Script for kotonoha project
 -- This script is executed when the PostgreSQL container is first created
 
+-- Create test database for pytest
+CREATE DATABASE kotonoha_test;
+
 -- Create database (if not exists)
 -- Note: The database is already created via POSTGRES_DB environment variable
 -- This is a placeholder for future initialization needs
