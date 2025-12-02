@@ -174,7 +174,7 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build Web (Release)
-        run: flutter build web --release --web-renderer html
+        run: flutter build web --release
 
       - name: Upload Web build
         uses: actions/upload-artifact@v4
@@ -215,13 +215,13 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build APK (Release)
-        run: flutter build apk --release
+        run: flutter build apk --release --flavor internal
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: frontend/kotonoha_app/build/app/outputs/flutter-apk/*.apk
+          path: frontend/kotonoha_app/build/app/outputs/flutter-apk/app-internal-release.apk
           retention-days: 30
 
   build-ios:
