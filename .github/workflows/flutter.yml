@@ -77,26 +77,34 @@ jobs:
 
       - name: Check coverage threshold
         run: |
-          # Calculate coverage percentage
-          COVERAGE_OUTPUT=$(lcov --summary coverage/lcov.info 2>&1 || true)
-          LINES_COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "lines" | sed 's/.*: \([0-9.]*\)%.*/\1/' || echo "0")
-          echo "Coverage: $LINES_COVERAGE%"
+          # Check if coverage file exists
+          if [ ! -f coverage/lcov.info ]; then
+            echo "::warning::Coverage file not found"
+            exit 0
+          fi
 
-          # Check if coverage meets threshold (80%)
-          if [ -n "$LINES_COVERAGE" ]; then
+          # Calculate coverage using simple line counting
+          TOTAL_LINES=$(grep -c "^DA:" coverage/lcov.info || echo "0")
+          COVERED_LINES=$(grep "^DA:" coverage/lcov.info | grep -v ",0$" | wc -l || echo "0")
+
+          if [ "$TOTAL_LINES" -gt 0 ]; then
+            COVERAGE=$(echo "scale=1; $COVERED_LINES * 100 / $TOTAL_LINES" | bc)
+            echo "Coverage: $COVERAGE% ($COVERED_LINES/$TOTAL_LINES lines)"
+
             THRESHOLD=80
-            RESULT=$(echo "$LINES_COVERAGE >= $THRESHOLD" | bc -l 2>/dev/null || echo "1")
-            if [ "$RESULT" = "0" ]; then
-              echo "::warning::Coverage $LINES_COVERAGE% is below threshold $THRESHOLD%"
+            if [ "$(echo "$COVERAGE < $THRESHOLD" | bc)" = "1" ]; then
+              echo "::warning::Coverage $COVERAGE% is below threshold $THRESHOLD%"
             else
-              echo "Coverage $LINES_COVERAGE% meets threshold $THRESHOLD%"
+              echo "✅ Coverage $COVERAGE% meets threshold $THRESHOLD%"
             fi
+          else
+            echo "::warning::No coverage data found"
           fi
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: frontend/kotonoha_app/coverage/lcov.info
+          files: coverage/lcov.info
           flags: flutter
           name: flutter-coverage
           fail_ci_if_error: false
@@ -107,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: flutter-coverage-report
-          path: frontend/kotonoha_app/coverage/
+          path: coverage/
           retention-days: 7
 
   integration-test:

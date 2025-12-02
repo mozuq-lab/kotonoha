@@ -137,7 +137,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: ./backend/coverage.xml
+          files: coverage.xml
           flags: python
           name: python-coverage
           fail_ci_if_error: false
@@ -148,7 +148,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: python-coverage-report
-          path: ./backend/htmlcov
+          path: htmlcov
           retention-days: 7
 
   security:
