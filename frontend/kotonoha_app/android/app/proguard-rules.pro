@@ -1,6 +1,11 @@
 # kotonoha ProGuard rules
 # NFR-401: Android 10+ support
 
+# Google Play Core - Deferred Components (not used, suppress R8 warnings)
+-dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
+-dontwarn com.google.android.play.core.splitinstall.**
+-dontwarn com.google.android.play.core.tasks.**
+
 # Flutter specific rules
 -keep class io.flutter.app.** { *; }
 -keep class io.flutter.plugin.** { *; }
