@@ -7,8 +7,8 @@ select = ["E", "F", "I", "N", "W", "B", "ANN", "S", "C90"]
 ignore = ["S101"]
 
 [tool.ruff.lint.per-file-ignores]
-# テストファイル: assert使用、型注釈省略、日本語docstringの行長、日本語関数名を許容
-"tests/*" = ["S101", "ANN", "E501", "N802"]
+# テストファイル: assert使用、型注釈省略、日本語docstringの行長、日本語関数名、テスト用パスワード文字列を許容
+"tests/*" = ["S101", "ANN", "E501", "N802", "S105"]
 # FastAPIのDepends()パターンはB008の例外として許容
 "app/api/*" = ["B008"]
 # main.py: FastAPIのDepends()パターン、日本語docstringの行長を許容
