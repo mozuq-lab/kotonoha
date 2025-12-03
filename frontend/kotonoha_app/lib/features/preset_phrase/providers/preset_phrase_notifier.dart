@@ -2,18 +2,21 @@
 ///
 /// TASK-0041: 定型文CRUD機能実装
 /// TASK-0042: 定型文初期データ投入機能追加
+/// TDD-FAVORITE-SYNC: お気に入り画面との連動機能追加
 /// TDD Refactorフェーズ: ドキュメント改善
 ///
 /// 関連要件:
 /// - REQ-104: 定型文の追加・編集・削除機能
 /// - REQ-105: お気に入り定型文を一覧上部に優先表示
 /// - REQ-107: 初期データとして50-100個の汎用定型文を提供
+/// - REQ-701: 定型文をお気に入りとして登録
 /// - CRUD-003: UUID形式の一意識別子を自動付与
 /// - CRUD-007: お気に入りフラグを切り替える機能
 /// - CRUD-008: createdAt/updatedAtタイムスタンプを自動設定
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/data/default_phrases.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:uuid/uuid.dart';
@@ -51,13 +54,23 @@ class PresetPhraseState {
 
 /// 【機能概要】: 定型文状態管理Notifier
 /// 【実装方針】: Riverpod StateNotifierで状態管理
-/// 【テスト対応】: TC-041-032〜TC-041-042
-/// 🔵 信頼性レベル: 青信号 - REQ-104, REQ-105に基づく
+/// 【テスト対応】: TC-041-032〜TC-041-042, TC-SYNC-001〜TC-SYNC-303
+/// 🔵 信頼性レベル: 青信号 - REQ-104, REQ-105, REQ-701に基づく
 ///
 /// 定型文のCRUD操作を提供するStateNotifier。
 /// 追加、更新、削除、お気に入り切り替え機能を実装。
+/// お気に入り操作時はFavoriteNotifierと連動する。
 class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
-  PresetPhraseNotifier() : super(const PresetPhraseState());
+  /// 【コンストラクタ】: FavoriteNotifierへの参照を受け取る
+  /// 【テスト対応】: TC-SYNC-001, TC-SYNC-002（連動機能）
+  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
+  PresetPhraseNotifier(this._favoriteNotifier)
+      : super(const PresetPhraseState());
+
+  /// 【フィールド定義】: FavoriteNotifierへの参照
+  /// 【実装内容】: お気に入り連動のために使用
+  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
+  final FavoriteNotifier? _favoriteNotifier;
 
   /// UUID生成用インスタンス
   static const _uuid = Uuid();
@@ -114,8 +127,8 @@ class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
   }
 
   /// 【メソッド】: 定型文を削除する
-  /// 【実装内容】: 指定IDの定型文を削除
-  /// 【テスト対応】: TC-041-037
+  /// 【実装内容】: 指定IDの定型文を削除し、お気に入りの場合はFavoriteからも削除
+  /// 【テスト対応】: TC-041-037, TC-SYNC-202
   /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
   Future<void> deletePhrase(String id) async {
     // 対象の定型文を検索 (EDGE-010対応)
@@ -125,15 +138,22 @@ class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
       return;
     }
 
+    // 【連動処理】: お気に入り済みの定型文を削除する場合、Favoriteからも削除（TC-SYNC-202）
+    // 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
+    final phrase = state.phrases[index];
+    if (phrase.isFavorite && _favoriteNotifier != null) {
+      await _favoriteNotifier.deleteFavoriteBySourceId(id);
+    }
+
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
     updatedPhrases.removeAt(index);
     state = state.copyWith(phrases: updatedPhrases);
   }
 
   /// 【メソッド】: お気に入りを切り替える
-  /// 【実装内容】: 指定IDの定型文のお気に入りフラグを反転
-  /// 【テスト対応】: TC-041-038, TC-041-039, TC-041-040
-  /// 🔵 信頼性レベル: 青信号 - CRUD-007, CRUD-106に基づく
+  /// 【実装内容】: 指定IDの定型文のお気に入りフラグを反転し、Favoriteと連動
+  /// 【テスト対応】: TC-041-038〜040, TC-SYNC-001, TC-SYNC-002, TC-SYNC-003
+  /// 🔵 信頼性レベル: 青信号 - CRUD-007, CRUD-106, REQ-701に基づく
   Future<void> toggleFavorite(String id) async {
     final index = state.phrases.indexWhere((p) => p.id == id);
     if (index == -1) {
@@ -150,6 +170,22 @@ class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
     updatedPhrases[index] = updatedPhrase;
     // お気に入り順でソート (REQ-105)
     state = state.copyWith(phrases: _sortPhrases(updatedPhrases));
+
+    // 【連動処理】: FavoriteNotifierへの連動（TC-SYNC-001, TC-SYNC-002）
+    // 【処理方針】: お気に入り追加時はFavoriteにも追加、解除時はFavoriteからも削除
+    // 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
+    if (_favoriteNotifier != null) {
+      if (updatedPhrase.isFavorite) {
+        // 【お気に入り追加】: Favoriteにも追加
+        await _favoriteNotifier.addFavoriteFromPresetPhrase(
+          updatedPhrase.content,
+          updatedPhrase.id,
+        );
+      } else {
+        // 【お気に入り解除】: Favoriteからも削除
+        await _favoriteNotifier.deleteFavoriteBySourceId(updatedPhrase.id);
+      }
+    }
   }
 
   /// 【メソッド】: 定型文一覧を読み込む
@@ -237,8 +273,11 @@ class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
 }
 
 /// 【Provider定義】: PresetPhraseNotifierのProvider
-/// 🔵 信頼性レベル: 青信号 - Riverpodパターンに基づく
+/// 【実装内容】: FavoriteNotifierを渡してお気に入り連動を有効化
+/// 【テスト対応】: TC-SYNC-001, TC-SYNC-002（連動機能の依存関係）
+/// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNCに基づく
 final presetPhraseNotifierProvider =
     StateNotifierProvider<PresetPhraseNotifier, PresetPhraseState>((ref) {
-  return PresetPhraseNotifier();
+  final favoriteNotifier = ref.read(favoriteProvider.notifier);
+  return PresetPhraseNotifier(favoriteNotifier);
 });

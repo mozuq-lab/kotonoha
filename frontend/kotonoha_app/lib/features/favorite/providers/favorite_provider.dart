@@ -121,6 +121,55 @@ class FavoriteNotifier extends StateNotifier<FavoriteState> {
   Future<void> clearAllFavorites() async {
     state = state.copyWith(favorites: []);
   }
+
+  /// 【メソッド定義】: 定型文由来のお気に入りを追加する
+  /// 【機能概要】: 定型文からお気に入りを追加する際、元データ情報を保持
+  /// 【実装方針】: sourceType='preset_phrase', sourceId=定型文IDを設定
+  /// 【テスト対応】: TC-SYNC-001, TC-SYNC-003, TC-SYNC-301
+  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件定義に基づく
+  Future<void> addFavoriteFromPresetPhrase(
+      String content, String sourceId) async {
+    // 【入力値検証】: 空文字は追加しない
+    if (content.isEmpty) return;
+
+    // 【重複チェック】: 同じsourceIdの定型文由来お気に入りが既に存在する場合は追加しない
+    // 【処理方針】: sourceIdで重複を判定（contentではなく）
+    final existsBySourceId = state.favorites.any((f) => f.sourceId == sourceId);
+    if (existsBySourceId) return;
+
+    // 【Favorite作成】: 定型文由来のお気に入りを作成
+    final now = DateTime.now();
+    final newFavorite = Favorite(
+      id: _uuid.v4(),
+      content: content,
+      createdAt: now,
+      displayOrder: state.favorites.length,
+      sourceType: 'preset_phrase', // 【元データ種類】: 定型文由来を示す
+      sourceId: sourceId, // 【元データID】: 定型文のIDを保持
+    );
+
+    // 【状態更新】: Favoriteリストに追加
+    final updatedFavorites = [...state.favorites, newFavorite];
+    state = state.copyWith(favorites: updatedFavorites);
+  }
+
+  /// 【メソッド定義】: sourceIdに一致するお気に入りを削除する
+  /// 【機能概要】: 定型文のお気に入り解除時に対応するFavoriteを削除
+  /// 【実装方針】: sourceIdで検索して削除
+  /// 【テスト対応】: TC-SYNC-002, TC-SYNC-202, TC-SYNC-302, TC-SYNC-303
+  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件定義に基づく
+  Future<void> deleteFavoriteBySourceId(String sourceId) async {
+    // 【検索】: sourceIdに一致するFavoriteを検索
+    final index = state.favorites.indexWhere((f) => f.sourceId == sourceId);
+
+    // 【該当なし処理】: 一致するものがなければ何もしない（TC-SYNC-303）
+    if (index == -1) return;
+
+    // 【削除処理】: 一致するFavoriteを削除
+    final updatedFavorites = List<Favorite>.from(state.favorites);
+    updatedFavorites.removeAt(index);
+    state = state.copyWith(favorites: updatedFavorites);
+  }
 }
 
 /// 【Provider定義】: FavoriteNotifierのProvider
