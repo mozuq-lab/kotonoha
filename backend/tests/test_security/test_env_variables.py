@@ -135,9 +135,7 @@ class TestHTTPSConfiguration:
         content = config_file.read_text()
 
         # CORS_ORIGINS環境変数が定義されていることを確認
-        assert (
-            "CORS_ORIGINS" in content
-        ), "CORS_ORIGINS が config.py に定義されていません"
+        assert "CORS_ORIGINS" in content, "CORS_ORIGINS が config.py に定義されていません"
 
 
 class TestPrivacyProtection:
@@ -168,6 +166,4 @@ class TestPrivacyProtection:
         content = schema_file.read_text()
 
         # ハッシュカラムが存在することを確認
-        assert (
-            "input_text_hash" in content
-        ), "input_text_hash カラムがスキーマに存在しません"
+        assert "input_text_hash" in content, "input_text_hash カラムがスキーマに存在しません"

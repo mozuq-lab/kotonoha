@@ -89,7 +89,9 @@ def test_engine_pool_configuration() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Docker環境のマルチスレッド制約により失敗 (OSError: Multi-thread/multi-process)")
+@pytest.mark.skip(
+    reason="Docker環境のマルチスレッド制約により失敗 (OSError: Multi-thread/multi-process)"
+)
 async def test_concurrent_connections() -> None:
     """TC-003: 10個の並行クエリが接続プールで適切に管理されることを確認。
 

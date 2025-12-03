@@ -5,6 +5,7 @@ Revises:
 Create Date: 2025-11-20 18:31:36.150310
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -12,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'ac3a7c362e68'
+revision: str = "ac3a7c362e68"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,34 +32,43 @@ def upgrade() -> None:
 
     # 【テーブル作成】: ai_conversion_historyテーブルを作成
     # 🔵 database-schema.sql（line 36-51）に基づくテーブル定義
-    op.create_table('ai_conversion_history',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('input_text', sa.Text(), nullable=False),
-    sa.Column('converted_text', sa.Text(), nullable=False),
-    sa.Column('politeness_level', sa.Enum('CASUAL', 'NORMAL', 'POLITE', name='politeness_level_enum', create_constraint=True), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.Column('conversion_time_ms', sa.Integer(), nullable=True),
-    sa.Column('user_session_id', sa.UUID(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    op.create_table(
+        "ai_conversion_history",
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("input_text", sa.Text(), nullable=False),
+        sa.Column("converted_text", sa.Text(), nullable=False),
+        sa.Column(
+            "politeness_level",
+            sa.Enum(
+                "CASUAL", "NORMAL", "POLITE", name="politeness_level_enum", create_constraint=True
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+            nullable=False,
+        ),
+        sa.Column("conversion_time_ms", sa.Integer(), nullable=True),
+        sa.Column("user_session_id", sa.UUID(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
     )
 
     # 【インデックス作成】: パフォーマンス最適化のためのインデックスを追加
     # 【idx_ai_conversion_created_at】: 時系列検索用インデックス（created_at DESC）
     # 🔵 database-schema.sql（line 54-60）に基づくインデックス定義
     op.create_index(
-        'idx_ai_conversion_created_at',
-        'ai_conversion_history',
-        [sa.text('created_at DESC')],
-        unique=False
+        "idx_ai_conversion_created_at",
+        "ai_conversion_history",
+        [sa.text("created_at DESC")],
+        unique=False,
     )
 
     # 【idx_ai_conversion_session】: セッション絞り込み用インデックス（user_session_id）
     # 🔵 database-schema.sql（line 62-68）に基づくインデックス定義
     op.create_index(
-        'idx_ai_conversion_session',
-        'ai_conversion_history',
-        ['user_session_id'],
-        unique=False
+        "idx_ai_conversion_session", "ai_conversion_history", ["user_session_id"], unique=False
     )
     # ### end Alembic commands ###
 
@@ -76,10 +86,10 @@ def downgrade() -> None:
 
     # 【インデックス削除】: テーブル削除前にインデックスを削除
     # 🔵 upgrade()の逆順で実行
-    op.drop_index('idx_ai_conversion_session', table_name='ai_conversion_history')
-    op.drop_index('idx_ai_conversion_created_at', table_name='ai_conversion_history')
+    op.drop_index("idx_ai_conversion_session", table_name="ai_conversion_history")
+    op.drop_index("idx_ai_conversion_created_at", table_name="ai_conversion_history")
 
     # 【テーブル削除】: ai_conversion_historyテーブルを削除
     # 🔵 database-schema.sqlに基づくロールバック処理
-    op.drop_table('ai_conversion_history')
+    op.drop_table("ai_conversion_history")
     # ### end Alembic commands ###

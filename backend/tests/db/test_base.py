@@ -49,6 +49,7 @@ class TestBaseModel:
         【説明】: 他のモデルがBaseを継承できることを確認
         【期待結果】: Baseを継承した新しいモデルクラスが作成できる
         """
+
         # Arrange
         class TestModel(Base):
             """テスト用モデルクラス"""
