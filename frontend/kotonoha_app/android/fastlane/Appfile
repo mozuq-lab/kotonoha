@@ -1,0 +1,4 @@
+# Kotonoha Android Fastlane Appfile
+
+package_name("com.kotonoha.kotonoha_app")
+# json_key_file("path/to/your/play-store-credentials.json") # Google Play API key file

@@ -1,0 +1,1 @@
+AAC,communication,speech,aid,TTS,text-to-speech,accessibility,stroke,ALS,disability

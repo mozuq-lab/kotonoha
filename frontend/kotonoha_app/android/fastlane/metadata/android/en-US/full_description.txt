@@ -1,0 +1,61 @@
+Kotonoha is an augmentative and alternative communication (AAC) app designed to help people with speech difficulties communicate effectively.
+
+Our goal is to enable users to express what they want to say with minimal effort, appropriate politeness, and safety.
+
+<b>Key Features</b>
+
+<b>Japanese Syllabary Keyboard</b>
+- Easy input for hiragana, katakana, voiced and semi-voiced sounds
+- Large, easy-to-tap buttons
+- Immediate text-to-speech playback
+
+<b>Preset Phrases</b>
+- Over 80 pre-loaded common phrases
+- Organized by categories: Daily, Health, Emotions
+- One-tap instant speech
+- Add your own custom phrases
+
+<b>Quick Response Buttons</b>
+- "Yes", "No", "I don't know" for rapid communication
+- Status buttons: "Pain", "Restroom", etc.
+
+<b>Emergency Button</b>
+- Loud emergency alarm with a single tap
+- Two-step confirmation to prevent accidental activation
+
+<b>AI Conversion (Optional)</b>
+- Automatically convert text to polite/formal speech
+- Three levels: Casual, Normal, Polite
+
+<b>Face-to-Face Display Mode</b>
+- Rotate screen 180 degrees to show others
+- Large, readable text display
+
+<b>Accessibility</b>
+
+- Font size: Small, Medium, Large
+- Themes: Light, Dark, High Contrast
+- Speech rate: Slow, Normal, Fast
+- Large, easy-to-tap button design
+
+<b>Offline Support</b>
+
+Core features (keyboard, phrases, speech, emergency) work without internet connection. Use confidently anywhere, anytime.
+
+<b>Privacy</b>
+
+- Your input data stays on your device only
+- No automatic cloud sync
+- AI conversion sends data to server only with your consent
+
+<b>Target Users</b>
+
+Designed primarily for people who have difficulty speaking due to stroke, ALS, muscular dystrophy, or similar conditions, but can operate a tablet by tapping.
+
+<b>Recommended Environment</b>
+
+Best experienced on tablets 9.7 inches or larger.
+
+<b>Support</b>
+
+For questions or feedback, please contact us via the support URL.

@@ -1,0 +1,1 @@
+AAC app for people with speech difficulties. Features preset phrases, text-to-speech, and emergency button. Works offline.

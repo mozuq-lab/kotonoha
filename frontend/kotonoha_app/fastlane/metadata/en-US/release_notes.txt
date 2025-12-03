@@ -1,0 +1,18 @@
+Version 1.0.0 - Initial Release
+
+【New Features】
+- Japanese syllabary keyboard input
+- 80+ preset phrases
+- Quick response buttons (Yes/No)
+- Status buttons (Pain, Restroom, etc.)
+- Emergency button with two-step confirmation
+- AI text conversion (polite/formal)
+- Face-to-face display mode
+- Full offline support
+
+【Accessibility】
+- Three font size options
+- Light/Dark/High Contrast themes
+- Adjustable speech rate
+
+Thank you for using Kotonoha!

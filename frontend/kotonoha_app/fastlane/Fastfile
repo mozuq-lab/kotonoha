@@ -1,0 +1,93 @@
+# Kotonoha Fastlane Configuration
+# https://docs.fastlane.tools
+
+default_platform(:ios)
+
+# iOS Configuration
+platform :ios do
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    # Increment build number
+    increment_build_number(xcodeproj: "ios/Runner.xcodeproj")
+
+    # Build the app
+    build_app(
+      workspace: "ios/Runner.xcworkspace",
+      scheme: "Runner",
+      export_method: "app-store"
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(skip_waiting_for_build_processing: true)
+  end
+
+  desc "Deploy a new version to the App Store"
+  lane :release do
+    # Increment build number
+    increment_build_number(xcodeproj: "ios/Runner.xcodeproj")
+
+    # Build the app
+    build_app(
+      workspace: "ios/Runner.xcworkspace",
+      scheme: "Runner",
+      export_method: "app-store"
+    )
+
+    # Upload to App Store Connect
+    upload_to_app_store(
+      skip_screenshots: true,
+      skip_metadata: false,
+      force: true
+    )
+  end
+
+  desc "Capture screenshots"
+  lane :screenshots do
+    capture_screenshots(scheme: "Runner")
+  end
+end
+
+# Android Configuration
+platform :android do
+  desc "Submit a new internal testing build to Google Play"
+  lane :internal do
+    # Build the app bundle
+    sh "cd ../.. && flutter build appbundle --release --flavor production"
+
+    # Upload to Google Play internal testing track
+    upload_to_play_store(
+      track: 'internal',
+      aab: '../build/app/outputs/bundle/productionRelease/app-production-release.aab',
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Deploy a new version to Google Play"
+  lane :release do
+    # Build the app bundle
+    sh "cd ../.. && flutter build appbundle --release --flavor production"
+
+    # Upload to Google Play production track
+    upload_to_play_store(
+      track: 'production',
+      aab: '../build/app/outputs/bundle/productionRelease/app-production-release.aab',
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Update metadata on Google Play"
+  lane :update_metadata do
+    upload_to_play_store(
+      track: 'production',
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+end

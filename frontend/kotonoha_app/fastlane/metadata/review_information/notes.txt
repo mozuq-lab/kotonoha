@@ -1,0 +1,16 @@
+Kotonoha is an AAC (Augmentative and Alternative Communication) app for people with speech difficulties such as stroke, ALS, or muscular dystrophy.
+
+Key Features:
+1. Japanese syllabary keyboard for text input
+2. 80+ preset phrases for quick communication
+3. Text-to-speech using OS standard TTS
+4. Emergency button with loud alarm
+5. Optional AI text conversion (requires network)
+
+Testing Notes:
+- The app is designed for Japanese language primarily
+- TTS functionality requires device TTS engine
+- AI conversion feature requires internet connection
+- Emergency button plays a loud alarm sound (be careful when testing)
+
+No login required. All data is stored locally on the device.
