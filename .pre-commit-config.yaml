@@ -30,3 +30,19 @@ repos:
   #     - id: mypy
   #       files: ^backend/app/
   #       additional_dependencies: [pydantic, fastapi]
+
+  # Flutter/Dart: Analyze and Format
+  - repo: local
+    hooks:
+      - id: flutter-analyze
+        name: Flutter Analyze
+        entry: bash -c 'cd frontend/kotonoha_app && flutter analyze --no-fatal-infos'
+        language: system
+        files: ^frontend/kotonoha_app/.*\.dart$
+        pass_filenames: false
+      - id: dart-format
+        name: Dart Format Check
+        entry: bash -c 'cd frontend/kotonoha_app && dart format --set-exit-if-changed .'
+        language: system
+        files: ^frontend/kotonoha_app/.*\.dart$
+        pass_filenames: false
