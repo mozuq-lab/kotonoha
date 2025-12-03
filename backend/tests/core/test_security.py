@@ -31,7 +31,7 @@ class TestPasswordHashing:
         【期待結果】: ハッシュ化されたパスワードが元のパスワードで検証成功
         """
         # Arrange
-        plain_password = "test_password_123"
+        plain_password = "test_password_123"  # noqa: S105
 
         # Act
         hashed_password = get_password_hash(plain_password)
@@ -48,8 +48,8 @@ class TestPasswordHashing:
         【期待結果】: 異なるパスワードで検証失敗
         """
         # Arrange
-        correct_password = "correct_password"
-        wrong_password = "wrong_password"
+        correct_password = "correct_password"  # noqa: S105
+        wrong_password = "wrong_password"  # noqa: S105
         hashed_password = get_password_hash(correct_password)
 
         # Act
@@ -127,7 +127,7 @@ class TestJWTToken:
         【期待結果】: JWTError例外が発生
         """
         # Arrange
-        invalid_token = "invalid.jwt.token"
+        invalid_token = "invalid.jwt.token"  # noqa: S105
 
         # Act & Assert
         with pytest.raises(JWTError):

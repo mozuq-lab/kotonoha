@@ -7,7 +7,6 @@ TC-CV-003: db/base.py テストケース
 【目的】: DB基底クラスのインポート・継承テスト
 """
 
-import pytest
 from sqlalchemy import Column, Integer, String
 
 from app.db.base import Base

@@ -5,7 +5,6 @@ TASK-0097: NFR-105 環境変数管理テスト（バックエンド）
 テスト対象: 環境変数がアプリ内にハードコードされていないこと
 """
 
-import os
 import re
 from pathlib import Path
 
