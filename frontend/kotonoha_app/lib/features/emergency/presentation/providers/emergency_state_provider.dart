@@ -4,7 +4,7 @@
 /// 関連要件: REQ-303, REQ-304, REQ-2005
 /// 信頼性レベル: 青信号（要件定義書ベース）
 ///
-/// Riverpod StateNotifier を使用した緊急状態管理。
+/// Riverpod Notifier を使用した緊急状態管理。
 /// 緊急呼び出しの開始・リセットを管理し、
 /// AudioService と連携して音声再生を制御する。
 ///
@@ -46,12 +46,21 @@ import 'package:kotonoha_app/features/emergency/domain/models/emergency_state.da
 import 'package:kotonoha_app/features/emergency/domain/services/emergency_audio_service.dart';
 
 // =============================================================================
+// 緊急音サービスプロバイダー
+// =============================================================================
+
+/// 緊急音サービスプロバイダー
+final emergencyAudioServiceProvider = Provider<EmergencyAudioServiceInterface>(
+  (ref) => EmergencyAudioService(),
+);
+
+// =============================================================================
 // Notifier実装
 // =============================================================================
 
 /// 緊急状態管理 Notifier
 ///
-/// 緊急呼び出し機能の状態を管理する StateNotifier。
+/// 緊急呼び出し機能の状態を管理する Notifier。
 /// EmergencyAudioServiceと連携して、状態変更時に音声再生/停止を制御する。
 ///
 /// ## 状態遷移
@@ -63,26 +72,13 @@ import 'package:kotonoha_app/features/emergency/domain/services/emergency_audio_
 ///
 /// 音声再生に失敗した場合でも、視覚的なフィードバック（赤画面）は
 /// 継続して提供される。これは緊急機能の信頼性を確保するための設計判断。
-class EmergencyStateNotifier extends StateNotifier<EmergencyStateEnum> {
+class EmergencyStateNotifier extends Notifier<EmergencyStateEnum> {
   // ---------------------------------------------------------------------------
-  // フィールド
-  // ---------------------------------------------------------------------------
-
-  /// 緊急音再生サービス
-  final EmergencyAudioServiceInterface? _audioService;
-
-  // ---------------------------------------------------------------------------
-  // コンストラクタ
+  // 初期状態
   // ---------------------------------------------------------------------------
 
-  /// EmergencyStateNotifier を作成する
-  ///
-  /// [audioService] - 緊急音再生サービス。
-  ///                  テスト時はモックを注入可能。
-  ///                  nullの場合は音声再生なしで動作。
-  EmergencyStateNotifier({EmergencyAudioServiceInterface? audioService})
-      : _audioService = audioService,
-        super(EmergencyStateEnum.normal);
+  @override
+  EmergencyStateEnum build() => EmergencyStateEnum.normal;
 
   // ---------------------------------------------------------------------------
   // 公開メソッド
@@ -104,7 +100,8 @@ class EmergencyStateNotifier extends StateNotifier<EmergencyStateEnum> {
     if (state == EmergencyStateEnum.alertActive) return;
 
     try {
-      await _audioService?.startEmergencySound();
+      final audioService = ref.read(emergencyAudioServiceProvider);
+      await audioService.startEmergencySound();
     } catch (_) {
       // 音声再生エラーは無視し、画面表示は継続
     }
@@ -124,7 +121,8 @@ class EmergencyStateNotifier extends StateNotifier<EmergencyStateEnum> {
     if (state == EmergencyStateEnum.normal) return;
 
     try {
-      await _audioService?.stopEmergencySound();
+      final audioService = ref.read(emergencyAudioServiceProvider);
+      await audioService.stopEmergencySound();
     } catch (_) {
       // 停止エラーは無視
     }
@@ -158,15 +156,12 @@ class EmergencyStateNotifier extends StateNotifier<EmergencyStateEnum> {
 /// ```dart
 /// ProviderScope(
 ///   overrides: [
-///     emergencyStateProvider.overrideWith(
-///       (ref) => EmergencyStateNotifier(audioService: mockService),
-///     ),
+///     emergencyAudioServiceProvider.overrideWithValue(mockService),
 ///   ],
 ///   child: MyApp(),
 /// )
 /// ```
 final emergencyStateProvider =
-    StateNotifierProvider<EmergencyStateNotifier, EmergencyStateEnum>((ref) {
-  final audioService = EmergencyAudioService();
-  return EmergencyStateNotifier(audioService: audioService);
-});
+    NotifierProvider<EmergencyStateNotifier, EmergencyStateEnum>(
+  EmergencyStateNotifier.new,
+);

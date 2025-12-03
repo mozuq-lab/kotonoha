@@ -25,7 +25,7 @@ dependencies:
 
   # HTTP通信
   dio: ^5.7.0
-  retrofit: ^4.4.1
+  retrofit: ^4.1.0
 
   # JSON
   json_annotation: ^4.9.0
@@ -66,10 +66,10 @@ dev_dependencies:
     sdk: flutter
 
   # コード生成
-  build_runner: ^2.4.14
-  riverpod_generator: ^2.6.1
-  json_serializable: ^6.9.2
-  retrofit_generator: ^9.1.4
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.6.3
+  json_serializable: ^6.9.0
+  retrofit_generator: ^9.1.6
 
   # テスト
   mocktail: ^1.0.4

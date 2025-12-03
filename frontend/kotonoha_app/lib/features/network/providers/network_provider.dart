@@ -23,29 +23,30 @@ import '../domain/services/connectivity_service.dart';
 ///
 /// connectivity_plusを使用してネットワーク接続状態を監視し、
 /// AI変換機能の利用可否を判定する。
-class NetworkNotifier extends StateNotifier<NetworkState> {
-  /// ConnectivityService インスタンス
-  final ConnectivityService? _connectivityService;
-
+class NetworkNotifier extends Notifier<NetworkState> {
   /// 接続状態変更リスナーのサブスクリプション
   StreamSubscription<List<ConnectivityResult>>? _subscription;
 
-  /// コンストラクタ
-  NetworkNotifier({ConnectivityService? connectivityService})
-      : _connectivityService = connectivityService,
-        super(NetworkState.checking);
+  /// 初期状態
+  @override
+  NetworkState build() => NetworkState.checking;
+
+  /// ConnectivityServiceを取得
+  ConnectivityService? get _connectivityService =>
+      ref.read(connectivityServiceProvider);
 
   /// connectivity_plusを使用して初期化する
   ///
   /// 現在の接続状態を確認し、状態を更新する。
   Future<void> initializeWithConnectivity() async {
-    if (_connectivityService == null) {
+    final service = _connectivityService;
+    if (service == null) {
       // ConnectivityServiceがない場合は状態変更なし
       return;
     }
 
     try {
-      final results = await _connectivityService.checkConnectivity();
+      final results = await service.checkConnectivity();
       _updateStateFromResults(results);
     } catch (e) {
       // エラー時はオフライン扱い
@@ -57,11 +58,12 @@ class NetworkNotifier extends StateNotifier<NetworkState> {
   ///
   /// ネットワーク接続状態が変更されるたびに状態を更新する。
   Future<void> startListening() async {
-    if (_connectivityService == null) {
+    final service = _connectivityService;
+    if (service == null) {
       return;
     }
 
-    _subscription = _connectivityService.onConnectivityChanged.listen(
+    _subscription = service.onConnectivityChanged.listen(
       _updateStateFromResults,
       onError: (_) {
         state = NetworkState.offline;
@@ -125,18 +127,16 @@ class NetworkNotifier extends StateNotifier<NetworkState> {
     return state == NetworkState.online;
   }
 
-  @override
-  void dispose() {
+  /// リソースをクリーンアップ
+  void cleanup() {
     _subscription?.cancel();
-    super.dispose();
+    _subscription = null;
   }
 }
 
 /// NetworkNotifierのProvider
 ///
 /// ConnectivityServiceを注入してテスト可能にする。
-final networkProvider =
-    StateNotifierProvider<NetworkNotifier, NetworkState>((ref) {
-  final connectivityService = ref.watch(connectivityServiceProvider);
-  return NetworkNotifier(connectivityService: connectivityService);
-});
+final networkProvider = NotifierProvider<NetworkNotifier, NetworkState>(
+  NetworkNotifier.new,
+);

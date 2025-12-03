@@ -29,14 +29,9 @@ final aiConversionApiClientProvider = Provider<AIConversionApiClient>((ref) {
 ///
 /// REQ-901〜REQ-904: AI変換機能の状態管理
 final aiConversionProvider =
-    StateNotifierProvider<AIConversionNotifier, AIConversionState>((ref) {
-  final apiClient = ref.watch(aiConversionApiClientProvider);
-  final networkNotifier = ref.watch(networkProvider.notifier);
-  return AIConversionNotifier(
-    apiClient: apiClient,
-    networkNotifier: networkNotifier,
-  );
-});
+    NotifierProvider<AIConversionNotifier, AIConversionState>(
+  AIConversionNotifier.new,
+);
 
 /// AI変換の状態管理Notifier
 ///
@@ -44,20 +39,17 @@ final aiConversionProvider =
 /// REQ-902: AI変換結果を表示し、採用・却下を選択可能
 /// REQ-903: 丁寧さレベルを3段階から選択可能
 /// REQ-904: 再生成または元の文を使用できる機能を提供
-class AIConversionNotifier extends StateNotifier<AIConversionState> {
-  /// APIクライアント
-  final AIConversionApiClient _apiClient;
+class AIConversionNotifier extends Notifier<AIConversionState> {
+  /// 初期状態
+  @override
+  AIConversionState build() => AIConversionState.initial;
 
-  /// ネットワーク状態Notifier
-  final NetworkNotifier _networkNotifier;
+  /// APIクライアントを取得
+  AIConversionApiClient get _apiClient =>
+      ref.read(aiConversionApiClientProvider);
 
-  /// コンストラクタ
-  AIConversionNotifier({
-    required AIConversionApiClient apiClient,
-    required NetworkNotifier networkNotifier,
-  })  : _apiClient = apiClient,
-        _networkNotifier = networkNotifier,
-        super(AIConversionState.initial);
+  /// ネットワーク状態Notifierを取得
+  NetworkNotifier get _networkNotifier => ref.read(networkProvider.notifier);
 
   /// AI変換を実行
   ///

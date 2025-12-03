@@ -1,6 +1,6 @@
-/// 文字入力バッファの状態管理（Riverpod StateNotifier）
+/// 文字入力バッファの状態管理（Riverpod Notifier）
 ///
-/// TASK-0038: 文字入力バッファ管理（Riverpod StateNotifier）
+/// TASK-0038: 文字入力バッファ管理（Riverpod Notifier）
 ///
 /// 主な機能:
 /// - 文字の追加（1文字ずつ）
@@ -9,7 +9,7 @@
 /// - テキストの設定（定型文挿入等）
 ///
 /// 設計方針:
-/// - StateNotifierによる同期的な状態管理でUI応答性を維持（100ms以内）
+/// - Notifierによる同期的な状態管理でUI応答性を維持（100ms以内）
 /// - 1000文字制限（EDGE-101）
 /// - 制御文字（改行・タブ）は入力を拒否
 ///
@@ -28,15 +28,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// // 文字の追加
 /// ref.read(inputBufferProvider.notifier).addCharacter('あ');
 /// ```
-final inputBufferProvider = StateNotifierProvider<InputBufferNotifier, String>(
-  (ref) => InputBufferNotifier(),
+final inputBufferProvider = NotifierProvider<InputBufferNotifier, String>(
+  InputBufferNotifier.new,
 );
 
 /// 文字入力バッファの状態管理クラス
 ///
-/// [StateNotifier]を継承し、同期的な状態更新でUI応答性を維持する。
+/// [Notifier]を継承し、同期的な状態更新でUI応答性を維持する。
 /// 状態は[String]型で、入力された文字列を保持する。
-class InputBufferNotifier extends StateNotifier<String> {
+class InputBufferNotifier extends Notifier<String> {
   /// 入力バッファの最大文字数（EDGE-101）
   static const int maxLength = 1000;
 
@@ -44,7 +44,8 @@ class InputBufferNotifier extends StateNotifier<String> {
   static const Set<String> _rejectedControlChars = {'\n', '\t'};
 
   /// 初期状態を空文字列で構築
-  InputBufferNotifier() : super('');
+  @override
+  String build() => '';
 
   /// 1文字を入力バッファに追加する
   ///

@@ -25,6 +25,18 @@ class MockAIConversionApiClient extends Mock implements AIConversionApiClient {}
 
 class MockDio extends Mock implements Dio {}
 
+/// オンライン状態用のNetworkNotifierサブクラス
+class _OnlineNetworkNotifier extends NetworkNotifier {
+  @override
+  NetworkState build() => NetworkState.online;
+}
+
+/// オフライン状態用のNetworkNotifierサブクラス
+class _OfflineNetworkNotifier extends NetworkNotifier {
+  @override
+  NetworkState build() => NetworkState.offline;
+}
+
 void main() {
   late MockAIConversionApiClient mockApiClient;
   late ProviderContainer container;
@@ -49,14 +61,10 @@ void main() {
     return ProviderContainer(
       overrides: [
         aiConversionApiClientProvider.overrideWithValue(mockApiClient),
-        networkProvider.overrideWith((ref) {
-          final notifier = NetworkNotifier();
-          if (initialNetworkState == NetworkState.online) {
-            notifier.setOnline();
-          } else if (initialNetworkState == NetworkState.offline) {
-            notifier.setOffline();
-          }
-          return notifier;
+        networkProvider.overrideWith(() {
+          return initialNetworkState == NetworkState.online
+              ? _OnlineNetworkNotifier()
+              : _OfflineNetworkNotifier();
         }),
       ],
     );

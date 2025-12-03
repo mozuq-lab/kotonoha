@@ -53,31 +53,27 @@ Future<void> navigateToHome(WidgetTester tester) async {
 
 /// オフライン状態用のNetworkNotifierサブクラス
 class _OfflineNetworkNotifier extends NetworkNotifier {
-  _OfflineNetworkNotifier() : super() {
-    // 初期状態をオフラインに設定
-    state = NetworkState.offline;
-  }
+  @override
+  NetworkState build() => NetworkState.offline;
 }
 
 /// オンライン状態用のNetworkNotifierサブクラス
 class _OnlineNetworkNotifier extends NetworkNotifier {
-  _OnlineNetworkNotifier() : super() {
-    // 初期状態をオンラインに設定
-    state = NetworkState.online;
-  }
+  @override
+  NetworkState build() => NetworkState.online;
 }
 
 /// オフライン状態をシミュレートするためのProviderオーバーライド
 List<Override> createOfflineOverrides() {
   return [
-    networkProvider.overrideWith((ref) => _OfflineNetworkNotifier()),
+    networkProvider.overrideWith(() => _OfflineNetworkNotifier()),
   ];
 }
 
 /// オンライン状態をシミュレートするためのProviderオーバーライド
 List<Override> createOnlineOverrides() {
   return [
-    networkProvider.overrideWith((ref) => _OnlineNetworkNotifier()),
+    networkProvider.overrideWith(() => _OnlineNetworkNotifier()),
   ];
 }
 

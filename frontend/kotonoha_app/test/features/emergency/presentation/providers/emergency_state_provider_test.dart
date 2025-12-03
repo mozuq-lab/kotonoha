@@ -35,9 +35,7 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
-          emergencyStateProvider.overrideWith(
-            (ref) => EmergencyStateNotifier(audioService: mockAudioService),
-          ),
+          emergencyAudioServiceProvider.overrideWithValue(mockAudioService),
         ],
       );
     });
@@ -154,9 +152,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              emergencyStateProvider.overrideWith(
-                (ref) => EmergencyStateNotifier(audioService: mockAudioService),
-              ),
+              emergencyAudioServiceProvider.overrideWithValue(mockAudioService),
             ],
             child: MaterialApp(
               home: Consumer(
@@ -287,9 +283,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              emergencyStateProvider.overrideWith(
-                (ref) => EmergencyStateNotifier(audioService: mockAudioService),
-              ),
+              emergencyAudioServiceProvider.overrideWithValue(mockAudioService),
             ],
             child: MaterialApp(
               home: Consumer(
@@ -346,9 +340,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              emergencyStateProvider.overrideWith(
-                (ref) => EmergencyStateNotifier(audioService: mockAudioService),
-              ),
+              emergencyAudioServiceProvider.overrideWithValue(mockAudioService),
             ],
             child: MaterialApp(
               home: Consumer(
@@ -500,9 +492,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              emergencyStateProvider.overrideWith(
-                (ref) => EmergencyStateNotifier(audioService: mockAudioService),
-              ),
+              emergencyAudioServiceProvider.overrideWithValue(mockAudioService),
             ],
             child: MaterialApp(
               home: Consumer(

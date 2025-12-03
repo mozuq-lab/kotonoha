@@ -85,9 +85,10 @@ class AppSessionState {
 ///
 /// バックグラウンド復帰時の状態復元、入力中テキストの保存、
 /// クラッシュ時のデータ保持を管理する。
-class AppSessionNotifier extends StateNotifier<AppSessionState> {
-  /// コンストラクタ
-  AppSessionNotifier() : super(const AppSessionState());
+class AppSessionNotifier extends Notifier<AppSessionState> {
+  /// 初期状態
+  @override
+  AppSessionState build() => const AppSessionState();
 
   /// 入力中のテキストを取得
   String get draftText => state.draftText;
@@ -192,6 +193,6 @@ class AppSessionNotifier extends StateNotifier<AppSessionState> {
 
 /// アプリセッション状態プロバイダー
 final appSessionProvider =
-    StateNotifierProvider<AppSessionNotifier, AppSessionState>((ref) {
-  return AppSessionNotifier();
-});
+    NotifierProvider<AppSessionNotifier, AppSessionState>(
+  AppSessionNotifier.new,
+);

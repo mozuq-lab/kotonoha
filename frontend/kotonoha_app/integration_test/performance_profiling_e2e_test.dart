@@ -119,15 +119,14 @@ Future<void> tapPresetPhraseTab(WidgetTester tester) async {
 
 /// オフライン状態用のNetworkNotifierサブクラス
 class _OfflineNetworkNotifier extends NetworkNotifier {
-  _OfflineNetworkNotifier() : super() {
-    state = NetworkState.offline;
-  }
+  @override
+  NetworkState build() => NetworkState.offline;
 }
 
 /// オフライン状態をシミュレートするためのProviderオーバーライド
 List<Override> createOfflineOverrides() {
   return [
-    networkProvider.overrideWith((ref) => _OfflineNetworkNotifier()),
+    networkProvider.overrideWith(() => _OfflineNetworkNotifier()),
   ];
 }
 
