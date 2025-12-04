@@ -115,9 +115,8 @@ class VolumeService {
         // テスト用モック
         return await _volumeController.getVolume();
       } else {
-        // 本番用: volume_controllerパッケージを使用
-        final controller = VolumeController();
-        final volume = await controller.getVolume();
+        // 本番用: volume_controllerパッケージを使用（v3.x シングルトンパターン）
+        final volume = await VolumeController.instance.getVolume();
         return volume;
       }
     } catch (e) {
