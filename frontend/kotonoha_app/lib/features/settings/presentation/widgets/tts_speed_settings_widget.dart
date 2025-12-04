@@ -1,10 +1,11 @@
 /// TTS速度設定ウィジェット
 ///
 /// TASK-0049: TTS速度設定（遅い/普通/速い）
-/// 読み上げ速度を3段階から選択できるUIウィジェット
+/// TDD-TTS-SLOWER-SPEED: TTS読み上げ速度の追加オプション（より遅い速度の追加）
+/// 読み上げ速度を4段階から選択できるUIウィジェット
 ///
 /// 【機能概要】: TTS読み上げ速度を視覚的に選択できるUI
-/// 【設計方針】: ユーザーが直感的に操作できる3つのボタン
+/// 【設計方針】: ユーザーが直感的に操作できる4つのボタン
 /// 【アクセシビリティ】: 最小タップサイズ44px、現在選択中をハイライト表示
 library;
 
@@ -15,15 +16,17 @@ import '../../providers/settings_provider.dart';
 
 /// TTS速度設定ウィジェット
 ///
-/// REQ-404: 読み上げ速度を「遅い」「普通」「速い」の3段階から選択できなければならない
+/// REQ-404: 読み上げ速度を「とても遅い」「遅い」「普通」「速い」の4段階から選択できる
+/// (元の要件を拡張: 3段階 → 4段階)
 ///
 /// 【使用シーン】:
 /// - ユーザーが設定画面でTTS読み上げ速度を変更する場合
 /// - 高齢者向けに聞き取りやすい速度を設定する場合
+/// - 聴覚に配慮が必要な方向けにより遅い速度を設定する場合
 /// - 慣れたユーザーが効率的な速度を設定する場合
 ///
 /// 【UI設計】:
-/// - 3つの選択肢ボタン（遅い/普通/速い）
+/// - 4つの選択肢ボタン（とても遅い/遅い/普通/速い）
 /// - 現在選択中の速度をハイライト表示（背景色・ボーダー）
 /// - タップで速度を即座に変更
 /// - 最小タップサイズ44px以上（アクセシビリティ要件）
@@ -57,10 +60,22 @@ class TTSSpeedSettingsWidget extends ConsumerWidget {
                 ),
               ),
             ),
-            // 【速度選択ボタン】: 3つの選択肢（遅い/普通/速い）
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+            // 【速度選択ボタン】: 4つの選択肢（とても遅い/遅い/普通/速い）
+            // 【レイアウト】: Wrapを使用してボタンが収まらない場合は折り返し
+            // 【テスト対応】: TTC-VS-004、TTC-VS-012
+            // 🔵 信頼性レベル: 高（要件定義書ベース）
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
+                // 【とても遅いボタン】: TTC-VS-005、TTC-VS-006で検証 🆕
+                // 🔵 信頼性レベル: 高（要件定義書ベース）
+                _SpeedButton(
+                  label: 'とても遅い',
+                  speed: TTSSpeed.verySlow,
+                  isSelected: settings.ttsSpeed == TTSSpeed.verySlow,
+                  onTap: () => _onSpeedChanged(ref, TTSSpeed.verySlow),
+                ),
                 // 【遅いボタン】: TTC-049-007、TTC-049-020で検証
                 _SpeedButton(
                   label: '遅い',
@@ -68,7 +83,6 @@ class TTSSpeedSettingsWidget extends ConsumerWidget {
                   isSelected: settings.ttsSpeed == TTSSpeed.slow,
                   onTap: () => _onSpeedChanged(ref, TTSSpeed.slow),
                 ),
-                const SizedBox(width: 8),
                 // 【普通ボタン】: TTC-049-008で検証
                 _SpeedButton(
                   label: '普通',
@@ -76,7 +90,6 @@ class TTSSpeedSettingsWidget extends ConsumerWidget {
                   isSelected: settings.ttsSpeed == TTSSpeed.normal,
                   onTap: () => _onSpeedChanged(ref, TTSSpeed.normal),
                 ),
-                const SizedBox(width: 8),
                 // 【速いボタン】: TTC-049-009、TTC-049-019で検証
                 _SpeedButton(
                   label: '速い',
@@ -123,6 +136,8 @@ class TTSSpeedSettingsWidget extends ConsumerWidget {
 /// - 最小タップサイズ44px × 44px（アクセシビリティ要件）
 /// - 選択中: プライマリカラーの背景、白テキスト
 /// - 非選択: 白背景、プライマリカラーのボーダー
+/// 【アクセシビリティ】: Semanticsによるスクリーンリーダー対応
+/// 🔵 信頼性レベル: 高（アクセシビリティ要件準拠）
 class _SpeedButton extends StatelessWidget {
   /// 速度選択ボタンを作成する。
   const _SpeedButton({
@@ -132,7 +147,7 @@ class _SpeedButton extends StatelessWidget {
     required this.onTap,
   });
 
-  /// ボタンのラベル（「遅い」「普通」「速い」）
+  /// ボタンのラベル（「とても遅い」「遅い」「普通」「速い」）
   final String label;
 
   /// 対応するTTS速度
@@ -149,33 +164,40 @@ class _SpeedButton extends StatelessWidget {
     // 【カラースキーム取得】: テーマから色を取得
     final colorScheme = Theme.of(context).colorScheme;
 
-    return InkWell(
-      onTap: onTap,
-      // 【最小タップサイズ】: 44px × 44px（アクセシビリティ要件）
-      child: Container(
-        constraints: const BoxConstraints(
-          minWidth: 60,
-          minHeight: 44,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          // 【背景色】: 選択中はプライマリカラー、非選択は白
-          color: isSelected ? colorScheme.primary : Colors.white,
-          // 【ボーダー】: プライマリカラーのボーダー
-          border: Border.all(
-            color: colorScheme.primary,
-            width: 2,
+    // 【アクセシビリティ強化】: Semanticsでスクリーンリーダー対応
+    // 🔵 信頼性レベル: 高（アクセシビリティ要件に基づく改善）
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$label読み上げ速度${isSelected ? "（選択中）" : ""}',
+      child: InkWell(
+        onTap: onTap,
+        // 【最小タップサイズ】: 44px × 44px（アクセシビリティ要件）
+        child: Container(
+          constraints: const BoxConstraints(
+            minWidth: 60,
+            minHeight: 44,
           ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              // 【テキスト色】: 選択中は白、非選択はプライマリカラー
-              color: isSelected ? Colors.white : colorScheme.primary,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 16,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            // 【背景色】: 選択中はプライマリカラー、非選択は白
+            color: isSelected ? colorScheme.primary : Colors.white,
+            // 【ボーダー】: プライマリカラーのボーダー
+            border: Border.all(
+              color: colorScheme.primary,
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                // 【テキスト色】: 選択中は白、非選択はプライマリカラー
+                color: isSelected ? Colors.white : colorScheme.primary,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 16,
+              ),
             ),
           ),
         ),

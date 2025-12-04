@@ -139,9 +139,186 @@ void main() {
     });
 
     // =========================================================================
+    // 正常系テストケース（verySlow追加）
+    // =========================================================================
+    group('正常系テスト（verySlow追加）', () {
+      /// TTC-VS-011: SharedPreferencesへの"verySlow"文字列の保存・復元
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: TDD-TTS-SLOWER-SPEED要件定義書
+      /// 検証内容: 「とても遅い」設定の永続化が正しく動作すること
+      test('TTC-VS-011: AppSettings.fromJson()で"verySlow"が正しく復元されることを確認', () {
+        // 【テスト目的】: 「とても遅い」設定の永続化が正しく動作することを確認 🔵
+        // 【テスト内容】: fromJson({'tts_speed': 'verySlow'})を呼び出し、ttsSpeedがTTSSpeed.verySlowに変換されることを検証
+        // 【期待される動作】: 文字列→enum変換が正確、保存→復元のサイクルで値が変わらない
+        // 🔵 青信号: 既存テスト（tts_speed_integration_test.dart TC-049-015）のパターンに基づく
+
+        // Given: 【テストデータ準備】: verySlowを含むJSONデータ
+        // 【初期条件設定】: ユーザーが「とても遅い」を設定してアプリを閉じ、再度開く場合を模擬
+        final json = {
+          'tts_speed': 'verySlow',
+          'font_size': 'medium',
+          'theme': 'light',
+        };
+
+        // When: 【実際の処理実行】: fromJson()を呼び出す
+        // 【処理内容】: JSON文字列からAppSettingsインスタンスを生成
+        final settings = AppSettings.fromJson(json);
+
+        // Then: 【結果検証】: ttsSpeedがverySlowに復元されたことを確認
+        // 【期待値確認】: 永続化データからの復元が正しく行われる
+        // 【品質保証】: アプリ再起動後も設定が保持されることを保証
+        expect(settings.ttsSpeed,
+            TTSSpeed.verySlow); // 【確認内容】: ttsSpeedがverySlowに復元されたことを確認 🔵
+      });
+
+      /// TTC-VS-011b: AppSettings.toJson()で"verySlow"が正しく保存される
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: TDD-TTS-SLOWER-SPEED要件定義書
+      /// 検証内容: 「とても遅い」設定のシリアライズが正しく動作すること
+      test(
+          'TTC-VS-011b: AppSettings.toJson()でverySlowが"verySlow"文字列に変換されることを確認',
+          () {
+        // 【テスト目的】: 「とても遅い」設定のシリアライズが正しく動作することを確認 🔵
+        // 【テスト内容】: toJson()を呼び出し、ttsSpeedが"verySlow"文字列に変換されることを検証
+        // 【期待される動作】: enum→文字列変換が正確
+        // 🔵 青信号: 既存テスト（TC-049-003）と同じパターン
+
+        // Given: 【テストデータ準備】: 速度を「とても遅い」に設定したAppSettingsを作成
+        // 【初期条件設定】: ユーザーが速度を「とても遅い」に設定した状態を模擬
+        const settings = AppSettings(ttsSpeed: TTSSpeed.verySlow);
+
+        // When: 【実際の処理実行】: toJson()を呼び出す
+        // 【処理内容】: shared_preferencesに保存する際のシリアライズ処理
+        final json = settings.toJson();
+
+        // Then: 【結果検証】: ttsSpeedが"verySlow"文字列に変換されることを確認
+        // 【期待値確認】: shared_preferencesへの保存前に正しく変換される
+        // 【品質保証】: 永続化データの形式が仕様通りであることを保証
+        expect(json['tts_speed'],
+            'verySlow'); // 【確認内容】: ttsSpeedが'verySlow'に変換されたことを確認 🔵
+      });
+
+      /// TTC-VS-011c: AppSettings.copyWith()でttsSpeedをverySlowに更新できる
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: TDD-TTS-SLOWER-SPEED要件定義書
+      /// 検証内容: copyWithでverySlowへの変更が正しく動作すること
+      test('TTC-VS-011c: copyWithメソッドでttsSpeedをverySlowに変更し、他のフィールドが保持されることを確認',
+          () {
+        // 【テスト目的】: copyWithでverySlowへの変更が正しく動作することを確認 🔵
+        // 【テスト内容】: copyWith(ttsSpeed: TTSSpeed.verySlow)を呼び出し、他のフィールドが保持されることを検証
+        // 【期待される動作】: ttsSpeedが変更され、fontSize、themeは元の値を保持
+        // 🔵 青信号: 既存テスト（TC-049-002）と同じパターン
+
+        // Given: 【テストデータ準備】: カスタマイズされた設定を持つAppSettingsを作成
+        // 【初期条件設定】: ユーザーが既に設定をカスタマイズしている状態
+        const original = AppSettings(
+          fontSize: FontSize.large,
+          theme: AppTheme.dark,
+          ttsSpeed: TTSSpeed.normal,
+        );
+
+        // When: 【実際の処理実行】: copyWithでttsSpeedをverySlowに変更
+        // 【処理内容】: TTS速度のみを「とても遅い」に変更する
+        final updated = original.copyWith(ttsSpeed: TTSSpeed.verySlow);
+
+        // Then: 【結果検証】: ttsSpeedが変更され、他のフィールドが保持されていることを確認
+        // 【期待値確認】: 不変オブジェクトパターンの正しい実装を保証
+        // 【品質保証】: 設定の一部のみを変更する際に、他の設定が意図せず変更されないことを確認
+        expect(updated.ttsSpeed,
+            TTSSpeed.verySlow); // 【確認内容】: ttsSpeedがverySlowに変更されたことを確認 🔵
+        expect(
+            updated.fontSize, FontSize.large); // 【確認内容】: fontSizeが保持されたことを確認 🔵
+        expect(updated.theme, AppTheme.dark); // 【確認内容】: themeが保持されたことを確認 🔵
+      });
+    });
+
+    // =========================================================================
     // 異常系テストケース
     // =========================================================================
     group('異常系テスト', () {
+      /// TTC-VS-007: 不正な速度値からのフォールバック
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: TDD-TTS-SLOWER-SPEED要件定義書、NFR-301
+      /// 検証内容: 不正な値に対する安全な動作（verySlowを含む4段階対応）
+      test(
+          'TTC-VS-007: shared_preferencesに不正な値（\'invalid\'）が保存されている場合、デフォルト値（normal）にフォールバックすることを確認',
+          () {
+        // 【テスト目的】: 不正な値に対する安全な動作を確認（4段階速度対応後） 🔵
+        // 【テスト内容】: fromJson()で不正な値（'invalid'）を渡した場合、デフォルト値（normal）にフォールバックすることを検証
+        // 【期待される動作】: アプリがクラッシュせず、デフォルト速度で動作継続する
+        // 🔵 青信号: 要件定義書のエラーケース仕様に基づく
+
+        // Given: 【テストデータ準備】: 不正な値を含むJSONデータ
+        // 【初期条件設定】: ストレージデータが破損している場合を模擬
+        final json = {
+          'tts_speed': 'invalid',
+          'font_size': 'medium',
+          'theme': 'light',
+        };
+
+        // When: 【実際の処理実行】: fromJson()を呼び出す
+        // 【処理内容】: 不正な値からAppSettingsインスタンスを生成しようとする
+        final settings = AppSettings.fromJson(json);
+
+        // Then: 【結果検証】: デフォルト値にフォールバックされたことを確認
+        // 【期待値確認】: エラーハンドリングの堅牢性を確認
+        // 【システムの安全性】: エラー発生でもアプリがクラッシュしない
+        expect(settings.ttsSpeed,
+            TTSSpeed.normal); // 【確認内容】: デフォルト値normalにフォールバックしたことを確認 🔵
+      });
+
+      /// TTC-VS-008: 既存設定（"slow", "normal", "fast"）の後方互換性
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: TDD-TTS-SLOWER-SPEED要件定義書
+      /// 検証内容: 古いバージョンの設定ファイルからの移行
+      test('TTC-VS-008: 既存の3段階設定（slow/normal/fast）が正常に読み込まれることを確認', () {
+        // 【テスト目的】: 既存の設定値が新バージョンでも正常に読み込まれることを確認 🔵
+        // 【テスト内容】: 古いバージョンの設定（slow/normal/fast）が引き続き動作することを検証
+        // 【期待される動作】: 既存ユーザーの設定が失われない
+        // 🔵 青信号: 要件定義書の「後方互換性」セクションに基づく
+
+        // Given: 【テストデータ準備】: 各既存設定のJSONデータ
+        // 【初期条件設定】: アプリアップデート後の初回起動を模擬
+
+        // slow: 既存の「遅い」設定
+        final slowJson = {
+          'tts_speed': 'slow',
+          'font_size': 'medium',
+          'theme': 'light',
+        };
+        final slowSettings = AppSettings.fromJson(slowJson);
+        expect(slowSettings.ttsSpeed,
+            TTSSpeed.slow); // 【確認内容】: slowが正しく復元されることを確認 🔵
+
+        // normal: 既存の「普通」設定
+        final normalJson = {
+          'tts_speed': 'normal',
+          'font_size': 'medium',
+          'theme': 'light',
+        };
+        final normalSettings = AppSettings.fromJson(normalJson);
+        expect(normalSettings.ttsSpeed,
+            TTSSpeed.normal); // 【確認内容】: normalが正しく復元されることを確認 🔵
+
+        // fast: 既存の「速い」設定
+        final fastJson = {
+          'tts_speed': 'fast',
+          'font_size': 'medium',
+          'theme': 'light',
+        };
+        final fastSettings = AppSettings.fromJson(fastJson);
+        expect(fastSettings.ttsSpeed,
+            TTSSpeed.fast); // 【確認内容】: fastが正しく復元されることを確認 🔵
+
+        // 【確認ポイント】: ユーザーの既存設定が保持される
+        // 【確認ポイント】: 既存ユーザーへの影響を最小化
+      });
+
       /// TC-049-011: 不正な速度値がshared_preferencesに保存されている場合、デフォルト値にフォールバック
       ///
       /// 優先度: P1（高優先度）

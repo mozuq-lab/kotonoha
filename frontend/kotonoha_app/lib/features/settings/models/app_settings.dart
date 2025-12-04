@@ -20,8 +20,8 @@ class AppSettings {
   // 🔵 青信号: REQ-803のテーマ要件に基づく
   final AppTheme theme;
 
-  // 【TTS速度設定】: 3段階（遅い・普通・速い）
-  // 🔵 青信号: REQ-404のTTS速度要件に基づく
+  // 【TTS速度設定】: 4段階（とても遅い・遅い・普通・速い）
+  // 🔵 青信号: REQ-404のTTS速度要件に基づく（TDD-TTS-SLOWER-SPEEDで3段階→4段階に拡張）
   final TTSSpeed ttsSpeed;
 
   // 【AI丁寧さレベル設定】: 3段階（カジュアル・普通・丁寧）

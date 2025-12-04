@@ -62,6 +62,55 @@ void main() {
     // 正常系テストケース（速度別読み上げ）
     // =========================================================================
     group('正常系テスト - 速度別読み上げ', () {
+      /// TTC-VS-003: 速度を「とても遅い」に設定後、読み上げが0.5倍速で実行される
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: TDD-TTS-SLOWER-SPEED要件定義書
+      /// 検証内容: 速度設定→読み上げのエンドツーエンドフロー
+      test('TTC-VS-003: 速度を「とても遅い」に設定後、テキストを読み上げると0.5倍速で再生されることを確認', () async {
+        // 【テスト目的】: 「とても遅い」設定後の読み上げが正しい速度で実行されることを確認 🔵
+        // 【テスト内容】: 速度を「とても遅い」に設定し、テキストを読み上げると0.5倍速で再生されることを検証
+        // 【期待される動作】: flutter_ttsのsetSpeechRate(0.5)とspeak()が呼ばれる
+        // 🔵 青信号: 既存テスト（TC-049-007〜009）のパターンに基づく
+
+        // Given: 【テストデータ準備】: ProviderContainerを作成し、TTSServiceのモックを注入
+        // 【初期条件設定】: アプリ起動時の状態
+        container = ProviderContainer(
+          overrides: [
+            ttsProvider.overrideWith(
+              (ref) => createTestTTSNotifier(mockFlutterTts),
+            ),
+          ],
+        );
+
+        // SettingsNotifierとTTSNotifierを取得
+        await container.read(settingsNotifierProvider.future);
+        final settingsNotifier =
+            container.read(settingsNotifierProvider.notifier);
+
+        final ttsNotifier = container.read(ttsProvider.notifier);
+        await ttsNotifier.initialize();
+
+        // モックの呼び出し履歴をクリア
+        clearInteractions(mockFlutterTts);
+
+        // When: 【実際の処理実行】: 速度を「とても遅い」に設定し、テキストを読み上げる
+        // 【処理内容】: ユーザーが速度を「とても遅い」に設定し、実際にテキストを読み上げる場合を模擬
+        // 【実行タイミング】: 高齢者や聴覚に配慮が必要な方に伝える際のユースケース
+        await settingsNotifier.setTTSSpeed(TTSSpeed.verySlow);
+        await ttsNotifier.speak('こんにちは');
+
+        // Then: 【結果検証】: setSpeechRate(0.5)とspeak()が呼ばれたことを確認
+        // 【期待値確認】: 要件定義書のデータフローに基づく
+        // 【品質保証】: エンドツーエンドで速度設定→読み上げが正しく機能することを確認
+        verify(() => mockFlutterTts.setSpeechRate(0.5))
+            .called(1); // 【確認内容】: 0.5倍速が設定されたことを確認 🔵
+        verify(() => mockFlutterTts.speak('こんにちは'))
+            .called(1); // 【確認内容】: 読み上げが開始されたことを確認 🔵
+
+        // 【確認ポイント】: SettingsNotifier→TTSNotifier→TTSService→FlutterTtsの連携
+      });
+
       /// TC-049-007: 速度を「遅い」に設定し、読み上げると0.7倍速で再生される
       ///
       /// 優先度: P0（必須）
