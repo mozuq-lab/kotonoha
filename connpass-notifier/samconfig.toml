@@ -1,0 +1,25 @@
+version = 0.1
+
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "connpass-notifier"
+s3_prefix = "connpass-notifier"
+region = "ap-northeast-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = [
+    "ConnpassUserId=\"your-connpass-username\"",
+    "NotificationEmail=\"your-email@example.com\"",
+    "SenderEmail=\"verified-sender@example.com\"",
+    "NotificationHoursBefore=\"24\""
+]
+confirm_changeset = true
+
+[default.build]
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.validate]
+[default.validate.parameters]
+lint = true
