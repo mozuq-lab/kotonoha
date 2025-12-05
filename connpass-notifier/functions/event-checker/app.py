@@ -122,7 +122,7 @@ def parse_event_item(item) -> Optional[Dict]:
             
         # Only return future events (compare in UTC)
         now_utc = datetime.now(timezone.utc)
-        if event_datetime.replace(tzinfo=timezone.utc) < now_utc:
+        if event_datetime < now_utc:
             return None
             
         # Extract location (if available)

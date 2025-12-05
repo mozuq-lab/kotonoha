@@ -107,14 +107,8 @@ def send_email_notification(events: List[Dict]) -> None:
     
     ses = get_ses_client()
     
-    # Build email body
-    subject = f"【connpass】{len(events)}件の参加予定イベントが近づいています"
-    
-    body_parts = [
-        "以下のイベントが近づいています：\n",
-    ]
-    
-    for event in events:
+    def parse_and_format_event(event: Dict) -> tuple:
+        """Parse event datetime and calculate time until event."""
         event_datetime = datetime.fromisoformat(event['event_date'])
         if event_datetime.tzinfo is None:
             event_datetime = event_datetime.replace(tzinfo=timezone.utc)
@@ -123,6 +117,18 @@ def send_email_notification(events: List[Dict]) -> None:
         event_datetime_jst = event_datetime.astimezone(JST)
         time_until = event_datetime - datetime.now(timezone.utc)
         hours_until = int(time_until.total_seconds() / 3600)
+        
+        return event_datetime_jst, hours_until
+    
+    # Build email body
+    subject = f"【connpass】{len(events)}件の参加予定イベントが近づいています"
+    
+    body_parts = [
+        "以下のイベントが近づいています：\n",
+    ]
+    
+    for event in events:
+        event_datetime_jst, hours_until = parse_and_format_event(event)
         
         body_parts.append(f"\n【{event['title']}】")
         body_parts.append(f"日時: {event_datetime_jst.strftime('%Y年%m月%d日 %H:%M')} (JST)")
@@ -142,14 +148,7 @@ def send_email_notification(events: List[Dict]) -> None:
     ]
     
     for event in events:
-        event_datetime = datetime.fromisoformat(event['event_date'])
-        if event_datetime.tzinfo is None:
-            event_datetime = event_datetime.replace(tzinfo=timezone.utc)
-        
-        # Convert to JST for display
-        event_datetime_jst = event_datetime.astimezone(JST)
-        time_until = event_datetime - datetime.now(timezone.utc)
-        hours_until = int(time_until.total_seconds() / 3600)
+        event_datetime_jst, hours_until = parse_and_format_event(event)
         
         html_parts.append("<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>")
         html_parts.append(f"<h3>{event['title']}</h3>")
