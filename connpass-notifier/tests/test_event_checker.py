@@ -5,7 +5,7 @@ Unit tests for event-checker Lambda function
 import json
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch, Mock
 
 import pytest
@@ -52,8 +52,10 @@ class TestParseDatetime:
         assert result.year == 2024
         assert result.month == 12
         assert result.day == 5
-        assert result.hour == 19
+        # JST 19:00 = UTC 10:00 (JST is UTC+9)
+        assert result.hour == 10
         assert result.minute == 0
+        assert result.tzinfo == timezone.utc
         
     def test_invalid_format(self):
         """Test parsing invalid datetime format"""

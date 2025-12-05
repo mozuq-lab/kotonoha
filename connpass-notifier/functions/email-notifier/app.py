@@ -3,15 +3,20 @@ Email Notifier Lambda Function
 
 This function checks for upcoming events in DynamoDB and sends
 email notifications before they start.
+
+Note: All times are stored in UTC. Event times are converted to JST for display in emails.
 """
 
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 
 import boto3
 from boto3.dynamodb.conditions import Attr
+
+# Timezone for Japan (JST = UTC+9)
+JST = timezone(timedelta(hours=9))
 
 # Configuration
 NOTIFICATION_HOURS_BEFORE = int(os.environ.get('NOTIFICATION_HOURS_BEFORE', 24))
@@ -49,7 +54,7 @@ def get_upcoming_events() -> List[Dict]:
         List of event dictionaries
     """
     table = get_table()
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     notification_window_start = now
     notification_window_end = now + timedelta(hours=NOTIFICATION_HOURS_BEFORE + 1)
     
@@ -68,7 +73,15 @@ def get_upcoming_events() -> List[Dict]:
         # Filter events that need notification
         events_to_notify = []
         for event in events:
-            event_datetime = datetime.fromisoformat(event['event_date'])
+            # Parse event datetime (stored in UTC)
+            event_datetime_str = event['event_date']
+            try:
+                event_datetime = datetime.fromisoformat(event_datetime_str)
+                if event_datetime.tzinfo is None:
+                    event_datetime = event_datetime.replace(tzinfo=timezone.utc)
+            except (ValueError, AttributeError):
+                continue
+                
             time_until_event = event_datetime - now
             
             # Notify if event is within notification window
@@ -103,11 +116,16 @@ def send_email_notification(events: List[Dict]) -> None:
     
     for event in events:
         event_datetime = datetime.fromisoformat(event['event_date'])
-        time_until = event_datetime - datetime.now()
+        if event_datetime.tzinfo is None:
+            event_datetime = event_datetime.replace(tzinfo=timezone.utc)
+        
+        # Convert to JST for display
+        event_datetime_jst = event_datetime.astimezone(JST)
+        time_until = event_datetime - datetime.now(timezone.utc)
         hours_until = int(time_until.total_seconds() / 3600)
         
         body_parts.append(f"\n【{event['title']}】")
-        body_parts.append(f"日時: {event_datetime.strftime('%Y年%m月%d日 %H:%M')}")
+        body_parts.append(f"日時: {event_datetime_jst.strftime('%Y年%m月%d日 %H:%M')} (JST)")
         body_parts.append(f"開始まで: 約{hours_until}時間")
         body_parts.append(f"場所: {event['location']}")
         body_parts.append(f"URL: {event['url']}")
@@ -125,12 +143,17 @@ def send_email_notification(events: List[Dict]) -> None:
     
     for event in events:
         event_datetime = datetime.fromisoformat(event['event_date'])
-        time_until = event_datetime - datetime.now()
+        if event_datetime.tzinfo is None:
+            event_datetime = event_datetime.replace(tzinfo=timezone.utc)
+        
+        # Convert to JST for display
+        event_datetime_jst = event_datetime.astimezone(JST)
+        time_until = event_datetime - datetime.now(timezone.utc)
         hours_until = int(time_until.total_seconds() / 3600)
         
         html_parts.append("<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>")
         html_parts.append(f"<h3>{event['title']}</h3>")
-        html_parts.append(f"<p><strong>日時:</strong> {event_datetime.strftime('%Y年%m月%d日 %H:%M')}</p>")
+        html_parts.append(f"<p><strong>日時:</strong> {event_datetime_jst.strftime('%Y年%m月%d日 %H:%M')} (JST)</p>")
         html_parts.append(f"<p><strong>開始まで:</strong> 約{hours_until}時間</p>")
         html_parts.append(f"<p><strong>場所:</strong> {event['location']}</p>")
         html_parts.append(f"<p><a href='{event['url']}' style='color: #0066cc;'>イベントページを見る</a></p>")
@@ -193,7 +216,7 @@ def mark_events_as_notified(events: List[Dict]) -> None:
                 UpdateExpression='SET notified = :notified, notified_at = :notified_at',
                 ExpressionAttributeValues={
                     ':notified': True,
-                    ':notified_at': datetime.now().isoformat(),
+                    ':notified_at': datetime.now(timezone.utc).isoformat(),
                 },
             )
             print(f"Marked event as notified: {event['title']}")

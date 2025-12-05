@@ -3,18 +3,23 @@ Event Checker Lambda Function
 
 This function checks a user's connpass page for upcoming events
 and stores them in DynamoDB.
+
+Note: All times are stored in UTC and converted from JST when parsing.
 """
 
 import json
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
 import boto3
 import requests
 from bs4 import BeautifulSoup
+
+# Timezone for Japan (JST = UTC+9)
+JST = timezone(timedelta(hours=9))
 
 # Configuration
 CONNPASS_BASE_URL = 'https://connpass.com'
@@ -115,8 +120,9 @@ def parse_event_item(item) -> Optional[Dict]:
         if not event_datetime:
             return None
             
-        # Only return future events
-        if event_datetime < datetime.now():
+        # Only return future events (compare in UTC)
+        now_utc = datetime.now(timezone.utc)
+        if event_datetime.replace(tzinfo=timezone.utc) < now_utc:
             return None
             
         # Extract location (if available)
@@ -138,21 +144,26 @@ def parse_event_item(item) -> Optional[Dict]:
 
 def parse_datetime(datetime_str: str) -> Optional[datetime]:
     """
-    Parse datetime string from connpass.
+    Parse datetime string from connpass and convert to UTC.
     
     Args:
         datetime_str: Datetime string
         
     Returns:
-        Datetime object or None
+        Datetime object in UTC or None
     """
     # Try ISO format first
     try:
-        return datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
+        dt = datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
+        # If it doesn't have timezone info, assume JST
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=JST)
+        return dt.astimezone(timezone.utc)
     except (ValueError, AttributeError):
         pass
     
     # Try Japanese format: 2024/12/05(木) 19:00
+    # These are in JST
     patterns = [
         r'(\d{4})/(\d{1,2})/(\d{1,2})\([月火水木金土日]\)\s+(\d{1,2}):(\d{2})',
         r'(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})',
@@ -163,10 +174,13 @@ def parse_datetime(datetime_str: str) -> Optional[datetime]:
         match = re.search(pattern, datetime_str)
         if match:
             year, month, day, hour, minute = match.groups()
-            return datetime(
+            # Create datetime in JST and convert to UTC
+            dt_jst = datetime(
                 int(year), int(month), int(day),
-                int(hour), int(minute)
+                int(hour), int(minute),
+                tzinfo=JST
             )
+            return dt_jst.astimezone(timezone.utc)
     
     return None
 
@@ -186,12 +200,12 @@ def store_event(event: Dict) -> None:
     
     item = {
         'event_id': event['event_id'],
-        'event_date': event['datetime'],
+        'event_date': event['datetime'],  # Already in UTC ISO format
         'title': event['title'],
         'url': event['url'],
         'location': event['location'],
         'notified': False,
-        'created_at': datetime.now().isoformat(),
+        'created_at': datetime.now(timezone.utc).isoformat(),
         'ttl': ttl,
     }
     
