@@ -12,8 +12,6 @@ import pytest
 
 # Add parent directory to path
 event_checker_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../functions/event-checker'))
-if event_checker_path in sys.path:
-    sys.path.remove(event_checker_path)
 sys.path.insert(0, event_checker_path)
 
 

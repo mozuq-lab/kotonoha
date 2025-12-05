@@ -12,8 +12,6 @@ import pytest
 
 # Add parent directory to path
 email_notifier_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../functions/email-notifier'))
-if email_notifier_path in sys.path:
-    sys.path.remove(email_notifier_path)
 sys.path.insert(0, email_notifier_path)
 
 
