@@ -7,6 +7,8 @@
 
 **kotonoha（ことのは）** は、発話困難な方が「できるだけ少ない操作で、自分の言いたいことを、適切な丁寧さで、安全に伝えられる」ことを目的としたタブレット向けコミュニケーション支援アプリケーションです。
 
+このリポジトリには、メインアプリケーションに加えて、connpassイベント通知システムも含まれています。
+
 ### 対象ユーザー
 
 脳梗塞・ALS・筋疾患などで発話が困難だが、タブレットのタップ操作がある程度可能な方々
@@ -142,6 +144,11 @@ kotonoha/
 ├── docker/                      # Docker設定
 │   ├── backend/                # バックエンドDockerfile
 │   └── postgres/               # PostgreSQL設定
+├── connpass-notifier/           # Connpassイベント通知システム（AWS SAM）
+│   ├── functions/              # Lambda関数
+│   ├── tests/                  # テストファイル
+│   ├── template.yaml           # SAMテンプレート
+│   └── README.md               # 詳細ドキュメント
 ├── docs/                        # ドキュメント
 │   ├── tech-stack.md           # 技術スタック定義
 │   ├── SETUP.md                # セットアップガイド
@@ -386,6 +393,27 @@ flutter test --coverage          # カバレッジ測定
 ## コントリビューション
 
 コントリビューションを歓迎します。詳細は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
+
+## 追加ツール
+
+### Connpass Event Notifier
+
+このリポジトリには、connpassの参加予定イベントを監視し、開催前にメール通知を送るAWS SAMアプリケーションが含まれています。
+
+**主な機能:**
+- 定期的にconnpassアカウントページをチェック
+- 参加予定イベントをDynamoDBに保存
+- イベント開始前（デフォルト24時間前）にメール通知
+- AWS Lambda + EventBridge + SESによるサーバーレス実装
+
+**セットアップ:**
+```bash
+cd connpass-notifier
+sam build
+sam deploy --guided
+```
+
+詳細は [connpass-notifier/README.md](connpass-notifier/README.md) および [connpass-notifier/DEPLOYMENT.md](connpass-notifier/DEPLOYMENT.md) を参照してください。
 
 ## ライセンス
 
