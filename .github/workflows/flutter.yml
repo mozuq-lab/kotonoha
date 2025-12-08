@@ -112,7 +112,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: flutter-coverage-report
           path: coverage/
@@ -177,7 +177,7 @@ jobs:
         run: flutter build web --release
 
       - name: Upload Web build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: web-build
           path: frontend/kotonoha_app/build/web
@@ -218,7 +218,7 @@ jobs:
         run: flutter build apk --release --flavor internal
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: android-apk
           path: frontend/kotonoha_app/build/app/outputs/flutter-apk/app-internal-release.apk
@@ -254,7 +254,7 @@ jobs:
         run: flutter build ios --release --no-codesign
 
       - name: Upload iOS build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ios-build
           path: frontend/kotonoha_app/build/ios/iphoneos/
