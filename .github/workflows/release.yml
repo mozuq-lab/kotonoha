@@ -60,7 +60,7 @@ jobs:
           zip -r ../../kotonoha-web-${{ needs.validate-tag.outputs.version }}.zip .
 
       - name: Upload Web build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: web-release
           path: frontend/kotonoha_app/kotonoha-web-${{ needs.validate-tag.outputs.version }}.zip
@@ -132,14 +132,14 @@ jobs:
           mv build/app/outputs/bundle/release/app-release.aab build/app/outputs/bundle/release/kotonoha-${{ needs.validate-tag.outputs.version }}.aab
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: android-apk-release
           path: frontend/kotonoha_app/build/app/outputs/flutter-apk/kotonoha-${{ needs.validate-tag.outputs.version }}.apk
           retention-days: 90
 
       - name: Upload App Bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: android-aab-release
           path: frontend/kotonoha_app/build/app/outputs/bundle/release/kotonoha-${{ needs.validate-tag.outputs.version }}.aab
@@ -199,7 +199,7 @@ jobs:
           zip -r ../../../kotonoha-ios-${{ needs.validate-tag.outputs.version }}.ipa Payload
 
       - name: Upload iOS build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ios-release
           path: frontend/kotonoha_app/kotonoha-ios-${{ needs.validate-tag.outputs.version }}.ipa
