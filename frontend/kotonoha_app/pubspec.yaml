@@ -12,8 +12,8 @@ dependencies:
     sdk: flutter
 
   # 状態管理
-  flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
+  flutter_riverpod: ^3.0.3
+  riverpod_annotation: ^3.0.3
 
   # ルーティング
   go_router: ^17.0.0
@@ -66,10 +66,10 @@ dev_dependencies:
     sdk: flutter
 
   # コード生成
-  build_runner: ^2.4.13
-  riverpod_generator: ^2.6.3
-  json_serializable: ^6.9.0
-  retrofit_generator: ^9.1.6
+  build_runner: ^2.10.4
+  riverpod_generator: ^3.0.3
+  json_serializable: ^6.11.2
+  retrofit_generator: ^10.2.1
 
   # テスト
   mocktail: ^1.0.4
