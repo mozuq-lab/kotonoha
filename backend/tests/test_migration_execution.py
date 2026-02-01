@@ -90,15 +90,13 @@ async def test_ai_conversion_history_table_exists(db_session):
     # 【実際の処理実行】: information_schema.tablesからテーブルを検索
     # 【処理内容】: PostgreSQLのメタデータカタログを使用してテーブル存在確認
     result = await db_session.execute(
-        text(
-            """
+        text("""
             SELECT EXISTS (
                 SELECT 1 FROM information_schema.tables
                 WHERE table_schema = 'public'
                 AND table_name = 'ai_conversion_history'
             )
-        """
-        )
+        """)
     )
     table_exists = result.scalar()
 
@@ -135,13 +133,11 @@ async def test_ai_conversion_history_table_has_all_columns(db_session):
     # 【実際の処理実行】: information_schema.columnsからカラム名を取得
     # 【処理内容】: データベーススキーマ定義と一致するか確認
     result = await db_session.execute(
-        text(
-            """
+        text("""
             SELECT column_name FROM information_schema.columns
             WHERE table_schema = 'public'
             AND table_name = 'ai_conversion_history'
-        """
-        )
+        """)
     )
     actual_columns = {row[0] for row in result.fetchall()}
 
@@ -180,14 +176,12 @@ async def test_ai_conversion_history_table_column_types(db_session):
     # 【実際の処理実行】: 各カラムのデータ型を取得
     # 【処理内容】: PostgreSQLのデータ型定義を確認
     result = await db_session.execute(
-        text(
-            """
+        text("""
             SELECT column_name, data_type
             FROM information_schema.columns
             WHERE table_schema = 'public'
             AND table_name = 'ai_conversion_history'
-        """
-        )
+        """)
     )
     actual_types = {row[0]: row[1] for row in result.fetchall()}
 
@@ -219,14 +213,12 @@ async def test_ai_conversion_history_not_null_constraints(db_session):
     # 【実際の処理実行】: is_nullableカラムから制約を取得
     # 【処理内容】: データベース制約の検証
     result = await db_session.execute(
-        text(
-            """
+        text("""
             SELECT column_name, is_nullable
             FROM information_schema.columns
             WHERE table_schema = 'public'
             AND table_name = 'ai_conversion_history'
-        """
-        )
+        """)
     )
     nullability = {row[0]: row[1] for row in result.fetchall()}
 
@@ -259,16 +251,14 @@ async def test_ai_conversion_history_primary_key(db_session):
     # 【実際の処理実行】: 主キー制約の存在を確認
     # 【処理内容】: 主キー制約の検証
     result = await db_session.execute(
-        text(
-            """
+        text("""
             SELECT EXISTS (
                 SELECT 1 FROM information_schema.table_constraints
                 WHERE table_schema = 'public'
                 AND table_name = 'ai_conversion_history'
                 AND constraint_type = 'PRIMARY KEY'
             )
-        """
-        )
+        """)
     )
     has_primary_key = result.scalar()
 
@@ -300,14 +290,12 @@ async def test_ai_conversion_history_indexes_created(db_session):
     # 【実際の処理実行】: pg_indexesビューからインデックス名を取得
     # 【処理内容】: パフォーマンス最適化のためのインデックス検証
     result = await db_session.execute(
-        text(
-            """
+        text("""
             SELECT indexname FROM pg_indexes
             WHERE tablename = 'ai_conversion_history'
             AND schemaname = 'public'
             AND indexname LIKE 'idx_%'
-        """
-        )
+        """)
     )
     actual_indexes = {row[0] for row in result.fetchall()}
 
