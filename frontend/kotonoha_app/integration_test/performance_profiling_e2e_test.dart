@@ -9,7 +9,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
@@ -124,7 +123,7 @@ class _OfflineNetworkNotifier extends NetworkNotifier {
 }
 
 /// オフライン状態をシミュレートするためのProviderオーバーライド
-List<Override> createOfflineOverrides() {
+createOfflineOverrides() {
   return [
     networkProvider.overrideWith(() => _OfflineNetworkNotifier()),
   ];

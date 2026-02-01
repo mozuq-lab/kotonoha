@@ -21,7 +21,7 @@ import '../mocks/mock_flutter_tts.dart';
 /// TTSNotifierを作成するヘルパー関数（テスト用）
 TTSNotifier createTestTTSNotifier(MockFlutterTts mockFlutterTts) {
   final service = TTSService(tts: mockFlutterTts);
-  return TTSNotifier(service: service);
+  return TTSNotifier(serviceOverride: service);
 }
 
 void main() {
@@ -67,7 +67,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider.overrideWith(
-              (ref) => createTestTTSNotifier(mockFlutterTts),
+              () => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -109,7 +109,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider.overrideWith(
-              (ref) => createTestTTSNotifier(mockFlutterTts),
+              () => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -152,7 +152,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider.overrideWith(
-              (ref) => createTestTTSNotifier(mockFlutterTts),
+              () => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -202,7 +202,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider.overrideWith(
-              (ref) => createTestTTSNotifier(mockFlutterTts),
+              () => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -247,7 +247,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider.overrideWith(
-              (ref) => createTestTTSNotifier(mockFlutterTts),
+              () => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -295,7 +295,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider.overrideWith(
-              (ref) => createTestTTSNotifier(mockFlutterTts),
+              () => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -344,7 +344,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider.overrideWith(
-              (ref) => createTestTTSNotifier(mockFlutterTts),
+              () => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );
@@ -404,7 +404,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider.overrideWith(
-              (ref) => createTestTTSNotifier(mockFlutterTts),
+              () => createTestTTSNotifier(mockFlutterTts),
             ),
           ],
         );

@@ -15,6 +15,7 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
@@ -60,14 +61,20 @@ void main() {
       // Given: 【テストデータ準備】: モックでの初期化追跡用
       // 【初期条件設定】: TTSNotifierを作成してバックグラウンド初期化を開始
 
-      // When: 【実際の処理実行】: TTSNotifierを作成
-      // 【処理内容】: コンストラクタでバックグラウンド初期化が開始されるはず
-      final notifier = TTSNotifier(
-        service: TTSService(
-          tts: mockFlutterTts,
-          onStateChanged: () {},
-        ),
+      // When: 【実際の処理実行】: TTSNotifierをProviderContainer経由で作成
+      // 【処理内容】: build()でバックグラウンド初期化が開始されるはず
+      final container = ProviderContainer(
+        overrides: [
+          ttsProvider.overrideWith(() => TTSNotifier(
+                serviceOverride: TTSService(
+                  tts: mockFlutterTts,
+                  onStateChanged: () {},
+                ),
+              )),
+        ],
       );
+      // Notifierのbuild()を呼び出すためにreadする
+      container.read(ttsProvider);
 
       // 【待機】: バックグラウンド初期化が完了するのを待つ
       await Future.delayed(const Duration(milliseconds: 100));
@@ -78,8 +85,7 @@ void main() {
       verify(() => mockFlutterTts.setLanguage('ja-JP'))
           .called(1); // 【確認内容】: バックグラウンドで初期化が実行されたことを確認 🔵
 
-      // 【Notifier破棄】: テスト後のクリーンアップ
-      notifier.dispose();
+      container.dispose();
     });
 
     // =========================================================================
@@ -393,13 +399,18 @@ void main() {
       // Given: 【テストデータ準備】: 初期化追跡用のモック設定
       // 【初期条件設定】: モックが設定済み
 
-      // When: 【実際の処理実行】: TTSNotifierを生成
-      // 【処理内容】: コンストラクタでバックグラウンド初期化が開始されるはず
+      // When: 【実際の処理実行】: TTSNotifierをProviderContainer経由で生成
+      // 【処理内容】: build()でバックグラウンド初期化が開始されるはず
       final service = TTSService(
         tts: mockFlutterTts,
         onStateChanged: () {},
       );
-      final notifier = TTSNotifier(service: service);
+      final container = ProviderContainer(
+        overrides: [
+          ttsProvider.overrideWith(() => TTSNotifier(serviceOverride: service)),
+        ],
+      );
+      container.read(ttsProvider);
 
       // バックグラウンド初期化が完了するのを待つ
       await Future.delayed(const Duration(milliseconds: 200));
@@ -414,8 +425,7 @@ void main() {
         () => mockFlutterTts.setSpeechRate(1.0),
       ).called(1); // 【確認内容】: 速度設定が実行された 🔵
 
-      // 【Notifier破棄】: テスト後のクリーンアップ
-      notifier.dispose();
+      container.dispose();
     });
   });
 }

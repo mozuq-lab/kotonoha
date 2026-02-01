@@ -42,12 +42,12 @@ class TutorialState {
 }
 
 /// チュートリアル状態管理Notifier
-class TutorialNotifier extends StateNotifier<TutorialState> {
+class TutorialNotifier extends Notifier<TutorialState> {
   /// shared_preferencesキー
   static const String _tutorialCompletedKey = 'tutorial_completed';
 
-  /// コンストラクタ
-  TutorialNotifier() : super(const TutorialState());
+  @override
+  TutorialState build() => const TutorialState();
 
   /// 初期化
   ///
@@ -86,7 +86,6 @@ class TutorialNotifier extends StateNotifier<TutorialState> {
 /// チュートリアルプロバイダー
 ///
 /// アプリ全体でチュートリアル状態を共有する。
-final tutorialProvider =
-    StateNotifierProvider<TutorialNotifier, TutorialState>((ref) {
-  return TutorialNotifier();
-});
+final tutorialProvider = NotifierProvider<TutorialNotifier, TutorialState>(
+  TutorialNotifier.new,
+);

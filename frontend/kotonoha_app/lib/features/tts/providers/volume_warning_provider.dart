@@ -60,11 +60,14 @@ final volumeServiceProvider = Provider<VolumeService>((ref) {
 ///
 /// 【要件対応】:
 /// - EDGE-202: OSの音量が0の状態で読み上げを実行した場合の警告
-class VolumeWarningNotifier extends StateNotifier<VolumeWarningState> {
-  VolumeWarningNotifier(this._volumeService)
-      : super(const VolumeWarningState());
+class VolumeWarningNotifier extends Notifier<VolumeWarningState> {
+  late VolumeService _volumeService;
 
-  final VolumeService _volumeService;
+  @override
+  VolumeWarningState build() {
+    _volumeService = ref.watch(volumeServiceProvider);
+    return const VolumeWarningState();
+  }
 
   /// TTS読み上げ前に音量をチェック
   ///
@@ -130,7 +133,6 @@ class VolumeWarningNotifier extends StateNotifier<VolumeWarningState> {
 /// final shouldProceed = await ref.read(volumeWarningProvider.notifier).checkVolumeBeforeSpeak();
 /// ```
 final volumeWarningProvider =
-    StateNotifierProvider<VolumeWarningNotifier, VolumeWarningState>((ref) {
-  final volumeService = ref.watch(volumeServiceProvider);
-  return VolumeWarningNotifier(volumeService);
-});
+    NotifierProvider<VolumeWarningNotifier, VolumeWarningState>(
+  VolumeWarningNotifier.new,
+);

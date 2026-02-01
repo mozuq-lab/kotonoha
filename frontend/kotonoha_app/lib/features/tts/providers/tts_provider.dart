@@ -56,47 +56,47 @@ class TTSServiceState {
   }
 }
 
-/// TTSNotifierのStateNotifierProvider
+/// TTSNotifierのNotifierProvider
 ///
 /// TTS機能の状態管理を行うプロバイダー。
 /// UIからはこのプロバイダーを通してTTS機能を利用する。
-final ttsProvider = StateNotifierProvider<TTSNotifier, TTSServiceState>((ref) {
-  return TTSNotifier();
-});
+final ttsProvider = NotifierProvider<TTSNotifier, TTSServiceState>(
+  TTSNotifier.new,
+);
 
 /// TTSNotifier
 ///
-/// TTS機能の状態管理を行うStateNotifier。
+/// TTS機能の状態管理を行うNotifier。
 ///
 /// 機能:
 /// - TTS初期化
 /// - テキスト読み上げ
 /// - 読み上げ停止
 /// - 読み上げ速度設定
-class TTSNotifier extends StateNotifier<TTSServiceState> {
-  /// コンストラクタ
+class TTSNotifier extends Notifier<TTSServiceState> {
+  /// テスト用のTTSServiceオーバーライド
   ///
-  /// TTSServiceを内部で作成し、状態変更コールバックを登録する。
-  /// [service] を指定した場合はそのサービスを使用（テスト用）。
-  ///
-  /// テスト時は以下のようにTTSServiceを作成して渡す:
+  /// テスト時は以下のようにオーバーライドする:
   /// ```dart
-  /// final service = TTSService(
-  ///   tts: mockFlutterTts,
-  ///   onStateChanged: () { /* 状態変更ハンドラ */ },
-  /// );
-  /// final notifier = TTSNotifier(service: service);
+  /// ttsProvider.overrideWith(() => TTSNotifier(serviceOverride: mockService))
   /// ```
-  TTSNotifier({TTSService? service}) : super(TTSServiceState.initial()) {
-    _service = service ??
+  TTSNotifier({this.serviceOverride});
+
+  /// テスト用のサービスオーバーライド
+  final TTSService? serviceOverride;
+
+  @override
+  TTSServiceState build() {
+    _service = serviceOverride ??
         TTSService(
           tts: FlutterTts(),
           onStateChanged: _onServiceStateChanged,
         );
     // バックグラウンドでTTS初期化を開始（TASK-0090: TTS最適化）
-    // コンストラクタ完了後に非同期で初期化を実行することで、
+    // build()完了後に非同期で初期化を実行することで、
     // 最初のspeak()呼び出し時の遅延を削減
     Future.microtask(() => _service.initialize());
+    return TTSServiceState.initial();
   }
 
   /// TTSServiceインスタンス

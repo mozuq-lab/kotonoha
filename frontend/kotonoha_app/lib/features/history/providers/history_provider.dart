@@ -42,8 +42,9 @@ class HistoryState {
 /// 【Notifier定義】: 履歴状態管理Notifier
 /// 【実装内容】: 履歴のCRUD操作を提供
 /// 🔵 信頼性レベル: 青信号 - REQ-601〜604に基づく
-class HistoryNotifier extends StateNotifier<HistoryState> {
-  HistoryNotifier() : super(const HistoryState());
+class HistoryNotifier extends Notifier<HistoryState> {
+  @override
+  HistoryState build() => const HistoryState();
 
   /// UUID生成用インスタンス
   static const _uuid = Uuid();
@@ -108,7 +109,6 @@ class HistoryNotifier extends StateNotifier<HistoryState> {
 
 /// 【Provider定義】: HistoryNotifierのProvider
 /// 🔵 信頼性レベル: 青信号 - Riverpodパターンに基づく
-final historyProvider =
-    StateNotifierProvider<HistoryNotifier, HistoryState>((ref) {
-  return HistoryNotifier();
-});
+final historyProvider = NotifierProvider<HistoryNotifier, HistoryState>(
+  HistoryNotifier.new,
+);

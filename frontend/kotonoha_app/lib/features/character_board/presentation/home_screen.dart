@@ -41,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final inputBuffer = ref.watch(inputBufferProvider);
     final settingsAsync = ref.watch(settingsNotifierProvider);
-    final fontSize = settingsAsync.valueOrNull?.fontSize ?? FontSize.medium;
+    final fontSize = settingsAsync.asData?.value.fontSize ?? FontSize.medium;
 
     return Scaffold(
       appBar: AppBar(

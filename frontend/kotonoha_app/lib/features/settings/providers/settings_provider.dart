@@ -171,7 +171,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     // 【現在の設定取得】: AsyncValueから現在の設定を取得
     // 【エラーチェック】: 現在の状態がロード済みでない場合は処理をスキップ
     // 🔵 青信号: Riverpod AsyncNotifierの標準的なパターン
-    final currentSettings = state.valueOrNull;
+    final currentSettings = state.asData?.value;
     if (currentSettings == null) return;
 
     // 【状態更新】: copyWithで新しい設定を生成し、stateを更新
@@ -211,7 +211,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     // 【現在の設定取得】: AsyncValueから現在の設定を取得
     // 【エラーチェック】: 現在の状態がロード済みでない場合は処理をスキップ
     // 🔵 青信号: Riverpod AsyncNotifierの標準的なパターン
-    final currentSettings = state.valueOrNull;
+    final currentSettings = state.asData?.value;
     if (currentSettings == null) return;
 
     // 【状態更新】: copyWithで新しい設定を生成し、stateを更新
@@ -252,7 +252,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     // 【現在の設定取得】: AsyncValueから現在の設定を取得
     // 【エラーチェック】: 現在の状態がロード済みでない場合は処理をスキップ
     // 🔵 青信号: Riverpod AsyncNotifierの標準的なパターン
-    final currentSettings = state.valueOrNull;
+    final currentSettings = state.asData?.value;
     if (currentSettings == null) return;
 
     // 【状態更新】: copyWithで新しい設定を生成し、stateを更新
@@ -302,7 +302,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     // 🔵 青信号: REQ-903（AI丁寧さレベル設定）、REQ-5003（永続化）に基づく
 
     // 【現在の設定取得】: AsyncValueから現在の設定を取得
-    final currentSettings = state.valueOrNull;
+    final currentSettings = state.asData?.value;
     if (currentSettings == null) return;
 
     // 【状態更新】: copyWithで新しい設定を生成し、stateを更新
