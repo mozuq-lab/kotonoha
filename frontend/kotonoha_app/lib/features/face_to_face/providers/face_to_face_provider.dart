@@ -16,19 +16,20 @@ import '../domain/models/face_to_face_state.dart';
 /// InputScreenや他のウィジェットからこのプロバイダーを参照して
 /// モードの切り替えや表示テキストの取得を行う。
 final faceToFaceProvider =
-    StateNotifierProvider<FaceToFaceNotifier, FaceToFaceState>((ref) {
-  return FaceToFaceNotifier();
-});
+    NotifierProvider<FaceToFaceNotifier, FaceToFaceState>(
+  FaceToFaceNotifier.new,
+);
 
 /// 対面表示モードのNotifier
 ///
 /// 状態の変更ロジックを担当する。
 /// REQ-503に基づき、シンプルな操作でモード切り替えを提供。
-class FaceToFaceNotifier extends StateNotifier<FaceToFaceState> {
-  /// FaceToFaceNotifierを作成
+class FaceToFaceNotifier extends Notifier<FaceToFaceState> {
+  /// 初期状態を構築
   ///
   /// 初期状態は対面表示モード無効、空のテキスト
-  FaceToFaceNotifier() : super(const FaceToFaceState());
+  @override
+  FaceToFaceState build() => const FaceToFaceState();
 
   /// 対面表示モードを有効化
   ///

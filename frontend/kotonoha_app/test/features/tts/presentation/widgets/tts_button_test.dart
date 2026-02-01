@@ -23,7 +23,7 @@ import '../../../../mocks/mock_flutter_tts.dart';
 /// モックされたFlutterTtsを使用するTTSNotifierを作成する。
 TTSNotifier createTestTTSNotifier(MockFlutterTts mockFlutterTts) {
   final service = TTSService(tts: mockFlutterTts);
-  return TTSNotifier(service: service);
+  return TTSNotifier(serviceOverride: service);
 }
 
 void main() {
@@ -70,7 +70,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider
-                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+                .overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -116,7 +116,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider
-                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+                .overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -166,7 +166,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider
-                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+                .overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -212,7 +212,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider
-                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+                .overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -263,7 +263,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider
-                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+                .overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -316,7 +316,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider
-                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+                .overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -372,7 +372,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider
-                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+                .overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -432,7 +432,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider
-                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+                .overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 
@@ -490,7 +490,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             ttsProvider
-                .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+                .overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
           ],
         );
 

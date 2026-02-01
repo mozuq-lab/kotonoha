@@ -64,55 +64,58 @@ List<History> createTestHistories(int count, {HistoryType? type}) {
 // =========================================================================
 
 /// HistoryNotifierのモック
-class MockHistoryNotifier extends Mock implements HistoryNotifier {}
+class MockHistoryNotifier extends HistoryNotifier with Mock {
+  @override
+  HistoryState build() => const HistoryState(histories: []);
+}
 
 /// TTSNotifierのモック
-class MockTTSNotifier extends Mock implements TTSNotifier {
-  MockTTSNotifier() {
-    // 初期状態を設定
-    _currentState = const TTSServiceState(
-      state: TTSState.idle,
-      currentSpeed: TTSSpeed.normal,
-    );
-  }
-
-  late TTSServiceState _currentState;
-  final List<void Function(TTSServiceState)> _listeners = [];
+class MockTTSNotifier extends TTSNotifier with Mock {
+  @override
+  TTSServiceState build() => const TTSServiceState(
+        state: TTSState.idle,
+        currentSpeed: TTSSpeed.normal,
+      );
 
   @override
-  TTSServiceState get state => _currentState;
+  Future<void> speak(String text) =>
+      super.noSuchMethod(
+        Invocation.method(#speak, [text]),
+      ) as Future<void>? ??
+      Future<void>.value();
 
   @override
-  set state(TTSServiceState newState) {
-    _currentState = newState;
-    // リスナーに状態変更を通知
-    for (final listener in _listeners) {
-      listener(newState);
-    }
-  }
+  Future<void> stop() =>
+      super.noSuchMethod(
+        Invocation.method(#stop, []),
+      ) as Future<void>? ??
+      Future<void>.value();
 
   @override
-  void Function() addListener(
-    void Function(TTSServiceState value) listener, {
-    bool fireImmediately = false,
-  }) {
-    _listeners.add(listener);
-    if (fireImmediately) {
-      listener(_currentState);
-    }
-    return () {
-      _listeners.remove(listener);
-    };
-  }
-
-  void removeListener(void Function(TTSServiceState value) listener) {
-    _listeners.remove(listener);
-  }
+  Future<void> initialize() =>
+      super.noSuchMethod(
+        Invocation.method(#initialize, []),
+      ) as Future<void>? ??
+      Future<void>.value();
 
   @override
-  bool updateShouldNotify(TTSServiceState old, TTSServiceState current) {
-    return old != current;
-  }
+  Future<void> setSpeed(TTSSpeed speed) =>
+      super.noSuchMethod(
+        Invocation.method(#setSpeed, [speed]),
+      ) as Future<void>? ??
+      Future<void>.value();
+}
+
+// =========================================================================
+// テスト用Notifierサブクラス
+// =========================================================================
+
+/// build()で初期状態を返すHistoryNotifierのテスト用サブクラス
+class _TestHistoryNotifier extends HistoryNotifier {
+  final HistoryState _initialState;
+  _TestHistoryNotifier(this._initialState);
+  @override
+  HistoryState build() => _initialState;
 }
 
 // =========================================================================
@@ -120,13 +123,8 @@ class MockTTSNotifier extends Mock implements TTSNotifier {
 // =========================================================================
 
 /// 【テストヘルパー】: HistoryProviderをモック状態でオーバーライド
-Override historyProviderOverride(HistoryState mockState) {
-  return historyProvider.overrideWith((ref) {
-    final notifier = HistoryNotifier();
-    // 内部状態を直接設定
-    notifier.state = mockState;
-    return notifier;
-  });
+historyProviderOverride(HistoryState mockState) {
+  return historyProvider.overrideWith(() => _TestHistoryNotifier(mockState));
 }
 
 // =========================================================================
@@ -416,7 +414,7 @@ void main() {
           ProviderScope(
             overrides: [
               historyProviderOverride(mockState),
-              ttsProvider.overrideWith((ref) => mockTTSNotifier),
+              ttsProvider.overrideWith(() => mockTTSNotifier),
             ],
             child: const MaterialApp(
               home: HistoryScreen(),

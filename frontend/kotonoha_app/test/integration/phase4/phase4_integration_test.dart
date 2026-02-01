@@ -52,7 +52,7 @@ void main() {
         await notifier.setTheme(AppTheme.dark);
 
         // Then: 即時に反映される
-        final settings = container.read(settingsNotifierProvider).valueOrNull;
+        final settings = container.read(settingsNotifierProvider).asData?.value;
         expect(settings?.theme, AppTheme.dark);
       });
 
@@ -65,7 +65,7 @@ void main() {
         await notifier.setFontSize(FontSize.large);
 
         // Then: 即時に反映される
-        final settings = container.read(settingsNotifierProvider).valueOrNull;
+        final settings = container.read(settingsNotifierProvider).asData?.value;
         expect(settings?.fontSize, FontSize.large);
       });
 
@@ -78,7 +78,7 @@ void main() {
         await notifier.setTTSSpeed(TTSSpeed.fast);
 
         // Then: 即時に反映される
-        final settings = container.read(settingsNotifierProvider).valueOrNull;
+        final settings = container.read(settingsNotifierProvider).asData?.value;
         expect(settings?.ttsSpeed, TTSSpeed.fast);
       });
     });

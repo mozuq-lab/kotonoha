@@ -34,7 +34,7 @@ IntegrationTestWidgetsFlutterBinding initializeE2ETestBinding() {
 /// [clearData]: true の場合、履歴・お気に入りデータをクリア（デフォルト: true）
 Future<void> pumpApp(
   WidgetTester tester, {
-  List<Override>? overrides,
+  dynamic overrides,
   bool clearData = true,
 }) async {
   await initHive();

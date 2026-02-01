@@ -28,10 +28,12 @@ History createTestHistory({
 }
 
 // テスト用Notifier
+/// build()で初期状態を返すことで、Riverpod 3.x互換にする
 class TestHistoryNotifier extends HistoryNotifier {
-  TestHistoryNotifier(HistoryState initialState) : super() {
-    state = initialState;
-  }
+  final HistoryState _initialState;
+  TestHistoryNotifier(this._initialState);
+  @override
+  HistoryState build() => _initialState;
 }
 
 void main() {
@@ -49,8 +51,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            historyProvider
-                .overrideWith((ref) => TestHistoryNotifier(mockState)),
+            historyProvider.overrideWith(() => TestHistoryNotifier(mockState)),
           ],
           child: const MaterialApp(
             home: HistoryScreen(),
@@ -70,8 +71,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            historyProvider
-                .overrideWith((ref) => TestHistoryNotifier(mockState)),
+            historyProvider.overrideWith(() => TestHistoryNotifier(mockState)),
           ],
           child: const MaterialApp(
             home: HistoryScreen(),

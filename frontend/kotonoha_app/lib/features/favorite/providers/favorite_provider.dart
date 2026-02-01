@@ -41,8 +41,9 @@ class FavoriteState {
 /// 【Notifier定義】: お気に入り状態管理Notifier
 /// 【実装内容】: お気に入りのCRUD操作、並び替えを提供
 /// 🔵 信頼性レベル: 青信号 - REQ-701〜704に基づく
-class FavoriteNotifier extends StateNotifier<FavoriteState> {
-  FavoriteNotifier() : super(const FavoriteState());
+class FavoriteNotifier extends Notifier<FavoriteState> {
+  @override
+  FavoriteState build() => const FavoriteState();
 
   /// UUID生成用インスタンス
   static const _uuid = Uuid();
@@ -174,7 +175,6 @@ class FavoriteNotifier extends StateNotifier<FavoriteState> {
 
 /// 【Provider定義】: FavoriteNotifierのProvider
 /// 🔵 信頼性レベル: 青信号 - Riverpodパターンに基づく
-final favoriteProvider =
-    StateNotifierProvider<FavoriteNotifier, FavoriteState>((ref) {
-  return FavoriteNotifier();
-});
+final favoriteProvider = NotifierProvider<FavoriteNotifier, FavoriteState>(
+  FavoriteNotifier.new,
+);

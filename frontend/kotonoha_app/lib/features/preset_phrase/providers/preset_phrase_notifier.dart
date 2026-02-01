@@ -60,17 +60,17 @@ class PresetPhraseState {
 /// 定型文のCRUD操作を提供するStateNotifier。
 /// 追加、更新、削除、お気に入り切り替え機能を実装。
 /// お気に入り操作時はFavoriteNotifierと連動する。
-class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
-  /// 【コンストラクタ】: FavoriteNotifierへの参照を受け取る
-  /// 【テスト対応】: TC-SYNC-001, TC-SYNC-002（連動機能）
-  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
-  PresetPhraseNotifier(this._favoriteNotifier)
-      : super(const PresetPhraseState());
-
+class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   /// 【フィールド定義】: FavoriteNotifierへの参照
   /// 【実装内容】: お気に入り連動のために使用
   /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
-  final FavoriteNotifier? _favoriteNotifier;
+  late FavoriteNotifier? _favoriteNotifier;
+
+  @override
+  PresetPhraseState build() {
+    _favoriteNotifier = ref.read(favoriteProvider.notifier);
+    return const PresetPhraseState();
+  }
 
   /// UUID生成用インスタンス
   static const _uuid = Uuid();
@@ -142,7 +142,7 @@ class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
     // 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
     final phrase = state.phrases[index];
     if (phrase.isFavorite && _favoriteNotifier != null) {
-      await _favoriteNotifier.deleteFavoriteBySourceId(id);
+      await _favoriteNotifier!.deleteFavoriteBySourceId(id);
     }
 
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
@@ -177,13 +177,13 @@ class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
     if (_favoriteNotifier != null) {
       if (updatedPhrase.isFavorite) {
         // 【お気に入り追加】: Favoriteにも追加
-        await _favoriteNotifier.addFavoriteFromPresetPhrase(
+        await _favoriteNotifier!.addFavoriteFromPresetPhrase(
           updatedPhrase.content,
           updatedPhrase.id,
         );
       } else {
         // 【お気に入り解除】: Favoriteからも削除
-        await _favoriteNotifier.deleteFavoriteBySourceId(updatedPhrase.id);
+        await _favoriteNotifier!.deleteFavoriteBySourceId(updatedPhrase.id);
       }
     }
   }
@@ -277,7 +277,6 @@ class PresetPhraseNotifier extends StateNotifier<PresetPhraseState> {
 /// 【テスト対応】: TC-SYNC-001, TC-SYNC-002（連動機能の依存関係）
 /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNCに基づく
 final presetPhraseNotifierProvider =
-    StateNotifierProvider<PresetPhraseNotifier, PresetPhraseState>((ref) {
-  final favoriteNotifier = ref.read(favoriteProvider.notifier);
-  return PresetPhraseNotifier(favoriteNotifier);
-});
+    NotifierProvider<PresetPhraseNotifier, PresetPhraseState>(
+  PresetPhraseNotifier.new,
+);

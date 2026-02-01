@@ -43,46 +43,24 @@ Favorite createTestFavorite({
 // =========================================================================
 
 /// TTSNotifierのモック
-class MockTTSNotifier extends Mock implements TTSNotifier {
-  MockTTSNotifier() {
-    _currentState = const TTSServiceState(
-      state: TTSState.idle,
-      currentSpeed: TTSSpeed.normal,
-    );
-  }
-
-  late TTSServiceState _currentState;
-  final List<void Function(TTSServiceState)> _listeners = [];
-
+class MockTTSNotifier extends TTSNotifier with Mock {
   @override
-  TTSServiceState get state => _currentState;
+  TTSServiceState build() => const TTSServiceState(
+        state: TTSState.idle,
+        currentSpeed: TTSSpeed.normal,
+      );
+}
 
-  @override
-  set state(TTSServiceState newState) {
-    _currentState = newState;
-    for (final listener in _listeners) {
-      listener(newState);
-    }
-  }
+// =========================================================================
+// テスト用Notifierサブクラス
+// =========================================================================
 
+/// build()で初期状態を返すFavoriteNotifierのテスト用サブクラス
+class _TestFavoriteNotifier extends FavoriteNotifier {
+  final FavoriteState _initialState;
+  _TestFavoriteNotifier(this._initialState);
   @override
-  void Function() addListener(
-    void Function(TTSServiceState value) listener, {
-    bool fireImmediately = false,
-  }) {
-    _listeners.add(listener);
-    if (fireImmediately) {
-      listener(_currentState);
-    }
-    return () {
-      _listeners.remove(listener);
-    };
-  }
-
-  @override
-  bool updateShouldNotify(TTSServiceState old, TTSServiceState current) {
-    return old != current;
-  }
+  FavoriteState build() => _initialState;
 }
 
 // =========================================================================
@@ -90,12 +68,8 @@ class MockTTSNotifier extends Mock implements TTSNotifier {
 // =========================================================================
 
 /// FavoriteProviderをモック状態でオーバーライド
-Override favoriteProviderOverride(FavoriteState mockState) {
-  return favoriteProvider.overrideWith((ref) {
-    final notifier = FavoriteNotifier();
-    notifier.state = mockState;
-    return notifier;
-  });
+favoriteProviderOverride(FavoriteState mockState) {
+  return favoriteProvider.overrideWith(() => _TestFavoriteNotifier(mockState));
 }
 
 // =========================================================================

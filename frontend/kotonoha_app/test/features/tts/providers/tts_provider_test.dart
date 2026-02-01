@@ -20,7 +20,7 @@ import '../../../mocks/mock_flutter_tts.dart';
 /// TTSNotifierを作成するヘルパー関数（テスト用）
 TTSNotifier createTestTTSNotifier(MockFlutterTts mockFlutterTts) {
   final service = TTSService(tts: mockFlutterTts);
-  return TTSNotifier(service: service);
+  return TTSNotifier(serviceOverride: service);
 }
 
 void main() {
@@ -49,8 +49,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           // TTSNotifierにモックされたサービスを注入
-          ttsProvider
-              .overrideWith((ref) => createTestTTSNotifier(mockFlutterTts)),
+          ttsProvider.overrideWith(() => createTestTTSNotifier(mockFlutterTts)),
         ],
       );
     });

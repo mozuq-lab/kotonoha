@@ -3,7 +3,6 @@
 /// TASK-0061: 履歴一覧UI実装
 library;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/features/history/domain/models/history.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
@@ -37,13 +36,15 @@ List<History> createTestHistories(int count, {HistoryType? type}) {
 }
 
 /// テスト用のHistoryNotifierを作成
+/// build()で初期状態を返すことで、Riverpod 3.x互換にする
 class TestHistoryNotifier extends HistoryNotifier {
-  TestHistoryNotifier(HistoryState initialState) : super() {
-    state = initialState;
-  }
+  final HistoryState _initialState;
+  TestHistoryNotifier(this._initialState);
+  @override
+  HistoryState build() => _initialState;
 }
 
 /// テスト用のhistoryProviderオーバーライドを作成
-Override createHistoryProviderOverride(HistoryState mockState) {
-  return historyProvider.overrideWith((ref) => TestHistoryNotifier(mockState));
+createHistoryProviderOverride(HistoryState mockState) {
+  return historyProvider.overrideWith(() => TestHistoryNotifier(mockState));
 }
