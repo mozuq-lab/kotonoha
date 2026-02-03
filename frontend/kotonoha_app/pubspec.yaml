@@ -34,7 +34,7 @@ dependencies:
   uuid: ^4.5.1
 
   # TTS（音声読み上げ）
-  flutter_tts: ^4.2.0
+  flutter_tts: ^4.2.5
 
   # 緊急音再生
   audioplayers: ^6.1.0
