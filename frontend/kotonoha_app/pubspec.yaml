@@ -28,7 +28,7 @@ dependencies:
   retrofit: ^4.1.0
 
   # JSON
-  json_annotation: ^4.9.0
+  json_annotation: ^4.10.0
 
   # UUID
   uuid: ^4.5.1
