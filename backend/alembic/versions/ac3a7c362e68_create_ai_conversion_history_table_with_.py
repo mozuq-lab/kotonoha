@@ -92,4 +92,9 @@ def downgrade() -> None:
     # 【テーブル削除】: ai_conversion_historyテーブルを削除
     # 🔵 database-schema.sqlに基づくロールバック処理
     op.drop_table("ai_conversion_history")
+
+    # 【ENUM型削除】: create_constraint=True により作成された ENUM 型を明示的に削除する。
+    # drop_table だけでは型が残り、再 upgrade 時に「type already exists」で失敗するため
+    # （冪等性・再現性の確保）。
+    op.execute("DROP TYPE IF EXISTS politeness_level_enum")
     # ### end Alembic commands ###

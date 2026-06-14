@@ -36,7 +36,7 @@ import enum
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, Enum, Index, Integer, Text
+from sqlalchemy import DateTime, Enum, Index, Integer, Text, text
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQL_UUID  # noqa: N811
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -82,10 +82,10 @@ class AIConversionHistory(Base):
         # 【created_at降順インデックス】: 履歴を新しい順に取得するための最適化
         # 【パフォーマンス】: 時系列検索クエリ（ORDER BY created_at DESC）の高速化
         # 🔵 database-schema.sql（line 54-60）に基づくインデックス定義
+        # マイグレーション（式インデックス）と表現を揃え、autogenerateの差分を防ぐ
         Index(
             "idx_ai_conversion_created_at",
-            "created_at",
-            postgresql_ops={"created_at": "DESC"},
+            text("created_at DESC"),
         ),
         # 【user_session_idインデックス】: セッションごとの履歴取得の最適化
         # 【パフォーマンス】: WHERE user_session_id = ?クエリの高速化
@@ -116,7 +116,14 @@ class AIConversionHistory(Base):
     # 【テスト対応】: B-4～B-6（Enum値テスト）、E-1（不正なEnum値テスト）を検証
     # 🔵 要件定義書（line 57）、database-schema.sql（line 39-44）に基づく
     politeness_level: Mapped[PolitenessLevel] = mapped_column(
-        Enum(PolitenessLevel, name="politeness_level_enum", create_constraint=True),
+        Enum(
+            PolitenessLevel,
+            name="politeness_level_enum",
+            create_constraint=True,
+            # メンバー名(CASUAL等)ではなく .value(casual等)をDBに保存し、
+            # ai_conversion_logs（小文字String）と表現を統一する
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
         nullable=False,
     )
 
