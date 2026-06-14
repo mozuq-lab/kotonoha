@@ -319,6 +319,11 @@ void main() {
           ),
         );
 
+        // When: 対象の履歴項目をタップして読み上げ対象に設定する
+        // （読み上げ中表示は項目単位で管理されるため、タップで対象を確定する）
+        await tester.tap(find.text('こんにちは'));
+        await tester.pump();
+
         // Then: 読み上げ中のインジケーター（例: アイコン、背景色変更など）が表示される
         // 実装に応じて検証方法を調整
         // 例: 読み上げ中アイコンの存在確認
@@ -353,6 +358,7 @@ void main() {
           state: TTSState.speaking,
           currentSpeed: TTSSpeed.normal,
         );
+        when(() => mockTTSNotifier.speak(any())).thenAnswer((_) async {});
         when(() => mockTTSNotifier.stop()).thenAnswer((_) async {});
 
         await tester.pumpWidget(
@@ -367,11 +373,73 @@ void main() {
           ),
         );
 
+        // When: 対象の履歴項目をタップして読み上げ対象に設定する
+        await tester.tap(find.text('こんにちは'));
+        await tester.pump();
+
         // Then: 停止ボタンが表示される
         expect(
           find.byIcon(Icons.stop),
           findsOneWidget,
           reason: '読み上げ中は停止ボタンが表示される必要がある',
+        );
+      });
+
+      /// TC-063-006: 読み上げ中表示は対象項目のみ（per-item）テスト 🔵
+      ///
+      /// 検証内容: 複数履歴で1件を読み上げ中にしたとき、その項目だけが
+      /// 読み上げ中表示（停止アイコン）になり、他の項目は通常表示のままであること。
+      /// （以前はTTSのspeaking状態を全カードに渡しており、全カードが停止表示になっていた）
+      testWidgets('TC-063-006: 読み上げ中表示は対象の1項目のみ', (WidgetTester tester) async {
+        // Given: 履歴を2件準備する
+        final histories = [
+          createTestHistory(
+            id: 'item_a',
+            content: '項目A',
+            type: HistoryType.manualInput,
+          ),
+          createTestHistory(
+            id: 'item_b',
+            content: '項目B',
+            type: HistoryType.manualInput,
+          ),
+        ];
+        final mockState = HistoryState(histories: histories);
+
+        final mockTTSNotifier = MockTTSNotifier();
+        mockTTSNotifier.mockInitialState = const TTSServiceState(
+          state: TTSState.speaking,
+          currentSpeed: TTSSpeed.normal,
+        );
+        when(() => mockTTSNotifier.speak(any())).thenAnswer((_) async {});
+        when(() => mockTTSNotifier.stop()).thenAnswer((_) async {});
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              historyProviderOverride(mockState),
+              ttsProvider.overrideWith(() => mockTTSNotifier),
+            ],
+            child: const MaterialApp(
+              home: HistoryScreen(),
+            ),
+          ),
+        );
+
+        // When: 項目Aのみをタップする
+        await tester.tap(find.text('項目A'));
+        await tester.pump();
+
+        // Then: 読み上げ中（停止）アイコンはちょうど1つ（項目Aのみ）
+        expect(
+          find.byIcon(Icons.stop),
+          findsOneWidget,
+          reason: '読み上げ中表示はタップした1項目のみであるべき',
+        );
+        expect(
+          find.byIcon(Icons.volume_up),
+          findsOneWidget,
+          reason: '読み上げ中アイコンはタップした1項目のみであるべき',
         );
       });
     });
