@@ -47,6 +47,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
     # 終了時の処理
     logger.info(f"Shutting down {settings.PROJECT_NAME}...")
+    # AIクライアントのHTTPリソースを明示的にクローズ
+    from app.utils import ai_client as ai_client_module
+
+    await ai_client_module.ai_client.aclose()
 
 
 # FastAPIアプリケーション作成
