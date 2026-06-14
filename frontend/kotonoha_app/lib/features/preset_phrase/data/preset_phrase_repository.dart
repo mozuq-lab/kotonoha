@@ -28,14 +28,29 @@ class PresetPhraseRepository {
   /// 【パフォーマンス】: 2回目以降の読み込みは10ms以内（TASK-0090）
   /// 🔵 信頼性レベル: 青信号 - REQ-104、EDGE-104対応、NFR-004パフォーマンス要件
   Future<List<PresetPhrase>> loadAll() async {
-    // キャッシュがあればそれを返す（高速）
+    // キャッシュがあればそれを返す（高速、防御的コピー）
     if (_cache != null) {
-      return _cache!;
+      return List<PresetPhrase>.from(_cache!);
     }
 
     // キャッシュがなければHiveから読み込んでキャッシュする
     _cache = _box.values.toList();
-    return _cache!;
+    // 内部キャッシュの参照を直接返さず、防御的コピーを返す
+    return List<PresetPhrase>.from(_cache!);
+  }
+
+  /// 【メソッド定義】: 全定型文を同期的に読み込み
+  /// 【実装内容】: build()等の同期コンテキストから利用するためのバージョン
+  /// 【戻り値】: `List<PresetPhrase>`（防御的コピー、0件の場合は空リスト）
+  /// 🔵 信頼性レベル: 青信号 - Notifier.build()での初期化に使用
+  List<PresetPhrase> loadAllSync() => List<PresetPhrase>.from(_box.values);
+
+  /// 【メソッド定義】: 全定型文を削除
+  /// 【実装内容】: Hive Boxの全データをクリアしてキャッシュを無効化
+  /// 🔵 信頼性レベル: 青信号 - resetToDefaults用
+  Future<void> deleteAll() async {
+    await _box.clear();
+    invalidateCache();
   }
 
   /// 【メソッド定義】: 定型文を保存（追加・更新）

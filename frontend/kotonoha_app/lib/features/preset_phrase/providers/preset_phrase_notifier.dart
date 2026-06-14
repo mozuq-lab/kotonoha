@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/data/default_phrases.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:uuid/uuid.dart';
 
 /// 【状態管理】: 定型文一覧の状態
@@ -69,6 +70,16 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   @override
   PresetPhraseState build() {
     _favoriteNotifier = ref.read(favoriteProvider.notifier);
+
+    // 【永続化配線】: Repositoryが利用可能（Boxオープン済み）の場合はHiveから初期化
+    // 【フォールバック】: repo==nilまたはデータ無しの場合は従来どおり空状態
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo != null) {
+      final items = repo.loadAllSync();
+      if (items.isNotEmpty) {
+        return PresetPhraseState(phrases: _sortPhrases(items));
+      }
+    }
     return const PresetPhraseState();
   }
 
@@ -94,6 +105,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     // 状態を更新し、お気に入り順でソート (REQ-105)
     final updatedPhrases = [...state.phrases, newPhrase];
     state = state.copyWith(phrases: _sortPhrases(updatedPhrases));
+
+    // 【永続化】: repoがあればHiveに保存
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo != null) {
+      await repo.save(newPhrase);
+    }
   }
 
   /// 【メソッド】: 定型文を更新する
@@ -124,6 +141,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
     updatedPhrases[index] = updatedPhrase;
     state = state.copyWith(phrases: _sortPhrases(updatedPhrases));
+
+    // 【永続化】: repoがあればHiveに保存
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo != null) {
+      await repo.save(updatedPhrase);
+    }
   }
 
   /// 【メソッド】: 定型文を削除する
@@ -148,6 +171,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
     updatedPhrases.removeAt(index);
     state = state.copyWith(phrases: updatedPhrases);
+
+    // 【永続化】: repoがあればHiveから削除
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo != null) {
+      await repo.delete(id);
+    }
   }
 
   /// 【メソッド】: お気に入りを切り替える
@@ -171,6 +200,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     // お気に入り順でソート (REQ-105)
     state = state.copyWith(phrases: _sortPhrases(updatedPhrases));
 
+    // 【永続化】: repoがあればHiveに保存（isFavoriteフラグの変更を反映）
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo != null) {
+      await repo.save(updatedPhrase);
+    }
+
     // 【連動処理】: FavoriteNotifierへの連動（TC-SYNC-001, TC-SYNC-002）
     // 【処理方針】: お気に入り追加時はFavoriteにも追加、解除時はFavoriteからも削除
     // 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
@@ -189,11 +224,20 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   }
 
   /// 【メソッド】: 定型文一覧を読み込む
-  /// 【実装内容】: ローカルストレージから定型文を読み込み
+  /// 【実装内容】: Hive（Boxオープン時）から定型文を読み込み、お気に入り順で反映
+  /// 【フォールバック】: repo==nilの場合は従来どおりインメモリ管理のみ
   /// 🔵 信頼性レベル: 青信号 - CRUD-205に基づく
   Future<void> loadPhrases() async {
-    // 現在はメモリ内での管理のみ
-    // 将来的にはHiveからの読み込みを実装
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo != null) {
+      // 【永続化】: Hiveから読み込み、お気に入り順でソートして反映
+      state = state.copyWith(
+        phrases: _sortPhrases(repo.loadAllSync()),
+        isLoading: false,
+      );
+      return;
+    }
+    // 【フォールバック】: インメモリ管理のみ
     state = state.copyWith(isLoading: false);
   }
 
@@ -234,6 +278,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
         }
       }
 
+      // 【永続化】: repoがあればHiveに一括保存
+      final repo = ref.read(presetPhraseRepositoryProvider);
+      if (repo != null) {
+        await repo.saveAll(phrases);
+      }
+
       state = state.copyWith(
         phrases: phrases,
         isLoading: false,
@@ -252,6 +302,11 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   ///
   /// 設定画面等から呼び出され、定型文を初期状態に戻す。
   Future<void> resetToDefaults() async {
+    // 【永続化】: repoがあればHiveの定型文を全削除してから再投入
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo != null) {
+      await repo.deleteAll();
+    }
     state = state.copyWith(phrases: [], isLoading: true);
     await initializeDefaultPhrases();
   }
