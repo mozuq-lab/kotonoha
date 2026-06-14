@@ -18,6 +18,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -45,10 +46,10 @@ class AIConversionLog(Base):
             name="check_politeness_level",
         ),
         # 【created_at降順インデックス】: 時系列検索用インデックス
+        # マイグレーション（式インデックス）と表現を揃え、autogenerateの差分を防ぐ
         Index(
             "idx_ai_conversion_logs_created_at",
-            "created_at",
-            postgresql_ops={"created_at": "DESC"},
+            text("created_at DESC"),
         ),
         # 【input_text_hashインデックス】: ハッシュ検索用インデックス
         Index("idx_ai_conversion_logs_hash", "input_text_hash"),
@@ -79,7 +80,9 @@ class AIConversionLog(Base):
     ai_provider: Mapped[str | None] = mapped_column(String(50), nullable=True, default="anthropic")
 
     # 【必須フィールド】: 成功・失敗フラグ（デフォルト: True）
-    is_success: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_success: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
 
     # 【オプションフィールド】: エラーメッセージ（失敗時のみ）
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)

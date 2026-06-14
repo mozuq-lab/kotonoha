@@ -9,7 +9,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, Integer, String, Text
+from sqlalchemy import DateTime, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -31,10 +31,10 @@ class ErrorLog(Base):
         # 【error_typeインデックス】: エラータイプ別検索用インデックス
         Index("idx_error_logs_type", "error_type"),
         # 【created_at降順インデックス】: 時系列検索用インデックス
+        # マイグレーション（式インデックス）と表現を揃え、autogenerateの差分を防ぐ
         Index(
             "idx_error_logs_created_at",
-            "created_at",
-            postgresql_ops={"created_at": "DESC"},
+            text("created_at DESC"),
         ),
     )
 
