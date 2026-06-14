@@ -15,6 +15,8 @@ on:
 env:
   FLUTTER_VERSION: '3.38.1'
   JAVA_VERSION: '17'
+  API_BASE_URL: ${{ vars.API_BASE_URL || 'http://localhost:8000' }}
+  AI_API_KEY: ${{ secrets.AI_API_KEY || '' }}
 
 jobs:
   analyze:
@@ -174,7 +176,10 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build Web (Release)
-        run: flutter build web --release
+        run: >
+          flutter build web --release
+          --dart-define=API_BASE_URL="${API_BASE_URL}"
+          --dart-define=AI_API_KEY="${AI_API_KEY}"
 
       - name: Upload Web build
         uses: actions/upload-artifact@v6
@@ -215,7 +220,10 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build APK (Release)
-        run: flutter build apk --release --flavor internal
+        run: >
+          flutter build apk --release --flavor internal
+          --dart-define=API_BASE_URL="${API_BASE_URL}"
+          --dart-define=AI_API_KEY="${AI_API_KEY}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v6
@@ -251,7 +259,10 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
+        run: >
+          flutter build ios --release --no-codesign
+          --dart-define=API_BASE_URL="${API_BASE_URL}"
+          --dart-define=AI_API_KEY="${AI_API_KEY}"
 
       - name: Upload iOS build
         uses: actions/upload-artifact@v6

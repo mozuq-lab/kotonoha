@@ -24,14 +24,17 @@ class AIConversionApiClient {
   /// コンストラクタ
   ///
   /// [baseUrl] APIのベースURL（例: http://localhost:8000）
-  AIConversionApiClient({required String baseUrl})
-      : dio = Dio(BaseOptions(
+  AIConversionApiClient({
+    required String baseUrl,
+    String apiKey = '',
+  }) : dio = Dio(BaseOptions(
           baseUrl: baseUrl,
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            if (apiKey.isNotEmpty) 'X-API-Key': apiKey,
           },
         ));
 
@@ -152,13 +155,25 @@ class AIConversionApiClient {
     String? errorCode;
     String? errorMessage;
     if (data is Map<String, dynamic> && data.containsKey('error')) {
-      final error = data['error'] as Map<String, dynamic>?;
-      errorCode = error?['code'] as String?;
-      errorMessage = error?['message'] as String?;
+      final error = data['error'];
+      if (error is Map<String, dynamic>) {
+        errorCode = error['code'] as String?;
+        errorMessage = error['message'] as String?;
+      } else if (error is String) {
+        errorMessage = error;
+        errorCode = data['error_code'] as String?;
+      }
     }
 
     switch (statusCode) {
+      case 401:
+        return AIConversionException(
+          code: errorCode ?? 'AUTHENTICATION_ERROR',
+          message: errorMessage ?? 'AI変換APIの認証設定を確認してください。',
+        );
+
       case 400:
+      case 422:
         return AIConversionException(
           code: errorCode ?? 'VALIDATION_ERROR',
           message: errorMessage ?? '入力内容を確認してください。',
@@ -173,6 +188,7 @@ class AIConversionApiClient {
       case 500:
       case 502:
       case 503:
+      case 504:
         return AIConversionException(
           code: errorCode ?? 'AI_API_ERROR',
           message: errorMessage ?? 'AI変換APIでエラーが発生しました。しばらく時間をおいて再試行してください。',

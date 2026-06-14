@@ -22,6 +22,18 @@ cd "$PROJECT_ROOT/frontend/kotonoha_app"
 BUILD_MODE="release"
 ARCHIVE=false
 TESTFLIGHT=false
+API_BASE_URL="${API_BASE_URL:-http://localhost:8000}"
+AI_API_KEY="${AI_API_KEY:-}"
+
+dart_define_flags() {
+    local flags="--dart-define=API_BASE_URL=$API_BASE_URL"
+
+    if [ -n "$AI_API_KEY" ]; then
+        flags="$flags --dart-define=AI_API_KEY=$AI_API_KEY"
+    fi
+
+    echo "$flags"
+}
 
 # 引数解析
 for arg in "$@"; do
@@ -56,6 +68,12 @@ echo "================================================"
 echo "Mode: $BUILD_MODE"
 echo "Archive: $ARCHIVE"
 echo "TestFlight: $TESTFLIGHT"
+echo "API Base URL: $API_BASE_URL"
+if [ -n "$AI_API_KEY" ]; then
+    echo "AI API Key: configured"
+else
+    echo "AI API Key: not configured"
+fi
 echo "================================================"
 
 # Flutter依存関係の更新
@@ -82,7 +100,8 @@ if [ "$ARCHIVE" = true ]; then
     flutter build ipa --release \
         --export-options-plist=ios/ExportOptions.plist \
         --obfuscate \
-        --split-debug-info=build/ios/symbols
+        --split-debug-info=build/ios/symbols \
+        $(dart_define_flags)
 
     # ビルド成果物の確認
     IPA_PATH="build/ios/ipa/*.ipa"
@@ -108,13 +127,13 @@ else
 
     case $BUILD_MODE in
         debug)
-            flutter build ios --debug --no-codesign
+            flutter build ios --debug --no-codesign $(dart_define_flags)
             ;;
         release)
-            flutter build ios --release
+            flutter build ios --release $(dart_define_flags)
             ;;
         profile)
-            flutter build ios --profile
+            flutter build ios --profile $(dart_define_flags)
             ;;
     esac
 

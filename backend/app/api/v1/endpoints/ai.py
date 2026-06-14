@@ -37,12 +37,17 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# レート制限ヘッダー定数（設定駆動）
-RATE_LIMIT_HEADERS = {
-    "X-RateLimit-Limit": str(settings.RATE_LIMIT_TIMES),
-    "X-RateLimit-Remaining": "0",
-    "X-RateLimit-Reset": str(settings.RATE_LIMIT_SECONDS),
-}
+
+def _rate_limit_headers(remaining: int | None = None) -> dict[str, str]:
+    """設定値に基づくレート制限ヘッダーを生成する。"""
+    remaining_count = (
+        max(settings.RATE_LIMIT_TIMES - 1, 0) if remaining is None else max(remaining, 0)
+    )
+    return {
+        "X-RateLimit-Limit": str(settings.RATE_LIMIT_TIMES),
+        "X-RateLimit-Remaining": str(remaining_count),
+        "X-RateLimit-Reset": str(settings.RATE_LIMIT_SECONDS),
+    }
 
 
 @dataclass(frozen=True)
@@ -110,7 +115,7 @@ def _create_error_response(error_info: ErrorInfo) -> JSONResponse:
                 "status_code": error_info.status_code,
             },
         },
-        headers=RATE_LIMIT_HEADERS,
+        headers=_rate_limit_headers(remaining=0 if error_info.status_code == 429 else None),
     )
 
 
@@ -224,7 +229,7 @@ async def convert_text(
 
         return JSONResponse(
             content=response_data,
-            headers=RATE_LIMIT_HEADERS,
+            headers=_rate_limit_headers(),
         )
 
     except (
@@ -312,7 +317,7 @@ async def regenerate_text(
 
         return JSONResponse(
             content=response_data,
-            headers=RATE_LIMIT_HEADERS,
+            headers=_rate_limit_headers(),
         )
 
     except (

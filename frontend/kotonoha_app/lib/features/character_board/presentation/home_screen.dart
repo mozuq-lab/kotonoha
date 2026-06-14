@@ -10,6 +10,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/router/app_router.dart';
+import 'package:kotonoha_app/features/ai_conversion/domain/exceptions/ai_conversion_exception.dart';
+import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
+import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_button.dart';
+import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_result_dialog.dart';
+import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/politeness_level_selector.dart';
+import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_provider.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
@@ -41,7 +47,9 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final inputBuffer = ref.watch(inputBufferProvider);
     final settingsAsync = ref.watch(settingsNotifierProvider);
-    final fontSize = settingsAsync.asData?.value.fontSize ?? FontSize.medium;
+    final settings = settingsAsync.asData?.value;
+    final fontSize = settings?.fontSize ?? FontSize.medium;
+    final aiPoliteness = settings?.aiPoliteness ?? PolitenessLevel.normal;
 
     return Scaffold(
       appBar: AppBar(
@@ -154,6 +162,52 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSizes.paddingSmall),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.paddingMedium,
+              ),
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: AppSizes.paddingMedium,
+                runSpacing: AppSizes.paddingSmall,
+                children: [
+                  PolitenessLevelSelector(
+                    selectedLevel: aiPoliteness,
+                    onLevelChanged: (level) {
+                      ref
+                          .read(settingsNotifierProvider.notifier)
+                          .setAIPoliteness(level);
+                    },
+                  ),
+                  AIConversionButton(
+                    inputText: inputBuffer,
+                    politenessLevel: aiPoliteness,
+                    onConvert: () => _convertWithAI(
+                      context,
+                      ref,
+                      inputBuffer,
+                      aiPoliteness,
+                    ),
+                    onConversionComplete: (convertedText) {
+                      if (!context.mounted) return;
+                      _showConversionResult(
+                        context,
+                        ref,
+                        inputBuffer,
+                        convertedText,
+                        aiPoliteness,
+                      );
+                    },
+                    onConversionError: (error) {
+                      if (!context.mounted) return;
+                      _showAIConversionError(context, error);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSizes.paddingSmall),
             // 文字盤
             Expanded(
               child: Padding(
@@ -187,6 +241,136 @@ class HomeScreen extends ConsumerWidget {
     ref
         .read(historyProvider.notifier)
         .addHistory(text, HistoryType.manualInput);
+  }
+
+  Future<String> _convertWithAI(
+    BuildContext context,
+    WidgetRef ref,
+    String inputText,
+    PolitenessLevel politenessLevel,
+  ) async {
+    final hasConsent = await _ensureAIPrivacyConsent(context, ref);
+    if (!hasConsent) {
+      throw const AIConversionException(
+        code: 'PRIVACY_CONSENT_REQUIRED',
+        message: 'AI変換を利用するにはプライバシー同意が必要です。',
+      );
+    }
+
+    await ref.read(aiConversionProvider.notifier).convert(
+          inputText: inputText,
+          politenessLevel: politenessLevel,
+        );
+
+    final state = ref.read(aiConversionProvider);
+    if (state.hasResult && state.convertedText != null) {
+      return state.convertedText!;
+    }
+
+    throw state.error ??
+        const AIConversionException(
+          code: 'AI_CONVERSION_FAILED',
+          message: 'AI変換に失敗しました。しばらく待ってから再度お試しください。',
+        );
+  }
+
+  Future<bool> _ensureAIPrivacyConsent(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final loadedSettings = ref.read(settingsNotifierProvider).asData?.value;
+    final settings =
+        loadedSettings ?? await ref.read(settingsNotifierProvider.future);
+    if (settings == null) return false;
+    if (settings.hasAcceptedAIPrivacyPolicy) return true;
+    if (!context.mounted) return false;
+
+    final accepted = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('AI変換の利用確認'),
+            content: const Text(
+              'AI変換では入力した文章を外部のAIサービスへ送信します。送信前に内容を確認し、同意できる場合のみ利用してください。',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('同意しない'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('同意して利用'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (accepted) {
+      await ref
+          .read(settingsNotifierProvider.notifier)
+          .setAIPrivacyConsent(true);
+    }
+    return accepted;
+  }
+
+  void _showConversionResult(
+    BuildContext context,
+    WidgetRef ref,
+    String originalText,
+    String convertedText,
+    PolitenessLevel politenessLevel,
+  ) {
+    AIConversionResultDialog.show(
+      context: context,
+      originalText: originalText,
+      convertedText: convertedText,
+      politenessLevel: politenessLevel,
+      onAdopt: (result) {
+        Navigator.of(context).pop();
+        ref.read(inputBufferProvider.notifier).setText(result);
+      },
+      onRegenerate: () {
+        Navigator.of(context).pop();
+        Future<void>.microtask(() async {
+          if (!context.mounted) return;
+          try {
+            final result = await _convertWithAI(
+              context,
+              ref,
+              originalText,
+              politenessLevel,
+            );
+            if (!context.mounted) return;
+            _showConversionResult(
+              context,
+              ref,
+              originalText,
+              result,
+              politenessLevel,
+            );
+          } catch (e) {
+            if (context.mounted) {
+              _showAIConversionError(context, e);
+            }
+          }
+        });
+      },
+      onUseOriginal: (original) {
+        Navigator.of(context).pop();
+        ref.read(inputBufferProvider.notifier).setText(original);
+      },
+    );
+  }
+
+  void _showAIConversionError(BuildContext context, Object error) {
+    final message = error is AIConversionException
+        ? error.message
+        : 'AI変換に失敗しました。しばらく待ってから再度お試しください。';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   /// FontSizeからフォントサイズ値を取得
