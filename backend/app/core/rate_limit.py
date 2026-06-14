@@ -14,28 +14,39 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from starlette.responses import JSONResponse
 
+from app.core.config import settings
+
 
 def get_client_ip(request: Request) -> str:
     """
-    【機能概要】: クライアントIPアドレスを取得
-    【実装方針】: X-Forwarded-Forヘッダーを優先、なければリクエストクライアントIPを使用
+    【機能概要】: レート制限用のクライアント識別子（IP）を取得
+    【実装方針】: 設定された信頼プロキシ段数に応じて X-Forwarded-For を安全に解釈する
+
+    セキュリティ:
+        X-Forwarded-For はクライアントが自由に付与できるヘッダーであり、最左の値を
+        無条件に信頼するとヘッダーを書き換えるだけでIP単位のレート制限を回避できる。
+        本実装では settings.TRUSTED_PROXY_COUNT で「自身が運用する信頼できるプロキシ段数」
+        を明示し、X-Forwarded-For の右からN番目（= 信頼プロキシが観測したクライアントIP）
+        のみを採用する。0 の場合は X-Forwarded-For を一切信頼せず接続元IPを使用する。
 
     Args:
         request: FastAPIリクエストオブジェクト
 
     Returns:
-        str: クライアントIPアドレス
+        str: クライアントIPアドレス（取得不可時は "unknown"）
     """
-    # X-Forwarded-Forヘッダーを確認（プロキシ/ロードバランサー経由）
-    forwarded_for = request.headers.get("X-Forwarded-For", "")
+    proxy_count = settings.TRUSTED_PROXY_COUNT
 
-    if forwarded_for:
-        # カンマ区切りの場合は最初のIPを取得（最左がオリジナルクライアント）
-        ip = forwarded_for.split(",")[0].strip()
-        if ip:
-            return ip
+    if proxy_count > 0:
+        forwarded_for = request.headers.get("X-Forwarded-For", "")
+        # カンマ区切りで複数IPが連なる。末尾が最も自身に近いプロキシが付与した値。
+        parts = [ip.strip() for ip in forwarded_for.split(",") if ip.strip()]
+        if parts:
+            # 右からproxy_count番目（チェーンより短ければ最左）を採用
+            index = min(proxy_count, len(parts))
+            return parts[-index]
 
-    # フォールバック: リクエストクライアントIP
+    # X-Forwarded-Forを信頼しない、または値が無い場合は接続元IPを使用
     if request.client and request.client.host:
         return request.client.host
 
@@ -43,8 +54,8 @@ def get_client_ip(request: Request) -> str:
     return "unknown"
 
 
-# レート制限設定: 10秒に1回
-AI_RATE_LIMIT = "1/10seconds"
+# レート制限設定（設定駆動。デフォルトは NFR-101: 1リクエスト/10秒）
+AI_RATE_LIMIT = f"{settings.RATE_LIMIT_TIMES}/{settings.RATE_LIMIT_SECONDS}seconds"
 
 
 # Limiterインスタンス作成
@@ -66,9 +77,9 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
     Returns:
         JSONResponse: 429エラーレスポンス
     """
-    # Retry-After値を計算（制限ウィンドウの残り秒数）
-    # slowapiのdetailから取得（形式: "1 per 10 second"）
-    retry_after = 10  # デフォルト10秒
+    # Retry-After値（制限ウィンドウ秒数）と制限回数を設定から取得
+    retry_after = settings.RATE_LIMIT_SECONDS
+    limit = settings.RATE_LIMIT_TIMES
 
     # エラーレスポンス（api-endpoints.mdの仕様に準拠）
     error_response = {
@@ -87,7 +98,7 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
         content=error_response,
         headers={
             "Retry-After": str(retry_after),
-            "X-RateLimit-Limit": "1",
+            "X-RateLimit-Limit": str(limit),
             "X-RateLimit-Remaining": "0",
             "X-RateLimit-Reset": str(retry_after),
         },
