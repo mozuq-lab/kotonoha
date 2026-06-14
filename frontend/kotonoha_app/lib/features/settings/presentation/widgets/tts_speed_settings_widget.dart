@@ -195,9 +195,12 @@ class _SpeedButton extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                // 【テキスト色】: 選択中はonPrimary、非選択はプライマリカラー
-                // 【AA対応】: onPrimaryトークンで背景に対し適切なコントラストを確保。
-                color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                // 【テキスト色】: 選択中はonPrimary（primary背景上）、
+                // 非選択はonSurface（surface背景上）。
+                // 【AA対応】: 非選択時に primary文字をsurfaceへ載せると約2.87:1で
+                // WCAG AA(4.5:1)不足のため、surfaceと対になる onSurface を使う。
+                color:
+                    isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 16,
               ),
