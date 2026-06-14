@@ -83,6 +83,8 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
         PolitenessLevel.values,
         PolitenessLevel.normal,
       );
+      final hasAcceptedAIPrivacyPolicy =
+          _prefs!.getBool('ai_privacy_consent') ?? false;
 
       // 【設定復元】: index値からenumに変換してAppSettingsインスタンスを生成
       // 【境界値チェック】: index値が範囲外の場合はデフォルト値を使用
@@ -92,6 +94,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
         theme: AppTheme.values[themeIndex],
         ttsSpeed: ttsSpeed,
         aiPoliteness: aiPoliteness,
+        hasAcceptedAIPrivacyPolicy: hasAcceptedAIPrivacyPolicy,
       );
     } catch (e) {
       // 【エラーハンドリング】: SharedPreferences初期化失敗時の処理
@@ -314,6 +317,24 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     } catch (e) {
       // 【エラーハンドリング】: 保存失敗時の処理
       // 【楽観的更新維持】: 保存失敗してもUI状態は更新済み
+    }
+  }
+
+  /// 【機能概要】: AI変換のプライバシー同意状態を変更する
+  /// 【実装方針】: 明示同意をSharedPreferencesへ永続化し、次回以降の再確認を省略する
+  /// 🔵 信頼性レベル: NFR-102（AI変換時の明示的な同意取得）に基づく
+  Future<void> setAIPrivacyConsent(bool accepted) async {
+    final currentSettings = state.asData?.value;
+    if (currentSettings == null) return;
+
+    state = AsyncValue.data(
+      currentSettings.copyWith(hasAcceptedAIPrivacyPolicy: accepted),
+    );
+
+    try {
+      await _prefs?.setBool('ai_privacy_consent', accepted);
+    } catch (e) {
+      // 保存失敗時も現在セッションでは同意状態を保持する。
     }
   }
 }

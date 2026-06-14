@@ -10,7 +10,7 @@ import '../../tts/domain/models/tts_speed.dart';
 import '../../ai_conversion/domain/models/politeness_level.dart';
 
 // 【実装内容】: アプリ設定を保持する不変オブジェクト
-// 【REQ-801, REQ-803, REQ-404, REQ-903対応】: フォントサイズ、テーマ、TTS速度、AI丁寧さレベルの設定を管理
+// 【REQ-801, REQ-803, REQ-404, REQ-903対応】: フォントサイズ、テーマ、TTS速度、AI丁寧さレベル、AI利用同意を管理
 class AppSettings {
   // 【フォントサイズ設定】: 3段階（小・中・大）
   // 🔵 青信号: REQ-801のフォントサイズ要件に基づく
@@ -28,7 +28,11 @@ class AppSettings {
   // 🔵 青信号: REQ-903のAI変換丁寧さレベル要件に基づく
   final PolitenessLevel aiPoliteness;
 
-  // 【コンストラクタ】: デフォルト値を設定（medium、light、normal、normal）
+  // 【AIプライバシー同意】: AI変換で外部APIへ入力文を送信することへの明示同意
+  // 🔵 青信号: NFR-102の初回同意要件に基づく
+  final bool hasAcceptedAIPrivacyPolicy;
+
+  // 【コンストラクタ】: デフォルト値を設定（medium、light、normal、normal、false）
   // 【デフォルト値】: interfaces.dartで定義されたデフォルト値
   // 🔵 青信号: REQ-801、REQ-803、REQ-404、REQ-903のデフォルト値定義に基づく
   const AppSettings({
@@ -36,6 +40,7 @@ class AppSettings {
     this.theme = AppTheme.light,
     this.ttsSpeed = TTSSpeed.normal,
     this.aiPoliteness = PolitenessLevel.normal,
+    this.hasAcceptedAIPrivacyPolicy = false,
   });
 
   /// 【機能概要】: 設定の一部を変更した新しいインスタンスを生成
@@ -47,6 +52,7 @@ class AppSettings {
     AppTheme? theme,
     TTSSpeed? ttsSpeed,
     PolitenessLevel? aiPoliteness,
+    bool? hasAcceptedAIPrivacyPolicy,
   }) {
     // 【実装内容】: 指定されたフィールドのみ更新し、それ以外は既存値を保持
     // 【null安全性】: Dart Null Safetyに準拠した実装
@@ -56,6 +62,8 @@ class AppSettings {
       theme: theme ?? this.theme,
       ttsSpeed: ttsSpeed ?? this.ttsSpeed,
       aiPoliteness: aiPoliteness ?? this.aiPoliteness,
+      hasAcceptedAIPrivacyPolicy:
+          hasAcceptedAIPrivacyPolicy ?? this.hasAcceptedAIPrivacyPolicy,
     );
   }
 
@@ -73,6 +81,7 @@ class AppSettings {
       'theme': theme.name,
       'tts_speed': ttsSpeed.name,
       'ai_politeness': aiPoliteness.name,
+      'ai_privacy_consent': hasAcceptedAIPrivacyPolicy,
     };
   }
 
@@ -142,6 +151,7 @@ class AppSettings {
       theme: theme,
       ttsSpeed: ttsSpeed,
       aiPoliteness: aiPoliteness,
+      hasAcceptedAIPrivacyPolicy: json['ai_privacy_consent'] as bool? ?? false,
     );
   }
 }

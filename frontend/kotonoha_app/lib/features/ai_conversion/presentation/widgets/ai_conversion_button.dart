@@ -63,6 +63,7 @@ class AIConversionButton extends ConsumerStatefulWidget {
   /// - [onConvert]: 変換処理のコールバック
   /// - [onConversionStart]: 変換開始時の通知（オプション）
   /// - [onConversionComplete]: 変換完了時の通知（オプション）
+  /// - [onConversionError]: 変換失敗時の通知（オプション）
   /// 🔵 信頼性レベル: 青信号
   const AIConversionButton({
     super.key,
@@ -71,6 +72,7 @@ class AIConversionButton extends ConsumerStatefulWidget {
     required this.onConvert,
     this.onConversionStart,
     this.onConversionComplete,
+    this.onConversionError,
   });
 
   /// 【プロパティ定義】: 変換対象の入力テキスト
@@ -97,6 +99,10 @@ class AIConversionButton extends ConsumerStatefulWidget {
   /// 【用途】: 変換結果の親ウィジェットへの伝達
   /// 🟡 信頼性レベル: 黄信号 - UI連携のため
   final void Function(String result)? onConversionComplete;
+
+  /// 【プロパティ定義】: 変換失敗時のコールバック（オプション）
+  /// 【用途】: 親ウィジェットでエラー表示を行う
+  final void Function(Object error)? onConversionError;
 
   @override
   ConsumerState<AIConversionButton> createState() => _AIConversionButtonState();
@@ -165,6 +171,8 @@ class _AIConversionButtonState extends ConsumerState<AIConversionButton> {
 
       // 【コールバック呼び出し】: 変換完了を通知
       widget.onConversionComplete?.call(result);
+    } catch (e) {
+      widget.onConversionError?.call(e);
     } finally {
       // 【状態更新】: ローディング終了（マウント状態を確認）
       // 【安全性確保】: アンマウント後のsetState呼び出しを防止
