@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     # 認証設定
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8日間
 
+    # 端末APIキー認証設定
+    # AI変換APIへのアクセスに必要な端末APIキー（カンマ区切りで複数指定可）。
+    # MVPはアカウント管理を持たないため、端末発行の共有シークレットで保護する。
+    # 未設定の場合: development/test では認証をスキップ、production では全リクエストを拒否。
+    API_KEYS: str = ""
+
     # 環境設定
     ENVIRONMENT: str = "development"
 
@@ -38,7 +44,16 @@ class Settings(BaseSettings):
     SESSION_EXPIRE_MINUTES: int = 60
 
     # レート制限設定
-    RATE_LIMIT_PER_MINUTE: int = 10
+    # AI変換APIのレート制限（RATE_LIMIT_TIMES 回 / RATE_LIMIT_SECONDS 秒 / IP）。
+    # デフォルトは NFR-101（1リクエスト/10秒/IP）。
+    RATE_LIMIT_TIMES: int = 1
+    RATE_LIMIT_SECONDS: int = 10
+
+    # 信頼するリバースプロキシの段数。
+    # 0 の場合: X-Forwarded-For を信頼せず、接続元IP（request.client）でレート制限する。
+    # N>=1 の場合: 自身が運用するプロキシ N 段を信頼し、X-Forwarded-For の右からN番目を
+    # クライアントIPとして採用する（クライアントが偽装した左側の値による制限回避を防ぐ）。
+    TRUSTED_PROXY_COUNT: int = 0
 
     # ログ設定
     LOG_LEVEL: str = "INFO"
@@ -80,6 +95,11 @@ class Settings(BaseSettings):
     def CORS_ORIGINS_LIST(self) -> list[str]:  # noqa: N802
         """CORS許可オリジンのリスト"""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+
+    @property
+    def API_KEYS_LIST(self) -> list[str]:  # noqa: N802
+        """有効な端末APIキーのリスト（空要素は除外）"""
+        return [key.strip() for key in self.API_KEYS.split(",") if key.strip()]
 
 
 # グローバル設定インスタンス
