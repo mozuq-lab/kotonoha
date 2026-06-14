@@ -12,6 +12,7 @@ TASK-0026: 外部AI API連携実装（Claude/GPT プロキシ）
   - エラーハンドリング（タイムアウト、レート制限等）
 """
 
+import importlib
 import logging
 import time
 from typing import Literal
@@ -28,6 +29,107 @@ logger = logging.getLogger(__name__)
 
 # 丁寧さレベルの型定義
 PolitenessLevel = Literal["casual", "normal", "polite"]
+
+# プロバイダーSDKの型付き例外のキャッシュ（(タイムアウト型, レート制限型)）
+_PROVIDER_EXCEPTION_TYPES: tuple[tuple[type, ...], tuple[type, ...]] | None = None
+
+
+def _provider_exception_types() -> tuple[tuple[type, ...], tuple[type, ...]]:
+    """インストール済みSDKのタイムアウト/レート制限例外型を収集する。
+
+    anthropic / openai SDKは `APITimeoutError` `RateLimitError` などの型付き例外を
+    提供する。文字列マッチではなく型で判定するために、利用可能な型を一度だけ収集する。
+
+    Returns:
+        (タイムアウト例外型のタプル, レート制限例外型のタプル)
+    """
+    global _PROVIDER_EXCEPTION_TYPES
+    if _PROVIDER_EXCEPTION_TYPES is not None:
+        return _PROVIDER_EXCEPTION_TYPES
+
+    timeout_types: list[type] = []
+    rate_types: list[type] = []
+    for module_name in ("anthropic", "openai"):
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            continue
+        timeout_type = getattr(module, "APITimeoutError", None)
+        if isinstance(timeout_type, type):
+            timeout_types.append(timeout_type)
+        rate_type = getattr(module, "RateLimitError", None)
+        if isinstance(rate_type, type):
+            rate_types.append(rate_type)
+
+    _PROVIDER_EXCEPTION_TYPES = (tuple(timeout_types), tuple(rate_types))
+    return _PROVIDER_EXCEPTION_TYPES
+
+
+def _map_provider_exception(error: Exception, provider_label: str) -> Exception:
+    """プロバイダーSDKの例外を、対応するアプリ例外へマッピングする。
+
+    型付き例外（SDKの APITimeoutError / RateLimitError / APIStatusError(429)）を優先し、
+    判定できない場合のみ文字列ヒューリスティックにフォールバックする。これにより
+    ローカライズやSDKのメッセージ変更でタイムアウト/レート制限の判定が外れるのを防ぐ。
+
+    Args:
+        error: SDKが送出した例外
+        provider_label: ログ/メッセージ用のプロバイダー名（例: "Claude"）
+
+    Returns:
+        Exception: AITimeoutException / AIRateLimitException / AIConversionException
+    """
+    timeout_types, rate_types = _provider_exception_types()
+    message = str(error)
+
+    if timeout_types and isinstance(error, timeout_types):
+        return AITimeoutException(f"{provider_label} API timeout: {message}")
+    if rate_types and isinstance(error, rate_types):
+        return AIRateLimitException(f"{provider_label} API rate limit: {message}")
+
+    # APIStatusError 等は status_code を持つ
+    status_code = getattr(error, "status_code", None)
+    if status_code == 429:
+        return AIRateLimitException(f"{provider_label} API rate limit: {message}")
+
+    # フォールバック: 文字列ヒューリスティック
+    lowered = message.lower()
+    if "timeout" in lowered:
+        return AITimeoutException(f"{provider_label} API timeout: {message}")
+    if "rate" in lowered or "429" in message:
+        return AIRateLimitException(f"{provider_label} API rate limit: {message}")
+
+    return AIConversionException(f"{provider_label} API error: {message}")
+
+
+def _extract_anthropic_text(response: object) -> str:
+    """Anthropicレスポンスから本文テキストを安全に取り出す。
+
+    空content・textブロック以外・空文字の場合は AIConversionException を送出し、
+    AttributeError/IndexError による未捕捉500を防ぐ。
+    """
+    content = getattr(response, "content", None)
+    if not content:
+        raise AIConversionException("Claude API returned empty content")
+    text = getattr(content[0], "text", None)
+    if not isinstance(text, str) or not text.strip():
+        raise AIConversionException("Claude API returned no text content")
+    return text.strip()
+
+
+def _extract_openai_text(response: object) -> str:
+    """OpenAIレスポンスから本文テキストを安全に取り出す。
+
+    空choices・content=None・空文字の場合は AIConversionException を送出する。
+    """
+    choices = getattr(response, "choices", None)
+    if not choices:
+        raise AIConversionException("OpenAI API returned no choices")
+    message = getattr(choices[0], "message", None)
+    content = getattr(message, "content", None)
+    if not isinstance(content, str) or not content.strip():
+        raise AIConversionException("OpenAI API returned empty content")
+    return content.strip()
 
 
 class AIClient:
@@ -56,6 +158,8 @@ class AIClient:
         """
         self.anthropic_client = None
         self.openai_client = None
+        # 明示生成した httpx クライアントを保持し、shutdown 時にクローズする
+        self._anthropic_http_client = None
 
         # Anthropic クライアント初期化
         if settings.ANTHROPIC_API_KEY:
@@ -65,6 +169,7 @@ class AIClient:
 
                 # httpxクライアントを明示的に作成（プロキシ設定を無視）
                 http_client = httpx.AsyncClient(timeout=settings.AI_API_TIMEOUT)
+                self._anthropic_http_client = http_client
                 self.anthropic_client = AsyncAnthropic(
                     api_key=settings.ANTHROPIC_API_KEY,
                     http_client=http_client,
@@ -166,7 +271,7 @@ class AIClient:
                 messages=[{"role": "user", "content": prompt}],
             )
 
-            converted_text = response.content[0].text.strip()
+            converted_text = _extract_anthropic_text(response)
             conversion_time_ms = int((time.time() - start_time) * 1000)
 
             logger.info(
@@ -176,20 +281,17 @@ class AIClient:
 
             return converted_text, conversion_time_ms
 
+        except (
+            AIProviderException,
+            AITimeoutException,
+            AIRateLimitException,
+            AIConversionException,
+        ):
+            # 既にマッピング済みのアプリ例外（空content検証含む）はそのまま伝播
+            raise
         except Exception as e:
-            error_message = str(e)
-            logger.error(f"Claude API error: {error_message}")
-
-            # タイムアウト判定
-            if "timeout" in error_message.lower():
-                raise AITimeoutException(f"Claude API timeout: {error_message}") from e
-
-            # レート制限判定
-            if "rate" in error_message.lower() or "429" in error_message:
-                raise AIRateLimitException(f"Claude API rate limit: {error_message}") from e
-
-            # その他のエラー
-            raise AIConversionException(f"Claude API error: {error_message}") from e
+            logger.error(f"Claude API error: {e}")
+            raise _map_provider_exception(e, "Claude") from e
 
     async def convert_text_openai(
         self,
@@ -246,7 +348,7 @@ class AIClient:
                 temperature=0.7,
             )
 
-            converted_text = response.choices[0].message.content.strip()
+            converted_text = _extract_openai_text(response)
             conversion_time_ms = int((time.time() - start_time) * 1000)
 
             logger.info(
@@ -256,20 +358,16 @@ class AIClient:
 
             return converted_text, conversion_time_ms
 
+        except (
+            AIProviderException,
+            AITimeoutException,
+            AIRateLimitException,
+            AIConversionException,
+        ):
+            raise
         except Exception as e:
-            error_message = str(e)
-            logger.error(f"OpenAI API error: {error_message}")
-
-            # タイムアウト判定
-            if "timeout" in error_message.lower():
-                raise AITimeoutException(f"OpenAI API timeout: {error_message}") from e
-
-            # レート制限判定
-            if "rate" in error_message.lower() or "429" in error_message:
-                raise AIRateLimitException(f"OpenAI API rate limit: {error_message}") from e
-
-            # その他のエラー
-            raise AIConversionException(f"OpenAI API error: {error_message}") from e
+            logger.error(f"OpenAI API error: {e}")
+            raise _map_provider_exception(e, "OpenAI") from e
 
     async def convert_text(
         self,
@@ -365,7 +463,7 @@ class AIClient:
                     messages=[{"role": "user", "content": prompt}],
                 )
 
-                converted_text = response.content[0].text.strip()
+                converted_text = _extract_anthropic_text(response)
 
             elif provider == "openai":
                 if not self.openai_client:
@@ -384,7 +482,7 @@ class AIClient:
                     temperature=0.9,  # 多様性を高める
                 )
 
-                converted_text = response.choices[0].message.content.strip()
+                converted_text = _extract_openai_text(response)
 
             else:
                 raise AIProviderException(f"Unknown AI provider: {provider}")
@@ -398,22 +496,39 @@ class AIClient:
 
             return converted_text, conversion_time_ms
 
-        except AIProviderException:
+        except (
+            AIProviderException,
+            AITimeoutException,
+            AIRateLimitException,
+            AIConversionException,
+        ):
             raise
         except Exception as e:
-            error_message = str(e)
-            logger.error(f"AI regeneration error: {error_message}")
+            logger.error(f"AI regeneration error: {e}")
+            raise _map_provider_exception(e, "AI") from e
 
-            # タイムアウト判定
-            if "timeout" in error_message.lower():
-                raise AITimeoutException(f"AI API timeout: {error_message}") from e
+    async def aclose(self) -> None:
+        """保持しているHTTPクライアントを明示的にクローズする。
 
-            # レート制限判定
-            if "rate" in error_message.lower() or "429" in error_message:
-                raise AIRateLimitException(f"AI API rate limit: {error_message}") from e
+        明示生成した httpx.AsyncClient はそのままだとクローズされず、
+        「Unclosed client」警告やリソースリークの原因になる。アプリの
+        shutdown（lifespan）から呼び出してクリーンアップする。
+        """
+        if self._anthropic_http_client is not None:
+            try:
+                await self._anthropic_http_client.aclose()
+            except Exception as e:  # クローズ失敗はログのみ（shutdownを阻害しない）
+                logger.warning(f"Failed to close Anthropic HTTP client: {e}")
+            finally:
+                self._anthropic_http_client = None
 
-            # その他のエラー
-            raise AIConversionException(f"AI API error: {error_message}") from e
+        if self.openai_client is not None:
+            close = getattr(self.openai_client, "close", None)
+            if callable(close):
+                try:
+                    await close()
+                except Exception as e:
+                    logger.warning(f"Failed to close OpenAI client: {e}")
 
 
 # シングルトンインスタンス
