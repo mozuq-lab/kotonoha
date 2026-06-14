@@ -224,11 +224,20 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   }
 
   /// 【メソッド】: 定型文一覧を読み込む
-  /// 【実装内容】: ローカルストレージから定型文を読み込み
+  /// 【実装内容】: Hive（Boxオープン時）から定型文を読み込み、お気に入り順で反映
+  /// 【フォールバック】: repo==nilの場合は従来どおりインメモリ管理のみ
   /// 🔵 信頼性レベル: 青信号 - CRUD-205に基づく
   Future<void> loadPhrases() async {
-    // 現在はメモリ内での管理のみ
-    // 将来的にはHiveからの読み込みを実装
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo != null) {
+      // 【永続化】: Hiveから読み込み、お気に入り順でソートして反映
+      state = state.copyWith(
+        phrases: _sortPhrases(repo.loadAllSync()),
+        isLoading: false,
+      );
+      return;
+    }
+    // 【フォールバック】: インメモリ管理のみ
     state = state.copyWith(isLoading: false);
   }
 

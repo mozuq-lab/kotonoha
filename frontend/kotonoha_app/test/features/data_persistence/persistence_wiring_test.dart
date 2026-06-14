@@ -180,6 +180,35 @@ void main() {
       expect(state.phrases.length, count1);
     });
 
+    test('loadPhrasesがHiveから定型文をstateに再読込する', () async {
+      // 別経路でBoxに直接保存（Notifier未経由の保存をシミュレート）
+      final box = Hive.box<PresetPhrase>('presetPhrases');
+      final now = DateTime.now();
+      await box.put(
+        'p1',
+        PresetPhrase(
+          id: 'p1',
+          content: '保存済み定型文',
+          category: 'daily',
+          isFavorite: false,
+          displayOrder: 0,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(presetPhraseNotifierProvider.notifier);
+
+      // loadPhrases() でHiveから再読込され、stateに反映される
+      await notifier.loadPhrases();
+      final state = container.read(presetPhraseNotifierProvider);
+
+      expect(state.isLoading, isFalse);
+      expect(state.phrases.map((p) => p.content), contains('保存済み定型文'));
+    });
+
     test('clearAllHistoriesがHiveの履歴を全削除する', () async {
       final container1 = ProviderContainer();
       await container1
