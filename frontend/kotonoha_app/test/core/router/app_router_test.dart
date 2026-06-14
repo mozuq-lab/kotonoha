@@ -54,7 +54,11 @@ void main() {
 
       // When（実行フェーズ）
       final router = container.read(routerProvider);
-      final routes = router.configuration.routes.whereType<GoRoute>().toList();
+      // ShellRoute導入により、GoRouteはShellRoute配下に定義される。
+      // ShellRouteの.routesからGoRouteを集計する。
+      final shellRoute =
+          router.configuration.routes.whereType<ShellRoute>().single;
+      final routes = shellRoute.routes.whereType<GoRoute>().toList();
 
       // Then（検証フェーズ）
       // ホームルート（/）が最初に定義されていることを確認
@@ -89,12 +93,23 @@ void main() {
 
       // When（実行フェーズ）
       final router = container.read(routerProvider);
-      final routes = router.configuration.routes;
+      // ShellRoute導入により、トップレベルには単一のShellRouteが存在し、
+      // 6つの主要ルートはそのShellRoute配下のGoRouteとして定義される。
+      final topRoutes = router.configuration.routes;
+      final shellRoute = topRoutes.whereType<ShellRoute>().single;
+      final goRoutes = shellRoute.routes.whereType<GoRoute>().toList();
 
       // Then（検証フェーズ）
-      // 6つの主要ルート（/, /settings, /history, /favorites, /help, /preset-phrases）が定義されていることを確認
+      // トップレベルは単一のShellRoute
       expect(
-        routes.length,
+        topRoutes.length,
+        equals(1),
+        reason: 'トップレベルは全画面共通シェル（ShellRoute）1つである必要がある',
+      );
+      // 6つの主要ルート（/, /settings, /history, /favorites, /help, /preset-phrases）が
+      // ShellRoute配下に定義されていることを確認
+      expect(
+        goRoutes.length,
         equals(6),
         reason:
             '主要ルートは6つ（home, settings, history, favorites, help, presetPhrases）である必要がある',
@@ -115,7 +130,10 @@ void main() {
 
       // When（実行フェーズ）
       final router = container.read(routerProvider);
-      final routes = router.configuration.routes.whereType<GoRoute>().toList();
+      // ShellRoute配下のGoRouteから名前を集計する。
+      final shellRoute =
+          router.configuration.routes.whereType<ShellRoute>().single;
+      final routes = shellRoute.routes.whereType<GoRoute>().toList();
       final routeNames = routes.map((r) => r.name).whereType<String>().toList();
 
       // Then（検証フェーズ）
@@ -159,12 +177,14 @@ void main() {
         reason: 'GoRouterのconfigurationが設定されている必要がある',
       );
 
-      // 全ルートがGoRoute型であることを確認
-      final routes = router.configuration.routes;
+      // ShellRoute配下のルートが全てGoRoute型であることを確認
+      final shellRoute =
+          router.configuration.routes.whereType<ShellRoute>().single;
+      final routes = shellRoute.routes;
       expect(
         routes.every((route) => route is GoRoute),
         isTrue,
-        reason: 'すべてのルートはGoRoute型である必要がある',
+        reason: 'ShellRoute配下のルートはすべてGoRoute型である必要がある',
       );
     });
   });
