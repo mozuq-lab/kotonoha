@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:kotonoha_app/core/router/error_screen.dart';
+import 'package:kotonoha_app/core/widgets/app_shell.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/favorites/presentation/favorites_screen.dart';
 import 'package:kotonoha_app/features/help/presentation/screens/help_screen.dart';
@@ -47,39 +48,52 @@ abstract final class AppRoutes {
 /// - FR-003: 4つの主要ルート定義（home, settings, history, favorites）
 /// - FR-004: errorBuilderでエラー画面を設定
 /// - FR-006: MaterialApp.routerとの統合
+///
+/// ## ShellRoute採用
+///
+/// 全6ルートを単一の [ShellRoute] で内包する。ShellRouteのbuilderは
+/// [AppShell] を返し、全画面共通の横断的関心事（ネットワーク監視の起動・
+/// 緊急機能の全画面配線）を一箇所で配線する。
+/// ShellRouteのchildはShell配下のNavigatorに属するため、緊急ボタンの
+/// 確認ダイアログ（Navigator.of(context)を使用）が正しく動作する。
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,
     routes: [
-      GoRoute(
-        path: AppRoutes.home,
-        name: 'home',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.settings,
-        name: 'settings',
-        builder: (context, state) => const SettingsScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.history,
-        name: 'history',
-        builder: (context, state) => const HistoryScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.favorites,
-        name: 'favorites',
-        builder: (context, state) => const FavoritesScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.help,
-        name: 'help',
-        builder: (context, state) => const HelpScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.presetPhrases,
-        name: 'presetPhrases',
-        builder: (context, state) => const PresetPhraseScreen(),
+      ShellRoute(
+        builder: (context, state, child) => AppShell(child: child),
+        routes: [
+          GoRoute(
+            path: AppRoutes.home,
+            name: 'home',
+            builder: (context, state) => const HomeScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.settings,
+            name: 'settings',
+            builder: (context, state) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.history,
+            name: 'history',
+            builder: (context, state) => const HistoryScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.favorites,
+            name: 'favorites',
+            builder: (context, state) => const FavoritesScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.help,
+            name: 'help',
+            builder: (context, state) => const HelpScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.presetPhrases,
+            name: 'presetPhrases',
+            builder: (context, state) => const PresetPhraseScreen(),
+          ),
+        ],
       ),
     ],
     errorBuilder: (context, state) => ErrorScreen(error: state.error),
