@@ -37,12 +37,24 @@ import 'constants/history_ui_constants.dart';
 /// - NFR-061-001: 50件を1秒以内に表示
 /// - NFR-061-004: タップターゲット44px以上
 /// - REQ-701: お気に入り追加機能
-class HistoryScreen extends ConsumerWidget {
+class HistoryScreen extends ConsumerStatefulWidget {
   /// 履歴画面を作成する。
   const HistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends ConsumerState<HistoryScreen> {
+  /// 現在読み上げ中の履歴項目ID
+  ///
+  /// 【バグ修正】: 以前はTTSのspeaking状態を全カードに一律で渡していたため、
+  /// 1件を読み上げ中に全カードが停止アイコンに変わっていた。読み上げ対象の
+  /// 項目IDを保持し、その項目のみ読み上げ中表示にする。
+  String? _speakingId;
+
+  @override
+  Widget build(BuildContext context) {
     // 履歴状態を監視
     final historyState = ref.watch(historyProvider);
     final histories = historyState.histories;
@@ -50,8 +62,9 @@ class HistoryScreen extends ConsumerWidget {
     // TTS状態を監視
     final ttsState = ref.watch(ttsProvider);
 
-    // エラーメッセージを表示（FR-063-009）
+    // TTSの状態変更を監視
     ref.listen<TTSServiceState>(ttsProvider, (previous, next) {
+      // エラーメッセージを表示（FR-063-009）
       if (next.state == TTSState.error && next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -59,6 +72,10 @@ class HistoryScreen extends ConsumerWidget {
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
+      }
+      // 読み上げが終了（speaking以外）したら読み上げ中ハイライトを解除
+      if (next.state != TTSState.speaking && _speakingId != null) {
+        setState(() => _speakingId = null);
       }
     });
 
@@ -70,7 +87,7 @@ class HistoryScreen extends ConsumerWidget {
             ? [
                 IconButton(
                   icon: const Icon(Icons.delete_sweep),
-                  onPressed: () => _showDeleteAllDialog(context, ref),
+                  onPressed: () => _showDeleteAllDialog(context),
                   tooltip: HistoryUIConstants.deleteAllTooltip,
                 ),
               ]
@@ -82,15 +99,17 @@ class HistoryScreen extends ConsumerWidget {
               itemCount: histories.length,
               itemBuilder: (context, index) {
                 final history = histories[index];
+                // 読み上げ中かつ対象項目が一致する場合のみ読み上げ中表示
+                final isSpeaking = ttsState.state == TTSState.speaking &&
+                    _speakingId == history.id;
                 return HistoryItemCard(
                   key: Key('history_item_card_${history.id}'),
                   history: history,
-                  isSpeaking: ttsState.state == TTSState.speaking,
-                  onTap: () => _onHistoryTap(ref, history.content),
-                  onDelete: () => _showDeleteDialog(context, ref, history.id),
-                  onStop: () => ref.read(ttsProvider.notifier).stop(),
-                  onLongPress: () =>
-                      _showContextMenu(context, ref, history.content),
+                  isSpeaking: isSpeaking,
+                  onTap: () => _onHistoryTap(history.id, history.content),
+                  onDelete: () => _showDeleteDialog(context, history.id),
+                  onStop: _onStop,
+                  onLongPress: () => _showContextMenu(context, history.content),
                 );
               },
             ),
@@ -101,20 +120,27 @@ class HistoryScreen extends ConsumerWidget {
   ///
   /// FR-061-006: 履歴項目をタップすると再読み上げを実行
   /// FR-063-008: 空文字列の読み上げを防止
-  void _onHistoryTap(WidgetRef ref, String content) {
+  void _onHistoryTap(String id, String content) {
     // 空文字列の場合は読み上げを実行しない
     if (content.isEmpty) {
       return;
     }
 
-    final ttsNotifier = ref.read(ttsProvider.notifier);
-    ttsNotifier.speak(content);
+    // 読み上げ対象の項目を記録（per-item表示のため）
+    setState(() => _speakingId = id);
+    ref.read(ttsProvider.notifier).speak(content);
+  }
+
+  /// 読み上げ停止処理
+  void _onStop() {
+    ref.read(ttsProvider.notifier).stop();
+    setState(() => _speakingId = null);
   }
 
   /// 個別削除確認ダイアログを表示
   ///
   /// FR-061-008: 削除時に確認ダイアログを表示
-  void _showDeleteDialog(BuildContext context, WidgetRef ref, String id) {
+  void _showDeleteDialog(BuildContext context, String id) {
     showDialog<void>(
       context: context,
       barrierDismissible: false, // FR-061-008: 誤操作防止
@@ -135,7 +161,7 @@ class HistoryScreen extends ConsumerWidget {
   /// 全削除確認ダイアログを表示
   ///
   /// FR-061-010: 全削除時に確認ダイアログを表示
-  void _showDeleteAllDialog(BuildContext context, WidgetRef ref) {
+  void _showDeleteAllDialog(BuildContext context) {
     showDialog<void>(
       context: context,
       barrierDismissible: false, // FR-061-010: 誤操作防止
@@ -156,7 +182,7 @@ class HistoryScreen extends ConsumerWidget {
   /// コンテキストメニューを表示
   ///
   /// REQ-701: 履歴からお気に入りに追加
-  void _showContextMenu(BuildContext context, WidgetRef ref, String content) {
+  void _showContextMenu(BuildContext context, String content) {
     showModalBottomSheet<void>(
       context: context,
       builder: (BuildContext sheetContext) {
@@ -168,7 +194,7 @@ class HistoryScreen extends ConsumerWidget {
                 title: const Text(HistoryUIConstants.addToFavoriteLabel),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  _addToFavorite(context, ref, content);
+                  _addToFavorite(context, content);
                 },
               ),
             ],
@@ -181,7 +207,7 @@ class HistoryScreen extends ConsumerWidget {
   /// お気に入りに追加
   ///
   /// REQ-701: お気に入り追加機能
-  void _addToFavorite(BuildContext context, WidgetRef ref, String content) {
+  void _addToFavorite(BuildContext context, String content) {
     final favoriteState = ref.read(favoriteProvider);
     final isDuplicate =
         favoriteState.favorites.any((f) => f.content == content);
