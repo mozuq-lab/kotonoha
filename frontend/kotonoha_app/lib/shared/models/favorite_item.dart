@@ -30,6 +30,18 @@ class FavoriteItem extends HiveObject {
   @HiveField(3)
   final int displayOrder;
 
+  /// 【フィールド定義】: 元データの種類（'preset_phrase' | 'history' | null）
+  /// 【実装内容】: お気に入りの由来を保持（定型文連動の永続化に使用）
+  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく拡張
+  @HiveField(4)
+  final String? sourceType;
+
+  /// 【フィールド定義】: 元データのID（定型文IDまたは履歴ID）
+  /// 【実装内容】: 連動元のIDを保持（定型文連動の永続化に使用）
+  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく拡張
+  @HiveField(5)
+  final String? sourceId;
+
   /// 【コンストラクタ】: FavoriteItem生成
   /// 【実装内容】: 全フィールドを初期化
   /// 🔵 信頼性レベル: 青信号 - テストケースTC-065-001〜TC-065-005の要件に基づく
@@ -38,6 +50,8 @@ class FavoriteItem extends HiveObject {
     required this.content,
     required this.createdAt,
     required this.displayOrder,
+    this.sourceType,
+    this.sourceId,
   });
 
   /// 【copyWithメソッド】: 不変オブジェクトの部分更新
@@ -49,12 +63,16 @@ class FavoriteItem extends HiveObject {
     String? content,
     DateTime? createdAt,
     int? displayOrder,
+    String? sourceType,
+    String? sourceId,
   }) {
     return FavoriteItem(
       id: id ?? this.id,
       content: content ?? this.content,
       createdAt: createdAt ?? this.createdAt,
       displayOrder: displayOrder ?? this.displayOrder,
+      sourceType: sourceType ?? this.sourceType,
+      sourceId: sourceId ?? this.sourceId,
     );
   }
 
@@ -82,6 +100,6 @@ class FavoriteItem extends HiveObject {
   /// 🔵 信頼性レベル: 青信号 - デバッグ・ログ出力のため
   @override
   String toString() {
-    return 'FavoriteItem(id: $id, content: $content, createdAt: $createdAt, displayOrder: $displayOrder)';
+    return 'FavoriteItem(id: $id, content: $content, createdAt: $createdAt, displayOrder: $displayOrder, sourceType: $sourceType, sourceId: $sourceId)';
   }
 }

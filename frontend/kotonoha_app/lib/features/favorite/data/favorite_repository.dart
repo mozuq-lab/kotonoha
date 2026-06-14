@@ -48,6 +48,12 @@ class FavoriteRepository {
     return _getSortedFavorites();
   }
 
+  /// 【メソッド定義】: 全お気に入りを同期的に読み込み（displayOrder昇順）
+  /// 【実装内容】: build()等の同期コンテキストから利用するためのバージョン
+  /// 【戻り値】: `List<FavoriteItem>`（displayOrder昇順）
+  /// 🔵 信頼性レベル: 青信号 - Notifier.build()での初期化に使用
+  List<FavoriteItem> loadAllSortedSync() => _getSortedFavorites();
+
   /// 【メソッド定義】: お気に入りを保存
   /// 【実装内容】: IDをキーとしてHive Boxに保存
   /// 【引数】: favorite - 保存するお気に入り
