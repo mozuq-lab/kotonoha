@@ -60,8 +60,11 @@ async def create_conversion_log(
     )
 
     # データベースに追加
+    # コミットはリクエスト境界（get_db）に一元化する。ここでコミットすると、
+    # 同一リクエスト内の後続DB操作との原子性が失われるため flush に留める。
+    # flush で主キー等が採番され、返却オブジェクトを呼び出し側で利用できる。
     db.add(log)
-    await db.commit()
+    await db.flush()
     await db.refresh(log)
 
     return log
