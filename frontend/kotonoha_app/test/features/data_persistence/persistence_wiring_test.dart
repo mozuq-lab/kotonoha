@@ -168,7 +168,8 @@ void main() {
       await container1
           .read(presetPhraseNotifierProvider.notifier)
           .initializeDefaultPhrases();
-      final count1 = container1.read(presetPhraseNotifierProvider).phrases.length;
+      final count1 =
+          container1.read(presetPhraseNotifierProvider).phrases.length;
       container1.dispose();
 
       expect(count1, greaterThan(0));
