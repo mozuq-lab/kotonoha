@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/status_buttons/domain/status_button_constants.dart';
 import 'package:kotonoha_app/features/status_buttons/domain/status_button_type.dart';
@@ -56,20 +57,37 @@ class StatusButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: StatusButtonConstants.gridColumns,
-      mainAxisSpacing: StatusButtonConstants.buttonSpacing,
-      crossAxisSpacing: StatusButtonConstants.buttonSpacing,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: _displayTypes.map((type) {
-        return StatusButton(
-          statusType: type,
-          onPressed: onStatus != null ? () => onStatus!(type) : null,
-          onTTSSpeak: onTTSSpeak,
-          fontSize: fontSize,
+    // 【AA対応】: GridView.countのchildAspectRatioが子のサイズを制約するため、
+    // 各セルの高さが最小タップターゲット(44px)を下回らないようにaspectRatioを動的計算する。
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const columns = StatusButtonConstants.gridColumns;
+        const spacing = StatusButtonConstants.buttonSpacing;
+        final cellWidth =
+            (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        // セル高さ = max(セル幅, 44px)。幅が十分なら正方形(aspectRatio=1.0)、
+        // 幅が狭い場合は高さを44pxに固定して横長セルにし、タップターゲットを確保する。
+        const minHeight = AppSizes.minTapTarget;
+        final cellHeight = cellWidth < minHeight ? minHeight : cellWidth;
+        final aspectRatio = cellWidth > 0 ? cellWidth / cellHeight : 1.0;
+
+        return GridView.count(
+          crossAxisCount: columns,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+          childAspectRatio: aspectRatio,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: _displayTypes.map((type) {
+            return StatusButton(
+              statusType: type,
+              onPressed: onStatus != null ? () => onStatus!(type) : null,
+              onTTSSpeak: onTTSSpeak,
+              fontSize: fontSize,
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 }

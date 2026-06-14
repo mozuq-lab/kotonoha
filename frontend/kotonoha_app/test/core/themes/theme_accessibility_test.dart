@@ -145,6 +145,48 @@ void main() {
       });
     });
 
+    /// TC-502b: 全テーマでTextButtonの最小サイズが44px以上である
+    ///
+    /// ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため、
+    /// 各テーマのtextButtonThemeで44px以上を保証する。
+    group('TC-502b: 全テーマでTextButtonの最小サイズが44px以上である', () {
+      test('ライトテーマのTextButton最小サイズが44px以上である', () {
+        final minimumSize =
+            lightTheme.textButtonTheme.style?.minimumSize?.resolve({});
+        expect(minimumSize, isNotNull);
+        expect(minimumSize?.width, greaterThanOrEqualTo(44.0));
+        expect(minimumSize?.height, greaterThanOrEqualTo(44.0));
+      });
+
+      test('ダークテーマのTextButton最小サイズが44px以上である', () {
+        final minimumSize =
+            darkTheme.textButtonTheme.style?.minimumSize?.resolve({});
+        expect(minimumSize, isNotNull);
+        expect(minimumSize?.width, greaterThanOrEqualTo(44.0));
+        expect(minimumSize?.height, greaterThanOrEqualTo(44.0));
+      });
+
+      test('高コントラストテーマのTextButton最小サイズが44px以上である', () {
+        final minimumSize =
+            highContrastTheme.textButtonTheme.style?.minimumSize?.resolve({});
+        expect(minimumSize, isNotNull);
+        expect(minimumSize?.width, greaterThanOrEqualTo(44.0));
+        expect(minimumSize?.height, greaterThanOrEqualTo(44.0));
+      });
+
+      test('全テーマでTextButton最小サイズがAppSizes.minTapTargetと一致する', () {
+        final lightMin =
+            lightTheme.textButtonTheme.style?.minimumSize?.resolve({});
+        final darkMin =
+            darkTheme.textButtonTheme.style?.minimumSize?.resolve({});
+        final hcMin =
+            highContrastTheme.textButtonTheme.style?.minimumSize?.resolve({});
+        expect(lightMin?.height, equals(AppSizes.minTapTarget));
+        expect(darkMin?.height, equals(AppSizes.minTapTarget));
+        expect(hcMin?.height, equals(AppSizes.minTapTarget));
+      });
+    });
+
     /// TC-503: 全テーマで同じフォントサイズが使用されている
     ///
     /// 前提条件:

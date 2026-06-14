@@ -180,8 +180,10 @@ class _SpeedButton extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            // 【背景色】: 選択中はプライマリカラー、非選択は白
-            color: isSelected ? colorScheme.primary : Colors.white,
+            // 【背景色】: 選択中はプライマリカラー、非選択はサーフェス色
+            // 【AA対応】: ハードコードのColors.whiteを廃止し、テーマトークンを使用。
+            // 全テーマ（ライト/ダーク/高コントラスト）でコントラストを確保する。
+            color: isSelected ? colorScheme.primary : colorScheme.surface,
             // 【ボーダー】: プライマリカラーのボーダー
             border: Border.all(
               color: colorScheme.primary,
@@ -193,8 +195,9 @@ class _SpeedButton extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                // 【テキスト色】: 選択中は白、非選択はプライマリカラー
-                color: isSelected ? Colors.white : colorScheme.primary,
+                // 【テキスト色】: 選択中はonPrimary、非選択はプライマリカラー
+                // 【AA対応】: onPrimaryトークンで背景に対し適切なコントラストを確保。
+                color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 16,
               ),

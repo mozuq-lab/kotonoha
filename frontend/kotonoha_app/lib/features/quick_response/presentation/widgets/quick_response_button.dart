@@ -24,14 +24,23 @@ import 'package:kotonoha_app/features/settings/models/font_size.dart';
 class QuickResponseButtonColors {
   QuickResponseButtonColors._();
 
-  /// 「はい」ボタンの背景色（緑系）
-  static const Color yes = Color(0xFF4CAF50);
+  /// 「はい」ボタンの背景色（緑系・濃いシェード）
+  ///
+  /// 白文字とのコントラスト比 約5.0:1（WCAG AA適合）。
+  /// 旧 #4CAF50 は白文字で約2.8:1とAA不足だったため #2E7D32 に変更。
+  static const Color yes = Color(0xFF2E7D32);
 
-  /// 「いいえ」ボタンの背景色（赤系）
-  static const Color no = Color(0xFFE53935);
+  /// 「いいえ」ボタンの背景色（赤系・濃いシェード）
+  ///
+  /// 白文字とのコントラスト比 約5.5:1（WCAG AA適合）。
+  /// 旧 #E53935 は白文字で約3.9:1とAA不足だったため #C62828 に変更。
+  static const Color no = Color(0xFFC62828);
 
-  /// 「わからない」ボタンの背景色（グレー系）
-  static const Color unknown = Color(0xFF9E9E9E);
+  /// 「わからない」ボタンの背景色（グレー系・濃いシェード）
+  ///
+  /// 白文字とのコントラスト比 約6.4:1（WCAG AA適合）。
+  /// 旧 #9E9E9E は白文字で約2.6:1とAA不足だったため #616161 に変更。
+  static const Color unknown = Color(0xFF616161);
 
   /// タイプに応じた背景色を取得
   static Color getColor(QuickResponseType type) {
