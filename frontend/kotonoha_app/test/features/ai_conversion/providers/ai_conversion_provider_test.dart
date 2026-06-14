@@ -140,11 +140,11 @@ void main() {
 
         final notifier = container.read(aiConversionProvider.notifier);
 
-        // 非同期で変換開始
-        unawaited(notifier.convert(
+        // 非同期で変換開始（完了は後で待つ）
+        final convertFuture = notifier.convert(
           inputText: 'テスト',
           politenessLevel: PolitenessLevel.polite,
-        ));
+        );
 
         // 少し待ってconverting状態を確認
         await Future<void>.delayed(const Duration(milliseconds: 10));
@@ -154,6 +154,10 @@ void main() {
         expect(state.isConverting, true);
         expect(state.originalText, 'テスト');
         expect(state.politenessLevel, PolitenessLevel.polite);
+
+        // テスト終了（container破棄）前に変換処理の完了を待ち、
+        // 破棄済みNotifierへのstate更新（failed after test completion）を防ぐ。
+        await convertFuture;
       });
 
       // TC-070-004: convert成功で状態がsuccessになり結果が設定される
