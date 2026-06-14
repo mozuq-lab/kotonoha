@@ -16,7 +16,8 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db_session
+from app.api.deps import get_db_session, require_api_key
+from app.core.config import settings
 from app.core.rate_limit import AI_RATE_LIMIT, limiter
 from app.crud.crud_ai_conversion import create_conversion_log
 from app.schemas.ai_conversion import (
@@ -36,11 +37,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# レート制限ヘッダー定数
+# レート制限ヘッダー定数（設定駆動）
 RATE_LIMIT_HEADERS = {
-    "X-RateLimit-Limit": "1",
+    "X-RateLimit-Limit": str(settings.RATE_LIMIT_TIMES),
     "X-RateLimit-Remaining": "0",
-    "X-RateLimit-Reset": "10",
+    "X-RateLimit-Reset": str(settings.RATE_LIMIT_SECONDS),
 }
 
 
@@ -171,6 +172,7 @@ async def convert_text(
     request: Request,
     conversion_request: AIConversionRequest,
     db: AsyncSession = Depends(get_db_session),
+    _: None = Depends(require_api_key),
 ) -> JSONResponse:
     """
     【機能概要】: AI変換エンドポイント
@@ -255,6 +257,7 @@ async def regenerate_text(
     request: Request,
     regenerate_request: AIRegenerateRequest,
     db: AsyncSession = Depends(get_db_session),
+    _: None = Depends(require_api_key),
 ) -> JSONResponse:
     """
     【機能概要】: AI再変換エンドポイント

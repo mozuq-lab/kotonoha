@@ -15,12 +15,25 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.main import app
 
 # AIクライアントモックのデフォルトレスポンス
 MOCK_CONVERT_RESPONSE = ("変換されたテキスト", 1000)
 MOCK_REGENERATE_RESPONSE = ("再変換されたテキスト", 1000)
+
+
+@pytest.fixture
+def trust_one_proxy(monkeypatch):
+    """信頼プロキシ1段を設定し、X-Forwarded-Forの右端IPでレート制限する状態を作る。
+
+    本番でリバースプロキシ（例: ALB/nginx）1段の背後に配置した構成を模擬する。
+    この設定下では X-Forwarded-For の最右IP（自身のプロキシが付与した実クライアントIP）
+    のみが識別子として使われ、クライアントが左側に付与した値は無視される。
+    """
+    monkeypatch.setattr(settings, "TRUSTED_PROXY_COUNT", 1)
+    yield
 
 
 @pytest.fixture
@@ -160,7 +173,7 @@ async def test_tc003_制限リセットテスト(mock_ai_client):
 
 
 @pytest.mark.asyncio
-async def test_tc004_ip別制限テスト(mock_ai_client):
+async def test_tc004_ip別制限テスト(mock_ai_client, trust_one_proxy):
     """
     【テスト目的】: 異なるIPは独立して制限されることを確認
     【テスト内容】: IPアドレスごとに個別のレート制限が適用されることを検証
@@ -168,8 +181,8 @@ async def test_tc004_ip別制限テスト(mock_ai_client):
     🔵 testcases.md TC-004（line 87-102）に基づく
 
     【テストシナリオ】:
-    - Given: レート制限ミドルウェアが有効な状態
-    - When: 異なるIPアドレスからリクエストを送信
+    - Given: 信頼プロキシ1段を設定したレート制限が有効な状態
+    - When: 異なるIPアドレス（X-Forwarded-For最右）からリクエストを送信
     - Then: 両方のリクエストが許可される
     """
     # 【テストデータ準備】: 有効なAI変換リクエストを作成
@@ -547,7 +560,7 @@ async def test_tc204_境界値テスト_retry_after値の範囲(mock_ai_client):
 
 
 @pytest.mark.asyncio
-async def test_tc301_x_forwarded_for_ヘッダーテスト(mock_ai_client):
+async def test_tc301_x_forwarded_for_ヘッダーテスト(mock_ai_client, trust_one_proxy):
     """
     【テスト目的】: プロキシ経由のIPアドレス取得が正しいことを確認
     【テスト内容】: X-Forwarded-Forヘッダーから実際のクライアントIPを取得できることを検証
@@ -555,7 +568,7 @@ async def test_tc301_x_forwarded_for_ヘッダーテスト(mock_ai_client):
     🔵 testcases.md TC-301（line 289-301）に基づく
 
     【テストシナリオ】:
-    - Given: X-Forwarded-Forヘッダーを付与したリクエスト
+    - Given: 信頼プロキシ1段 + X-Forwarded-Forヘッダーを付与したリクエスト
     - When: 同じIPから2回リクエストを送信
     - Then: 2回目は429エラー
     """
@@ -619,44 +632,76 @@ async def test_tc302_不正ipフォールバックテスト(mock_ai_client):
 
 
 @pytest.mark.asyncio
-async def test_tc303_複数x_forwarded_for_ヘッダーテスト(mock_ai_client):
+async def test_tc303_左側偽装によるレート制限回避を防止(mock_ai_client, trust_one_proxy):
     """
-    【テスト目的】: 複数IPがX-Forwarded-Forに含まれる場合の処理を確認
-    【テスト内容】: カンマ区切りで複数IPが指定された場合の処理を検証
-    【期待される動作】: 最初（最左）のIPアドレスが使用される
-    🟡 testcases.md TC-303（line 319-332）- 妥当な推測（X-Forwarded-Forの標準仕様）
+    【テスト目的】: クライアントが X-Forwarded-For の左側を偽装してもレート制限を回避できないことを確認
+    【テスト内容】: 信頼プロキシ1段では右端IP（実クライアント）のみが識別子に使われることを検証
+    【期待される動作】: 左側の偽装値が異なっても、右端が同一なら同一クライアントとして制限される
+    🔵 セキュリティ修正（X-Forwarded-For信頼の厳格化）の回帰テスト
 
     【テストシナリオ】:
-    - Given: 複数IPを含むX-Forwarded-Forヘッダー
-    - When: 最初のIPと同じIPからリクエストを送信
-    - Then: 同一IPとして扱われ、2回目は429エラー
+    - Given: 信頼プロキシ1段（右端=実クライアントIP）
+    - When: 左側の偽装IPだけを変えた2回のリクエストを送信（右端は同一）
+    - Then: 同一クライアントとして扱われ、2回目は429エラー（回避不可）
     """
-    # 【テストデータ準備】: 有効なAI変換リクエストを作成
-    # 【初期条件設定】: 複数プロキシを経由したリクエスト
-    # 🟡 testcases.md TC-303（line 323-326）に基づく
+    # 【テストデータ準備】: 右端（実クライアントIP）は同一、左側の偽装値のみ変更
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
-    forwarded_for_multiple = "192.168.1.100, 10.0.0.1, 172.16.0.1"
-    forwarded_for_first = "192.168.1.100"
+    spoofed_first = "1.1.1.1, 203.0.113.5"  # 右端=203.0.113.5（実クライアント）
+    spoofed_second = "9.9.9.9, 203.0.113.5"  # 左を偽装しても右端は同一
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        # 【実際の処理実行】: 複数IPを含むX-Forwarded-Forで1回目のリクエスト
+        # 【実際の処理実行】: 1回目（右端=203.0.113.5）
         response1 = await client.post(
             "/api/v1/ai/convert",
             json=request_body,
-            headers={"X-Forwarded-For": forwarded_for_multiple},
+            headers={"X-Forwarded-For": spoofed_first},
         )
-        assert response1.status_code == 200  # 【確認内容】: 1回目は成功 🟡
+        assert response1.status_code == 200  # 【確認内容】: 1回目は成功 🔵
 
-        # 【実際の処理実行】: 最初のIPのみで2回目のリクエスト
-        # 【処理内容】: 最初のIPが同じとして扱われるか確認
+        # 【実際の処理実行】: 2回目（左側だけ偽装、右端は同一）
         response2 = await client.post(
             "/api/v1/ai/convert",
             json=request_body,
-            headers={"X-Forwarded-For": forwarded_for_first},
+            headers={"X-Forwarded-For": spoofed_second},
         )
 
-        # 【結果検証】: 同じIPとして扱われ、2回目は制限超過
-        assert response2.status_code == 429  # 【確認内容】: 最初のIPが同じため拒否 🟡
+        # 【結果検証】: 右端が同一のため同一クライアントとして制限される
+        assert response2.status_code == 429  # 【確認内容】: 左側偽装では回避不可 🔵
+
+
+@pytest.mark.asyncio
+async def test_tc305_xff非信頼時はヘッダーを無視してレート制限(mock_ai_client):
+    """
+    【テスト目的】: TRUSTED_PROXY_COUNT=0（既定）では X-Forwarded-For を信頼しないことを確認
+    【テスト内容】: 既定設定で XFF を変えても接続元IPで同一クライアントとして制限されることを検証
+    【期待される動作】: XFF を毎回変えても2回目は429（ヘッダー偽装で回避不可）
+    🔵 セキュリティ修正（既定でXFFを信頼しない）の回帰テスト
+
+    【テストシナリオ】:
+    - Given: TRUSTED_PROXY_COUNT=0（既定、プロキシなし直結を想定）
+    - When: 毎回異なる X-Forwarded-For を付与して2回リクエスト
+    - Then: 接続元IPは同一のため2回目は429（XFFは無視される）
+    """
+    request_body = {"input_text": "テスト", "politeness_level": "normal"}
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # 【実際の処理実行】: 1回目（偽装IP-A）
+        response1 = await client.post(
+            "/api/v1/ai/convert",
+            json=request_body,
+            headers={"X-Forwarded-For": "10.0.0.1"},
+        )
+        assert response1.status_code == 200  # 【確認内容】: 1回目は成功 🔵
+
+        # 【実際の処理実行】: 2回目（異なる偽装IP-B）
+        response2 = await client.post(
+            "/api/v1/ai/convert",
+            json=request_body,
+            headers={"X-Forwarded-For": "10.0.0.2"},
+        )
+
+        # 【結果検証】: XFFは無視され接続元IPで制限されるため429
+        assert response2.status_code == 429  # 【確認内容】: XFF偽装では回避不可 🔵
 
 
 @pytest.mark.asyncio

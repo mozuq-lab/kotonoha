@@ -5,6 +5,7 @@
 【実装方針】: jose, passlib を使用した標準的なセキュリティ実装
 """
 
+import hmac
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -15,6 +16,27 @@ from app.core.config import settings
 
 # JWT暗号化アルゴリズム
 ALGORITHM = "HS256"
+
+
+def is_valid_api_key(api_key: str | None) -> bool:
+    """
+    【機能概要】: 端末APIキーが有効かどうかを検証する
+    【実装方針】: 設定された許可リストとタイミング攻撃に強い比較（hmac.compare_digest）で照合
+
+    Args:
+        api_key: リクエストから受け取ったAPIキー（未指定の場合None）
+
+    Returns:
+        bool: いずれかの許可キーと一致する場合True
+    """
+    if not api_key:
+        return False
+    # 設定された全キーと定数時間で比較し、短絡評価による時間差を避ける
+    valid = False
+    for allowed in settings.API_KEYS_LIST:
+        if hmac.compare_digest(api_key, allowed):
+            valid = True
+    return valid
 
 
 def create_access_token(
