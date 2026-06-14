@@ -4,6 +4,8 @@
 // 🔵 信頼性レベル: 青信号 - EARS要件定義書に基づく
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/shared/models/favorite_item.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:uuid/uuid.dart';
 import '../domain/models/favorite.dart';
 
@@ -43,10 +45,38 @@ class FavoriteState {
 /// 🔵 信頼性レベル: 青信号 - REQ-701〜704に基づく
 class FavoriteNotifier extends Notifier<FavoriteState> {
   @override
-  FavoriteState build() => const FavoriteState();
+  FavoriteState build() {
+    // 【永続化配線】: Repositoryが利用可能（Boxオープン済み）の場合はHiveから初期化
+    // 【フォールバック】: repo==nilの場合は従来どおりインメモリ空状態
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo == null) return const FavoriteState();
+    return FavoriteState(
+      favorites: repo.loadAllSortedSync().map(_toDomain).toList(),
+    );
+  }
 
   /// UUID生成用インスタンス
   static const _uuid = Uuid();
+
+  /// 【変換ヘルパー】: Hiveモデル FavoriteItem → ドメイン Favorite
+  Favorite _toDomain(FavoriteItem item) => Favorite(
+        id: item.id,
+        content: item.content,
+        createdAt: item.createdAt,
+        displayOrder: item.displayOrder,
+        sourceType: item.sourceType,
+        sourceId: item.sourceId,
+      );
+
+  /// 【変換ヘルパー】: ドメイン Favorite → Hiveモデル FavoriteItem
+  FavoriteItem _toItem(Favorite f) => FavoriteItem(
+        id: f.id,
+        content: f.content,
+        createdAt: f.createdAt,
+        displayOrder: f.displayOrder,
+        sourceType: f.sourceType,
+        sourceId: f.sourceId,
+      );
 
   /// 【メソッド定義】: お気に入りを追加する
   /// 【実装内容】: テキストを受け取り、新しいお気に入りを追加
@@ -69,6 +99,12 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
 
     final updatedFavorites = [...state.favorites, newFavorite];
     state = state.copyWith(favorites: updatedFavorites);
+
+    // 【永続化】: repoがあればHiveに保存
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      await repo.save(_toItem(newFavorite));
+    }
   }
 
   /// 【メソッド定義】: お気に入りを削除する
@@ -81,6 +117,12 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     final updatedFavorites = List<Favorite>.from(state.favorites);
     updatedFavorites.removeAt(index);
     state = state.copyWith(favorites: updatedFavorites);
+
+    // 【永続化】: repoがあればHiveから削除
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      await repo.delete(id);
+    }
   }
 
   /// 【メソッド定義】: お気に入りの並び順を変更する
@@ -105,14 +147,30 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     }).toList();
 
     state = state.copyWith(favorites: reorderedFavorites);
+
+    // 【永続化】: repoがあれば並び順を一括保存
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      for (final fav in reorderedFavorites) {
+        await repo.save(_toItem(fav));
+      }
+    }
   }
 
   /// 【メソッド定義】: お気に入りを読み込む
   /// 【実装内容】: ローカルストレージからお気に入りを読み込み
   /// 🟡 信頼性レベル: 黄信号 - 将来的にHiveから読み込み
   Future<void> loadFavorites() async {
-    // 現在はメモリ内での管理のみ
-    // 将来的にはHiveからの読み込みを実装（TASK-0059で対応）
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      // 【永続化】: Hiveからお気に入りを読み込み
+      state = state.copyWith(
+        favorites: repo.loadAllSortedSync().map(_toDomain).toList(),
+        isLoading: false,
+      );
+      return;
+    }
+    // 【フォールバック】: インメモリ管理のみ
     state = state.copyWith(isLoading: false);
   }
 
@@ -120,6 +178,11 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
   /// 【実装内容】: 全てのお気に入りを削除
   /// 🔵 信頼性レベル: 青信号 - REQ-703（お気に入り削除）
   Future<void> clearAllFavorites() async {
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      // 【永続化】: Hiveの全お気に入りを削除
+      await repo.deleteAll();
+    }
     state = state.copyWith(favorites: []);
   }
 
@@ -152,6 +215,12 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     // 【状態更新】: Favoriteリストに追加
     final updatedFavorites = [...state.favorites, newFavorite];
     state = state.copyWith(favorites: updatedFavorites);
+
+    // 【永続化】: repoがあればHiveに保存（sourceType/sourceId含む）
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      await repo.save(_toItem(newFavorite));
+    }
   }
 
   /// 【メソッド定義】: sourceIdに一致するお気に入りを削除する
@@ -167,9 +236,16 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     if (index == -1) return;
 
     // 【削除処理】: 一致するFavoriteを削除
+    final removed = state.favorites[index];
     final updatedFavorites = List<Favorite>.from(state.favorites);
     updatedFavorites.removeAt(index);
     state = state.copyWith(favorites: updatedFavorites);
+
+    // 【永続化】: repoがあればHiveから削除
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      await repo.delete(removed.id);
+    }
   }
 }
 

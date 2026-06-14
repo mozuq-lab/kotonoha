@@ -37,6 +37,12 @@ class HistoryRepository {
     return _getSortedHistories();
   }
 
+  /// 【メソッド定義】: 全履歴を同期的に読み込み（最新順）
+  /// 【実装内容】: build()等の同期コンテキストから利用するためのバージョン
+  /// 【戻り値】: `List<HistoryItem>`（最新順にソート）
+  /// 🔵 信頼性レベル: 青信号 - Notifier.build()での初期化に使用
+  List<HistoryItem> loadAllSortedSync() => _getSortedHistories();
+
   /// 【メソッド定義】: 履歴を保存（50件超過時は自動削除）
   /// 【実装内容】: IDをキーとしてHive Boxに保存、50件超過時は最古履歴を削除
   /// 【引数】: history - 保存する履歴
