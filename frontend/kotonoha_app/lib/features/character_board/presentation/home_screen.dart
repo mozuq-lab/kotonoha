@@ -274,6 +274,32 @@ class HomeScreen extends ConsumerWidget {
         );
   }
 
+  Future<String> _regenerateWithAI(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final hasConsent = await _ensureAIPrivacyConsent(context, ref);
+    if (!hasConsent) {
+      throw const AIConversionException(
+        code: 'PRIVACY_CONSENT_REQUIRED',
+        message: 'AI変換を利用するにはプライバシー同意が必要です。',
+      );
+    }
+
+    await ref.read(aiConversionProvider.notifier).regenerate();
+
+    final state = ref.read(aiConversionProvider);
+    if (state.hasResult && state.convertedText != null) {
+      return state.convertedText!;
+    }
+
+    throw state.error ??
+        const AIConversionException(
+          code: 'AI_REGENERATION_FAILED',
+          message: 'AI再生成に失敗しました。しばらく待ってから再度お試しください。',
+        );
+  }
+
   Future<bool> _ensureAIPrivacyConsent(
     BuildContext context,
     WidgetRef ref,
@@ -336,12 +362,7 @@ class HomeScreen extends ConsumerWidget {
         Future<void>.microtask(() async {
           if (!context.mounted) return;
           try {
-            final result = await _convertWithAI(
-              context,
-              ref,
-              originalText,
-              politenessLevel,
-            );
+            final result = await _regenerateWithAI(context, ref);
             if (!context.mounted) return;
             _showConversionResult(
               context,
@@ -365,6 +386,11 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _showAIConversionError(BuildContext context, Object error) {
+    if (error is AIConversionException &&
+        error.code == 'PRIVACY_CONSENT_REQUIRED') {
+      return;
+    }
+
     final message = error is AIConversionException
         ? error.message
         : 'AI変換に失敗しました。しばらく待ってから再度お試しください。';

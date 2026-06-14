@@ -222,8 +222,14 @@ flutter test --coverage          # カバレッジ測定
 | `POSTGRES_HOST` | データベースホスト | localhost |
 | `POSTGRES_PORT` | データベースポート | 5432 |
 | `SECRET_KEY` | JWT認証用シークレットキー | - |
+| `API_KEYS` | AI変換APIで許可する端末APIキー（カンマ区切り） | 空 |
+| `API_BASE_URL` | Flutterビルド時に埋め込むバックエンドURL | http://localhost:8000 |
+| `AI_API_KEY` | Flutterビルド時に埋め込む端末APIキー。`API_KEYS` のいずれかを指定 | 空 |
 | `OPENAI_API_KEY` | OpenAI APIキー（オプション） | - |
 | `ENVIRONMENT` | 環境設定 | development |
+
+`AI_API_KEY` はクライアントアプリに埋め込まれるため、強い秘密情報としては扱えません。
+匿名利用による過剰リクエストを抑える端末キーとして、リリースごとにローテーションできる値を指定してください。
 
 ## CI/CD
 
