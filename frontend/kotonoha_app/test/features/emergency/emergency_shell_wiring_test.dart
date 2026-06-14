@@ -67,8 +67,7 @@ void main() {
       );
     }
 
-    testWidgets('REQ-301: ホーム画面で緊急ボタンが表示される',
-        (WidgetTester tester) async {
+    testWidgets('REQ-301: ホーム画面で緊急ボタンが表示される', (WidgetTester tester) async {
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
 

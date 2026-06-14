@@ -97,8 +97,7 @@ void main() {
       );
     });
 
-    testWidgets('F2: 接続状態変更ストリームの更新が状態へ反映される',
-        (WidgetTester tester) async {
+    testWidgets('F2: 接続状態変更ストリームの更新が状態へ反映される', (WidgetTester tester) async {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
