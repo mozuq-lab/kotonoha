@@ -4,21 +4,25 @@
 環境変数から設定を読み込み、型安全に管理する。
 """
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEV_SECRET_KEY = "dev-secret-key-change-me"  # noqa: S105
+DEV_POSTGRES_PASSWORD = "your_secure_password_here"  # noqa: S105
 
 
 class Settings(BaseSettings):
     """アプリケーション設定クラス"""
 
     # データベース設定
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
+    POSTGRES_USER: str = "kotonoha_user"
+    POSTGRES_PASSWORD: str = DEV_POSTGRES_PASSWORD
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
-    POSTGRES_DB: str
+    POSTGRES_DB: str = "kotonoha_db"
 
     # API設定
-    SECRET_KEY: str
+    SECRET_KEY: str = DEV_SECRET_KEY
     API_HOST: str = "0.0.0.0"  # noqa: S104
     API_PORT: int = 8000
     API_V1_STR: str = "/api/v1"
@@ -100,6 +104,19 @@ class Settings(BaseSettings):
     def API_KEYS_LIST(self) -> list[str]:  # noqa: N802
         """有効な端末APIキーのリスト（空要素は除外）"""
         return [key.strip() for key in self.API_KEYS.split(",") if key.strip()]
+
+    @model_validator(mode="after")
+    def validate_production_settings(self) -> "Settings":
+        """本番環境では開発用の弱い既定値を拒否する。"""
+        if self.ENVIRONMENT != "production":
+            return self
+
+        if self.SECRET_KEY == DEV_SECRET_KEY:
+            raise ValueError("SECRET_KEY must be set explicitly in production")
+        if self.POSTGRES_PASSWORD == DEV_POSTGRES_PASSWORD:
+            raise ValueError("POSTGRES_PASSWORD must be set explicitly in production")
+
+        return self
 
 
 # グローバル設定インスタンス

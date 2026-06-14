@@ -147,8 +147,8 @@ class AIConversionHistory(Base):
     def __repr__(self) -> str:
         """
         【機能概要】: モデルインスタンスの文字列表現を返す
-        【実装方針】: デバッグ用にidとinput_textを含む文字列を返す
+        【実装方針】: デバッグ用にidのみを含む文字列を返す
         🟡 デバッグ用の補助機能（要件定義書には明記されていないが、開発時に有用）
         """
-        # 【文字列表現】: モデルの主要情報を含む文字列を生成
-        return f"<AIConversionHistory(id={self.id}, input_text='{self.input_text[:20]}...')>"
+        # 【文字列表現】: 平文の入力内容をログ等へ漏らさない
+        return f"<AIConversionHistory(id={self.id})>"

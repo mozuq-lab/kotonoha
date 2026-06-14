@@ -46,6 +46,8 @@ PWA_ENABLED=true
 TREE_SHAKE_ICONS=true
 PORT=8080
 WASM_BUILD=false
+API_BASE_URL="${API_BASE_URL:-http://localhost:8000}"
+AI_API_KEY="${AI_API_KEY:-}"
 
 # Project paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -142,6 +144,16 @@ build_common_flags() {
     echo "$flags"
 }
 
+build_dart_define_flags() {
+    local flags="--dart-define=API_BASE_URL=$API_BASE_URL"
+
+    if [ -n "$AI_API_KEY" ]; then
+        flags="$flags --dart-define=AI_API_KEY=$AI_API_KEY"
+    fi
+
+    echo "$flags"
+}
+
 # Build commands
 build_debug() {
     print_header "Building Flutter Web (Debug)"
@@ -149,14 +161,22 @@ build_debug() {
     cd "$FLUTTER_APP_DIR"
 
     local common_flags=$(build_common_flags)
+    local dart_define_flags=$(build_dart_define_flags)
 
     echo "Base Href: $BASE_HREF"
+    echo "API Base URL: $API_BASE_URL"
+    if [ -n "$AI_API_KEY" ]; then
+        echo "AI API Key: configured"
+    else
+        echo "AI API Key: not configured"
+    fi
     echo "PWA: $PWA_ENABLED"
     echo "WASM: $WASM_BUILD"
 
     flutter build web \
         --debug \
         $common_flags \
+        $dart_define_flags \
         --source-maps \
         --dart-define=FLUTTER_WEB_DEBUG_MODE=true
 
@@ -169,14 +189,22 @@ build_release() {
     cd "$FLUTTER_APP_DIR"
 
     local common_flags=$(build_common_flags)
+    local dart_define_flags=$(build_dart_define_flags)
 
     echo "Base Href: $BASE_HREF"
+    echo "API Base URL: $API_BASE_URL"
+    if [ -n "$AI_API_KEY" ]; then
+        echo "AI API Key: configured"
+    else
+        echo "AI API Key: not configured"
+    fi
     echo "PWA: $PWA_ENABLED"
     echo "WASM: $WASM_BUILD"
 
     flutter build web \
         --release \
         $common_flags \
+        $dart_define_flags \
         --dart-define=FLUTTER_WEB_DEBUG_MODE=false
 
     # Show build size
@@ -194,10 +222,12 @@ build_profile() {
     cd "$FLUTTER_APP_DIR"
 
     local common_flags=$(build_common_flags)
+    local dart_define_flags=$(build_dart_define_flags)
 
     flutter build web \
         --profile \
         $common_flags \
+        $dart_define_flags \
         --source-maps
 
     print_success "Profile build completed: $BUILD_DIR"

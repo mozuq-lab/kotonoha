@@ -7,6 +7,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 FLUTTER_APP_DIR="$PROJECT_ROOT/frontend/kotonoha_app"
+API_BASE_URL="${API_BASE_URL:-http://localhost:8000}"
+AI_API_KEY="${AI_API_KEY:-}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -24,6 +26,25 @@ echo_warn() {
 
 echo_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+dart_define_flags() {
+    local flags="--dart-define=API_BASE_URL=$API_BASE_URL"
+
+    if [ -n "$AI_API_KEY" ]; then
+        flags="$flags --dart-define=AI_API_KEY=$AI_API_KEY"
+    fi
+
+    echo "$flags"
+}
+
+print_build_config() {
+    echo_info "API Base URL: $API_BASE_URL"
+    if [ -n "$AI_API_KEY" ]; then
+        echo_info "AI API Key: configured"
+    else
+        echo_warn "AI API Key: not configured"
+    fi
 }
 
 # Check Flutter installation
@@ -64,7 +85,8 @@ get_dependencies() {
 build_apk_debug() {
     echo_info "Building debug APK..."
     cd "$FLUTTER_APP_DIR"
-    flutter build apk --debug --flavor production
+    print_build_config
+    flutter build apk --debug --flavor production $(dart_define_flags)
     echo_info "Debug APK built: build/app/outputs/flutter-apk/app-production-debug.apk"
 }
 
@@ -72,7 +94,8 @@ build_apk_debug() {
 build_apk_release() {
     echo_info "Building release APK..."
     cd "$FLUTTER_APP_DIR"
-    flutter build apk --release --flavor production --obfuscate --split-debug-info=build/debug-info
+    print_build_config
+    flutter build apk --release --flavor production --obfuscate --split-debug-info=build/debug-info $(dart_define_flags)
     echo_info "Release APK built: build/app/outputs/flutter-apk/app-production-release.apk"
 }
 
@@ -80,7 +103,8 @@ build_apk_release() {
 build_bundle() {
     echo_info "Building App Bundle for Google Play..."
     cd "$FLUTTER_APP_DIR"
-    flutter build appbundle --release --flavor production --obfuscate --split-debug-info=build/debug-info
+    print_build_config
+    flutter build appbundle --release --flavor production --obfuscate --split-debug-info=build/debug-info $(dart_define_flags)
     echo_info "App Bundle built: build/app/outputs/bundle/productionRelease/app-production-release.aab"
 }
 
@@ -88,7 +112,8 @@ build_bundle() {
 build_internal() {
     echo_info "Building internal test APK..."
     cd "$FLUTTER_APP_DIR"
-    flutter build apk --release --flavor internal
+    print_build_config
+    flutter build apk --release --flavor internal $(dart_define_flags)
     echo_info "Internal APK built: build/app/outputs/flutter-apk/app-internal-release.apk"
 }
 

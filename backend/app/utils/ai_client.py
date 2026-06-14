@@ -171,7 +171,7 @@ class AIClient:
 
             logger.info(
                 f"Claude conversion completed in {conversion_time_ms}ms: "
-                f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
+                f"input_length={len(input_text)}, output_length={len(converted_text)}"
             )
 
             return converted_text, conversion_time_ms
@@ -251,7 +251,7 @@ class AIClient:
 
             logger.info(
                 f"OpenAI conversion completed in {conversion_time_ms}ms: "
-                f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
+                f"input_length={len(input_text)}, output_length={len(converted_text)}"
             )
 
             return converted_text, conversion_time_ms
@@ -393,7 +393,7 @@ class AIClient:
 
             logger.info(
                 f"AI regeneration completed in {conversion_time_ms}ms: "
-                f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
+                f"input_length={len(input_text)}, output_length={len(converted_text)}"
             )
 
             return converted_text, conversion_time_ms
