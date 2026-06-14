@@ -29,7 +29,11 @@ class NetworkNotifier extends Notifier<NetworkState> {
 
   /// 初期状態
   @override
-  NetworkState build() => NetworkState.checking;
+  NetworkState build() {
+    // Provider破棄時に接続状態リスナーを解放（StreamSubscriptionリーク防止）
+    ref.onDispose(cleanup);
+    return NetworkState.checking;
+  }
 
   /// ConnectivityServiceを取得
   ConnectivityService? get _connectivityService =>

@@ -23,7 +23,10 @@ final aiConversionApiClientProvider = Provider<AIConversionApiClient>((ref) {
     defaultValue: 'http://localhost:8000',
   );
   const apiKey = String.fromEnvironment('AI_API_KEY');
-  return AIConversionApiClient(baseUrl: baseUrl, apiKey: apiKey);
+  final client = AIConversionApiClient(baseUrl: baseUrl, apiKey: apiKey);
+  // Provider破棄時にDioの接続リソースを解放（リソースリーク防止）
+  ref.onDispose(client.dio.close);
+  return client;
 });
 
 /// AI変換Providerの定義

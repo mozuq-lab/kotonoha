@@ -4,6 +4,8 @@
 /// Riverpod StateNotifierを使用したTTS状態管理
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../domain/models/tts_speed.dart';
@@ -92,6 +94,12 @@ class TTSNotifier extends Notifier<TTSServiceState> {
           tts: FlutterTts(),
           onStateChanged: _onServiceStateChanged,
         );
+    // Provider破棄時にネイティブTTSリソースを解放（リソースリーク防止）
+    // dispose内のネイティブ呼び出し失敗（例: テスト環境のプラグイン未登録）が
+    // 未処理の非同期エラーにならないよう握りつぶす。
+    ref.onDispose(() {
+      unawaited(_service.dispose().catchError((Object _) {}));
+    });
     // バックグラウンドでTTS初期化を開始（TASK-0090: TTS最適化）
     // build()完了後に非同期で初期化を実行することで、
     // 最初のspeak()呼び出し時の遅延を削減
