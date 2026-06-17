@@ -103,6 +103,16 @@ void main() {
       expect(minimumSize?.height, greaterThanOrEqualTo(44.0));
     });
 
+    /// ライトテーマのonPrimaryが黒である（WCAG AA対応）
+    ///
+    /// primary(#2196F3)上の白文字は約3.1:1でAA不足のため、
+    /// onPrimaryを黒(#000000, 約6.7:1)に設定してAAを満たす。
+    test('ライトテーマのonPrimaryが黒（AA適合）である', () {
+      expect(
+          lightTheme.colorScheme.onPrimary, equals(AppColors.onPrimaryLight));
+      expect(lightTheme.colorScheme.onPrimary, equals(const Color(0xFF000000)));
+    });
+
     /// ライトテーマのテキスト色が黒系である
     ///
     /// 期待結果:

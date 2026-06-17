@@ -142,13 +142,19 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       },
       itemBuilder: (context, index) {
         final favorite = favorites[index];
-        return _buildReorderableItem(favorite, index);
+        return _buildReorderableItem(favorite, index, favorites.length);
       },
     );
   }
 
   /// 並び替え用アイテムを構築
-  Widget _buildReorderableItem(Favorite favorite, int index) {
+  ///
+  /// 【アクセシビリティ対応】: ドラッグ操作だけでなく、タップのみで並べ替えられる
+  /// よう「上へ移動」「下へ移動」ボタンを提供する（スワイプ/ドラッグ非依存）。
+  Widget _buildReorderableItem(Favorite favorite, int index, int total) {
+    final isFirst = index == 0;
+    final isLast = index == total - 1;
+
     return Card(
       key: Key('reorderable_item_${favorite.id}'),
       margin: const EdgeInsets.symmetric(
@@ -165,13 +171,51 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           maxLines: FavoriteUIConstants.maxTextLines,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: () => _showDeleteDialog(context, favorite.id),
-          tooltip: FavoriteUIConstants.deleteTooltip,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 【タップ代替】: 上へ移動ボタン（先頭では無効）
+            Semantics(
+              button: true,
+              label: '${favorite.content}を上へ移動',
+              child: IconButton(
+                key: Key('move_up_${favorite.id}'),
+                icon: const Icon(Icons.arrow_upward),
+                onPressed: isFirst ? null : () => _moveUp(favorite, index),
+                tooltip: '上へ移動',
+              ),
+            ),
+            // 【タップ代替】: 下へ移動ボタン（末尾では無効）
+            Semantics(
+              button: true,
+              label: '${favorite.content}を下へ移動',
+              child: IconButton(
+                key: Key('move_down_${favorite.id}'),
+                icon: const Icon(Icons.arrow_downward),
+                onPressed: isLast ? null : () => _moveDown(favorite, index),
+                tooltip: '下へ移動',
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _showDeleteDialog(context, favorite.id),
+              tooltip: FavoriteUIConstants.deleteTooltip,
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  /// 1つ上へ移動（タップ操作による並べ替え）
+  void _moveUp(Favorite favorite, int index) {
+    if (index <= 0) return;
+    ref.read(favoriteProvider.notifier).reorderFavorite(favorite.id, index - 1);
+  }
+
+  /// 1つ下へ移動（タップ操作による並べ替え）
+  void _moveDown(Favorite favorite, int index) {
+    ref.read(favoriteProvider.notifier).reorderFavorite(favorite.id, index + 1);
   }
 
   /// 並び替え処理

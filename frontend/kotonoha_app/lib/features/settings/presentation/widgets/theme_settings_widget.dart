@@ -50,6 +50,10 @@ class ThemeSettingsWidget extends ConsumerWidget {
             const Text('テーマ'),
             const SizedBox(height: 8),
             SegmentedButton<AppTheme>(
+              // 【AA対応】: デフォルト高さ約40pxを44px以上に拡張（タップターゲット要件）。
+              style: SegmentedButton.styleFrom(
+                minimumSize: const Size(0, 44),
+              ),
               segments: AppTheme.values.map((theme) {
                 return ButtonSegment<AppTheme>(
                   value: theme,

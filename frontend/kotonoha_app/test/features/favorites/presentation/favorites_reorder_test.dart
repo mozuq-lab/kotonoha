@@ -331,5 +331,113 @@ void main() {
         reason: 'お気に入りが0件の場合、編集ボタンが非表示である必要がある',
       );
     });
+
+    /// TC-A11Y-001: タップのみで並べ替えできる「上へ移動」「下へ移動」ボタンが表示される
+    ///
+    /// 関連要件: REQ-703（並び替え）、アクセシビリティ（タップ非依存操作）
+    /// 検証内容: 編集モードで各項目に上下移動ボタン（IconButton）が表示される
+    testWidgets('TC-A11Y-001: 編集モードで上へ/下へ移動ボタンが表示される',
+        (WidgetTester tester) async {
+      // Given
+      final favorites = [
+        createTestFavorite(id: 'test_1', content: 'お気に入り1', displayOrder: 0),
+        createTestFavorite(id: 'test_2', content: 'お気に入り2', displayOrder: 1),
+        createTestFavorite(id: 'test_3', content: 'お気に入り3', displayOrder: 2),
+      ];
+      final mockState = FavoriteState(favorites: favorites);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [favoriteProviderOverride(mockState)],
+          child: const MaterialApp(home: FavoritesScreen()),
+        ),
+      );
+
+      // When: 編集モードに入る
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pumpAndSettle();
+
+      // Then: 上へ/下へ移動ボタンが表示される
+      expect(find.byIcon(Icons.arrow_upward), findsNWidgets(3));
+      expect(find.byIcon(Icons.arrow_downward), findsNWidgets(3));
+    });
+
+    /// TC-A11Y-002: 先頭項目の「上へ移動」と末尾項目の「下へ移動」は無効化される
+    testWidgets('TC-A11Y-002: 先頭の上移動・末尾の下移動ボタンは無効である',
+        (WidgetTester tester) async {
+      // Given
+      final favorites = [
+        createTestFavorite(id: 'test_1', content: 'お気に入り1', displayOrder: 0),
+        createTestFavorite(id: 'test_2', content: 'お気に入り2', displayOrder: 1),
+      ];
+      final mockState = FavoriteState(favorites: favorites);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [favoriteProviderOverride(mockState)],
+          child: const MaterialApp(home: FavoritesScreen()),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pumpAndSettle();
+
+      // 先頭項目の上移動ボタンは無効（onPressed == null）
+      final firstUp = tester.widget<IconButton>(
+        find.byKey(const Key('move_up_test_1')),
+      );
+      expect(firstUp.onPressed, isNull, reason: '先頭項目は上へ移動できない');
+
+      // 末尾項目の下移動ボタンは無効
+      final lastDown = tester.widget<IconButton>(
+        find.byKey(const Key('move_down_test_2')),
+      );
+      expect(lastDown.onPressed, isNull, reason: '末尾項目は下へ移動できない');
+
+      // 先頭項目の下移動・末尾項目の上移動は有効
+      final firstDown = tester.widget<IconButton>(
+        find.byKey(const Key('move_down_test_1')),
+      );
+      expect(firstDown.onPressed, isNotNull);
+      final lastUp = tester.widget<IconButton>(
+        find.byKey(const Key('move_up_test_2')),
+      );
+      expect(lastUp.onPressed, isNotNull);
+    });
+
+    /// TC-A11Y-003: 「下へ移動」ボタンのタップで順序が変更される
+    testWidgets('TC-A11Y-003: 下へ移動ボタンのタップでreorderFavoriteが反映される',
+        (WidgetTester tester) async {
+      // Given
+      final favorites = [
+        createTestFavorite(id: 'test_1', content: 'お気に入り1', displayOrder: 0),
+        createTestFavorite(id: 'test_2', content: 'お気に入り2', displayOrder: 1),
+        createTestFavorite(id: 'test_3', content: 'お気に入り3', displayOrder: 2),
+      ];
+      final mockState = FavoriteState(favorites: favorites);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [favoriteProviderOverride(mockState)],
+          child: const MaterialApp(home: FavoritesScreen()),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pumpAndSettle();
+
+      // When: 先頭項目(test_1)の下へ移動ボタンをタップ
+      await tester.tap(find.byKey(const Key('move_down_test_1')));
+      await tester.pumpAndSettle();
+
+      // Then: test_1 が 2番目(index 1)に移動している
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(FavoritesScreen)),
+      );
+      final updated = container.read(favoriteProvider).favorites
+        ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+      expect(updated[1].id, equals('test_1'),
+          reason: '下へ移動で test_1 が2番目になる必要がある');
+    });
   });
 }

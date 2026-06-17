@@ -77,7 +77,9 @@ class _OnlineRecoveryNotificationState
             label: 'オンラインに戻りました。AI変換が利用可能です。',
             child: Container(
               width: double.infinity,
-              color: Colors.green[300],
+              // 【AA対応】: green[900] on green[100] でコントラスト比 約5.9:1。
+              // 旧 green[800] on green[300] は約3.0:1でAA不足だった。
+              color: Colors.green[100],
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -85,13 +87,13 @@ class _OnlineRecoveryNotificationState
                   Icon(
                     Icons.wifi,
                     size: 18,
-                    color: Colors.green[800],
+                    color: Colors.green[900],
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'オンラインに戻りました。AI変換が利用可能です',
                     style: TextStyle(
-                      color: Colors.green[800],
+                      color: Colors.green[900],
                       fontSize: 14,
                     ),
                   ),

@@ -37,6 +37,10 @@ class AIPolitenessSettingsWidget extends ConsumerWidget {
             const Text('丁寧さレベル'),
             const SizedBox(height: 8),
             SegmentedButton<PolitenessLevel>(
+              // 【AA対応】: デフォルト高さ約40pxを44px以上に拡張（タップターゲット要件）。
+              style: SegmentedButton.styleFrom(
+                minimumSize: const Size(0, 44),
+              ),
               segments: PolitenessLevel.values.map((level) {
                 return ButtonSegment<PolitenessLevel>(
                   value: level,

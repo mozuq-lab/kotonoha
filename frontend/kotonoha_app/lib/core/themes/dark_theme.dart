@@ -25,6 +25,8 @@ final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
   colorScheme: const ColorScheme.dark(
     primary: AppColors.primaryDark,
+    // primaryDark(#1976D2)上の白文字は約4.6:1でAA適合。
+    onPrimary: Colors.white,
     surface: AppColors.surfaceDark,
     onSurface: AppColors.onSurfaceDark,
     error: AppColors.emergency,
@@ -65,6 +67,17 @@ final ThemeData darkTheme = ThemeData(
   // Icon button theme
   iconButtonTheme: IconButtonThemeData(
     style: IconButton.styleFrom(
+      minimumSize: const Size(
+        AppSizes.minTapTarget,
+        AppSizes.minTapTarget,
+      ),
+    ),
+  ),
+
+  // Text button theme
+  // 【AA対応】: ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため44pxを保証。
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
       minimumSize: const Size(
         AppSizes.minTapTarget,
         AppSizes.minTapTarget,

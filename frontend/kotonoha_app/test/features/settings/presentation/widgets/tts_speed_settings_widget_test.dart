@@ -16,6 +16,7 @@ import 'package:kotonoha_app/features/settings/providers/settings_provider.dart'
 import 'package:kotonoha_app/features/settings/models/app_settings.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import 'package:kotonoha_app/features/settings/presentation/settings_screen.dart';
+import 'package:kotonoha_app/core/themes/light_theme.dart';
 
 void main() {
   group('TTS速度設定UIウィジェットテスト', () {
@@ -300,6 +301,52 @@ void main() {
 
         // 【確認ポイント】: タップ応答が100ms以内（パフォーマンス要件）
         // 【確認ポイント】: 状態更新がUIに即座に反映される
+      });
+    });
+
+    // =========================================================================
+    // アクセシビリティ（コントラスト）テスト
+    // =========================================================================
+    group('コントラスト（WCAG AA）テスト', () {
+      /// TC-049-A11Y: 非選択ボタンのテキスト色がsurfaceに対しAAを満たす
+      ///
+      /// 検証内容: 非選択の速度ボタンは onSurface 文字（surface背景）を使い、
+      /// primary文字をsurfaceへ載せる（約2.87:1でAA不足）構成になっていないこと。
+      testWidgets('TC-049-A11Y: 非選択ボタンはonSurface、選択ボタンはonPrimaryの文字色',
+          (WidgetTester tester) async {
+        // Given: ttsSpeed=verySlow（「とても遅い」が選択）の状態。
+        // （「普通」はAI丁寧さ設定にも存在し曖昧なため、TTS固有の一意ラベルで検証する）
+        final container = ProviderContainer(
+          overrides: [
+            settingsNotifierProvider.overrideWith(
+              () => FakeSettingsNotifier(
+                const AppSettings(ttsSpeed: TTSSpeed.verySlow),
+              ),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: lightTheme,
+              home: const SettingsScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final colorScheme = lightTheme.colorScheme;
+
+        // 非選択（「速い」）の文字色は onSurface（surface背景に対しAA）
+        final unselected = tester.widget<Text>(find.text('速い'));
+        expect(unselected.style?.color, colorScheme.onSurface);
+
+        // 選択（「とても遅い」）の文字色は onPrimary（primary背景に対しAA）
+        final selected = tester.widget<Text>(find.text('とても遅い'));
+        expect(selected.style?.color, colorScheme.onPrimary);
       });
     });
   });

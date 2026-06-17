@@ -23,6 +23,9 @@ final ThemeData lightTheme = ThemeData(
   brightness: Brightness.light,
   colorScheme: const ColorScheme.light(
     primary: AppColors.primaryLight,
+    // primary(#2196F3)上の白文字は約3.1:1でAA不足のため、
+    // onPrimaryを黒(#000000)に設定（コントラスト比 約6.7:1でAA適合）。
+    onPrimary: AppColors.onPrimaryLight,
     surface: AppColors.surfaceLight,
     onSurface: AppColors.onSurfaceLight,
     error: AppColors.emergency,
@@ -63,6 +66,17 @@ final ThemeData lightTheme = ThemeData(
   // Icon button theme
   iconButtonTheme: IconButtonThemeData(
     style: IconButton.styleFrom(
+      minimumSize: const Size(
+        AppSizes.minTapTarget,
+        AppSizes.minTapTarget,
+      ),
+    ),
+  ),
+
+  // Text button theme
+  // 【AA対応】: ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため44pxを保証。
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
       minimumSize: const Size(
         AppSizes.minTapTarget,
         AppSizes.minTapTarget,

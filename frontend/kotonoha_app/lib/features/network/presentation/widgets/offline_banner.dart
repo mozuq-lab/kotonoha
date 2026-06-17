@@ -47,13 +47,15 @@ class OfflineBanner extends ConsumerWidget {
             Icon(
               Icons.wifi_off,
               size: 18,
-              color: Colors.grey[700],
+              // 【AA対応】: grey[900] on grey[300] でコントラスト比 約12:1。
+              // 旧 grey[700] on grey[300] は約4.0:1でAA不足だった。
+              color: Colors.grey[900],
             ),
             const SizedBox(width: 8),
             Text(
               'オフライン - 基本機能のみ利用可能',
               style: TextStyle(
-                color: Colors.grey[700],
+                color: Colors.grey[900],
                 fontSize: 14,
               ),
             ),
