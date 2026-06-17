@@ -153,11 +153,19 @@ class _StatusButtonState extends State<StatusButton> with DebounceMixin {
                     BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
             ),
-            child: Text(
-              _label,
-              style: TextStyle(
-                fontSize: _fontSize,
-                fontWeight: FontWeight.bold,
+            // 【AA対応】: GridViewのセルがaspectRatio 1.0で子サイズを制約するため、
+            // largeフォント時にラベルがoverflowしないようFittedBoxで縮小し、
+            // それでも収まらない場合はellipsisで省略する。
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                _label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: _fontSize,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

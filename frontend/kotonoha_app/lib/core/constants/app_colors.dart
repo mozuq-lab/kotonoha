@@ -31,6 +31,12 @@ class AppColors {
   /// ライトモードのプライマリカラー（青系）
   static const Color primaryLight = Color(0xFF2196F3);
 
+  /// ライトモードのプライマリ上テキスト色（黒）
+  ///
+  /// primary(#2196F3)上では白文字が約3.1:1でWCAG AA不足のため、
+  /// 黒文字（コントラスト比 約6.7:1）を採用しAAを満たす。
+  static const Color onPrimaryLight = Color(0xFF000000);
+
   /// ライトモードの背景色（白）
   static const Color backgroundLight = Color(0xFFFFFFFF);
 

@@ -109,17 +109,22 @@ class HomeScreen extends ConsumerWidget {
                     BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
               constraints: const BoxConstraints(minHeight: 80),
-              child: Text(
-                inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: _getFontSizeValue(fontSize),
-                      color: inputBuffer.isEmpty
-                          ? Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withAlpha(128)
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
+              // 【アクセシビリティ対応】: liveRegionで入力中テキストの変化を
+              // スクリーンリーダーが自動読み上げできるようにする。
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: _getFontSizeValue(fontSize),
+                        color: inputBuffer.isEmpty
+                            ? Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withAlpha(128)
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
               ),
             ),
             const SizedBox(height: AppSizes.paddingSmall),

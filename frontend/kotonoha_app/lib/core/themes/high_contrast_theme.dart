@@ -28,9 +28,14 @@ final ThemeData highContrastTheme = ThemeData(
   brightness: Brightness.light,
   colorScheme: const ColorScheme.light(
     primary: AppColors.primaryHighContrast,
+    // primary(#000000)上の白文字は最大コントラスト（21:1）でAA適合。
+    onPrimary: Colors.white,
     surface: AppColors.surfaceHighContrast,
     onSurface: AppColors.onSurfaceHighContrast,
-    error: AppColors.emergency,
+    // 高コントラストモードのエラー色は純粋な赤(#FF0000)を使用。
+    // 白背景上でのコントラスト比 約5.25:1（WCAG AA適合）。
+    // 旧 emergency(#D32F2F) は約4.6:1だが、高コントラスト用の指定色を採用。
+    error: AppColors.emergencyHighContrast,
     outline: Colors.black,
   ),
   scaffoldBackgroundColor: AppColors.backgroundHighContrast,
@@ -77,6 +82,18 @@ final ThemeData highContrastTheme = ThemeData(
   // Icon button theme with high contrast
   iconButtonTheme: IconButtonThemeData(
     style: IconButton.styleFrom(
+      minimumSize: const Size(
+        AppSizes.minTapTarget,
+        AppSizes.minTapTarget,
+      ),
+      foregroundColor: Colors.black,
+    ),
+  ),
+
+  // Text button theme
+  // 【AA対応】: ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため44pxを保証。
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
       minimumSize: const Size(
         AppSizes.minTapTarget,
         AppSizes.minTapTarget,

@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
 import 'package:kotonoha_app/features/settings/presentation/widgets/ai_politeness_settings_widget.dart';
 
 void main() {
@@ -46,6 +47,31 @@ void main() {
         expect(find.text('カジュアル'), findsOneWidget);
         expect(find.text('普通'), findsOneWidget);
         expect(find.text('丁寧'), findsOneWidget);
+      });
+
+      /// TC-A11Y-004: SegmentedButtonの最小タップ高さが44px以上である
+      ///
+      /// 関連要件: アクセシビリティ（タップターゲット最小44px）
+      /// 既定の約40pxではAA不足のため、minimumSizeで44pxを保証する。
+      testWidgets('TC-A11Y-004: SegmentedButtonの最小高さが44px以上である',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: AIPolitenessSettingsWidget(),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final segmented = tester.widget<SegmentedButton<PolitenessLevel>>(
+          find.byType(SegmentedButton<PolitenessLevel>),
+        );
+        final minSize = segmented.style?.minimumSize?.resolve({});
+        expect(minSize, isNotNull);
+        expect(minSize!.height, greaterThanOrEqualTo(44.0));
       });
     });
   });

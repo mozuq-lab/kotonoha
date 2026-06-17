@@ -38,6 +38,10 @@ class FontSizeSettingsWidget extends ConsumerWidget {
             const Text('フォントサイズ'),
             const SizedBox(height: 8),
             SegmentedButton<FontSize>(
+              // 【AA対応】: デフォルト高さ約40pxを44px以上に拡張（タップターゲット要件）。
+              style: SegmentedButton.styleFrom(
+                minimumSize: const Size(0, 44),
+              ),
               segments: FontSize.values.map((size) {
                 return ButtonSegment<FontSize>(
                   value: size,

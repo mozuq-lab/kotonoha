@@ -115,5 +115,37 @@ void main() {
         reason: 'HomeScreenは指定されたkeyで識別可能である必要がある',
       );
     });
+
+    /// TC-A11Y-005: 入力表示テキストがliveRegionで囲まれている
+    ///
+    /// 関連要件: アクセシビリティ（スクリーンリーダーへの入力変化の通知）
+    /// 入力中テキストの変化が自動読み上げされるよう、Semantics.liveRegion=true
+    /// が入力表示Textに付与されていることを確認する。
+    testWidgets('TC-A11Y-005: 入力表示がliveRegionで読み上げ対象になっている',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: HomeScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 入力プレースホルダーTextを内包するSemanticsにliveRegion=trueが
+      // 設定されていることを確認する。
+      final liveRegionFinder = find.ancestor(
+        of: find.text('入力してください...'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.liveRegion == true,
+        ),
+      );
+      expect(
+        liveRegionFinder,
+        findsOneWidget,
+        reason: '入力表示テキストはliveRegion対応のSemanticsで囲まれている必要がある',
+      );
+    });
   });
 }
