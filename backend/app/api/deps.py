@@ -16,6 +16,7 @@ Example:
             ...
 """
 
+import hmac
 from collections.abc import AsyncGenerator
 
 from fastapi import HTTPException, Security, status
@@ -39,7 +40,7 @@ async def verify_api_key(api_key: str | None = Security(api_key_header)) -> None
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI endpoint is disabled: API_KEY is not configured.",
         )
-    if api_key != settings.API_KEY:
+    if api_key is None or not hmac.compare_digest(api_key, settings.API_KEY):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key.",

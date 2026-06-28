@@ -19,6 +19,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.main import app
 from app.models.ai_conversion_logs import AIConversionLog
@@ -48,6 +49,18 @@ async def test_convert_requires_api_key():
             json={"input_text": "水ちょうだい", "politeness_level": "polite"},
         )
         assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_convert_disabled_when_api_key_unset(monkeypatch):
+    """API_KEY 未設定時は 503 を返す（fail-safe で無効化）。"""
+    monkeypatch.setattr(settings, "API_KEY", None)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post(
+            "/api/v1/ai/convert",
+            json={"input_text": "水ちょうだい", "politeness_level": "polite"},
+        )
+        assert resp.status_code == 503
 
 
 # ================================================================================
