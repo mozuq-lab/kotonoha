@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db_session
+from app.api.deps import get_db_session, verify_api_key
 from app.core.rate_limit import AI_RATE_LIMIT, limiter
 from app.crud.crud_ai_conversion import create_conversion_log
 from app.schemas.ai_conversion import (
@@ -163,6 +163,7 @@ def _get_error_info(error: Exception) -> ErrorInfo:
 @router.post(
     "/convert",
     response_model=AIConversionResponse,
+    dependencies=[Depends(verify_api_key)],
     summary="AI変換API",
     description="入力文字列を指定の丁寧さレベルでAI変換します（レート制限: 10秒に1回）",
 )
@@ -247,6 +248,7 @@ async def convert_text(
 @router.post(
     "/regenerate",
     response_model=AIConversionResponse,
+    dependencies=[Depends(verify_api_key)],
     summary="AI再変換API",
     description="前回と異なる変換結果を取得します（レート制限: 10秒に1回）",
 )

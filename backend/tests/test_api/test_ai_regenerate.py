@@ -26,6 +26,7 @@ from app.utils.exceptions import (
     AIProviderException,
     AITimeoutException,
 )
+from tests.conftest import AUTH_HEADERS
 
 
 @pytest.fixture(autouse=True)
@@ -70,7 +71,9 @@ class TestAIRegenerateSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: HTTPステータスコードが200であることを確認
                 assert response.status_code == 200
@@ -110,7 +113,9 @@ class TestAIRegenerateSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
                 response_json = response.json()
@@ -140,7 +145,9 @@ class TestAIRegenerateSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
                 response_json = response.json()
@@ -171,7 +178,9 @@ class TestAIRegenerateSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
                 response_json = response.json()
@@ -200,7 +209,9 @@ class TestAIRegenerateSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
 
@@ -232,7 +243,9 @@ class TestAIRegenerateValidation:
         }
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/regenerate", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -251,7 +264,9 @@ class TestAIRegenerateValidation:
         }
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/regenerate", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -272,7 +287,9 @@ class TestAIRegenerateValidation:
         }
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/regenerate", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -291,7 +308,9 @@ class TestAIRegenerateValidation:
         }
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/regenerate", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -309,7 +328,9 @@ class TestAIRegenerateValidation:
         }
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/regenerate", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -346,11 +367,15 @@ class TestAIRegenerateRateLimit:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 # 1回目のリクエスト
-                response1 = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response1 = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
                 assert response1.status_code == 200
 
                 # 2回目のリクエスト（即座に送信）
-                response2 = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response2 = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 2回目は429エラーであることを確認
                 assert response2.status_code == 429
@@ -388,7 +413,9 @@ class TestAIRegenerateErrorHandling:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 504エラーが返されることを確認
                 assert response.status_code == 504
@@ -422,7 +449,9 @@ class TestAIRegenerateErrorHandling:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 503エラーが返されることを確認
                 assert response.status_code == 503
@@ -456,7 +485,9 @@ class TestAIRegenerateErrorHandling:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 500エラーが返されることを確認
                 assert response.status_code == 500
@@ -503,7 +534,9 @@ class TestAIRegenerateLogging:
             async with AsyncClient(
                 transport=ASGITransport(app=test_client_with_db), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/regenerate", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
 

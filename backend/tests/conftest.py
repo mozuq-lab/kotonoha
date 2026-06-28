@@ -14,6 +14,18 @@ from collections.abc import AsyncGenerator
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.core.config import settings
+
+TEST_API_KEY = "test-api-key"
+AUTH_HEADERS = {"X-API-Key": TEST_API_KEY}
+
+
+@pytest.fixture(autouse=True)
+def _set_test_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """全テストで settings.API_KEY をテスト用キーに固定する。"""
+    monkeypatch.setattr(settings, "API_KEY", TEST_API_KEY)
+
+
 # 【テスト前準備】: テスト用のデータベース接続URLを環境変数から取得
 # 【環境初期化】: 本番環境とは異なるテストデータベースを使用し、データの分離を保証
 # 【セキュリティ】: 本番データベースへの誤接続を防ぐため、明示的にテストDB URLを指定

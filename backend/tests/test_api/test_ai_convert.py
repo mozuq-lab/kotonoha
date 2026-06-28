@@ -28,6 +28,7 @@ from app.utils.exceptions import (
     AIRateLimitException,
     AITimeoutException,
 )
+from tests.conftest import AUTH_HEADERS
 
 
 @pytest.fixture(autouse=True)
@@ -36,6 +37,17 @@ async def reset_limiter():
     limiter.reset()
     yield
     limiter.reset()
+
+
+@pytest.mark.asyncio
+async def test_convert_requires_api_key():
+    """API キーなしのリクエストは 401 を返す。"""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post(
+            "/api/v1/ai/convert",
+            json={"input_text": "水ちょうだい", "politeness_level": "polite"},
+        )
+        assert resp.status_code == 401
 
 
 # ================================================================================
@@ -67,7 +79,9 @@ class TestAIConvertSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: HTTPステータスコードが200であることを確認
                 assert response.status_code == 200
@@ -100,7 +114,9 @@ class TestAIConvertSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
                 response_json = response.json()
@@ -126,7 +142,9 @@ class TestAIConvertSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
                 response_json = response.json()
@@ -151,7 +169,9 @@ class TestAIConvertSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
                 response_json = response.json()
@@ -177,7 +197,9 @@ class TestAIConvertSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
 
@@ -209,7 +231,9 @@ class TestAIConvertSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
                 response_json = response.json()
@@ -239,7 +263,9 @@ class TestAIConvertSuccess:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
                 response_json = response.json()
@@ -275,7 +301,9 @@ class TestAIConvertValidation:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
 
@@ -300,7 +328,9 @@ class TestAIConvertValidation:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
 
@@ -315,7 +345,9 @@ class TestAIConvertValidation:
         request_body = {"input_text": "あ", "politeness_level": "normal"}
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/convert", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -333,7 +365,9 @@ class TestAIConvertValidation:
         request_body = {"input_text": input_text, "politeness_level": "normal"}
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/convert", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -349,7 +383,9 @@ class TestAIConvertValidation:
         request_body = {"input_text": "   ", "politeness_level": "normal"}
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/convert", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -365,7 +401,9 @@ class TestAIConvertValidation:
         request_body = {"input_text": "", "politeness_level": "normal"}
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/convert", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -381,7 +419,9 @@ class TestAIConvertValidation:
         request_body = {"input_text": "こんにちは", "politeness_level": "invalid"}
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/convert", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -397,7 +437,9 @@ class TestAIConvertValidation:
         request_body = {"politeness_level": "normal"}
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/convert", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -413,7 +455,9 @@ class TestAIConvertValidation:
         request_body = {"input_text": "こんにちは"}
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/ai/convert", json=request_body)
+            response = await client.post(
+                "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+            )
 
             # 【結果検証】: 422エラーが返されることを確認
             assert response.status_code == 422
@@ -447,11 +491,15 @@ class TestAIConvertRateLimit:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 # 1回目のリクエスト
-                response1 = await client.post("/api/v1/ai/convert", json=request_body)
+                response1 = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
                 assert response1.status_code == 200
 
                 # 2回目のリクエスト（即座に送信）
-                response2 = await client.post("/api/v1/ai/convert", json=request_body)
+                response2 = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 2回目は429エラーであることを確認
                 assert response2.status_code == 429
@@ -476,10 +524,12 @@ class TestAIConvertRateLimit:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 # 1回目のリクエスト
-                await client.post("/api/v1/ai/convert", json=request_body)
+                await client.post("/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS)
 
                 # 2回目のリクエスト（制限超過）
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 429レスポンスにRetry-Afterヘッダーが含まれることを確認
                 assert response.status_code == 429
@@ -509,14 +559,18 @@ class TestAIConvertRateLimit:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 # 1回目のリクエスト
-                response1 = await client.post("/api/v1/ai/convert", json=request_body)
+                response1 = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
                 assert response1.status_code == 200
 
                 # リミッターをリセット（10秒経過をシミュレート）
                 limiter.reset()
 
                 # 2回目のリクエスト（リセット後）
-                response2 = await client.post("/api/v1/ai/convert", json=request_body)
+                response2 = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 2回目も成功することを確認
                 assert response2.status_code == 200
@@ -551,7 +605,9 @@ class TestAIConvertErrorHandling:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 504エラーが返されることを確認
                 assert response.status_code == 504
@@ -582,7 +638,9 @@ class TestAIConvertErrorHandling:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 503エラーが返されることを確認
                 assert response.status_code == 503
@@ -613,7 +671,9 @@ class TestAIConvertErrorHandling:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 500エラーが返されることを確認
                 assert response.status_code == 500
@@ -647,7 +707,9 @@ class TestAIConvertErrorHandling:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: 429エラーが返されることを確認
                 assert response.status_code == 429
@@ -676,7 +738,9 @@ class TestAIConvertErrorHandling:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 # 【結果検証】: エラーレスポンス形式を確認
                 response_json = response.json()
@@ -730,7 +794,9 @@ class TestAIConvertLogging:
             async with AsyncClient(
                 transport=ASGITransport(app=test_client_with_db), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
 
@@ -784,7 +850,9 @@ class TestAIConvertLogging:
             async with AsyncClient(
                 transport=ASGITransport(app=test_client_with_db), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 500
 
@@ -822,7 +890,9 @@ class TestAIConvertLogging:
             async with AsyncClient(
                 transport=ASGITransport(app=test_client_with_db), base_url="http://test"
             ) as client:
-                response = await client.post("/api/v1/ai/convert", json=request_body)
+                response = await client.post(
+                    "/api/v1/ai/convert", json=request_body, headers=AUTH_HEADERS
+                )
 
                 assert response.status_code == 200
 
@@ -877,14 +947,18 @@ class TestAIConvertLogging:
                 transport=ASGITransport(app=test_client_with_db), base_url="http://test"
             ) as client:
                 # 1回目のリクエスト
-                response1 = await client.post("/api/v1/ai/convert", json=request_body1)
+                response1 = await client.post(
+                    "/api/v1/ai/convert", json=request_body1, headers=AUTH_HEADERS
+                )
                 assert response1.status_code == 200
 
                 # リミッターをリセット（2回目のリクエストを許可）
                 limiter.reset()
 
                 # 2回目のリクエスト
-                response2 = await client.post("/api/v1/ai/convert", json=request_body2)
+                response2 = await client.post(
+                    "/api/v1/ai/convert", json=request_body2, headers=AUTH_HEADERS
+                )
                 assert response2.status_code == 200
 
                 # 【結果検証】: 新しいログが作成されたことを確認

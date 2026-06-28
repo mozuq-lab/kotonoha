@@ -17,6 +17,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.rate_limit import limiter
 from app.main import app
+from tests.conftest import AUTH_HEADERS
 
 
 @pytest.fixture(autouse=True)
@@ -59,6 +60,7 @@ async def test_ai_conversion_response_time_with_mock():
                     "input_text": "テスト文章",
                     "politeness_level": "normal",
                 },
+                headers=AUTH_HEADERS,
             )
             elapsed = time.time() - start
 
@@ -152,6 +154,7 @@ async def test_concurrent_ai_conversions_without_rate_limit():
                     "input_text": "テスト文章",
                     "politeness_level": "normal",
                 },
+                headers=AUTH_HEADERS,
             )
             total_time = time.time() - start
 
@@ -187,6 +190,7 @@ async def test_sequential_requests_response_consistency():
                     "input_text": "テスト",
                     "politeness_level": "normal",
                 },
+                headers=AUTH_HEADERS,
             )
             assert response.status_code == 200
             data = response.json()
@@ -232,6 +236,7 @@ async def test_large_input_text_performance():
                     "input_text": large_text,
                     "politeness_level": "polite",
                 },
+                headers=AUTH_HEADERS,
             )
             elapsed = time.time() - start
 
@@ -289,6 +294,7 @@ async def test_response_time_single_request():
                     "input_text": "テスト",
                     "politeness_level": "normal",
                 },
+                headers=AUTH_HEADERS,
             )
             elapsed = time.time() - start
 

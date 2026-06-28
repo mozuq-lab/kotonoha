@@ -15,6 +15,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.rate_limit import limiter
 from app.main import app
+from tests.conftest import AUTH_HEADERS
 
 
 @pytest.fixture(autouse=True)
@@ -60,6 +61,7 @@ async def test_full_conversion_workflow_with_mock():
                     "input_text": "ありがとう",
                     "politeness_level": "polite",
                 },
+                headers=AUTH_HEADERS,
             )
             assert convert_response.status_code == 200
             convert_data = convert_response.json()
@@ -75,6 +77,7 @@ async def test_full_conversion_workflow_with_mock():
                     "politeness_level": "polite",
                     "previous_result": convert_data["converted_text"],
                 },
+                headers=AUTH_HEADERS,
             )
             assert regenerate_response.status_code == 200
             regenerate_data = regenerate_response.json()
@@ -121,6 +124,7 @@ async def test_multiple_conversions_different_levels_with_mock():
                         "input_text": input_text,
                         "politeness_level": level,
                     },
+                    headers=AUTH_HEADERS,
                 )
                 assert response.status_code == 200
                 results[level] = response.json()
@@ -152,6 +156,7 @@ async def test_error_handling_invalid_politeness_level():
                 "input_text": "テスト",
                 "politeness_level": "invalid_level",
             },
+            headers=AUTH_HEADERS,
         )
         assert response.status_code == 422  # Validation Error
 
@@ -172,6 +177,7 @@ async def test_error_handling_empty_input_text():
                 "input_text": "",
                 "politeness_level": "normal",
             },
+            headers=AUTH_HEADERS,
         )
         assert response.status_code == 422  # Validation Error
 
@@ -220,6 +226,7 @@ async def test_regenerate_workflow_with_mock():
                     "input_text": "テスト入力",
                     "politeness_level": "normal",
                 },
+                headers=AUTH_HEADERS,
             )
             assert convert_response.status_code == 200
             convert_data = convert_response.json()
@@ -233,6 +240,7 @@ async def test_regenerate_workflow_with_mock():
                     "politeness_level": "normal",
                     "previous_result": first_converted_text,
                 },
+                headers=AUTH_HEADERS,
             )
             assert regenerate_response.status_code == 200
             regenerate_data = regenerate_response.json()
@@ -258,6 +266,7 @@ async def test_missing_required_field_error():
                 "politeness_level": "normal",
                 # input_text を省略
             },
+            headers=AUTH_HEADERS,
         )
         assert response.status_code == 422  # Validation Error
 
@@ -275,6 +284,6 @@ async def test_invalid_json_error():
         response = await client.post(
             "/api/v1/ai/convert",
             content="invalid json",
-            headers={"Content-Type": "application/json"},
+            headers={**AUTH_HEADERS, "Content-Type": "application/json"},
         )
         assert response.status_code == 422  # Validation Error

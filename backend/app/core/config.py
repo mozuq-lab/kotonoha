@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # レート制限設定
     RATE_LIMIT_PER_MINUTE: int = 10
 
+    # AI エンドポイント保護用 API キー（共有シークレット）
+    API_KEY: str | None = None
+
     # 信頼プロキシ（X-Forwarded-For をこの IP からのみ信頼する）
     TRUSTED_PROXIES: str = ""
 

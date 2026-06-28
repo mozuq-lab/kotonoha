@@ -15,6 +15,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.rate_limit import limiter
 from app.main import app
+from tests.conftest import AUTH_HEADERS
 
 
 @pytest.fixture(autouse=True)
@@ -41,6 +42,7 @@ async def test_validation_error_handler_empty_input():
                 "input_text": "",
                 "politeness_level": "polite",
             },
+            headers=AUTH_HEADERS,
         )
 
         assert response.status_code == 422
@@ -65,6 +67,7 @@ async def test_validation_error_handler_invalid_politeness():
                 "input_text": "テスト",
                 "politeness_level": "invalid_level",
             },
+            headers=AUTH_HEADERS,
         )
 
         assert response.status_code == 422
@@ -89,6 +92,7 @@ async def test_validation_error_handler_missing_field():
                 "politeness_level": "polite",
                 # input_text を省略
             },
+            headers=AUTH_HEADERS,
         )
 
         assert response.status_code == 422
@@ -110,7 +114,7 @@ async def test_validation_error_handler_invalid_json():
         response = await client.post(
             "/api/v1/ai/convert",
             content="invalid json",
-            headers={"Content-Type": "application/json"},
+            headers={**AUTH_HEADERS, "Content-Type": "application/json"},
         )
 
         assert response.status_code == 422
