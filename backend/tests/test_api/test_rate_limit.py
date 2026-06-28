@@ -10,12 +10,12 @@ TASK-0025: レート制限ミドルウェア実装 - TDD Redフェーズ
 🔵 rate-limit-middleware-testcases.md に基づく実装
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.core.rate_limit import limiter
+from app.core.rate_limit import get_client_ip, limiter
 from app.main import app
 
 # AIクライアントモックのデフォルトレスポンス
@@ -160,21 +160,21 @@ async def test_tc003_制限リセットテスト(mock_ai_client):
 
 
 @pytest.mark.asyncio
-async def test_tc004_ip別制限テスト(mock_ai_client):
+async def test_tc004_ip別制限テスト(mock_ai_client, monkeypatch):
     """
     【テスト目的】: 異なるIPは独立して制限されることを確認
-    【テスト内容】: IPアドレスごとに個別のレート制限が適用されることを検証
+    【テスト内容】: 信頼プロキシ経由で異なる XFF IP からのリクエストが独立して制限されることを検証
     【期待される動作】: IP Aのリクエストは IP Bの制限に影響しない
     🔵 testcases.md TC-004（line 87-102）に基づく
 
     【テストシナリオ】:
-    - Given: レート制限ミドルウェアが有効な状態
-    - When: 異なるIPアドレスからリクエストを送信
-    - Then: 両方のリクエストが許可される
+    - Given: テストクライアント(127.0.0.1)を信頼プロキシに設定した状態
+    - When: 異なる XFF IP アドレスからリクエストを送信
+    - Then: 両方のリクエストが許可される（XFF IP ごとに独立した制限）
     """
-    # 【テストデータ準備】: 有効なAI変換リクエストを作成
-    # 【初期条件設定】: 異なるクライアントからの同時アクセスを模擬
-    # 🔵 testcases.md TC-004（line 92-95）に基づく
+    # 【テストデータ準備】: テストクライアントの peer IP を信頼プロキシとして設定
+    # 【セキュリティ考慮】: 信頼プロキシ経由の場合のみ XFF が採用される
+    monkeypatch.setattr("app.core.rate_limit.settings.TRUSTED_PROXIES", "127.0.0.1")
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -696,3 +696,36 @@ async def test_tc304_高頻度リクエストテスト(mock_ai_client):
 
         # 【結果検証】: システムがクラッシュせずに全リクエストに応答
         assert len(responses) == num_requests  # 【確認内容】: 全リクエストに応答 🟡
+
+
+# ================================================================================
+# カテゴリE: get_client_ip 信頼プロキシ制御テスト
+# ================================================================================
+
+
+def _make_request(client_host: str | None, xff: str | None) -> MagicMock:
+    request = MagicMock()
+    request.client = MagicMock(host=client_host) if client_host else None
+    request.headers = {"X-Forwarded-For": xff} if xff is not None else {}
+    return request
+
+
+def test_get_client_ip_trusts_xff_only_from_trusted_proxy(monkeypatch):
+    # 信頼プロキシ(10.0.0.1)経由なら XFF 最左を採用
+    monkeypatch.setattr("app.core.rate_limit.settings.TRUSTED_PROXIES", "10.0.0.1")
+    req = _make_request(client_host="10.0.0.1", xff="203.0.113.9, 10.0.0.1")
+    assert get_client_ip(req) == "203.0.113.9"
+
+
+def test_get_client_ip_ignores_xff_from_untrusted_source(monkeypatch):
+    # 信頼外からの XFF 偽装は無視し、接続元 IP を採用
+    monkeypatch.setattr("app.core.rate_limit.settings.TRUSTED_PROXIES", "10.0.0.1")
+    req = _make_request(client_host="198.51.100.5", xff="203.0.113.9")
+    assert get_client_ip(req) == "198.51.100.5"
+
+
+def test_get_client_ip_no_trusted_proxies_uses_peer(monkeypatch):
+    # TRUSTED_PROXIES 未設定なら常に接続元 IP
+    monkeypatch.setattr("app.core.rate_limit.settings.TRUSTED_PROXIES", "")
+    req = _make_request(client_host="198.51.100.5", xff="203.0.113.9")
+    assert get_client_ip(req) == "198.51.100.5"

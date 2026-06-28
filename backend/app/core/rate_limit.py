@@ -14,33 +14,32 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from starlette.responses import JSONResponse
 
+from app.core.config import settings
+
 
 def get_client_ip(request: Request) -> str:
-    """
-    【機能概要】: クライアントIPアドレスを取得
-    【実装方針】: X-Forwarded-Forヘッダーを優先、なければリクエストクライアントIPを使用
+    """クライアント IP アドレスを取得する。
+
+    直接接続元が信頼プロキシリストに含まれる場合のみ X-Forwarded-For
+    ヘッダーの最左 IP を採用する。それ以外はヘッダー偽装によるレート制限
+    回避を防ぐため接続元 IP を採用する。
 
     Args:
-        request: FastAPIリクエストオブジェクト
+        request: FastAPI リクエストオブジェクト
 
     Returns:
-        str: クライアントIPアドレス
+        str: クライアント IP アドレス
     """
-    # X-Forwarded-Forヘッダーを確認（プロキシ/ロードバランサー経由）
-    forwarded_for = request.headers.get("X-Forwarded-For", "")
+    peer = request.client.host if request.client and request.client.host else None
 
-    if forwarded_for:
-        # カンマ区切りの場合は最初のIPを取得（最左がオリジナルクライアント）
-        ip = forwarded_for.split(",")[0].strip()
-        if ip:
-            return ip
+    if peer and peer in settings.TRUSTED_PROXIES_LIST:
+        forwarded_for = request.headers.get("X-Forwarded-For", "")
+        if forwarded_for:
+            ip = forwarded_for.split(",")[0].strip()
+            if ip:
+                return ip
 
-    # フォールバック: リクエストクライアントIP
-    if request.client and request.client.host:
-        return request.client.host
-
-    # 最終フォールバック
-    return "unknown"
+    return peer or "unknown"
 
 
 # レート制限設定: 10秒に1回

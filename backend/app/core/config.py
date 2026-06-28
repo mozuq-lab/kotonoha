@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # レート制限設定
     RATE_LIMIT_PER_MINUTE: int = 10
 
+    # 信頼プロキシ（X-Forwarded-For をこの IP からのみ信頼する）
+    TRUSTED_PROXIES: str = ""
+
     # ログ設定
     LOG_LEVEL: str = "INFO"
     LOG_FILE_PATH: str = "logs/app.log"
@@ -80,6 +83,11 @@ class Settings(BaseSettings):
     def CORS_ORIGINS_LIST(self) -> list[str]:  # noqa: N802
         """CORS許可オリジンのリスト"""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+
+    @property
+    def TRUSTED_PROXIES_LIST(self) -> list[str]:  # noqa: N802
+        """信頼プロキシ IP のリスト（空文字なら空リスト）"""
+        return [ip.strip() for ip in self.TRUSTED_PROXIES.split(",") if ip.strip()]
 
 
 # グローバル設定インスタンス
