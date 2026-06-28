@@ -29,7 +29,7 @@ class Base:
     def __tablename__(self) -> str:
         """
         【機能概要】: クラス名からテーブル名を自動生成
-        【実装方針】: クラス名を小文字に変換（例: AIConversionHistory -> ai_conversion_history）
+        【実装方針】: クラス名を小文字に変換（例: AIConversionLog -> ai_conversion_logs）
         【テスト対応】: モデルクラスがテーブル名を自動的に持つことを保証
         🔵 SQLAlchemy 2.x の標準機能
         """

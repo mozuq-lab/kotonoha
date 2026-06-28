@@ -23,8 +23,8 @@ Example:
             request: AIConversionRequest,
             db: AsyncSession = Depends(get_db)
         ):
-            history = AIConversionHistory(...)
-            db.add(history)
+            log = AIConversionLog.create_log(...)
+            db.add(log)
             await db.commit()
             return {"success": True}
 """
@@ -101,8 +101,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
                 request: AIConversionRequest,
                 db: AsyncSession = Depends(get_db)
             ):
-                history = AIConversionHistory(...)
-                db.add(history)
+                log = AIConversionLog.create_log(...)
+                db.add(log)
                 # get_db()が自動的にcommitを実行
     """
     async with async_session_maker() as session:

@@ -65,39 +65,3 @@ async def create_conversion_log(
     await db.refresh(log)
 
     return log
-
-
-async def create_conversion_history(
-    db: AsyncSession,
-    input_text: str,
-    output_text: str,
-    politeness_level: str,
-    conversion_time_ms: int | None = None,
-    ai_provider: str = "anthropic",
-) -> AIConversionLog:
-    """
-    AI変換履歴を作成する（成功時のみ使用する簡易版）
-
-    【機能概要】: 正常完了したAI変換の履歴を作成
-    【実装方針】: create_conversion_logの簡易ラッパー
-
-    Args:
-        db: データベースセッション
-        input_text: 元の入力テキスト
-        output_text: 変換後テキスト
-        politeness_level: 丁寧さレベル
-        conversion_time_ms: 変換処理時間（ミリ秒）
-        ai_provider: AIプロバイダー名
-
-    Returns:
-        AIConversionLog: 作成された履歴エントリ
-    """
-    return await create_conversion_log(
-        db=db,
-        input_text=input_text,
-        output_text=output_text,
-        politeness_level=politeness_level,
-        conversion_time_ms=conversion_time_ms,
-        ai_provider=ai_provider,
-        is_success=True,
-    )
