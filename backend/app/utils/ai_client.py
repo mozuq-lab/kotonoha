@@ -35,6 +35,9 @@ logger = logging.getLogger(__name__)
 # 丁寧さレベルの型定義
 PolitenessLevel = Literal["casual", "normal", "polite"]
 
+# 呼び出すたびに新しい awaitable を返す 0 引数の callable（リトライ用）
+CoroFactory = Callable[[], Coroutine[Any, Any, Any]]
+
 
 class AIClient:
     """
@@ -121,7 +124,7 @@ class AIClient:
             return AIConversionException(f"AI API error: {msg}")
         return AIConversionException(f"AI API error: {msg}")
 
-    async def _call_with_retry(self, coro_factory: Callable[[], Coroutine[Any, Any, Any]]) -> Any:  # noqa: ANN401
+    async def _call_with_retry(self, coro_factory: CoroFactory) -> Any:  # noqa: ANN401
         """リトライ可能例外に対し AI_MAX_RETRIES 回まで指数バックオフで再試行する。
 
         Args:
@@ -131,8 +134,12 @@ class AIClient:
             coro_factory() の結果
 
         Raises:
+            ValueError: AI_MAX_RETRIES が 1 未満の場合
             内部例外型（_classify_error による写像後）
         """
+        if settings.AI_MAX_RETRIES < 1:
+            raise ValueError("AI_MAX_RETRIES must be >= 1")
+
         last_exc: Exception | None = None
         for attempt in range(settings.AI_MAX_RETRIES):
             try:
@@ -143,6 +150,8 @@ class AIClient:
                     await asyncio.sleep(0.5 * (2**attempt))
             except Exception as exc:  # noqa: BLE001
                 raise self._classify_error(exc) from exc
+        # ガードによりループは最低1回実行されるため last_exc は必ず設定済み
+        assert last_exc is not None
         raise self._classify_error(last_exc) from last_exc
 
     def _get_politeness_instruction(self, level: PolitenessLevel) -> str:
@@ -392,11 +401,7 @@ class AIClient:
                     messages=[{"role": "user", "content": prompt}],
                 )
 
-            try:
-                response = await self._call_with_retry(_call_anthropic)
-            except AIProviderException:
-                raise
-
+            response = await self._call_with_retry(_call_anthropic)
             converted_text = response.content[0].text.strip()
 
         elif provider == "openai":
@@ -417,11 +422,7 @@ class AIClient:
                     temperature=0.9,  # 多様性を高める
                 )
 
-            try:
-                response = await self._call_with_retry(_call_openai)
-            except AIProviderException:
-                raise
-
+            response = await self._call_with_retry(_call_openai)
             converted_text = response.choices[0].message.content.strip()
 
         else:

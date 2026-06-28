@@ -30,7 +30,6 @@ from app.utils.exceptions import (
 class TestAIClientInitialization:
     """AIClient初期化テスト"""
 
-    @pytest.mark.skip(reason="anthropicパッケージが環境にインストールされていない")
     def test_ai_client_initialization_with_anthropic_key(self):
         """
         UT-001: Anthropic APIキー設定時の初期化
@@ -50,7 +49,6 @@ class TestAIClientInitialization:
             client = AIClient()
             assert client.anthropic_client is not None
 
-    @pytest.mark.skip(reason="openaiパッケージが環境にインストールされていない")
     def test_ai_client_initialization_with_openai_key(self):
         """
         UT-002: OpenAI APIキー設定時の初期化
@@ -69,7 +67,6 @@ class TestAIClientInitialization:
             client = AIClient()
             assert client.openai_client is not None
 
-    @pytest.mark.skip(reason="anthropic/openaiパッケージが環境にインストールされていない")
     def test_ai_client_initialization_with_both_keys(self):
         """
         UT-003: 両方のAPIキー設定時の初期化
@@ -528,11 +525,29 @@ class TestClassifyError:
         )
         assert isinstance(AIClient()._classify_error(exc), AIRateLimitException)
 
+    def test_classify_error_rate_limit_openai(self):
+        """openai.RateLimitErrorがAIRateLimitExceptionに写像される。"""
+        from app.utils.ai_client import AIClient
+
+        exc = openai.RateLimitError(
+            message="rate",
+            response=httpx.Response(429, request=httpx.Request("POST", "http://x")),
+            body=None,
+        )
+        assert isinstance(AIClient()._classify_error(exc), AIRateLimitException)
+
     def test_classify_error_connection(self):
         """APIConnectionErrorがAIProviderExceptionに写像される。"""
         from app.utils.ai_client import AIClient
 
         exc = anthropic.APIConnectionError(request=httpx.Request("POST", "http://x"))
+        assert isinstance(AIClient()._classify_error(exc), AIProviderException)
+
+    def test_classify_error_connection_openai(self):
+        """openai.APIConnectionErrorがAIProviderExceptionに写像される。"""
+        from app.utils.ai_client import AIClient
+
+        exc = openai.APIConnectionError(request=httpx.Request("POST", "http://x"))
         assert isinstance(AIClient()._classify_error(exc), AIProviderException)
 
     def test_classify_error_unknown_is_conversion(self):
@@ -584,3 +599,24 @@ class TestCallWithRetry:
         with patch("app.utils.ai_client.asyncio.sleep", new_callable=AsyncMock):
             with pytest.raises(AIConversionException):
                 await client._call_with_retry(fail)
+
+    @pytest.mark.asyncio
+    async def test_retry_exhausted_raises_classified_exception(self, monkeypatch):
+        """全リトライ枯渇後、写像済み内部例外を再raiseする。"""
+        from app.utils.ai_client import AIClient
+
+        client = AIClient()
+        call_count = 0
+
+        async def always_timeout():
+            nonlocal call_count
+            call_count += 1
+            raise anthropic.APITimeoutError(request=httpx.Request("POST", "http://x"))
+
+        monkeypatch.setattr("app.utils.ai_client.settings.AI_MAX_RETRIES", 2)
+
+        with patch("app.utils.ai_client.asyncio.sleep", new_callable=AsyncMock):
+            with pytest.raises(AITimeoutException):
+                await client._call_with_retry(always_timeout)
+
+        assert call_count == 2
