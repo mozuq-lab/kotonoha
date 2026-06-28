@@ -64,6 +64,39 @@ async def test_database_connection_error():
     await engine.dispose()
 
 
+async def test_create_conversion_log_does_not_commit(db_session, test_session_maker):
+    """CRUD は flush のみ行い commit はセッション層に委譲する。
+
+    flush のみであれば同一トランザクションをロールバックするとレコードが消える。
+    commit が呼ばれていた場合は rollback 後も別セッションからレコードが見える。
+    """
+    from sqlalchemy import select
+
+    from app.crud.crud_ai_conversion import create_conversion_log
+    from app.models.ai_conversion_logs import AIConversionLog
+
+    log = await create_conversion_log(
+        db=db_session,
+        input_text="テスト",
+        output_text="テストです",
+        politeness_level="normal",
+    )
+    log_id = log.id
+    assert log_id is not None  # flush で採番される
+
+    # ロールバック: commit 済みであれば record は残り、flush のみであれば消える
+    await db_session.rollback()
+
+    # 別セッションで確認（commit されていれば record が残るはず）
+    async with test_session_maker() as fresh_session:
+        result = await fresh_session.execute(
+            select(AIConversionLog).where(AIConversionLog.id == log_id)
+        )
+        found = result.scalar_one_or_none()
+
+    assert found is None, "CRUD must not commit; commit is delegated to the session layer (get_db)"
+
+
 async def test_session_begin_transaction(db_session):
     """
     トランザクション開始機能のテスト

@@ -6,7 +6,6 @@ FastAPIメインアプリケーション
 """
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 from typing import AsyncIterator
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -18,6 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.api import api_router
+from app.api.v1.endpoints.health import get_ai_provider_status, get_current_timestamp
 from app.core.config import settings
 from app.core.exceptions import (
     database_exception_handler,
@@ -83,17 +83,6 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
-def get_current_timestamp() -> str:
-    """
-    【機能概要】: 現在時刻をISO 8601形式で取得するヘルパー関数
-    【設計方針】: DRY原則に基づき、タイムスタンプ生成を一箇所に集約
-
-    Returns:
-        str: ISO 8601形式のタイムスタンプ（UTC、例: "2025-11-20T12:34:56Z"）
-    """
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
 @app.get("/", response_model=RootResponse)
 async def root() -> RootResponse:
     """
@@ -104,26 +93,6 @@ async def root() -> RootResponse:
         RootResponse: メッセージとバージョン情報を含むレスポンス
     """
     return RootResponse(message="kotonoha API is running", version=settings.VERSION)
-
-
-def get_ai_provider_status() -> str:
-    """
-    【機能概要】: 有効なAIプロバイダーを確認するヘルパー関数
-    【設計方針】: AIClient の初期化状態を確認し、使用可能なプロバイダーを返す
-
-    Returns:
-        str: AIプロバイダー名（"anthropic", "openai", "none"）
-
-    🔵 TASK-0029に基づく
-    """
-    from app.utils import ai_client as ai_client_module
-
-    ai_client = ai_client_module.ai_client
-    if ai_client.anthropic_client:
-        return "anthropic"
-    elif ai_client.openai_client:
-        return "openai"
-    return "none"
 
 
 @app.get(

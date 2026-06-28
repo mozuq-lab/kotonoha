@@ -59,9 +59,9 @@ async def create_conversion_log(
         error_message=error_message,
     )
 
-    # データベースに追加
+    # データベースに追加（commit はセッション層 get_db() に委譲）
     db.add(log)
-    await db.commit()
+    await db.flush()
     await db.refresh(log)
 
     return log
