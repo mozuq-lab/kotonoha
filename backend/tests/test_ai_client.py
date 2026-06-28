@@ -10,7 +10,17 @@ TASK-0026: 外部AI API連携実装（Claude/GPT プロキシ）
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import anthropic
+import httpx
+import openai
 import pytest
+
+from app.utils.exceptions import (
+    AIConversionException,
+    AIProviderException,
+    AIRateLimitException,
+    AITimeoutException,
+)
 
 # ============================================================
 # 1. 単体テスト: AIClient初期化
@@ -480,3 +490,97 @@ class TestProcessingTimeMeasurement:
         """
         # E2Eテストで実際のAPIを使用して検証
         pass
+
+
+# ============================================================
+# 9. _classify_error テスト（SDK公式例外型→内部例外型の写像）
+# ============================================================
+
+
+class TestClassifyError:
+    """_classify_error メソッドのテスト"""
+
+    @pytest.mark.parametrize(
+        "sdk_exc,expected",
+        [
+            (
+                anthropic.APITimeoutError(request=httpx.Request("POST", "http://x")),
+                AITimeoutException,
+            ),
+            (openai.APITimeoutError(request=httpx.Request("POST", "http://x")), AITimeoutException),
+            (httpx.TimeoutException("timed out"), AITimeoutException),
+        ],
+    )
+    def test_classify_error_timeout(self, sdk_exc, expected):
+        """タイムアウト系SDK例外がAITimeoutExceptionに写像される。"""
+        from app.utils.ai_client import AIClient
+
+        assert isinstance(AIClient()._classify_error(sdk_exc), expected)
+
+    def test_classify_error_rate_limit(self):
+        """RateLimitErrorがAIRateLimitExceptionに写像される。"""
+        from app.utils.ai_client import AIClient
+
+        exc = anthropic.RateLimitError(
+            message="rate",
+            response=httpx.Response(429, request=httpx.Request("POST", "http://x")),
+            body=None,
+        )
+        assert isinstance(AIClient()._classify_error(exc), AIRateLimitException)
+
+    def test_classify_error_connection(self):
+        """APIConnectionErrorがAIProviderExceptionに写像される。"""
+        from app.utils.ai_client import AIClient
+
+        exc = anthropic.APIConnectionError(request=httpx.Request("POST", "http://x"))
+        assert isinstance(AIClient()._classify_error(exc), AIProviderException)
+
+    def test_classify_error_unknown_is_conversion(self):
+        """不明な例外がAIConversionExceptionに写像される。"""
+        from app.utils.ai_client import AIClient
+
+        assert isinstance(AIClient()._classify_error(ValueError("boom")), AIConversionException)
+
+
+# ============================================================
+# 10. _call_with_retry テスト
+# ============================================================
+
+
+class TestCallWithRetry:
+    """_call_with_retry メソッドのリトライ動作テスト"""
+
+    @pytest.mark.asyncio
+    async def test_retry_on_timeout_then_succeed(self):
+        """タイムアウト後にリトライして成功する。"""
+        from app.utils.ai_client import AIClient
+
+        client = AIClient()
+        call_count = 0
+
+        async def flaky():
+            nonlocal call_count
+            call_count += 1
+            if call_count < 2:
+                raise anthropic.APITimeoutError(request=httpx.Request("POST", "http://x"))
+            return "ok"
+
+        with patch("app.utils.ai_client.asyncio.sleep", new_callable=AsyncMock):
+            result = await client._call_with_retry(flaky)
+
+        assert result == "ok"
+        assert call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_non_retryable_raises_immediately(self):
+        """リトライ対象外の例外は即座に変換して送出する。"""
+        from app.utils.ai_client import AIClient
+
+        client = AIClient()
+
+        async def fail():
+            raise ValueError("not retryable")
+
+        with patch("app.utils.ai_client.asyncio.sleep", new_callable=AsyncMock):
+            with pytest.raises(AIConversionException):
+                await client._call_with_retry(fail)

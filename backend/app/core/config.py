@@ -53,6 +53,7 @@ class Settings(BaseSettings):
 
     # AI変換機能設定（Anthropic）
     ANTHROPIC_API_KEY: str | None = None
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
     DEFAULT_AI_PROVIDER: str = "anthropic"
     AI_API_TIMEOUT: int = 30
     AI_MAX_RETRIES: int = 3

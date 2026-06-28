@@ -12,9 +12,15 @@ TASK-0026: 外部AI API連携実装（Claude/GPT プロキシ）
   - エラーハンドリング（タイムアウト、レート制限等）
 """
 
+import asyncio
 import logging
 import time
-from typing import Literal
+from collections.abc import Callable, Coroutine
+from typing import Any, Literal
+
+import anthropic
+import httpx
+import openai
 
 from app.core.config import settings
 from app.utils.exceptions import (
@@ -48,6 +54,17 @@ class AIClient:
     🔵 REQ-901, REQ-902に基づく
     """
 
+    # リトライ対象とみなす SDK 例外
+    _RETRYABLE = (
+        anthropic.APITimeoutError,
+        anthropic.RateLimitError,
+        anthropic.APIConnectionError,
+        openai.APITimeoutError,
+        openai.RateLimitError,
+        openai.APIConnectionError,
+        httpx.TimeoutException,
+    )
+
     def __init__(self) -> None:
         """
         AIClientの初期化
@@ -60,7 +77,6 @@ class AIClient:
         # Anthropic クライアント初期化
         if settings.ANTHROPIC_API_KEY:
             try:
-                import httpx
                 from anthropic import AsyncAnthropic
 
                 # httpxクライアントを明示的に作成（プロキシ設定を無視）
@@ -89,6 +105,45 @@ class AIClient:
                 logger.warning("openai package not installed")
             except Exception as e:
                 logger.error(f"Failed to initialize OpenAI client: {e}")
+
+    def _classify_error(self, exc: Exception) -> Exception:
+        """SDK 例外を内部例外型へ写像する。"""
+        msg = str(exc)
+        if isinstance(
+            exc, (anthropic.APITimeoutError, openai.APITimeoutError, httpx.TimeoutException)
+        ):
+            return AITimeoutException(f"AI API timeout: {msg}")
+        if isinstance(exc, (anthropic.RateLimitError, openai.RateLimitError)):
+            return AIRateLimitException(f"AI API rate limit: {msg}")
+        if isinstance(exc, (anthropic.APIConnectionError, openai.APIConnectionError)):
+            return AIProviderException(f"AI provider unavailable: {msg}")
+        if isinstance(exc, (anthropic.APIError, openai.APIError)):
+            return AIConversionException(f"AI API error: {msg}")
+        return AIConversionException(f"AI API error: {msg}")
+
+    async def _call_with_retry(self, coro_factory: Callable[[], Coroutine[Any, Any, Any]]) -> Any:  # noqa: ANN401
+        """リトライ可能例外に対し AI_MAX_RETRIES 回まで指数バックオフで再試行する。
+
+        Args:
+            coro_factory: 呼び出すたびに新しい awaitable を返す 0 引数の callable
+
+        Returns:
+            coro_factory() の結果
+
+        Raises:
+            内部例外型（_classify_error による写像後）
+        """
+        last_exc: Exception | None = None
+        for attempt in range(settings.AI_MAX_RETRIES):
+            try:
+                return await coro_factory()
+            except self._RETRYABLE as exc:
+                last_exc = exc
+                if attempt < settings.AI_MAX_RETRIES - 1:
+                    await asyncio.sleep(0.5 * (2**attempt))
+            except Exception as exc:  # noqa: BLE001
+                raise self._classify_error(exc) from exc
+        raise self._classify_error(last_exc) from last_exc
 
     def _get_politeness_instruction(self, level: PolitenessLevel) -> str:
         """
@@ -159,37 +214,23 @@ class AIClient:
 
 変換後の文のみを出力してください。説明や追加情報は不要です。"""
 
-        try:
-            response = await self.anthropic_client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+        async def _call() -> object:
+            return await self.anthropic_client.messages.create(
+                model=settings.ANTHROPIC_MODEL,
                 max_tokens=1024,
                 messages=[{"role": "user", "content": prompt}],
             )
 
-            converted_text = response.content[0].text.strip()
-            conversion_time_ms = int((time.time() - start_time) * 1000)
+        response = await self._call_with_retry(_call)
+        converted_text = response.content[0].text.strip()
+        conversion_time_ms = int((time.time() - start_time) * 1000)
 
-            logger.info(
-                f"Claude conversion completed in {conversion_time_ms}ms: "
-                f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
-            )
+        logger.info(
+            f"Claude conversion completed in {conversion_time_ms}ms: "
+            f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
+        )
 
-            return converted_text, conversion_time_ms
-
-        except Exception as e:
-            error_message = str(e)
-            logger.error(f"Claude API error: {error_message}")
-
-            # タイムアウト判定
-            if "timeout" in error_message.lower():
-                raise AITimeoutException(f"Claude API timeout: {error_message}") from e
-
-            # レート制限判定
-            if "rate" in error_message.lower() or "429" in error_message:
-                raise AIRateLimitException(f"Claude API rate limit: {error_message}") from e
-
-            # その他のエラー
-            raise AIConversionException(f"Claude API error: {error_message}") from e
+        return converted_text, conversion_time_ms
 
     async def convert_text_openai(
         self,
@@ -232,8 +273,8 @@ class AIClient:
 
 変換後の文のみを出力してください。説明や追加情報は不要です。"""
 
-        try:
-            response = await self.openai_client.chat.completions.create(
+        async def _call() -> object:
+            return await self.openai_client.chat.completions.create(
                 model=settings.OPENAI_MODEL,
                 messages=[
                     {
@@ -246,30 +287,16 @@ class AIClient:
                 temperature=0.7,
             )
 
-            converted_text = response.choices[0].message.content.strip()
-            conversion_time_ms = int((time.time() - start_time) * 1000)
+        response = await self._call_with_retry(_call)
+        converted_text = response.choices[0].message.content.strip()
+        conversion_time_ms = int((time.time() - start_time) * 1000)
 
-            logger.info(
-                f"OpenAI conversion completed in {conversion_time_ms}ms: "
-                f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
-            )
+        logger.info(
+            f"OpenAI conversion completed in {conversion_time_ms}ms: "
+            f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
+        )
 
-            return converted_text, conversion_time_ms
-
-        except Exception as e:
-            error_message = str(e)
-            logger.error(f"OpenAI API error: {error_message}")
-
-            # タイムアウト判定
-            if "timeout" in error_message.lower():
-                raise AITimeoutException(f"OpenAI API timeout: {error_message}") from e
-
-            # レート制限判定
-            if "rate" in error_message.lower() or "429" in error_message:
-                raise AIRateLimitException(f"OpenAI API rate limit: {error_message}") from e
-
-            # その他のエラー
-            raise AIConversionException(f"OpenAI API error: {error_message}") from e
+        return converted_text, conversion_time_ms
 
     async def convert_text(
         self,
@@ -354,24 +381,30 @@ class AIClient:
 前回と**異なる表現**で変換してください。意味は同じでも、言い回しを変えてください。
 変換後の文のみを出力してください。説明や追加情報は不要です。"""
 
-        try:
-            if provider == "anthropic":
-                if not self.anthropic_client:
-                    raise AIProviderException("Anthropic API key is not configured")
+        if provider == "anthropic":
+            if not self.anthropic_client:
+                raise AIProviderException("Anthropic API key is not configured")
 
-                response = await self.anthropic_client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
+            async def _call_anthropic() -> object:
+                return await self.anthropic_client.messages.create(
+                    model=settings.ANTHROPIC_MODEL,
                     max_tokens=1024,
                     messages=[{"role": "user", "content": prompt}],
                 )
 
-                converted_text = response.content[0].text.strip()
+            try:
+                response = await self._call_with_retry(_call_anthropic)
+            except AIProviderException:
+                raise
 
-            elif provider == "openai":
-                if not self.openai_client:
-                    raise AIProviderException("OpenAI API key is not configured")
+            converted_text = response.content[0].text.strip()
 
-                response = await self.openai_client.chat.completions.create(
+        elif provider == "openai":
+            if not self.openai_client:
+                raise AIProviderException("OpenAI API key is not configured")
+
+            async def _call_openai() -> object:
+                return await self.openai_client.chat.completions.create(
                     model=settings.OPENAI_MODEL,
                     messages=[
                         {
@@ -384,36 +417,24 @@ class AIClient:
                     temperature=0.9,  # 多様性を高める
                 )
 
-                converted_text = response.choices[0].message.content.strip()
+            try:
+                response = await self._call_with_retry(_call_openai)
+            except AIProviderException:
+                raise
 
-            else:
-                raise AIProviderException(f"Unknown AI provider: {provider}")
+            converted_text = response.choices[0].message.content.strip()
 
-            conversion_time_ms = int((time.time() - start_time) * 1000)
+        else:
+            raise AIProviderException(f"Unknown AI provider: {provider}")
 
-            logger.info(
-                f"AI regeneration completed in {conversion_time_ms}ms: "
-                f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
-            )
+        conversion_time_ms = int((time.time() - start_time) * 1000)
 
-            return converted_text, conversion_time_ms
+        logger.info(
+            f"AI regeneration completed in {conversion_time_ms}ms: "
+            f"'{input_text[:20]}...' -> '{converted_text[:20]}...'"
+        )
 
-        except AIProviderException:
-            raise
-        except Exception as e:
-            error_message = str(e)
-            logger.error(f"AI regeneration error: {error_message}")
-
-            # タイムアウト判定
-            if "timeout" in error_message.lower():
-                raise AITimeoutException(f"AI API timeout: {error_message}") from e
-
-            # レート制限判定
-            if "rate" in error_message.lower() or "429" in error_message:
-                raise AIRateLimitException(f"AI API rate limit: {error_message}") from e
-
-            # その他のエラー
-            raise AIConversionException(f"AI API error: {error_message}") from e
+        return converted_text, conversion_time_ms
 
 
 # シングルトンインスタンス
