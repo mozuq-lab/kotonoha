@@ -12,10 +12,12 @@ TASK-0026: 外部AI API連携実装（Claude/GPT プロキシ）
   - エラーハンドリング（タイムアウト、レート制限等）
 """
 
+import asyncio
 import importlib
 import logging
 import time
-from typing import Literal
+from collections.abc import Awaitable, Callable
+from typing import Literal, TypeVar
 
 from app.core.config import settings
 from app.utils.exceptions import (
@@ -30,8 +32,14 @@ logger = logging.getLogger(__name__)
 # 丁寧さレベルの型定義
 PolitenessLevel = Literal["casual", "normal", "polite"]
 
+# _call_with_retry の戻り値型変数
+_T = TypeVar("_T")
+
 # プロバイダーSDKの型付き例外のキャッシュ（(タイムアウト型, レート制限型)）
 _PROVIDER_EXCEPTION_TYPES: tuple[tuple[type, ...], tuple[type, ...]] | None = None
+
+# リトライ対象の一時的例外型のキャッシュ
+_RETRYABLE_EXCEPTION_TYPES: tuple[type, ...] | None = None
 
 
 def _provider_exception_types() -> tuple[tuple[type, ...], tuple[type, ...]]:
@@ -63,6 +71,43 @@ def _provider_exception_types() -> tuple[tuple[type, ...], tuple[type, ...]]:
 
     _PROVIDER_EXCEPTION_TYPES = (tuple(timeout_types), tuple(rate_types))
     return _PROVIDER_EXCEPTION_TYPES
+
+
+def _retryable_exception_types() -> tuple[type, ...]:
+    """リトライ対象の一時的例外型を収集する（SDK 未インストールでも安全）。
+
+    anthropic / openai の APITimeoutError・RateLimitError・APIConnectionError と
+    httpx.TimeoutException をリトライ対象とする。importlib で動的収集するため、
+    対象 SDK がインストールされていない環境でも例外を送出しない。
+
+    Returns:
+        リトライ対象例外型のタプル（空タプルの場合はリトライしない）。
+    """
+    global _RETRYABLE_EXCEPTION_TYPES
+    if _RETRYABLE_EXCEPTION_TYPES is not None:
+        return _RETRYABLE_EXCEPTION_TYPES
+
+    types: list[type] = []
+    for module_name in ("anthropic", "openai"):
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            continue
+        for exc_name in ("APITimeoutError", "RateLimitError", "APIConnectionError"):
+            t = getattr(module, exc_name, None)
+            if isinstance(t, type):
+                types.append(t)
+
+    try:
+        httpx_mod = importlib.import_module("httpx")
+        t = getattr(httpx_mod, "TimeoutException", None)
+        if isinstance(t, type):
+            types.append(t)
+    except ImportError:
+        pass
+
+    _RETRYABLE_EXCEPTION_TYPES = tuple(types)
+    return _RETRYABLE_EXCEPTION_TYPES
 
 
 def _map_provider_exception(error: Exception, provider_label: str) -> Exception:
@@ -265,10 +310,12 @@ class AIClient:
 変換後の文のみを出力してください。説明や追加情報は不要です。"""
 
         try:
-            response = await self.anthropic_client.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=1024,
-                messages=[{"role": "user", "content": prompt}],
+            response = await self._call_with_retry(
+                lambda: self.anthropic_client.messages.create(
+                    model=settings.ANTHROPIC_MODEL,
+                    max_tokens=1024,
+                    messages=[{"role": "user", "content": prompt}],
+                )
             )
 
             converted_text = _extract_anthropic_text(response)
@@ -335,17 +382,19 @@ class AIClient:
 変換後の文のみを出力してください。説明や追加情報は不要です。"""
 
         try:
-            response = await self.openai_client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "あなたは日本語の文章を適切な丁寧さレベルに変換する専門家です。",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                max_tokens=1024,
-                temperature=0.7,
+            response = await self._call_with_retry(
+                lambda: self.openai_client.chat.completions.create(
+                    model=settings.OPENAI_MODEL,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "あなたは日本語の文章を適切な丁寧さレベルに変換する専門家です。",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=1024,
+                    temperature=0.7,
+                )
             )
 
             converted_text = _extract_openai_text(response)
@@ -457,10 +506,12 @@ class AIClient:
                 if not self.anthropic_client:
                     raise AIProviderException("Anthropic API key is not configured")
 
-                response = await self.anthropic_client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
-                    max_tokens=1024,
-                    messages=[{"role": "user", "content": prompt}],
+                response = await self._call_with_retry(
+                    lambda: self.anthropic_client.messages.create(
+                        model=settings.ANTHROPIC_MODEL,
+                        max_tokens=1024,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
                 )
 
                 converted_text = _extract_anthropic_text(response)
@@ -469,17 +520,19 @@ class AIClient:
                 if not self.openai_client:
                     raise AIProviderException("OpenAI API key is not configured")
 
-                response = await self.openai_client.chat.completions.create(
-                    model=settings.OPENAI_MODEL,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "あなたは日本語の文章を適切な丁寧さレベルに変換する専門家です。",
-                        },
-                        {"role": "user", "content": prompt},
-                    ],
-                    max_tokens=1024,
-                    temperature=0.9,  # 多様性を高める
+                response = await self._call_with_retry(
+                    lambda: self.openai_client.chat.completions.create(
+                        model=settings.OPENAI_MODEL,
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "あなたは日本語の文章を適切な丁寧さレベルに変換する専門家です。",
+                            },
+                            {"role": "user", "content": prompt},
+                        ],
+                        max_tokens=1024,
+                        temperature=0.9,  # 多様性を高める
+                    )
                 )
 
                 converted_text = _extract_openai_text(response)
@@ -506,6 +559,40 @@ class AIClient:
         except Exception as e:
             logger.error(f"AI regeneration error: {e}")
             raise _map_provider_exception(e, "AI") from e
+
+    async def _call_with_retry(self, factory: Callable[[], Awaitable[_T]]) -> _T:
+        """リトライ付き API 呼び出し。
+
+        一時的な例外（タイムアウト / レート制限 / 接続エラー）を
+        settings.AI_MAX_RETRIES 回まで指数バックオフで再試行する。
+        リトライ対象外の例外は即座に伝播させる。
+        リトライを使い切った場合は最後の例外を再 raise し、呼び出し元の
+        ``except Exception`` ブロックに処理させる。
+
+        Args:
+            factory: 呼び出しごとに新しい awaitable を返す 0 引数 callable。
+
+        Returns:
+            API レスポンス。
+
+        Raises:
+            最後の試行で発生した例外（リトライ対象外の例外はそのまま伝播）。
+        """
+        max_retries = max(1, settings.AI_MAX_RETRIES)
+        retryable = _retryable_exception_types()
+        last_exc: BaseException | None = None
+
+        for attempt in range(max_retries):
+            try:
+                return await factory()
+            except Exception as exc:
+                if not retryable or not isinstance(exc, retryable):
+                    raise
+                last_exc = exc
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(0.5 * (2**attempt))
+
+        raise last_exc  # type: ignore[misc]
 
     async def aclose(self) -> None:
         """保持しているHTTPクライアントを明示的にクローズする。
