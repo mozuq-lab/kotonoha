@@ -1,141 +1,100 @@
 """
 エラーハンドリングテスト（TASK-0008）
 
-データベース制約違反、トランザクションエラー、Enumバリデーションエラーを確認。
+ai_conversion_logs テーブルに対するデータベース制約違反、トランザクションエラー、
+バリデーションエラーを確認する。
 """
+
+import uuid
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from app.models.ai_conversion_logs import AIConversionLog
+
 
 async def test_not_null_constraint_violation(db_session):
     """
-    D-4. 必須フィールドがNoneの場合、IntegrityErrorが発生する
+    D-4. 必須フィールド(input_text_hash)がNoneの場合、IntegrityErrorが発生する
 
     【テスト目的】: NOT NULL制約が正しく機能することを確認
-    【テスト内容】: NOT NULL制約のあるフィールドにNoneを設定してコミット
+    【テスト内容】: NOT NULL制約のあるinput_text_hashにNoneを設定してフラッシュ
     【期待される動作】: IntegrityErrorが発生し、レコードは保存されない
-    🔵 この内容は要件定義書（line 293-307, line 421-426）に基づく
     """
-    # 【テストデータ準備】: 必須フィールドの入力漏れをシミュレート
-    # 【初期条件設定】: データベースが起動しており、セッションが利用可能な状態
-    from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
-
-    # 【実際の処理実行】: NOT NULL制約違反のレコードを作成し、コミットを試みる
-    # 【処理内容】: input_textがNoneのため、データベース側でエラーが発生
-    # 【エラー処理の重要性】: データ整合性を保ち、不正なデータの保存を防ぐ
+    # 【実際の処理実行】: NOT NULL制約違反のレコードを作成し、フラッシュを試みる
     with pytest.raises(IntegrityError) as exc_info:
-        record = AIConversionHistory(
-            input_text=None,  # NOT NULL制約違反
-            converted_text="テスト",
-            politeness_level=PolitenessLevel.NORMAL,
+        record = AIConversionLog(
+            input_text_hash=None,  # NOT NULL制約違反
+            input_length=5,
+            output_length=7,
+            politeness_level="normal",
+            session_id=uuid.uuid4(),
         )
         db_session.add(record)
-        await db_session.commit()
+        await db_session.flush()
 
-    # 【結果検証】: IntegrityErrorが発生し、エラーメッセージに詳細が含まれることを確認
-
-    # 【検証項目】: IntegrityErrorが発生したか
-    # 🔵 要件定義書（line 293-307, line 421-426）に基づく制約違反検証
+    # 【検証項目】: IntegrityErrorが発生し、メッセージに制約違反の詳細が含まれるか
     assert exc_info.value is not None
-
-    # 【検証項目】: エラーメッセージに制約違反の詳細が含まれるか
-    # 🔵 要件定義書（line 146）に基づくNOT NULL制約の検証
-    error_message = str(exc_info.value)
-    # PostgreSQLのNOT NULL制約エラーメッセージを確認
-    assert "null" in error_message.lower() or "not-null" in error_message.lower()
+    error_message = str(exc_info.value).lower()
+    assert "null" in error_message or "not-null" in error_message
 
 
-async def test_converted_text_not_null_constraint_violation(db_session):
+async def test_session_id_not_null_constraint_violation(db_session):
     """
-    converted_textのNOT NULL制約違反テスト
+    必須フィールド(session_id)のNOT NULL制約違反テスト
 
-    【テスト目的】: converted_textのNOT NULL制約が正しく機能することを確認
-    【テスト内容】: converted_text=Noneでレコードを作成し、エラーを確認
+    【テスト目的】: session_idのNOT NULL制約が正しく機能することを確認
+    【テスト内容】: session_id=Noneでレコードを作成し、エラーを確認
     【期待される動作】: IntegrityErrorが発生する
-    🔵 この内容は要件定義書（line 55, line 146）に基づく
     """
-    # 【テストデータ準備】: converted_textにNoneを設定
-    from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
-
-    # 【実際の処理実行】: NOT NULL制約違反のレコードを作成
-    # 【処理内容】: converted_textがNoneのため、データベース側でエラーが発生
     with pytest.raises(IntegrityError):
-        record = AIConversionHistory(
-            input_text="テスト",
-            converted_text=None,  # NOT NULL制約違反
-            politeness_level=PolitenessLevel.NORMAL,
+        record = AIConversionLog(
+            input_text_hash="a" * 64,
+            input_length=5,
+            output_length=7,
+            politeness_level="normal",
+            session_id=None,  # NOT NULL制約違反
         )
         db_session.add(record)
-        await db_session.commit()
-
-    # 【結果検証】: IntegrityErrorが発生したことを確認
-    # 【検証項目】: converted_textのNOT NULL制約が機能しているか
-    # 🔵 要件定義書（line 55, line 146）に基づく検証
+        await db_session.flush()
 
 
-async def test_invalid_politeness_level_enum_value():
+async def test_invalid_politeness_level_raises_value_error():
     """
-    E-1. 存在しないpoliteness_level値を設定した場合、ValueErrorが発生する
+    E-1. create_logに無効なpoliteness_level値を渡すとValueErrorが発生する
 
-    【テスト目的】: Enum型バリデーションが正しく機能することを確認
-    【テスト内容】: Enumに定義されていない値を設定した場合、Pythonレベルでエラーが発生
-    【期待される動作】: ValueErrorまたはAttributeErrorが発生する
-    🟡 この内容は要件定義書（line 276-290）に基づくが、Enum実装方法は推測
+    【テスト目的】: アプリケーションレベルの丁寧さレベルバリデーションを確認
+    【テスト内容】: 定義外の値をcreate_logに渡す
+    【期待される動作】: ValueErrorが発生し、不正な値がDBに到達しない
     """
-    # 【テストデータ準備】: 無効なEnum値を使用
-    # 【初期条件設定】: PolitenessLevel Enumが正しく定義されている
-    from app.models.ai_conversion_history import PolitenessLevel
+    with pytest.raises(ValueError) as exc_info:
+        AIConversionLog.create_log(
+            input_text="テスト",
+            output_text="テストです",
+            politeness_level="super_polite",  # 定義外の値
+        )
 
-    # 【実際の処理実行】: 不正なEnum値でインスタンスを作成
-    # 【処理内容】: 'super_polite'はEnum定義に存在しないため、エラーが発生
-    # 【エラー処理の重要性】: データベースに不正な値が保存される前にPythonレベルで検出
-    with pytest.raises((ValueError, AttributeError)) as exc_info:
-        # 文字列をEnum値として直接設定することはできないため、
-        # Enum値として存在しない値を使用しようとするとエラーが発生
-        # ここではPolitenessLevel("super_polite")を試みる
-        PolitenessLevel("super_polite")
-
-    # 【結果検証】: ValueError or AttributeErrorが発生したことを確認
-
-    # 【検証項目】: Enum型バリデーションエラーが発生したか
-    # 🟡 要件定義書（line 276-290）に基づくEnum検証（実装方法は推測）
     assert exc_info.value is not None
 
 
-async def test_enum_string_assignment_prevention():
+async def test_invalid_politeness_level_check_constraint(db_session):
     """
-    Enum型フィールドに文字列を直接代入した場合のテスト
+    politeness_levelのCHECK制約違反テスト（DBレベル）
 
-    【テスト目的】: Enum型に文字列を直接代入できないことを確認
-    【テスト内容】: politeness_levelに文字列を直接代入した場合の動作確認
-    【期待される動作】: 型エラーまたはバリデーションエラーが発生する
-    🟡 この内容は要件定義書（line 57）に基づくが、実装方法は推測
+    【テスト目的】: create_logのバリデーションを迂回した場合でも、DBのCHECK制約で防御されることを確認
+    【テスト内容】: モデルを直接構築し、許可値以外のpoliteness_levelでフラッシュ
+    【期待される動作】: CHECK制約違反によりIntegrityErrorが発生する
     """
-    # 【テストデータ準備】: 文字列をEnum型フィールドに代入しようとする
-    from app.models.ai_conversion_history import AIConversionHistory
-
-    # 【実際の処理実行】: 文字列でインスタンスを作成
-    # 【処理内容】: SQLAlchemy Enumフィールドは文字列を受け入れる可能性がある
-    # 【注意】: Pydantic等のバリデーションがある場合はエラーになる可能性
-    # このテストは実装依存のため、実際の動作を確認する
-    try:
-        AIConversionHistory(
-            input_text="テスト",
-            converted_text="テストです",
-            politeness_level="normal",  # 文字列で代入
+    with pytest.raises(IntegrityError):
+        record = AIConversionLog(
+            input_text_hash="a" * 64,
+            input_length=5,
+            output_length=7,
+            politeness_level="super_polite",  # CHECK制約違反
+            session_id=uuid.uuid4(),
         )
-        # SQLAlchemyのEnumフィールドは文字列を受け入れる可能性があるため、
-        # この場合はエラーが発生しないかもしれない
-        # 【検証項目】: 文字列が受け入れられる場合は、Enum値に自動変換されるか
-        # 文字列が受け入れられた場合、Enum値に変換されているか確認
-        # または、そのまま文字列として保存されるか確認
-        # 🟡 実装依存の動作
-    except (ValueError, TypeError) as e:
-        # 文字列が拒否された場合、適切なエラーが発生したことを確認
-        # 【検証項目】: 型エラーまたはバリデーションエラーが発生したか
-        # 🟡 要件定義書（line 57）に基づくEnum型の検証
-        assert e is not None
+        db_session.add(record)
+        await db_session.flush()
 
 
 async def test_rollback_after_integrity_error(db_session):
@@ -143,39 +102,33 @@ async def test_rollback_after_integrity_error(db_session):
     IntegrityError発生後のロールバック動作テスト
 
     【テスト目的】: エラー発生後にセッションが適切にロールバックされることを確認
-    【テスト内容】: IntegrityError発生後、セッションをロールバックして再利用可能にする
+    【テスト内容】: IntegrityError発生後、ロールバックして正常なレコードを保存する
     【期待される動作】: ロールバック後、セッションが正常に使用できる
     🔵 この内容は要件定義書（line 234-251, NFR-304）に基づく
     """
-    # 【テストデータ準備】: エラー発生後のロールバックをテスト
-    from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
-
     # 【実際の処理実行】: 制約違反エラーを発生させる
-    # 【処理内容】: NOT NULL制約違反のレコードを作成
     try:
-        record = AIConversionHistory(
-            input_text=None,  # NOT NULL制約違反
-            converted_text="テスト",
-            politeness_level=PolitenessLevel.NORMAL,
+        record = AIConversionLog(
+            input_text_hash=None,  # NOT NULL制約違反
+            input_length=5,
+            output_length=7,
+            politeness_level="normal",
+            session_id=uuid.uuid4(),
         )
         db_session.add(record)
-        await db_session.commit()
+        await db_session.flush()
     except IntegrityError:
         # 【テスト後処理】: エラー発生後、明示的にロールバック
-        # 【状態復元】: セッションをクリーンな状態に戻す
         await db_session.rollback()
 
-    # 【結果検証】: ロールバック後、セッションが正常に使用できることを確認
-
     # 【検証項目】: ロールバック後、正常なレコードを作成できるか
-    # 🔵 要件定義書（line 234-251, NFR-304）に基づくエラーハンドリング検証
-    normal_record = AIConversionHistory(
+    normal_record = AIConversionLog.create_log(
         input_text="正常なテスト",
-        converted_text="正常なテストです",
-        politeness_level=PolitenessLevel.NORMAL,
+        output_text="正常なテストです",
+        politeness_level="normal",
     )
     db_session.add(normal_record)
-    await db_session.commit()
+    await db_session.flush()
 
     # 【検証項目】: 正常なレコードが保存されたか
     assert normal_record.id is not None
@@ -186,27 +139,19 @@ async def test_multiple_integrity_errors(db_session):
     複数のNOT NULL制約違反を同時に含むレコードのテスト
 
     【テスト目的】: 複数の制約違反が発生した場合、適切なエラーが返されることを確認
-    【テスト内容】: input_textとconverted_textの両方がNoneのレコードを作成
+    【テスト内容】: input_text_hashとinput_lengthの両方がNoneのレコードを作成
     【期待される動作】: IntegrityErrorが発生する
-    🔵 この内容は要件定義書（line 54-55, line 146）に基づく
     """
-    # 【テストデータ準備】: 複数の制約違反を含むデータ
-    from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
-
-    # 【実際の処理実行】: 複数のNOT NULL制約違反を含むレコードを作成
-    # 【処理内容】: input_textとconverted_textの両方がNone
     with pytest.raises(IntegrityError):
-        record = AIConversionHistory(
-            input_text=None,  # NOT NULL制約違反
-            converted_text=None,  # NOT NULL制約違反
-            politeness_level=PolitenessLevel.NORMAL,
+        record = AIConversionLog(
+            input_text_hash=None,  # NOT NULL制約違反
+            input_length=None,  # NOT NULL制約違反
+            output_length=7,
+            politeness_level="normal",
+            session_id=uuid.uuid4(),
         )
         db_session.add(record)
-        await db_session.commit()
-
-    # 【結果検証】: IntegrityErrorが発生したことを確認
-    # 【検証項目】: 複数の制約違反がある場合も適切にエラーが発生するか
-    # 🔵 要件定義書（line 54-55, line 146）に基づく検証
+        await db_session.flush()
 
 
 # ================================================================================
@@ -214,73 +159,25 @@ async def test_multiple_integrity_errors(db_session):
 # ================================================================================
 
 
-async def test_insert_fails_with_not_null_constraint_after_migration(db_session):
+async def test_insert_fails_with_not_null_constraint(db_session):
     """
-    G-3. マイグレーション後のレコード挿入でNOT NULL制約違反が発生する
+    G-3. レコード挿入でNOT NULL制約違反(output_length)が発生する
 
-    【テスト目的】: マイグレーション後のテーブルでNOT NULL制約が正しく機能することを確認
-    【テスト内容】: 必須フィールド（input_text, converted_text）にNoneを設定してレコード挿入
+    【テスト目的】: NOT NULL制約が正しく機能することを確認
+    【テスト内容】: output_lengthにNoneを設定してレコード挿入
     【期待される動作】: IntegrityErrorが発生し、レコードが保存されない
-    🔵 この内容は要件定義書（line 267-286, line 421-426, NFR-304）とテストケース仕様書（line 474-497）に基づく
+    🔵 この内容は要件定義書（line 267-286, line 421-426, NFR-304）に基づく
     """
-    # 【テストデータ準備】: NOT NULL制約違反のデータ
-    # 【初期条件設定】: マイグレーションが実行済みで、ai_conversion_historyテーブルが存在する
-    # 【前提条件確認】: NOT NULL制約が正しく設定されていること
-    from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
-
-    # 【実際の処理実行】: NOT NULL制約違反のレコードを作成し、コミットを試みる
-    # 【処理内容】: input_textがNoneのため、データベース側でエラーが発生
-    # 【実行タイミング】: マイグレーション後の制約機能確認
-    # 【エラー処理の重要性】: データ整合性を保ち、不正なデータの保存を防ぐ（NFR-304）
     with pytest.raises(IntegrityError) as exc_info:
-        record = AIConversionHistory(
-            input_text=None,  # NOT NULL制約違反
-            converted_text="テスト",
-            politeness_level=PolitenessLevel.NORMAL,
+        record = AIConversionLog(
+            input_text_hash="a" * 64,
+            input_length=5,
+            output_length=None,  # NOT NULL制約違反
+            politeness_level="normal",
+            session_id=uuid.uuid4(),
         )
         db_session.add(record)
-        await db_session.commit()
-
-    # 【結果検証】: IntegrityErrorが発生し、エラーメッセージに制約違反の詳細が含まれることを確認
-    # 【期待値確認】: 不正なデータがデータベースに保存されない
-    # 【品質保証】: データ整合性が保たれることを保証
-
-    # 【検証項目】: IntegrityErrorが発生したか
-    # 🔵 要件定義書（line 267-286, line 421-426, NFR-304）に基づく制約違反検証
-    assert exc_info.value is not None  # 【確認内容】: IntegrityErrorが発生している
+        await db_session.flush()
 
     # 【検証項目】: エラーメッセージに制約違反の詳細が含まれるか
-    # 🔵 要件定義書（line 146）に基づくNOT NULL制約の検証
-    error_message = str(exc_info.value)
-    assert "null" in error_message.lower()  # 【確認内容】: エラーメッセージに"null"が含まれる
-
-
-async def test_insert_fails_with_invalid_enum_value_after_migration(db_session):
-    """
-    G-4. マイグレーション後のレコード挿入で不正なEnum値によるエラーが発生する
-
-    【テスト目的】: Enum型バリデーションが正しく機能することを確認
-    【テスト内容】: politeness_levelに存在しないEnum値を設定してレコード挿入
-    【期待される動作】: ValueErrorまたはCheckViolationErrorが発生する
-    🟡 この内容は要件定義書（line 276-290）とテストケース仕様書（line 499-516）に基づくが、実装方法は推測
-    """
-    # 【テストデータ準備】: 不正なEnum値
-    # 【初期条件設定】: マイグレーションが実行済みで、ai_conversion_historyテーブルが存在する
-    # 【前提条件確認】: PolitenessLevel Enumが正しく定義されていること
-    from app.models.ai_conversion_history import PolitenessLevel
-
-    # 【実際の処理実行】: 不正なEnum値でインスタンスを作成しようとする
-    # 【処理内容】: 'super_polite'はEnum定義に存在しないため、エラーが発生
-    # 【実行タイミング】: マイグレーション後のEnum検証
-    # 【エラー処理の重要性】: Enum型バリデーションにより、不正な値の保存を防ぐ
-    with pytest.raises((ValueError, AttributeError)) as exc_info:
-        # 【実際の処理実行】: 存在しないEnum値を使用しようとする
-        PolitenessLevel("super_polite")
-
-    # 【結果検証】: ValueError or AttributeErrorが発生したことを確認
-    # 【期待値確認】: 不正なEnum値がデータベースに保存されない
-    # 【品質保証】: 不正な値が保存されないことを保証
-
-    # 【検証項目】: Enum型バリデーションエラーが発生したか
-    # 🟡 要件定義書（line 276-290）に基づくEnum検証（実装方法は推測）
-    assert exc_info.value is not None  # 【確認内容】: ValueErrorまたはAttributeErrorが発生している
+    assert "null" in str(exc_info.value).lower()
