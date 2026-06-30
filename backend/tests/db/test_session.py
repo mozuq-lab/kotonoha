@@ -39,7 +39,7 @@ from app.db.session import (
     async_session_maker,
     engine,
 )
-from app.models.ai_conversion_history import AIConversionHistory, PolitenessLevel
+from app.models.ai_conversion_logs import AIConversionLog
 
 # ============================================================================
 # TC-001: データベース接続テスト
@@ -142,10 +142,12 @@ async def test_session_rollback_on_error(db_session: AsyncSession) -> None:
         - セッションが再利用可能である
     """
     with pytest.raises(IntegrityError):
-        record = AIConversionHistory(
-            input_text=None,  # NOT NULL制約違反
-            converted_text="test",
-            politeness_level=PolitenessLevel.POLITE,
+        record = AIConversionLog(
+            input_text_hash=None,  # NOT NULL制約違反
+            input_length=4,
+            output_length=4,
+            politeness_level="polite",
+            session_id=uuid4(),
         )
         db_session.add(record)
         await db_session.flush()
@@ -267,12 +269,12 @@ async def test_session_commit(db_session: AsyncSession) -> None:
     test_output = "テスト出力です"
     test_conversion_time = 100
 
-    record = AIConversionHistory(
+    record = AIConversionLog.create_log(
         input_text=test_input,
-        converted_text=test_output,
-        politeness_level=PolitenessLevel.NORMAL,
+        output_text=test_output,
+        politeness_level="normal",
         conversion_time_ms=test_conversion_time,
-        user_session_id=test_session_id,
+        session_id=test_session_id,
     )
 
     db_session.add(record)
@@ -282,14 +284,15 @@ async def test_session_commit(db_session: AsyncSession) -> None:
     assert record.created_at is not None
 
     result = await db_session.execute(
-        select(AIConversionHistory).where(AIConversionHistory.user_session_id == test_session_id)
+        select(AIConversionLog).where(AIConversionLog.session_id == test_session_id)
     )
     saved_record = result.scalar_one_or_none()
 
     assert saved_record is not None
-    assert saved_record.input_text == test_input
-    assert saved_record.converted_text == test_output
-    assert saved_record.politeness_level == PolitenessLevel.NORMAL
+    assert saved_record.input_text_hash == AIConversionLog.hash_text(test_input)
+    assert saved_record.input_length == len(test_input)
+    assert saved_record.output_length == len(test_output)
+    assert saved_record.politeness_level == "normal"
     assert saved_record.conversion_time_ms == test_conversion_time
 
 
