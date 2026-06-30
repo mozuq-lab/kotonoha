@@ -114,7 +114,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: flutter-coverage-report
           path: coverage/
@@ -182,7 +182,7 @@ jobs:
           --dart-define=AI_API_KEY="${AI_API_KEY}"
 
       - name: Upload Web build
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: web-build
           path: frontend/kotonoha_app/build/web
@@ -226,7 +226,7 @@ jobs:
           --dart-define=AI_API_KEY="${AI_API_KEY}"
 
       - name: Upload APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: android-apk
           path: frontend/kotonoha_app/build/app/outputs/flutter-apk/app-internal-release.apk
@@ -265,7 +265,7 @@ jobs:
           --dart-define=AI_API_KEY="${AI_API_KEY}"
 
       - name: Upload iOS build
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ios-build
           path: frontend/kotonoha_app/build/ios/iphoneos/
