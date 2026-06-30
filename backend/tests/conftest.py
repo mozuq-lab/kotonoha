@@ -11,6 +11,7 @@ pytestテスト設定ファイル
 import os
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 from sqlalchemy import text
@@ -38,8 +39,9 @@ def _alembic_schema():
     【テスト目的】: alembic_version テーブルを含む完全なスキーマをテスト DB に構築
     【実装方針】: session-scope の同期フィクスチャとして実装し、pytest-asyncio の
                   loop scope 衝突を回避する。alembic の env.py が
-                  settings.DATABASE_URL_SYNC を読み取るため、settings.POSTGRES_DB を
-                  一時的にテスト用 DB 名にパッチして kotonoha_test に向ける。
+                  settings.DATABASE_URL_SYNC（POSTGRES_* から構築）を読み取るため、
+                  TEST_DATABASE_URL の接続情報を settings に一時パッチして
+                  テスト DB（ローカル kotonoha_test / CI test_db 等）に向ける。
     【注意】: test_engine フィクスチャが依存し、セッション全体で1回だけ実行される
     🔵 この内容は要件定義書（line 60-69, line 169-183）に基づく
     """
@@ -48,12 +50,21 @@ def _alembic_schema():
     from alembic import command
     from app.core.config import settings
 
-    # 【URL制御】: alembic/env.py は settings.DATABASE_URL_SYNC を参照して
-    # sqlalchemy.url を設定する。テスト DB（kotonoha_test）に向けるため
-    # settings.POSTGRES_DB を一時的にパッチする。
-    # object.__setattr__ で Pydantic の __setattr__ をバイパスして確実に設定する。
-    original_db = settings.POSTGRES_DB
-    object.__setattr__(settings, "POSTGRES_DB", "kotonoha_test")
+    # 【URL制御】: env.py は settings.DATABASE_URL_SYNC（POSTGRES_* から構築）を参照する。
+    # TEST_DATABASE_URL の全コンポーネントを settings に一時パッチして alembic を
+    # テスト DB に向ける（DB名ハードコードを避け、ローカル/CI 両対応）。
+    # object.__setattr__ で Pydantic の __setattr__ をバイパスする。
+    _parsed = urlparse(TEST_DATABASE_URL)
+    _patched = {
+        "POSTGRES_USER": _parsed.username,
+        "POSTGRES_PASSWORD": _parsed.password,
+        "POSTGRES_HOST": _parsed.hostname,
+        "POSTGRES_PORT": _parsed.port or 5432,
+        "POSTGRES_DB": _parsed.path.lstrip("/"),
+    }
+    _originals = {key: getattr(settings, key) for key in _patched}
+    for _key, _value in _patched.items():
+        object.__setattr__(settings, _key, _value)
 
     alembic_ini_path = str(Path(__file__).resolve().parents[1] / "alembic.ini")
     alembic_cfg = Config(alembic_ini_path)
@@ -66,8 +77,9 @@ def _alembic_schema():
         # 【クリーンアップ】: テストセッション終了時にスキーマを削除
         command.downgrade(alembic_cfg, "base")
     finally:
-        # 【状態復元】: settings.POSTGRES_DB を元の値に戻す
-        object.__setattr__(settings, "POSTGRES_DB", original_db)
+        # 【状態復元】: パッチした settings を元の値に戻す
+        for _key, _value in _originals.items():
+            object.__setattr__(settings, _key, _value)
 
 
 @pytest.fixture(scope="function")
