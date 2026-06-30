@@ -10,8 +10,10 @@ pytestテスト設定ファイル
 
 import os
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # 【テスト前準備】: テスト用のデータベース接続URLを環境変数から取得
@@ -23,23 +25,67 @@ TEST_DATABASE_URL = os.getenv(
     "postgresql+asyncpg://kotonoha_user:your_secure_password_here@localhost:5432/kotonoha_test",
 )
 
+# 【テーブル名定義】: TRUNCATE対象のアプリケーションテーブル（alembic_versionは除く）
+# 🔵 test_migration_execution.py が alembic_version を参照するため TRUNCATE 対象から除外
+_APP_TABLES = ["ai_conversion_logs", "error_logs"]
+
+
+@pytest.fixture(scope="session")
+def _alembic_schema():
+    """
+    セッションスコープで alembic upgrade head を実行してスキーマを構築する（同期処理）。
+
+    【テスト目的】: alembic_version テーブルを含む完全なスキーマをテスト DB に構築
+    【実装方針】: session-scope の同期フィクスチャとして実装し、pytest-asyncio の
+                  loop scope 衝突を回避する。alembic の env.py が
+                  settings.DATABASE_URL_SYNC を読み取るため、settings.POSTGRES_DB を
+                  一時的にテスト用 DB 名にパッチして kotonoha_test に向ける。
+    【注意】: test_engine フィクスチャが依存し、セッション全体で1回だけ実行される
+    🔵 この内容は要件定義書（line 60-69, line 169-183）に基づく
+    """
+    from alembic.config import Config
+
+    from alembic import command
+    from app.core.config import settings
+
+    # 【URL制御】: alembic/env.py は settings.DATABASE_URL_SYNC を参照して
+    # sqlalchemy.url を設定する。テスト DB（kotonoha_test）に向けるため
+    # settings.POSTGRES_DB を一時的にパッチする。
+    # object.__setattr__ で Pydantic の __setattr__ をバイパスして確実に設定する。
+    original_db = settings.POSTGRES_DB
+    object.__setattr__(settings, "POSTGRES_DB", "kotonoha_test")
+
+    alembic_ini_path = str(Path(__file__).resolve().parents[1] / "alembic.ini")
+    alembic_cfg = Config(alembic_ini_path)
+
+    try:
+        # 【スキーマ構築】: alembic upgrade head でマイグレーションを実行
+        # alembic_version テーブルも含めて完全なスキーマを構築する
+        command.upgrade(alembic_cfg, "head")
+        yield
+        # 【クリーンアップ】: テストセッション終了時にスキーマを削除
+        command.downgrade(alembic_cfg, "base")
+    finally:
+        # 【状態復元】: settings.POSTGRES_DB を元の値に戻す
+        object.__setattr__(settings, "POSTGRES_DB", original_db)
+
 
 @pytest.fixture(scope="function")
-async def test_engine():
+async def test_engine(_alembic_schema):
     """
     テスト用の非同期エンジンを作成（各テスト関数ごとに作成）
 
     【テスト目的】: テスト用データベースへの接続エンジンを提供
     【テスト内容】: SQLAlchemy 2.x の非同期エンジンを作成し、テスト完了後にクリーンアップ
     【期待される動作】: テストデータベースに接続し、セッション作成の基盤を提供
-    【実装方針】: 各テストごとにエンジンを作成・破棄し、イベントループ問題を回避
+    【実装方針】: スキーマは _alembic_schema が構築済みのため create_all/drop_all は行わない。
+                  各テスト後はアプリケーションテーブルを TRUNCATE してデータ分離を保証する。
+                  alembic_version テーブルは TRUNCATE しない（test_migration_execution.py が参照）。
     🔵 この内容は要件定義書（line 67-75）に基づく
 
     Yields:
         AsyncEngine: テスト用の非同期データベースエンジン
     """
-    from app.db.base import Base
-
     # 【テストデータ準備】: テスト用データベース接続エンジンを作成
     # 【初期条件設定】: echo=False でSQL出力を抑制（必要に応じてTrueに変更可能）
     # 【パフォーマンス最適化】: pool_size=5 で接続プールを制限（テスト環境では少数で十分）
@@ -51,15 +97,14 @@ async def test_engine():
         max_overflow=5,  # 【追加接続数】: 必要に応じて追加接続を許可
     )
 
-    # 【テーブル作成】: テスト用DBに全テーブルを作成
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     yield engine
 
-    # 【テーブル削除】: テスト後にすべてのテーブルを削除してクリーンアップ
+    # 【テスト後処理】: アプリケーションテーブルを TRUNCATE してデータ分離を保証
+    # 【注意】: alembic_version は削除しない（test_migration_execution.py が参照するため）
+    # 【状態復元】: 各テストが書き込んだデータを次のテストに持ち越さないようにする
+    truncate_sql = f"TRUNCATE {', '.join(_APP_TABLES)} RESTART IDENTITY CASCADE"
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(text(truncate_sql))
 
     # 【テスト後処理】: エンジンとすべての接続を適切にクローズ
     # 【リソースリーク防止】: イベントループクローズ前に接続プールをクリーンアップ
@@ -101,7 +146,8 @@ async def db_session(test_session_maker) -> AsyncGenerator[AsyncSession, None]:
     【テスト目的】: 各テストケースに独立したデータベースセッションを提供
     【テスト内容】: セッションを作成し、テスト完了後にロールバック
     【期待される動作】: テスト間のデータ分離を保証し、各テストが独立して実行される
-    【実装方針】: トランザクションをロールバックすることで、テストデータをクリーンアップ
+    【実装方針】: 未コミットの変更はロールバックで破棄する。コミット済みデータは
+                  test_engine teardown の TRUNCATE で除去される。
     🔵 この内容は要件定義書（line 180-188）に基づく
 
     Yields:
@@ -111,7 +157,7 @@ async def db_session(test_session_maker) -> AsyncGenerator[AsyncSession, None]:
     # 【環境初期化】: テスト用のクリーンなセッションを提供
     async with test_session_maker() as session:
         yield session
-        # 【テスト後処理】: テスト完了後、トランザクションをロールバック
+        # 【テスト後処理】: テスト完了後、未コミットのトランザクションをロールバック
         # 【状態復元】: テストで作成されたデータをすべて破棄し、次のテストに影響しないようにする
         await session.rollback()
         # 【セッションクローズ】: セッションを明示的にクローズ
