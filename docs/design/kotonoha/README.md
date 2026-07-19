@@ -97,7 +97,7 @@ FastAPI バックエンドのAPIエンドポイント仕様を記載していま
 - HTTPステータスコード・エラーコード
 - AI変換エンドポイント（`POST /api/v1/ai/convert`）
 - ヘルスチェックエンドポイント（`GET /api/v1/health`）
-- レート制限（1分間に10リクエスト）
+- レート制限（1リクエスト/10秒/IP、`RATE_LIMIT_TIMES`/`RATE_LIMIT_SECONDS`で変更可）
 - セキュリティ設定（HTTPS/TLS、CORS）
 - サンプルコード（Dart/Flutter、Python/FastAPI）
 

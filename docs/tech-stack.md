@@ -24,7 +24,7 @@
 - **対応プラットフォーム**: iOS / Android / Web
 
 ### 状態管理
-- **Riverpod**: 2.x
+- **Riverpod**: 3.x（`flutter_riverpod: ^3.1.0`、2026-07-19時点。当初はRiverpod 2.xを想定していたが、実装は3.xに移行済み）
   - コンパイル時の安全性
   - テスタビリティが高い
   - 非同期処理との親和性が高い
@@ -577,6 +577,8 @@ npm test                          # CDKスタックテスト実行
   - Riverpod 2.x 状態管理
   - Docker開発環境
   - GitHub Actions CI/CD
+- **2026-07-19**: 記述と実装の乖離を修正
+  - 状態管理をRiverpod 2.x → 3.x（`flutter_riverpod: ^3.1.0`）に修正（pubspec.yaml確認）
 
 ---
 
