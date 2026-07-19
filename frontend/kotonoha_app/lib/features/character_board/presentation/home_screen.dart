@@ -22,8 +22,13 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/clear
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_buttons.dart';
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
+import 'package:kotonoha_app/features/face_to_face/providers/face_to_face_provider.dart';
+import 'package:kotonoha_app/features/status_buttons/status_buttons.dart';
+import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
+import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_widget.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
+import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
@@ -51,10 +56,28 @@ class HomeScreen extends ConsumerWidget {
     final fontSize = settings?.fontSize ?? FontSize.medium;
     final aiPoliteness = settings?.aiPoliteness ?? PolitenessLevel.normal;
 
+    // 【音量ゼロ警告の配線】(EDGE-202): tts_button.dart自体は変更せず、
+    // グローバルなttsProviderの状態遷移(非speaking -> speaking)を横断的に
+    // 監視することで、どのボタン（クイック応答・状態ボタン・読み上げボタン等）
+    // から読み上げが開始されても音量チェックが行われるようにする。
+    ref.listen<TTSServiceState>(ttsProvider, (previous, next) {
+      final wasSpeaking = previous?.state == TTSState.speaking;
+      final isSpeaking = next.state == TTSState.speaking;
+      if (!wasSpeaking && isSpeaking) {
+        ref.read(volumeWarningProvider.notifier).checkVolumeBeforeSpeak();
+      }
+    });
+    final showVolumeWarning = ref.watch(volumeWarningProvider).showWarning;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('kotonoha'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.open_in_full),
+            tooltip: '対面表示',
+            onPressed: () => _openFaceToFace(context, ref, inputBuffer),
+          ),
           IconButton(
             icon: const Icon(Icons.format_list_bulleted),
             tooltip: '定型文',
@@ -78,42 +101,72 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // 【レスポンシブ対応】: 可視高さ・幅に応じてレイアウトを切り替える。
-            // - isCompactHeight: 主に横持ちスマホ（可視高さ< compactHeightThreshold）。
-            //   固定サイズのセクションを縦に積むと必要高さが可視高さを超え、
-            //   RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
-            // - isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
-            //   しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
-            final isCompactHeight =
-                constraints.maxHeight < AppSizes.compactHeightThreshold;
-            final isPhoneWidth = constraints.maxWidth < AppSizes.phoneMaxWidth;
+        child: Column(
+          children: [
+            // 音量0警告（EDGE-202）: 警告不要時はSizedBox.shrinkで高さ0のため
+            // 既存レイアウトへの影響はない。
+            VolumeWarningWidget(
+              isVisible: showVolumeWarning,
+              onDismiss: () =>
+                  ref.read(volumeWarningProvider.notifier).dismissWarning(),
+            ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // 【レスポンシブ対応】: 可視高さ・幅に応じてレイアウトを切り替える。
+                  // - isCompactHeight: 主に横持ちスマホ（可視高さ< compactHeightThreshold）。
+                  //   固定サイズのセクションを縦に積むと必要高さが可視高さを超え、
+                  //   RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
+                  // - isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
+                  //   しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
+                  final isCompactHeight =
+                      constraints.maxHeight < AppSizes.compactHeightThreshold;
+                  final isPhoneWidth =
+                      constraints.maxWidth < AppSizes.phoneMaxWidth;
 
-            if (isCompactHeight) {
-              return _buildCompactLandscapeLayout(
-                context,
-                ref,
-                inputBuffer: inputBuffer,
-                fontSize: fontSize,
-                aiPoliteness: aiPoliteness,
-                availableHeight: constraints.maxHeight,
-              );
-            }
+                  if (isCompactHeight) {
+                    return _buildCompactLandscapeLayout(
+                      context,
+                      ref,
+                      inputBuffer: inputBuffer,
+                      fontSize: fontSize,
+                      aiPoliteness: aiPoliteness,
+                      availableHeight: constraints.maxHeight,
+                    );
+                  }
 
-            return _buildStandardLayout(
-              context,
-              ref,
-              inputBuffer: inputBuffer,
-              fontSize: fontSize,
-              aiPoliteness: aiPoliteness,
-              compact: isPhoneWidth,
-              availableHeight: constraints.maxHeight,
-            );
-          },
+                  return _buildStandardLayout(
+                    context,
+                    ref,
+                    inputBuffer: inputBuffer,
+                    fontSize: fontSize,
+                    aiPoliteness: aiPoliteness,
+                    compact: isPhoneWidth,
+                    availableHeight: constraints.maxHeight,
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  /// 対面表示モード画面を開く（TASK-0052/0053, REQ-501〜503）
+  ///
+  /// 表示するテキストは、入力中のテキスト（input_buffer）を優先し、
+  /// 入力が空の場合は直近の読み上げ履歴（historyProvider）のテキストを使う。
+  void _openFaceToFace(
+      BuildContext context, WidgetRef ref, String inputBuffer) {
+    final histories = ref.read(historyProvider).histories;
+    final lastSpokenText = histories.isNotEmpty ? histories.first.content : '';
+    final displayText = inputBuffer.isNotEmpty ? inputBuffer : lastSpokenText;
+
+    ref.read(faceToFaceProvider.notifier).enableFaceToFace(displayText);
+    context.push(AppRoutes.faceToFace, extra: displayText).whenComplete(() {
+      ref.read(faceToFaceProvider.notifier).disableFaceToFace();
+    });
   }
 
   /// 標準レイアウト（タブレット・縦持ちスマホ）
@@ -140,6 +193,8 @@ class HomeScreen extends ConsumerWidget {
           padding: compact ? AppSizes.paddingSmall : AppSizes.paddingMedium,
           compact: compact,
         ),
+        // 状態ボタン（痛い/トイレ/暑い/寒い等、TASK-0044）: 横スクロール1行ストリップ
+        _buildStatusButtonsSection(ref, fontSize: fontSize),
         // 入力表示エリア
         _buildInputArea(
           context,
@@ -200,6 +255,9 @@ class HomeScreen extends ConsumerWidget {
                   padding: AppSizes.paddingXSmall,
                   compact: true,
                 ),
+                // 状態ボタン（痛い/トイレ/暑い/寒い等、TASK-0044）:
+                // 左ペインのスクロール領域内、横スクロール1行ストリップとして配置。
+                _buildStatusButtonsSection(ref, fontSize: fontSize),
                 _buildInputArea(
                   context,
                   inputBuffer: inputBuffer,
@@ -232,6 +290,14 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// クイック応答ボタンセクションを構築する
+  ///
+  /// 【バグ修正】: 従来はonResponse内でもTTS読み上げを行っていたため、
+  /// onTTSSpeak（読み上げ実行）と合わせて1タップでspeak()が二重に
+  /// 呼ばれていた。読み上げはonTTSSpeakのみに一本化し、onResponseは
+  /// 履歴保存のみを担当するようにした。
+  /// 【バグ修正】: 履歴種類が誤ってHistoryType.manualInput（文字盤入力）に
+  /// なっていたため、大ボタン相当のHistoryType.quickButtonに修正した
+  /// （履歴画面でのアイコン・スクリーンリーダー表示の誤りを解消）。
   Widget _buildQuickResponseSection(
     WidgetRef ref, {
     required FontSize fontSize,
@@ -242,8 +308,7 @@ class HomeScreen extends ConsumerWidget {
       padding: EdgeInsets.all(padding),
       child: QuickResponseButtons(
         onResponse: (type) {
-          // TTS読み上げと履歴保存
-          _speakAndSaveHistory(ref, type.label);
+          _saveToHistory(ref, type.label, HistoryType.quickButton);
         },
         onTTSSpeak: (text) {
           ref.read(ttsProvider.notifier).speak(text);
@@ -251,6 +316,43 @@ class HomeScreen extends ConsumerWidget {
         fontSize: fontSize,
         buttonHeight:
             compact ? AppSizes.quickResponseButtonHeightCompact : null,
+      ),
+    );
+  }
+
+  /// 状態ボタンセクションを構築する（TASK-0044, REQ-202〜204）
+  ///
+  /// 「痛い」「トイレ」「暑い」「寒い」等の状態ボタンをホーム画面に統合する。
+  /// 縦スペースが貴重なため、StatusButtons（4列グリッド）はそのまま使わず、
+  /// 高さ約56px（[AppSizes.statusButtonStripHeight]）の横スクロール1行
+  /// ストリップとして必須8個を表示する。タップで即座にTTS読み上げ＋
+  /// 履歴保存（大ボタン扱い: HistoryType.quickButton）を行う。
+  Widget _buildStatusButtonsSection(
+    WidgetRef ref, {
+    required FontSize fontSize,
+  }) {
+    return SizedBox(
+      height: AppSizes.statusButtonStripHeight,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.paddingMedium,
+        ),
+        itemCount: defaultStatusTypes.length,
+        separatorBuilder: (context, index) =>
+            const SizedBox(width: AppSizes.paddingSmall),
+        itemBuilder: (context, index) {
+          final type = defaultStatusTypes[index];
+          return StatusButton(
+            statusType: type,
+            width: AppSizes.statusButtonStripItemWidth,
+            height: AppSizes.statusButtonStripHeight,
+            fontSize: fontSize,
+            onTTSSpeak: (text) => ref.read(ttsProvider.notifier).speak(text),
+            onPressed: () =>
+                _saveToHistory(ref, type.label, HistoryType.quickButton),
+          );
+        },
       ),
     );
   }
@@ -362,7 +464,7 @@ class HomeScreen extends ConsumerWidget {
             text: inputBuffer,
             onSpeak: () {
               if (inputBuffer.isNotEmpty) {
-                _saveToHistory(ref, inputBuffer);
+                _saveToHistory(ref, inputBuffer, HistoryType.manualInput);
               }
             },
           ),
@@ -444,17 +546,16 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  /// TTSで読み上げて履歴に保存
-  void _speakAndSaveHistory(WidgetRef ref, String text) {
-    ref.read(ttsProvider.notifier).speak(text);
-    _saveToHistory(ref, text);
-  }
-
-  /// 履歴に保存
-  void _saveToHistory(WidgetRef ref, String text) {
-    ref
-        .read(historyProvider.notifier)
-        .addHistory(text, HistoryType.manualInput);
+  /// 履歴に保存する
+  ///
+  /// 【バグ修正】: 従来は常にHistoryType.manualInput固定で保存していたため、
+  /// クイック応答・状態ボタン経由の履歴も「文字盤入力」として記録され、
+  /// 履歴画面のアイコン・スクリーンリーダー読み上げが実態と異なっていた。
+  /// 呼び出し元ごとに適切な[type]を指定できるようにした
+  /// （文字盤入力: HistoryType.manualInput、クイック応答・状態ボタン:
+  /// HistoryType.quickButton）。
+  void _saveToHistory(WidgetRef ref, String text, HistoryType type) {
+    ref.read(historyProvider.notifier).addHistory(text, type);
   }
 
   Future<String> _convertWithAI(

@@ -603,5 +603,106 @@ void main() {
         container.dispose();
       });
     });
+
+    // =========================================================================
+    // 4. 無効理由の可視化テスト（fix/improvement-p0-p2で配線）
+    // =========================================================================
+    group('4. 無効理由の可視化テスト', () {
+      /// オフラインで無効な場合、OfflineIndicatorが併記表示される
+      ///
+      /// 関連要件: REQ-3004
+      testWidgets('オフラインでボタンが無効な場合、OfflineIndicatorが表示される',
+          (WidgetTester tester) async {
+        final container = ProviderContainer();
+        await container.read(networkProvider.notifier).setOffline();
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AIConversionButton(
+                    inputText: '水 ぬるく',
+                    politenessLevel: PolitenessLevel.normal,
+                    onConvert: () async => '変換結果',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        expect(find.byType(OfflineIndicator), findsOneWidget);
+        expect(find.text('オフライン'), findsOneWidget);
+
+        container.dispose();
+      });
+
+      /// 文字数不足で無効な場合、不足文字数のヒントが表示される
+      ///
+      /// 関連要件: EDGE-105
+      testWidgets('文字数不足でボタンが無効な場合、不足文字数のヒントが表示される',
+          (WidgetTester tester) async {
+        final container = ProviderContainer();
+        await container.read(networkProvider.notifier).setOnline();
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AIConversionButton(
+                    inputText: 'あ', // 1文字のみ（あと1文字必要）
+                    politenessLevel: PolitenessLevel.normal,
+                    onConvert: () async => '変換結果',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        expect(find.text('あと1文字入力してください'), findsOneWidget);
+        expect(find.byType(OfflineIndicator), findsNothing);
+
+        container.dispose();
+      });
+
+      /// オンラインかつ入力十分でボタンが有効な場合、理由表示は出ない
+      testWidgets('ボタンが有効な場合、無効理由の表示は出ない', (WidgetTester tester) async {
+        final container = ProviderContainer();
+        await container.read(networkProvider.notifier).setOnline();
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AIConversionButton(
+                    inputText: '水 ぬるく',
+                    politenessLevel: PolitenessLevel.normal,
+                    onConvert: () async => '変換結果',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        expect(find.byType(OfflineIndicator), findsNothing);
+        expect(find.textContaining('文字入力してください'), findsNothing);
+
+        container.dispose();
+      });
+    });
   });
 }

@@ -79,14 +79,15 @@ void main() {
       );
     });
 
-    // TC-003: ルート定義数テスト（6ルート）
+    // TC-003: ルート定義数テスト（7ルート）
     // テストカテゴリ: Unit Test
     // 対応要件: FR-003（主要ルート定義）
     // 対応受け入れ基準: AC-003〜AC-006
     // 青信号: タスクファイルで主要ルートが明示
     // TASK-0075: ヘルプルート追加
     // TASK-0083: 定型文ルート追加
-    test('TC-003: 6つの主要ルートが定義されている', () {
+    // TASK-0052/0053: 対面表示モードルート追加（fix/improvement-p0-p2で配線）
+    test('TC-003: 7つの主要ルートが定義されている', () {
       // Given（準備フェーズ）
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -94,7 +95,7 @@ void main() {
       // When（実行フェーズ）
       final router = container.read(routerProvider);
       // ShellRoute導入により、トップレベルには単一のShellRouteが存在し、
-      // 6つの主要ルートはそのShellRoute配下のGoRouteとして定義される。
+      // 7つの主要ルートはそのShellRoute配下のGoRouteとして定義される。
       final topRoutes = router.configuration.routes;
       final shellRoute = topRoutes.whereType<ShellRoute>().single;
       final goRoutes = shellRoute.routes.whereType<GoRoute>().toList();
@@ -106,13 +107,13 @@ void main() {
         equals(1),
         reason: 'トップレベルは全画面共通シェル（ShellRoute）1つである必要がある',
       );
-      // 6つの主要ルート（/, /settings, /history, /favorites, /help, /preset-phrases）が
-      // ShellRoute配下に定義されていることを確認
+      // 7つの主要ルート（/, /settings, /history, /favorites, /help,
+      // /preset-phrases, /face-to-face）がShellRoute配下に定義されていることを確認
       expect(
         goRoutes.length,
-        equals(6),
-        reason:
-            '主要ルートは6つ（home, settings, history, favorites, help, presetPhrases）である必要がある',
+        equals(7),
+        reason: '主要ルートは7つ（home, settings, history, favorites, help, '
+            'presetPhrases, faceToFace）である必要がある',
       );
     });
 
@@ -137,7 +138,7 @@ void main() {
       final routeNames = routes.map((r) => r.name).whereType<String>().toList();
 
       // Then（検証フェーズ）
-      // 6つの名前付きルートが存在することを確認
+      // 7つの名前付きルートが存在することを確認
       expect(
         routeNames,
         containsAll([
@@ -146,10 +147,11 @@ void main() {
           'history',
           'favorites',
           'help',
-          'presetPhrases'
+          'presetPhrases',
+          'faceToFace',
         ]),
-        reason:
-            '名前付きルート（home, settings, history, favorites, help, presetPhrases）がすべて定義されている必要がある',
+        reason: '名前付きルート（home, settings, history, favorites, help, '
+            'presetPhrases, faceToFace）がすべて定義されている必要がある',
       );
     });
 

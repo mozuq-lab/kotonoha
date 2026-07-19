@@ -70,6 +70,13 @@ class AppSizes {
   // コンパクトレイアウトでのクイック応答ボタン高さ（44px以上を維持）
   static const double quickResponseButtonHeightCompact = 48.0;
 
+  // 状態ボタン (Status buttons)
+  // ホーム画面での横スクロールストリップの高さ。縦スペースを圧迫しないよう
+  // 1行分（44px以上のタップターゲット + 余白）に収める。
+  static const double statusButtonStripHeight = 56.0;
+  // 状態ボタンストリップ内の各ボタンの幅
+  static const double statusButtonStripItemWidth = 84.0;
+
   // ダイアログボタン (Dialog buttons)
   static const double dialogButtonWidth = 120.0;
   static const double dialogButtonMinWidth = 100.0;
