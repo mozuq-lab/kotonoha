@@ -198,11 +198,20 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
                     BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
             ),
-            child: Text(
-              _label,
-              style: TextStyle(
-                fontSize: _fontSize,
-                fontWeight: FontWeight.bold,
+            // 【スマホ幅対応】: 「わからない」等ラベルが長い場合、狭い幅
+            // （スマホ幅でExpanded/Padding経由で圧縮される）で折り返し・
+            // クリップが発生しないよう、FittedBox(scaleDown)+maxLines:1で
+            // 縮小表示する。status_button.dartの対策と同方式。
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                _label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: _fontSize,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

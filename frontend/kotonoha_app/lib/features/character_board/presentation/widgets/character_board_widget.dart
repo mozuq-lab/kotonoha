@@ -120,8 +120,43 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
         // 横幅に応じて列数を計算（最低5列）
         final spacing = AppSizes.characterBoardButtonSpacing;
         final availableWidth = constraints.maxWidth;
+        final availableHeight = constraints.maxHeight;
         final columnsCount = (availableWidth / (buttonSize + spacing)).floor();
         final columns = columnsCount.clamp(5, 10);
+
+        // 【fit-to-height対応】: 列数だけでなく行数・可視高さも考慮してセルの
+        // 高さを決定する。スマホ縦持ちのように高さが乏しい画面では、幅基準の
+        // 正方形セル（childAspectRatio: 1.0固定）だと1画面に収まらず大量の
+        // スクロールが発生するため、「幅基準セル」と「高さ基準セル」のうち
+        // 小さい方を採用してセルを縦に押し縮める。
+        // ただし44px未満には縮めない（アクセシビリティ: タップターゲット下限）。
+        // 44pxでも収まらない場合はGridView標準のスクロールに委ねる。
+        const gridPadding = AppSizes.paddingSmall;
+        final rows =
+            characters.isEmpty ? 0 : (characters.length / columns).ceil();
+
+        final contentWidth = availableWidth - gridPadding * 2;
+        final widthBasedCellSize = columns > 0
+            ? (contentWidth - spacing * (columns - 1)) / columns
+            : buttonSize;
+
+        double heightBasedCellSize = widthBasedCellSize;
+        if (rows > 0 && availableHeight.isFinite) {
+          final contentHeight = availableHeight - gridPadding * 2;
+          heightBasedCellSize = (contentHeight - spacing * (rows - 1)) / rows;
+        }
+
+        final smallerCellSize = widthBasedCellSize < heightBasedCellSize
+            ? widthBasedCellSize
+            : heightBasedCellSize;
+        final effectiveCellHeight = smallerCellSize < AppSizes.minTapTarget
+            ? AppSizes.minTapTarget
+            : smallerCellSize;
+
+        final childAspectRatio =
+            (widthBasedCellSize > 0 && effectiveCellHeight > 0)
+                ? widthBasedCellSize / effectiveCellHeight
+                : 1.0;
 
         return GridView.builder(
           padding: const EdgeInsets.all(AppSizes.paddingSmall),
@@ -129,7 +164,7 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
             crossAxisCount: columns,
             mainAxisSpacing: spacing,
             crossAxisSpacing: spacing,
-            childAspectRatio: 1.0,
+            childAspectRatio: childAspectRatio,
           ),
           itemCount: characters.length,
           itemBuilder: (context, index) {

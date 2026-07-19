@@ -78,159 +78,368 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // クイック応答ボタン（はい/いいえ/わからない）
-            Padding(
-              padding: const EdgeInsets.all(AppSizes.paddingMedium),
-              child: QuickResponseButtons(
-                onResponse: (type) {
-                  // TTS読み上げと履歴保存
-                  _speakAndSaveHistory(ref, type.label);
-                },
-                onTTSSpeak: (text) {
-                  ref.read(ttsProvider.notifier).speak(text);
-                },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // 【レスポンシブ対応】: 可視高さ・幅に応じてレイアウトを切り替える。
+            // - isCompactHeight: 主に横持ちスマホ（可視高さ< compactHeightThreshold）。
+            //   固定サイズのセクションを縦に積むと必要高さが可視高さを超え、
+            //   RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
+            // - isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
+            //   しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
+            final isCompactHeight =
+                constraints.maxHeight < AppSizes.compactHeightThreshold;
+            final isPhoneWidth = constraints.maxWidth < AppSizes.phoneMaxWidth;
+
+            if (isCompactHeight) {
+              return _buildCompactLandscapeLayout(
+                context,
+                ref,
+                inputBuffer: inputBuffer,
                 fontSize: fontSize,
-              ),
-            ),
-            // 入力表示エリア
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(
-                horizontal: AppSizes.paddingMedium,
-              ),
-              padding: const EdgeInsets.all(AppSizes.paddingMedium),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-                borderRadius:
-                    BorderRadius.circular(AppSizes.borderRadiusMedium),
-              ),
-              constraints: const BoxConstraints(minHeight: 80),
-              // 【アクセシビリティ対応】: liveRegionで入力中テキストの変化を
-              // スクリーンリーダーが自動読み上げできるようにする。
-              child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: _getFontSizeValue(fontSize),
-                        color: inputBuffer.isEmpty
-                            ? Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withAlpha(128)
-                            : Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSizes.paddingSmall),
-            // コントロールボタン（削除、全消去、読み上げ）
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.paddingMedium,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      DeleteButton(
-                        enabled: inputBuffer.isNotEmpty,
-                        onPressed: () {
-                          ref
-                              .read(inputBufferProvider.notifier)
-                              .deleteLastCharacter();
-                        },
-                      ),
-                      const SizedBox(width: AppSizes.paddingSmall),
-                      ClearAllButton(
-                        enabled: inputBuffer.isNotEmpty,
-                        onConfirmed: () {
-                          ref.read(inputBufferProvider.notifier).clear();
-                        },
-                      ),
-                    ],
-                  ),
-                  TTSButton(
-                    text: inputBuffer,
-                    onSpeak: () {
-                      if (inputBuffer.isNotEmpty) {
-                        _saveToHistory(ref, inputBuffer);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSizes.paddingSmall),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.paddingMedium,
-              ),
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: AppSizes.paddingMedium,
-                runSpacing: AppSizes.paddingSmall,
-                children: [
-                  PolitenessLevelSelector(
-                    selectedLevel: aiPoliteness,
-                    onLevelChanged: (level) {
-                      ref
-                          .read(settingsNotifierProvider.notifier)
-                          .setAIPoliteness(level);
-                    },
-                  ),
-                  AIConversionButton(
-                    inputText: inputBuffer,
-                    politenessLevel: aiPoliteness,
-                    onConvert: () => _convertWithAI(
-                      context,
-                      ref,
-                      inputBuffer,
-                      aiPoliteness,
-                    ),
-                    onConversionComplete: (convertedText) {
-                      if (!context.mounted) return;
-                      _showConversionResult(
-                        context,
-                        ref,
-                        inputBuffer,
-                        convertedText,
-                        aiPoliteness,
-                      );
-                    },
-                    onConversionError: (error) {
-                      if (!context.mounted) return;
-                      _showAIConversionError(context, error);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSizes.paddingSmall),
-            // 文字盤
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.paddingSmall,
-                ),
-                child: CharacterBoardWidget(
-                  onCharacterTap: (character) {
-                    ref
-                        .read(inputBufferProvider.notifier)
-                        .addCharacter(character);
-                  },
-                  fontSize: fontSize,
-                ),
-              ),
-            ),
-          ],
+                aiPoliteness: aiPoliteness,
+                availableHeight: constraints.maxHeight,
+              );
+            }
+
+            return _buildStandardLayout(
+              context,
+              ref,
+              inputBuffer: inputBuffer,
+              fontSize: fontSize,
+              aiPoliteness: aiPoliteness,
+              compact: isPhoneWidth,
+              availableHeight: constraints.maxHeight,
+            );
+          },
         ),
+      ),
+    );
+  }
+
+  /// 標準レイアウト（タブレット・縦持ちスマホ）
+  ///
+  /// 各セクションを縦に積むレイアウト。[compact] がtrue（スマホ幅）の場合は
+  /// パディング・ボタン高さを圧縮し、文字盤（Expanded）の可視領域を広げる。
+  Widget _buildStandardLayout(
+    BuildContext context,
+    WidgetRef ref, {
+    required String inputBuffer,
+    required FontSize fontSize,
+    required PolitenessLevel aiPoliteness,
+    required bool compact,
+    required double availableHeight,
+  }) {
+    final sectionGap = compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall;
+
+    return Column(
+      children: [
+        // クイック応答ボタン（はい/いいえ/わからない）
+        _buildQuickResponseSection(
+          ref,
+          fontSize: fontSize,
+          padding: compact ? AppSizes.paddingSmall : AppSizes.paddingMedium,
+          compact: compact,
+        ),
+        // 入力表示エリア
+        _buildInputArea(
+          context,
+          inputBuffer: inputBuffer,
+          fontSize: fontSize,
+          compact: compact,
+          availableHeight: availableHeight,
+        ),
+        SizedBox(height: sectionGap),
+        // コントロールボタン（削除、全消去、読み上げ）
+        _buildControlRow(ref, inputBuffer: inputBuffer),
+        SizedBox(height: sectionGap),
+        _buildPolitenessAIRow(
+          context,
+          ref,
+          aiPoliteness: aiPoliteness,
+          inputBuffer: inputBuffer,
+          compact: compact,
+        ),
+        SizedBox(height: sectionGap),
+        // 文字盤
+        Expanded(
+          child: _buildCharacterBoard(ref, fontSize: fontSize),
+        ),
+      ],
+    );
+  }
+
+  /// コンパクト2ペインレイアウト（主に横持ちスマホ、可視高さが乏しい場合）
+  ///
+  /// 縦積みだと固定セクションの必要高さが可視高さを超えRenderFlex
+  /// オーバーフローが発生するため、左ペイン（各種操作UI・スクロール可）と
+  /// 右ペイン（文字盤、残り全高さをExpandedで使用）の横並びに切り替える。
+  /// アプリの主機能である文字盤が消えてしまう不具合を解消する。
+  Widget _buildCompactLandscapeLayout(
+    BuildContext context,
+    WidgetRef ref, {
+    required String inputBuffer,
+    required FontSize fontSize,
+    required PolitenessLevel aiPoliteness,
+    required double availableHeight,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 左ペイン: 操作UI一式（スクロール可能にしてオーバーフローを防止）
+        Expanded(
+          flex: 2,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              vertical: AppSizes.paddingXSmall,
+            ),
+            child: Column(
+              children: [
+                _buildQuickResponseSection(
+                  ref,
+                  fontSize: fontSize,
+                  padding: AppSizes.paddingXSmall,
+                  compact: true,
+                ),
+                _buildInputArea(
+                  context,
+                  inputBuffer: inputBuffer,
+                  fontSize: fontSize,
+                  compact: true,
+                  availableHeight: availableHeight,
+                ),
+                const SizedBox(height: AppSizes.paddingXSmall),
+                _buildControlRow(ref, inputBuffer: inputBuffer),
+                const SizedBox(height: AppSizes.paddingXSmall),
+                _buildPolitenessAIRow(
+                  context,
+                  ref,
+                  aiPoliteness: aiPoliteness,
+                  inputBuffer: inputBuffer,
+                  compact: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSizes.paddingXSmall),
+        // 右ペイン: 文字盤（主機能。残り全高さを使用する）
+        Expanded(
+          flex: 3,
+          child: _buildCharacterBoard(ref, fontSize: fontSize),
+        ),
+      ],
+    );
+  }
+
+  /// クイック応答ボタンセクションを構築する
+  Widget _buildQuickResponseSection(
+    WidgetRef ref, {
+    required FontSize fontSize,
+    required double padding,
+    required bool compact,
+  }) {
+    return Padding(
+      padding: EdgeInsets.all(padding),
+      child: QuickResponseButtons(
+        onResponse: (type) {
+          // TTS読み上げと履歴保存
+          _speakAndSaveHistory(ref, type.label);
+        },
+        onTTSSpeak: (text) {
+          ref.read(ttsProvider.notifier).speak(text);
+        },
+        fontSize: fontSize,
+        buttonHeight:
+            compact ? AppSizes.quickResponseButtonHeightCompact : null,
+      ),
+    );
+  }
+
+  /// 入力表示エリアを構築する
+  ///
+  /// 長文（最大1000文字）入力時に文字盤エリアを圧迫しないよう、
+  /// 可視高さの約20%を上限（maxHeight）とし、内部をSingleChildScrollView
+  /// （reverse: true）にすることで、超過分は末尾（最新入力）が見える形で
+  /// スクロール可能にする。
+  Widget _buildInputArea(
+    BuildContext context, {
+    required String inputBuffer,
+    required FontSize fontSize,
+    required bool compact,
+    required double availableHeight,
+  }) {
+    final minHeight = compact
+        ? AppSizes.inputAreaMinHeightCompact
+        : AppSizes.inputAreaMinHeightStandard;
+    final ratioBasedMaxHeight = availableHeight.isFinite
+        ? availableHeight * AppSizes.inputAreaMaxHeightRatio
+        : double.infinity;
+    final maxHeight =
+        ratioBasedMaxHeight > minHeight ? ratioBasedMaxHeight : minHeight;
+    final horizontalMargin =
+        compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;
+    final contentPadding =
+        compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;
+
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
+      padding: EdgeInsets.all(contentPadding),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline,
+        ),
+        borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+      ),
+      constraints: BoxConstraints(minHeight: minHeight, maxHeight: maxHeight),
+      // 【アクセシビリティ対応】: liveRegionで入力中テキストの変化を
+      // スクリーンリーダーが自動読み上げできるようにする。
+      child: Semantics(
+        liveRegion: true,
+        child: SingleChildScrollView(
+          reverse: true,
+          child: Text(
+            inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontSize: _getFontSizeValue(fontSize),
+                  color: inputBuffer.isEmpty
+                      ? Theme.of(context).colorScheme.onSurface.withAlpha(128)
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// コントロールボタン行（削除・全消去・読み上げ）を構築する
+  ///
+  /// 【バグ修正】: コンパクト2ペインレイアウトの左ペイン（幅の狭いExpanded flex:2）
+  /// では、固定サイズのボタン群がRow(mainAxisAlignment.spaceBetween)の
+  /// 幅を超えRenderFlexオーバーフローが発生していた。Wrapに変更することで、
+  /// 幅に余裕がある場合は従来通り1行（spaceBetween相当）で表示しつつ、
+  /// 幅が不足する場合はスワイプ操作を必要とせず2行に折り返して収める
+  /// （タップ操作のみで完結させるための対応）。
+  Widget _buildControlRow(
+    WidgetRef ref, {
+    required String inputBuffer,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.paddingMedium,
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: AppSizes.paddingSmall,
+        runSpacing: AppSizes.paddingSmall,
+        children: [
+          // 【バグ修正】: 削除・全消去ボタン（各60px推奨サイズ）は、コンパクト
+          // 2ペインレイアウトの左ペインのように2ボタン分の幅すら確保できない
+          // 極端に狭い幅では、この内側グループ自体もWrapにしないと
+          // オーバーフローする（外側WrapはRunをまたぐ折り返しのみ制御し、
+          // 単一の子の内部レイアウトまでは救えないため）。
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSizes.paddingSmall,
+            runSpacing: AppSizes.paddingSmall,
+            children: [
+              DeleteButton(
+                enabled: inputBuffer.isNotEmpty,
+                onPressed: () {
+                  ref.read(inputBufferProvider.notifier).deleteLastCharacter();
+                },
+              ),
+              ClearAllButton(
+                enabled: inputBuffer.isNotEmpty,
+                onConfirmed: () {
+                  ref.read(inputBufferProvider.notifier).clear();
+                },
+              ),
+            ],
+          ),
+          TTSButton(
+            text: inputBuffer,
+            onSpeak: () {
+              if (inputBuffer.isNotEmpty) {
+                _saveToHistory(ref, inputBuffer);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 丁寧さレベル選択＋AI変換ボタンのセクションを構築する
+  Widget _buildPolitenessAIRow(
+    BuildContext context,
+    WidgetRef ref, {
+    required PolitenessLevel aiPoliteness,
+    required String inputBuffer,
+    required bool compact,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.paddingMedium,
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: AppSizes.paddingMedium,
+        runSpacing: compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall,
+        children: [
+          PolitenessLevelSelector(
+            selectedLevel: aiPoliteness,
+            onLevelChanged: (level) {
+              ref
+                  .read(settingsNotifierProvider.notifier)
+                  .setAIPoliteness(level);
+            },
+          ),
+          AIConversionButton(
+            inputText: inputBuffer,
+            politenessLevel: aiPoliteness,
+            onConvert: () => _convertWithAI(
+              context,
+              ref,
+              inputBuffer,
+              aiPoliteness,
+            ),
+            onConversionComplete: (convertedText) {
+              if (!context.mounted) return;
+              _showConversionResult(
+                context,
+                ref,
+                inputBuffer,
+                convertedText,
+                aiPoliteness,
+              );
+            },
+            onConversionError: (error) {
+              if (!context.mounted) return;
+              _showAIConversionError(context, error);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 文字盤セクションを構築する
+  Widget _buildCharacterBoard(
+    WidgetRef ref, {
+    required FontSize fontSize,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.paddingSmall,
+      ),
+      child: CharacterBoardWidget(
+        onCharacterTap: (character) {
+          ref.read(inputBufferProvider.notifier).addCharacter(character);
+        },
+        fontSize: fontSize,
       ),
     );
   }
