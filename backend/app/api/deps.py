@@ -35,6 +35,11 @@ API_KEY_HEADER_NAME = "X-API-Key"
 # auto_error=False: ヘッダー欠如時もFastAPI標準403ではなく、本モジュールで統一的に処理する
 api_key_header = APIKeyHeader(name=API_KEY_HEADER_NAME, auto_error=False)
 
+# APIキー未設定時に認証スキップを許可する環境のallowlist。
+# ここに含まれない環境（staging, production、および将来追加されうる未知の値）は
+# フェイルオープンを避けるため、常に認証必須（APIキー未設定なら503）とする。
+_AUTH_OPTIONAL_ENVIRONMENTS = frozenset({"development", "test"})
+
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """データベースセッションを取得する依存性関数。
@@ -70,8 +75,9 @@ async def require_api_key(
 
     挙動:
         - APIキーが未設定（settings.API_KEYS が空）の場合:
-            - production 環境では全リクエストを拒否（503: フェイルクローズ、設定漏れ防止）
-            - それ以外（development / test）では認証をスキップ（警告ログ）
+            - development / test 環境（allowlist）でのみ認証をスキップ（警告ログ）
+            - それ以外（staging, production を含む）では全リクエストを拒否
+              （503: フェイルクローズ、設定漏れ防止）
         - APIキーが設定されている場合:
             - 有効な X-API-Key ヘッダーを要求し、不一致・欠如は 401 で拒否
 
@@ -82,15 +88,22 @@ async def require_api_key(
         HTTPException: 認証失敗時（401）またはサーバー設定不備時（503）
     """
     if not settings.API_KEYS_LIST:
-        if settings.ENVIRONMENT == "production":
-            logger.error("API_KEYS is not configured in production; rejecting request.")
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="API key authentication is not configured.",
+        if settings.ENVIRONMENT in _AUTH_OPTIONAL_ENVIRONMENTS:
+            # 開発・テスト環境では認証をスキップ（誤って他環境で無効化しないよう警告）
+            logger.warning(
+                "API_KEYS is not configured; skipping authentication (environment=%s).",
+                settings.ENVIRONMENT,
             )
-        # 開発・テスト環境では認証をスキップ（誤って本番で無効化しないよう警告）
-        logger.warning("API_KEYS is not configured; skipping authentication (non-production).")
-        return
+            return
+        # allowlist外（staging, production等）はフェイルオープンを避け、常に拒否する
+        logger.error(
+            "API_KEYS is not configured in %s; rejecting request (fail-closed).",
+            settings.ENVIRONMENT,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="API key authentication is not configured.",
+        )
 
     if not is_valid_api_key(api_key):
         raise HTTPException(

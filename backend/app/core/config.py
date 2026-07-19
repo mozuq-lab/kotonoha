@@ -4,11 +4,16 @@
 環境変数から設定を読み込み、型安全に管理する。
 """
 
+from typing import Literal
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEV_SECRET_KEY = "dev-secret-key-change-me"  # noqa: S105
 DEV_POSTGRES_PASSWORD = "your_secure_password_here"  # noqa: S105
+
+# ENVIRONMENT に許可される値。表記ゆれ（"prod" 等）は起動時エラーとして拒否する。
+EnvironmentName = Literal["development", "test", "staging", "production"]
 
 
 class Settings(BaseSettings):
@@ -35,11 +40,13 @@ class Settings(BaseSettings):
     # 端末APIキー認証設定
     # AI変換APIへのアクセスに必要な端末APIキー（カンマ区切りで複数指定可）。
     # MVPはアカウント管理を持たないため、端末発行の共有シークレットで保護する。
-    # 未設定の場合: development/test では認証をスキップ、production では全リクエストを拒否。
+    # 未設定の場合: development/test では認証をスキップ、それ以外（staging/production等）は
+    # 全リクエストを拒否（フェイルクローズ、allowlist方式）。
     API_KEYS: str = ""
 
     # 環境設定
-    ENVIRONMENT: str = "development"
+    # 許可される値: development, test, staging, production のみ（表記ゆれは起動時エラー）。
+    ENVIRONMENT: EnvironmentName = "development"
 
     # CORS設定
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
