@@ -89,6 +89,35 @@ void main() {
             .called(1); // 【確認内容】: CompletionHandlerが登録されたことを確認 🔵
       });
 
+      /// TTS-SPEED-RESTORE-FIX: 初期化前に設定された速度を上書きしない
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: REQ-404, REQ-5003
+      /// 検証内容: initialize()呼び出し前にsetSpeed()で速度が変更されていた場合、
+      /// initialize()がその速度を尊重し、標準速度(1.0)で上書きしないことを確認する回帰テスト
+      test('TTS-SPEED-RESTORE-FIX: 初期化前に設定された速度をinitialize()が上書きしない', () async {
+        // 【テスト目的】: initialize()が現在のcurrentSpeedを尊重し、
+        // 無条件に標準速度(1.0)を設定しないことを確認 🔵
+        // 【背景】: 従来はinitialize()内でsetSpeechRate(1.0)を無条件に実行していたため、
+        // アプリ起動直後に保存済みの速度を先に適用しても、後から初期化が完了すると
+        // 標準速度で上書きされてしまう不具合があった。
+
+        // Given: 【テストデータ準備】: 初期化前に速度を「速い」に設定した状態を用意
+        await service.setSpeed(TTSSpeed.fast);
+        clearInteractions(mockFlutterTts);
+
+        // When: 【実際の処理実行】: initialize()を呼び出す（アプリ起動時の初期化を模擬）
+        await service.initialize();
+
+        // Then: 【結果検証】: setSpeechRate(1.3)が維持され、1.0への上書きが発生しないことを確認
+        verify(() => mockFlutterTts.setSpeechRate(1.3))
+            .called(1); // 【確認内容】: 速度が上書きされず維持されたことを確認 🔵
+        verifyNever(() => mockFlutterTts
+            .setSpeechRate(1.0)); // 【確認内容】: 標準速度への上書きが発生していないことを確認 🔵
+        expect(service.currentSpeed,
+            TTSSpeed.fast); // 【確認内容】: 内部状態も維持されていることを確認 🔵
+      });
+
       /// TC-048-002: テキストを渡すと読み上げが開始される
       ///
       /// 優先度: P0（必須）

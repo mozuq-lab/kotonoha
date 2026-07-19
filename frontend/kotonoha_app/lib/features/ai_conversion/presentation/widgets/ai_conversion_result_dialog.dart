@@ -176,7 +176,6 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primaryButtonColor = _getPrimaryButtonColor(theme);
     final secondaryButtonColor = _getSecondaryButtonColor(theme);
     final secondaryTextColor = _getSecondaryButtonTextColor(theme);
 
@@ -208,7 +207,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildAdoptButton(primaryButtonColor),
+              _buildAdoptButton(theme),
               const SizedBox(height: AppSizes.paddingSmall),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -234,6 +233,12 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   }
 
   /// 元の文セクションを構築
+  ///
+  /// 【AA対応】: ラベル文字色にColors.grey(#9E9E9E)を使用していたため、
+  /// 背景（白系サーフェス）との組み合わせで約2.8:1しかなくWCAG AA（4.5:1）未達だった。
+  /// テーマのcolorScheme.onSurfaceは各テーマのサーフェス色との組み合わせで
+  /// AAを大きく上回るよう定義済み（ライト/高コントラスト: 黒文字で約21:1、
+  /// ダーク: 白文字で約16.7:1）であるため、これをそのまま使用する。
   Widget _buildOriginalTextSection(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,7 +246,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
         Text(
           '元の文',
           style: AppTextStyles.bodySmall.copyWith(
-            color: Colors.grey,
+            color: theme.colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: AppSizes.paddingXSmall),
@@ -273,7 +278,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
             Text(
               '変換結果',
               style: AppTextStyles.bodySmall.copyWith(
-                color: Colors.grey,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(width: AppSizes.paddingSmall),
@@ -324,7 +329,16 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   }
 
   /// 「採用」ボタンを構築
-  Widget _buildAdoptButton(Color backgroundColor) {
+  ///
+  /// 【AA対応】: 従来は背景色（テーマのプライマリカラー）に関わらず
+  /// 文字色をColors.white固定にしていたため、ライトテーマの
+  /// primaryLight(#2196F3)+白文字で約3.1:1しかなくWCAG AA（4.5:1）未達だった。
+  /// 各テーマのcolorScheme.onPrimaryは背景（colorScheme.primary）との組み合わせで
+  /// AAを満たすよう定義済み（ライト: 黒文字で約6.7:1、ダーク: 白文字で約4.6:1、
+  /// 高コントラスト: 白文字で約21:1）であるため、これをそのまま使用する。
+  Widget _buildAdoptButton(ThemeData theme) {
+    final backgroundColor = _getPrimaryButtonColor(theme);
+    final foregroundColor = theme.colorScheme.onPrimary;
     return SizedBox(
       width: double.infinity,
       height: AppSizes.recommendedTapTarget,
@@ -334,7 +348,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
             : () => _handleTap(() => widget.onAdopt(widget.convertedText)),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
-          foregroundColor: Colors.white,
+          foregroundColor: foregroundColor,
           minimumSize: const Size(
             double.infinity,
             AppSizes.minTapTarget,

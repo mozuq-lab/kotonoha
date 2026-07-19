@@ -99,12 +99,20 @@ class TTSService {
 
   /// TTS初期化
   ///
-  /// flutter_ttsの初期化、言語設定、デフォルト速度設定を行う。
+  /// flutter_ttsの初期化、言語設定、速度設定を行う。
   ///
   /// 【処理内容】:
   /// 1. 言語を日本語（ja-JP）に設定
-  /// 2. 読み上げ速度を標準（1.0）に設定
+  /// 2. 読み上げ速度を現在の`currentSpeed`（未変更ならnormal=1.0）に設定
   /// 3. 初期化フラグを設定
+  ///
+  /// 【TTS-SPEED-RESTORE-FIX】: 従来はここで無条件に1.0（標準速度）を
+  /// 設定していたため、アプリ起動時に設定画面から復元された速度が
+  /// エンジンに適用される前に初期化がその速度を1.0で上書きしてしまい、
+  /// 「設定は『遅い』のまま表示されているのに実際は標準速度で読み上げられる」
+  /// という不具合の原因になっていた。`currentSpeed`（デフォルトはnormal）を
+  /// 尊重することで、呼び出し側（TTSNotifier）が初期化前に速度を反映しても
+  /// 上書きされないようにする。
   ///
   /// 【エラーハンドリング】:
   /// - 初期化失敗時: errorMessageを設定し、falseを返す
@@ -123,8 +131,9 @@ class TTSService {
       // 【言語設定】: 日本語（ja-JP）を設定
       await tts.setLanguage('ja-JP');
 
-      // 【速度設定】: 標準速度（1.0倍速）を設定
-      await tts.setSpeechRate(1.0);
+      // 【速度設定】: 現在保持している速度（デフォルトはnormal=1.0倍速）を設定
+      // 🔵 信頼性レベル: TTS-SPEED-RESTORE-FIX - 起動時の速度復元と競合しないための変更
+      await tts.setSpeechRate(currentSpeed.value);
 
       // 【完了コールバック登録】: 読み上げ完了時に状態をidleに戻す
       tts.setCompletionHandler(() {

@@ -86,6 +86,33 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       final hasAcceptedAIPrivacyPolicy =
           _prefs!.getBool('ai_privacy_consent') ?? false;
 
+      // 【TTS速度のエンジンへの反映について】: 復元した速度を実際のTTSエンジンへ
+      // 反映する処理は、ここ（SettingsNotifier.build()）からTTSNotifierへ
+      // push するのではなく、TTSNotifier側（tts_provider.dart の
+      // `_applyPersistedSpeedIfAvailable`）がSettingsNotifierから pull する
+      // 一方向の依存関係にしている。
+      //
+      // 【レビューで判明した重大バグ】: 以前はここでも
+      // `if (ref.exists(ttsProvider)) { await ref.read(ttsProvider.notifier)
+      // .setSpeed(ttsSpeed); }` という逆方向（Settings→TTS）の反映を
+      // 行っていたが、これは実アプリのHomeScreen.build()内で
+      // `ref.watch(settingsNotifierProvider)` の直後に
+      // `ref.listen(ttsProvider, ...)` が呼ばれる実行順（同一同期フレーム内で
+      // 両Providerが生成される）と組み合わさると、以下の循環待機による
+      // **デッドロック**を引き起こすことを確認した:
+      //   SettingsNotifier.build()
+      //     → await ttsProvider.notifier.setSpeed()
+      //       → await _initFuture
+      //         → await _applyPersistedSpeedIfAvailable()
+      //           → await ref.read(settingsNotifierProvider.future)  // ← build()自身の完了待ち
+      // この結果 settingsNotifierProvider.future が永久に解決せず、
+      // アプリ起動直後に設定画面・AI丁寧さ・フォントサイズ等がすべて
+      // デフォルト値のまま固まってしまう（再現テストで確認済み）。
+      // TTS→Settingsの一方向pull（tts_provider.dart側）だけで
+      // 「再起動後に保存済み速度がTTSエンジンへ反映される」という
+      // 本来の目的は満たされるため、逆方向のpushは行わない。
+      // 🔵 信頼性レベル: REQ-404（読み上げ速度設定）、REQ-5003（設定永続化）に基づく
+
       // 【設定復元】: index値からenumに変換してAppSettingsインスタンスを生成
       // 【境界値チェック】: index値が範囲外の場合はデフォルト値を使用
       // 🔵 青信号: TC-015、TC-016（境界値テスト）に対応

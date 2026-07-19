@@ -14,10 +14,19 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
+import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
+import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
+import '../../../mocks/mock_flutter_tts.dart';
 
 /// TTSNotifierのモック
 class MockTTSNotifier extends Mock {
   Future<void> setSpeed(TTSSpeed speed);
+}
+
+/// テスト用にモック化されたFlutterTtsを注入したTTSNotifierを作成する
+TTSNotifier createTestTTSNotifier(MockFlutterTts mockFlutterTts) {
+  final service = TTSService(tts: mockFlutterTts);
+  return TTSNotifier(serviceOverride: service);
 }
 
 void main() {
@@ -28,6 +37,8 @@ void main() {
     setUpAll(() {
       // Mocktailのフォールバック値を登録
       registerFallbackValue(TTSSpeed.normal);
+      registerFallbackValue('');
+      registerFallbackValue(0.0);
     });
 
     setUp(() async {
@@ -156,6 +167,132 @@ void main() {
         // 【品質保証】: アプリ再起動後も設定が失われないことを確認
         expect(settings.ttsSpeed,
             TTSSpeed.fast); // 【確認内容】: 保存された速度が正しく復元されたことを確認 🔵
+      });
+
+      /// TTS-SPEED-RESTORE-FIX: アプリ再起動後、保存された速度が実際のTTSエンジンに反映される
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: REQ-404, REQ-5003
+      /// 検証内容: 状態(ttsSpeed)だけでなく、実際のTTSエンジン（flutter_tts）にも
+      /// 復元した速度が適用されることを確認する回帰テスト。
+      ///
+      /// 【バグの背景】: 従来はSettingsNotifier.build()で復元した速度が
+      /// AppSettingsの状態にのみ反映され、TTSNotifier.setSpeed()が
+      /// 呼ばれるのは設定画面でユーザーが速度を変更したとき（setTTSSpeed()）
+      /// のみだった。さらにTTSService.initialize()が無条件にsetSpeechRate(1.0)を
+      /// 実行していたため、再起動直後は「設定画面には保存済みの速度（例: 遅い）が
+      /// 表示されているのに、実際の読み上げは標準速度（1.0倍）のまま」という
+      /// 不具合が発生していた。TC-049-010は状態(ttsSpeed)のみを検証しており、
+      /// この不具合を検出できていなかった。
+      ///
+      /// 【シナリオ】: アプリ起動シーケンスでは、通常SettingsNotifierの復元が
+      /// 完了してから（ローディング画面等でゲートされた後）TTSButton等が
+      /// ビルドされ、ttsProviderが構築される。このテストではその順序を再現する。
+      test(
+          'TTS-SPEED-RESTORE-FIX: アプリ再起動後、保存された速度が実際にTTSエンジン（flutter_tts）へ適用されることを確認',
+          () async {
+        // 【テスト目的】: 保存済みTTS速度が起動時にTTSエンジンへ実際に適用されることを確認 🔵
+
+        // Given: 【テストデータ準備】: 前回のセッションで速度を「速い」に設定していた状態を再現
+        // 【初期条件設定】: SharedPreferencesに保存済みの速度、モック化されたTTSエンジン
+        SharedPreferences.setMockInitialValues({
+          'tts_speed': 'fast',
+        });
+
+        final mockFlutterTts = MockFlutterTts();
+        when(() => mockFlutterTts.setLanguage(any()))
+            .thenAnswer((_) async => 1);
+        when(() => mockFlutterTts.setSpeechRate(any()))
+            .thenAnswer((_) async => 1);
+        when(() => mockFlutterTts.speak(any())).thenAnswer((_) async => 1);
+        when(() => mockFlutterTts.stop()).thenAnswer((_) async => 1);
+
+        final service = TTSService(tts: mockFlutterTts);
+
+        container = ProviderContainer(
+          overrides: [
+            ttsProvider
+                .overrideWith(() => TTSNotifier(serviceOverride: service)),
+          ],
+        );
+
+        // When: 【実際の処理実行(1)】: まずSettingsNotifier.build()の完了を待つ
+        // （起動シーケンスで設定復元がTTS画面表示より先に完了する状況を再現）
+        final settings = await container.read(settingsNotifierProvider.future);
+
+        // When: 【実際の処理実行(2)】: その後TTSButton等が表示され、
+        // ttsProviderが構築される状況を再現する
+        container.read(ttsProvider.notifier);
+        // バックグラウンド初期化＋保存済み速度の反映が完了するのを待つ
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Then: 【結果検証】: 状態だけでなく、実際のTTSエンジンにも速度(1.3倍速)が
+        // 適用されていることを確認する
+        // 【期待値確認】: setSpeechRate(1.0)への上書きが発生せず、最終的な速度が
+        // fast(1.3)であること
+        expect(settings.ttsSpeed, TTSSpeed.fast);
+        verify(() => mockFlutterTts.setSpeechRate(1.3)).called(
+            greaterThanOrEqualTo(1)); // 【確認内容】: 保存済み速度がTTSエンジンに反映されたこと 🔵
+        expect(
+          service.currentSpeed,
+          TTSSpeed.fast,
+        ); // 【確認内容】: TTSServiceの内部状態も正しく反映されていること 🔵
+      });
+
+      /// 【回帰テスト】: HomeScreen.build()と同じ読み取り順（settingsNotifierProvider
+      /// をwatchした直後、同一の同期フレーム内でttsProviderをlisten/read）でも、
+      /// settingsNotifierProviderがデッドロックせず解決することを確認する。
+      ///
+      /// 【バグの背景】: レビューで、SettingsNotifier.build()内から
+      /// `ref.exists(ttsProvider)`が真の場合にttsProvider.notifier.setSpeed()を
+      /// 呼ぶコードが存在すると、HomeScreen.build()の実際の呼び出し順序
+      /// （settingsNotifierProviderをwatchした直後、同じ同期フレーム内で
+      /// ttsProviderをlistenする）では、両Providerが同一フレームで生成される
+      /// ため以下の循環待機が発生し、settingsNotifierProvider.future が
+      /// 永久に解決しないデッドロックを引き起こすことが判明した:
+      ///   SettingsNotifier.build()
+      ///     → await ttsProvider.notifier.setSpeed()
+      ///       → await _initFuture
+      ///         → await _applyPersistedSpeedIfAvailable()
+      ///           → await ref.read(settingsNotifierProvider.future) // 循環
+      /// この回帰テストは、settings→ttsの一方向依存（tts_provider.dart側の
+      /// pullのみ）で運用されていることを保証する。
+      test(
+          '回帰: settingsNotifierProviderをwatch直後に同一フレームでttsProviderを'
+          'read してもsettingsNotifierProviderがデッドロックしない', () async {
+        SharedPreferences.setMockInitialValues({'tts_speed': 'fast'});
+
+        final mockFlutterTts = MockFlutterTts();
+        when(() => mockFlutterTts.setLanguage(any()))
+            .thenAnswer((_) async => 1);
+        when(() => mockFlutterTts.setSpeechRate(any()))
+            .thenAnswer((_) async => 1);
+        when(() => mockFlutterTts.speak(any())).thenAnswer((_) async => 1);
+        when(() => mockFlutterTts.stop()).thenAnswer((_) async => 1);
+
+        final service = TTSService(tts: mockFlutterTts);
+
+        container = ProviderContainer(
+          overrides: [
+            ttsProvider
+                .overrideWith(() => TTSNotifier(serviceOverride: service)),
+          ],
+        );
+
+        // HomeScreen.build()を模擬: settingsNotifierProviderを読んだ直後、
+        // awaitを挟まず同一の同期スタック内でttsProviderを読む。
+        final settingsFuture = container.read(settingsNotifierProvider.future);
+        container.read(ttsProvider.notifier);
+
+        // デッドロックしていれば、この await はタイムアウトする。
+        final settings = await settingsFuture.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => fail(
+            'settingsNotifierProvider.future がデッドロックにより解決しなかった',
+          ),
+        );
+
+        expect(settings.ttsSpeed, TTSSpeed.fast);
       });
     });
 
