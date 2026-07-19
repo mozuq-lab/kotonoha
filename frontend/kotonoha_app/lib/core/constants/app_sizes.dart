@@ -77,6 +77,11 @@ class AppSizes {
   // 状態ボタンストリップ内の各ボタンの幅
   static const double statusButtonStripItemWidth = 84.0;
 
+  // 入力候補チップ行 (Input candidate chips)
+  // 候補がない/入力が空のときは高さ0（行ごと非表示）になる。
+  // 候補がある場合のみ、この高さの横スクロール1行を表示する。
+  static const double inputCandidateRowHeight = 48.0;
+
   // ダイアログボタン (Dialog buttons)
   static const double dialogButtonWidth = 120.0;
   static const double dialogButtonMinWidth = 100.0;

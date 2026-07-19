@@ -17,6 +17,7 @@ import 'widgets/font_size_settings_widget.dart';
 import 'widgets/theme_settings_widget.dart';
 import 'widgets/tts_speed_settings_widget.dart';
 import 'widgets/ai_politeness_settings_widget.dart';
+import 'widgets/simple_mode_settings_widget.dart';
 
 /// 設定画面ウィジェット
 ///
@@ -57,6 +58,8 @@ class SettingsScreen extends StatelessWidget {
                 FontSizeSettingsWidget(),
                 SizedBox(height: 16),
                 ThemeSettingsWidget(),
+                SizedBox(height: 16),
+                SimpleModeSettingsWidget(),
               ],
             ),
             // 【音声設定セクション】: REQ-404

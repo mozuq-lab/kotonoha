@@ -180,6 +180,9 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
               child: CharacterButton(
                 key: ValueKey('character_button_$character'),
                 character: character,
+                displayLabel: CharacterData.getDisplayLabel(character),
+                accessibilityLabel:
+                    CharacterData.getAccessibilityLabel(character),
                 onTap: widget.isEnabled
                     ? () => widget.onCharacterTap(character)
                     : null,
@@ -205,11 +208,13 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
 class CharacterButton extends StatelessWidget {
   /// 文字ボタンを作成する。
   ///
-  /// [character] - 表示する文字
+  /// [character] - 表示する文字（タップ時にコールバックへ渡す値）
   /// [onTap] - タップ時のコールバック
   /// [size] - ボタンサイズ（デフォルト: 60.0）
   /// [isEnabled] - 有効/無効状態（デフォルト: true）
   /// [fontSize] - フォントサイズ設定（デフォルト: medium）
+  /// [displayLabel] - ボタンに表示するラベル（省略時は[character]をそのまま表示）
+  /// [accessibilityLabel] - スクリーンリーダー用ラベル（省略時は[character]を使用）
   const CharacterButton({
     super.key,
     required this.character,
@@ -217,9 +222,11 @@ class CharacterButton extends StatelessWidget {
     this.size = 60.0,
     this.isEnabled = true,
     this.fontSize = FontSize.medium,
+    this.displayLabel,
+    this.accessibilityLabel,
   });
 
-  /// 表示する文字
+  /// 表示する文字（タップ時にコールバックへ渡す値）
   final String character;
 
   /// タップ時のコールバック
@@ -234,6 +241,16 @@ class CharacterButton extends StatelessWidget {
   /// フォントサイズ設定
   final FontSize fontSize;
 
+  /// ボタンに表示するラベル（濁点・半濁点・空白キー等の特殊表示用）
+  ///
+  /// nullの場合は[character]をそのまま表示する。
+  final String? displayLabel;
+
+  /// スクリーンリーダー用ラベル（濁点・半濁点・空白キー等の特殊表示用）
+  ///
+  /// nullの場合は[character]をそのまま使用する。
+  final String? accessibilityLabel;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -244,7 +261,7 @@ class CharacterButton extends StatelessWidget {
     );
 
     return Semantics(
-      label: character,
+      label: accessibilityLabel ?? character,
       button: true,
       enabled: isEnabled,
       child: SizedBox(
@@ -270,7 +287,7 @@ class CharacterButton extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Text(
-                character,
+                displayLabel ?? character,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontSize: textSize,
                   color: isEnabled

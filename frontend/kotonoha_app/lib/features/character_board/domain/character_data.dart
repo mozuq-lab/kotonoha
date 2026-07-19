@@ -37,10 +37,38 @@ enum CharacterCategory {
 class CharacterData {
   CharacterData._();
 
-  /// 基本五十音（あ〜ん）46文字
+  /// 濁音化キー（文字盤専用の特殊トークン）
+  ///
+  /// タップすると入力バッファ末尾の文字を濁音化する（か→が等）。
+  /// 濁音化された文字に対して再度タップするとトグルで清音に戻す。
+  /// 見た目上も「゛」記号そのものを表示する実在文字のため、通常の
+  /// 文字ボタンと同じ描画で表示できる。
+  ///
+  /// 対応要件: TASK改善（濁音・半濁音の3タップ問題解消）
+  static const String dakutenKey = '゛';
+
+  /// 半濁音化キー（文字盤専用の特殊トークン）
+  ///
+  /// タップすると入力バッファ末尾の文字を半濁音化する（は→ぱ等）。
+  /// 半濁音化された文字に対して再度タップするとトグルで清音に戻す。
+  static const String handakutenKey = '゜';
+
+  /// 空白キー
+  ///
+  /// タップすると全角スペース（U+3000）を入力バッファに追加する。
+  /// 実際の値がそのまま挿入されるため、他の特殊キーと異なり
+  /// InputBufferNotifier.addCharacter()にそのまま渡せばよい。
+  static const String spaceKey = '　';
+
+  /// 基本五十音（あ〜ん）46文字 + 特殊キー3種（濁点・半濁点・空白）
   ///
   /// 五十音表の配列順に並べる
   /// 空文字列は表示しないスペーサーとして使用
+  ///
+  /// 【改善】: 濁音・半濁音の入力に従来はタブ切替（基本→濁音/半濁音→基本の
+  /// 3タップ）が必要だった。五十音表上もともと文字が存在しない
+  /// スペーサー位置（や行・わ行の空きセル）を活用し、行数を増やさずに
+  /// 「゛」「゜」「空白」キーを配置する。
   static const List<String> basic = [
     'あ',
     'い',
@@ -78,9 +106,9 @@ class CharacterData {
     'め',
     'も',
     'や',
-    '',
+    dakutenKey,
     'ゆ',
-    '',
+    handakutenKey,
     'よ',
     'ら',
     'り',
@@ -90,7 +118,7 @@ class CharacterData {
     'わ',
     'を',
     'ん',
-    '',
+    spaceKey,
     '',
   ];
 
@@ -174,5 +202,36 @@ class CharacterData {
   /// カテゴリに対応する文字リストを取得（空文字を除外）
   static List<String> getCharactersFiltered(CharacterCategory category) {
     return getCharacters(category).where((c) => c.isNotEmpty).toList();
+  }
+
+  /// 文字が濁音化キーかどうかを判定する
+  static bool isDakutenKey(String character) => character == dakutenKey;
+
+  /// 文字が半濁音化キーかどうかを判定する
+  static bool isHandakutenKey(String character) => character == handakutenKey;
+
+  /// 文字が空白キーかどうかを判定する
+  static bool isSpaceKey(String character) => character == spaceKey;
+
+  /// ボタンに表示する文字列を取得する
+  ///
+  /// 空白キーは実際の値が全角スペース（見た目上は空白）のため、
+  /// そのままボタンに表示すると視覚的に判別できない。表示専用の
+  /// ラベルに差し替える。濁点・半濁点キーはそれ自体が可視文字のため
+  /// そのまま表示する。それ以外の文字はそのまま返す。
+  static String getDisplayLabel(String character) {
+    if (isSpaceKey(character)) return '空白';
+    return character;
+  }
+
+  /// アクセシビリティ用のSemanticsラベルを取得する
+  ///
+  /// スクリーンリーダーで読み上げても意味が伝わるよう、
+  /// 特殊キーには専用ラベルを設定する。
+  static String getAccessibilityLabel(String character) {
+    if (isDakutenKey(character)) return '濁点';
+    if (isHandakutenKey(character)) return '半濁点';
+    if (isSpaceKey(character)) return '空白';
+    return character;
   }
 }

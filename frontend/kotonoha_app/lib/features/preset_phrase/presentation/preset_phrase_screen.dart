@@ -16,6 +16,7 @@ import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_list_widget.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
+import 'package:kotonoha_app/features/quick_response/presentation/mixins/debounce_mixin.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart'
     show historyProvider;
@@ -35,7 +36,8 @@ class PresetPhraseScreen extends ConsumerStatefulWidget {
   ConsumerState<PresetPhraseScreen> createState() => _PresetPhraseScreenState();
 }
 
-class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen> {
+class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
+    with DebounceMixin<PresetPhraseScreen> {
   @override
   void initState() {
     super.initState();
@@ -89,7 +91,13 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen> {
   /// 【メソッド】: 定型文選択時の処理
   /// 【実装内容】: 即座にTTS読み上げを開始し、履歴に保存
   /// 🔵 信頼性レベル: 青信号 - REQ-103、NFR-001に基づく
+  ///
+  /// 【バグ修正】: DebounceMixin未適用で誤タップによる連続発話が発生し得たため、
+  /// 他画面（クイック応答ボタン等）と同様にデバウンスを適用した。
   void _onPhraseSelected(PresetPhrase phrase) {
+    // デバウンス期間内の連続タップは無視する（誤タップによる連続発話防止）
+    if (!checkDebounce()) return;
+
     // TTS読み上げを開始
     ref.read(ttsProvider.notifier).speak(phrase.content);
 

@@ -205,5 +205,76 @@ void main() {
         expect(state.favorites.length, 1);
       });
     });
+
+    // =========================================================================
+    // Undo機能テスト（個別削除・全削除の復元）
+    // =========================================================================
+    group('Undo機能テスト', () {
+      test('restoreLastDeletedFavorite()で直近に削除したお気に入りが復元される', () async {
+        final notifier = container.read(favoriteProvider.notifier);
+        await notifier.addFavorite('復元対象');
+        final id = container.read(favoriteProvider).favorites.first.id;
+
+        await notifier.deleteFavorite(id);
+        expect(container.read(favoriteProvider).favorites, isEmpty);
+
+        await notifier.restoreLastDeletedFavorite();
+
+        final state = container.read(favoriteProvider);
+        expect(state.favorites.length, 1);
+        expect(state.favorites.first.content, '復元対象');
+        expect(state.favorites.first.id, id);
+      });
+
+      test('restoreLastDeletedFavorite()を削除していない状態で呼んでも何も起きない', () async {
+        final notifier = container.read(favoriteProvider.notifier);
+        await notifier.addFavorite('そのまま');
+
+        await notifier.restoreLastDeletedFavorite();
+
+        expect(container.read(favoriteProvider).favorites.length, 1);
+      });
+
+      test('restoreLastDeletedFavorite()は1度しか復元できない（連続呼び出しでは増えない）', () async {
+        final notifier = container.read(favoriteProvider.notifier);
+        await notifier.addFavorite('復元対象');
+        final id = container.read(favoriteProvider).favorites.first.id;
+
+        await notifier.deleteFavorite(id);
+        await notifier.restoreLastDeletedFavorite();
+        await notifier.restoreLastDeletedFavorite();
+
+        expect(container.read(favoriteProvider).favorites.length, 1);
+      });
+
+      test('restoreClearedFavorites()で全削除前のお気に入り一覧が復元される', () async {
+        final notifier = container.read(favoriteProvider.notifier);
+        await notifier.addFavorite('1番目');
+        await notifier.addFavorite('2番目');
+        await notifier.addFavorite('3番目');
+        expect(container.read(favoriteProvider).favorites.length, 3);
+
+        await notifier.clearAllFavorites();
+        expect(container.read(favoriteProvider).favorites, isEmpty);
+
+        await notifier.restoreClearedFavorites();
+
+        final state = container.read(favoriteProvider);
+        expect(state.favorites.length, 3);
+        expect(
+          state.favorites.map((f) => f.content).toSet(),
+          {'1番目', '2番目', '3番目'},
+        );
+      });
+
+      test('restoreClearedFavorites()を全削除していない状態で呼んでも何も起きない', () async {
+        final notifier = container.read(favoriteProvider.notifier);
+        await notifier.addFavorite('そのまま');
+
+        await notifier.restoreClearedFavorites();
+
+        expect(container.read(favoriteProvider).favorites.length, 1);
+      });
+    });
   });
 }

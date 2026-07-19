@@ -16,6 +16,7 @@ import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conv
 import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_result_dialog.dart';
 import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/politeness_level_selector.dart';
 import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_provider.dart';
+import 'package:kotonoha_app/features/character_board/domain/character_data.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
@@ -23,6 +24,10 @@ import 'package:kotonoha_app/features/character_board/providers/input_buffer_pro
 import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_buttons.dart';
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
 import 'package:kotonoha_app/features/face_to_face/providers/face_to_face_provider.dart';
+import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
+import 'package:kotonoha_app/features/input_candidates/presentation/widgets/input_candidate_chips.dart';
+import 'package:kotonoha_app/features/input_candidates/providers/input_candidates_provider.dart';
+import 'package:kotonoha_app/features/simple_mode/presentation/simple_mode_view.dart';
 import 'package:kotonoha_app/features/status_buttons/status_buttons.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
@@ -55,6 +60,7 @@ class HomeScreen extends ConsumerWidget {
     final settings = settingsAsync.asData?.value;
     final fontSize = settings?.fontSize ?? FontSize.medium;
     final aiPoliteness = settings?.aiPoliteness ?? PolitenessLevel.normal;
+    final simpleMode = settings?.simpleMode ?? false;
 
     // 【音量ゼロ警告の配線】(EDGE-202): tts_button.dart自体は変更せず、
     // グローバルなttsProviderの状態遷移(非speaking -> speaking)を横断的に
@@ -72,84 +78,145 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('kotonoha'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.open_in_full),
-            tooltip: '対面表示',
-            onPressed: () => _openFaceToFace(context, ref, inputBuffer),
-          ),
-          IconButton(
-            icon: const Icon(Icons.format_list_bulleted),
-            tooltip: '定型文',
-            onPressed: () => context.push(AppRoutes.presetPhrases),
-          ),
-          IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: '履歴',
-            onPressed: () => context.push(AppRoutes.history),
-          ),
-          IconButton(
-            icon: const Icon(Icons.favorite),
-            tooltip: 'お気に入り',
-            onPressed: () => context.push(AppRoutes.favorites),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: '設定',
-            onPressed: () => context.push(AppRoutes.settings),
-          ),
-        ],
+        // 【シンプルモード】: 文字盤を使わない大ボタン画面に切り替えている間は、
+        // 認知負荷を下げるため他のナビゲーションアイコンは表示せず、
+        // 通常モードへ戻すトグルアイコンのみを表示する。
+        actions: simpleMode
+            ? [_buildSimpleModeToggleButton(ref, simpleMode: true)]
+            : [
+                IconButton(
+                  icon: const Icon(Icons.open_in_full),
+                  tooltip: '対面表示',
+                  onPressed: () => _openFaceToFace(context, ref, inputBuffer),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.format_list_bulleted),
+                  tooltip: '定型文',
+                  onPressed: () => context.push(AppRoutes.presetPhrases),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.history),
+                  tooltip: '履歴',
+                  onPressed: () => context.push(AppRoutes.history),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.favorite),
+                  tooltip: 'お気に入り',
+                  onPressed: () => context.push(AppRoutes.favorites),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  tooltip: '設定',
+                  onPressed: () => context.push(AppRoutes.settings),
+                ),
+                _buildSimpleModeToggleButton(ref, simpleMode: false),
+              ],
       ),
       body: SafeArea(
         child: Column(
           children: [
             // 音量0警告（EDGE-202）: 警告不要時はSizedBox.shrinkで高さ0のため
-            // 既存レイアウトへの影響はない。
+            // 既存レイアウトへの影響はない。シンプルモード中も表示する。
             VolumeWarningWidget(
               isVisible: showVolumeWarning,
               onDismiss: () =>
                   ref.read(volumeWarningProvider.notifier).dismissWarning(),
             ),
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // 【レスポンシブ対応】: 可視高さ・幅に応じてレイアウトを切り替える。
-                  // - isCompactHeight: 主に横持ちスマホ（可視高さ< compactHeightThreshold）。
-                  //   固定サイズのセクションを縦に積むと必要高さが可視高さを超え、
-                  //   RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
-                  // - isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
-                  //   しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
-                  final isCompactHeight =
-                      constraints.maxHeight < AppSizes.compactHeightThreshold;
-                  final isPhoneWidth =
-                      constraints.maxWidth < AppSizes.phoneMaxWidth;
+              child: simpleMode
+                  ? _buildSimpleModeContent(ref, fontSize: fontSize)
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        // 【レスポンシブ対応】: 可視高さ・幅に応じてレイアウトを切り替える。
+                        // - isCompactHeight: 主に横持ちスマホ（可視高さ< compactHeightThreshold）。
+                        //   固定サイズのセクションを縦に積むと必要高さが可視高さを超え、
+                        //   RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
+                        // - isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
+                        //   しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
+                        final isCompactHeight = constraints.maxHeight <
+                            AppSizes.compactHeightThreshold;
+                        final isPhoneWidth =
+                            constraints.maxWidth < AppSizes.phoneMaxWidth;
 
-                  if (isCompactHeight) {
-                    return _buildCompactLandscapeLayout(
-                      context,
-                      ref,
-                      inputBuffer: inputBuffer,
-                      fontSize: fontSize,
-                      aiPoliteness: aiPoliteness,
-                      availableHeight: constraints.maxHeight,
-                    );
-                  }
+                        if (isCompactHeight) {
+                          return _buildCompactLandscapeLayout(
+                            context,
+                            ref,
+                            inputBuffer: inputBuffer,
+                            fontSize: fontSize,
+                            aiPoliteness: aiPoliteness,
+                            availableHeight: constraints.maxHeight,
+                          );
+                        }
 
-                  return _buildStandardLayout(
-                    context,
-                    ref,
-                    inputBuffer: inputBuffer,
-                    fontSize: fontSize,
-                    aiPoliteness: aiPoliteness,
-                    compact: isPhoneWidth,
-                    availableHeight: constraints.maxHeight,
-                  );
-                },
-              ),
+                        return _buildStandardLayout(
+                          context,
+                          ref,
+                          inputBuffer: inputBuffer,
+                          fontSize: fontSize,
+                          aiPoliteness: aiPoliteness,
+                          compact: isPhoneWidth,
+                          availableHeight: constraints.maxHeight,
+                        );
+                      },
+                    ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// シンプルモードの切替トグルボタンを構築する
+  ///
+  /// [simpleMode] は現在シンプルモードが有効かどうか。有効な場合はアイコン・
+  /// tooltip（=Semanticsラベル）を「解除」用に切り替える。
+  Widget _buildSimpleModeToggleButton(
+    WidgetRef ref, {
+    required bool simpleMode,
+  }) {
+    return IconButton(
+      icon: Icon(
+        simpleMode ? Icons.keyboard_alt_outlined : Icons.grid_view_rounded,
+      ),
+      tooltip: simpleMode ? 'シンプルモードを解除' : 'シンプルモードに切替',
+      onPressed: () {
+        ref.read(settingsNotifierProvider.notifier).setSimpleMode(!simpleMode);
+      },
+    );
+  }
+
+  /// シンプルモード画面の中身を構築する
+  ///
+  /// 文字盤を使わない大ボタン画面。クイック応答・状態ボタン・お気に入りを
+  /// 再利用し、TTS読み上げ・履歴保存はこのメソッド内のコールバックで配線する。
+  Widget _buildSimpleModeContent(
+    WidgetRef ref, {
+    required FontSize fontSize,
+  }) {
+    final favorites = ref.watch(favoriteProvider).favorites;
+
+    return SimpleModeView(
+      fontSize: fontSize,
+      favorites: favorites,
+      onQuickResponse: (type) {
+        _saveToHistory(ref, type.label, HistoryType.quickButton);
+      },
+      onStatusButton: (type) {
+        _saveToHistory(ref, type.label, HistoryType.quickButton);
+      },
+      onTTSSpeak: (text) {
+        ref.read(ttsProvider.notifier).speak(text);
+      },
+      onFavoriteTap: (favorite) {
+        // 【既存挙動に合わせる】: FavoritesScreenのお気に入りタップと同様、
+        // 読み上げのみ行い、履歴への再保存は行わない。
+        if (favorite.content.isEmpty) return;
+        ref.read(ttsProvider.notifier).speak(favorite.content);
+      },
+      onExitSimpleMode: () {
+        ref.read(settingsNotifierProvider.notifier).setSimpleMode(false);
+      },
     );
   }
 
@@ -203,6 +270,9 @@ class HomeScreen extends ConsumerWidget {
           compact: compact,
           availableHeight: availableHeight,
         ),
+        // 入力候補チップ行（頻度ベース）: 候補がない/入力が空の場合は
+        // ウィジェット自身が高さ0になるため、ここでの追加の余白調整は不要。
+        _buildInputCandidatesSection(ref, fontSize: fontSize),
         SizedBox(height: sectionGap),
         // コントロールボタン（削除、全消去、読み上げ）
         _buildControlRow(ref, inputBuffer: inputBuffer),
@@ -265,6 +335,7 @@ class HomeScreen extends ConsumerWidget {
                   compact: true,
                   availableHeight: availableHeight,
                 ),
+                _buildInputCandidatesSection(ref, fontSize: fontSize),
                 const SizedBox(height: AppSizes.paddingXSmall),
                 _buildControlRow(ref, inputBuffer: inputBuffer),
                 const SizedBox(height: AppSizes.paddingXSmall),
@@ -414,6 +485,27 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
+  /// 入力候補チップ行セクションを構築する（頻度ベースの入力候補）
+  ///
+  /// 履歴・定型文・お気に入りから前方一致で算出された候補を、入力表示
+  /// エリアの直下に横スクロールのチップ行として表示する。候補が0件、
+  /// または入力バッファが空の場合はウィジェット自身が高さ0になる。
+  /// タップで入力バッファを候補テキストに置換する（前方一致のため
+  /// 自然な補完になる）。
+  Widget _buildInputCandidatesSection(
+    WidgetRef ref, {
+    required FontSize fontSize,
+  }) {
+    final candidates = ref.watch(inputCandidatesProvider);
+    return InputCandidateChips(
+      candidates: candidates,
+      fontSize: fontSize,
+      onSelect: (text) {
+        ref.read(inputBufferProvider.notifier).setText(text);
+      },
+    );
+  }
+
   /// コントロールボタン行（削除・全消去・読み上げ）を構築する
   ///
   /// 【バグ修正】: コンパクト2ペインレイアウトの左ペイン（幅の狭いExpanded flex:2）
@@ -539,7 +631,18 @@ class HomeScreen extends ConsumerWidget {
       ),
       child: CharacterBoardWidget(
         onCharacterTap: (character) {
-          ref.read(inputBufferProvider.notifier).addCharacter(character);
+          // 【濁点・半濁点キー対応】: 通常の文字追加ではなく、入力バッファ末尾の
+          // 文字を濁音/半濁音に変換する専用処理を呼び出す（3タップ問題の解消）。
+          // 空白キーは全角スペース文字そのものが渡ってくるため、通常のaddCharacter
+          // でそのまま追加できる。
+          final notifier = ref.read(inputBufferProvider.notifier);
+          if (CharacterData.isDakutenKey(character)) {
+            notifier.applyDakuten();
+          } else if (CharacterData.isHandakutenKey(character)) {
+            notifier.applyHandakuten();
+          } else {
+            notifier.addCharacter(character);
+          }
         },
         fontSize: fontSize,
       ),

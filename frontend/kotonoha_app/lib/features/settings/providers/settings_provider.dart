@@ -56,15 +56,25 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       // 🔵 青信号: SharedPreferencesの標準的な初期化方法
       _prefs = await SharedPreferences.getInstance();
 
-      // 【フォントサイズ復元】: SharedPreferencesからフォントサイズのindex値を読み込む
-      // 【null安全性】: getInt()がnullを返した場合はデフォルト値（medium.index）を使用
-      // 🔵 青信号: TC-014（null安全性）に対応
-      final fontSizeIndex = _prefs!.getInt('fontSize') ?? FontSize.medium.index;
+      // 【フォントサイズ復元】: SharedPreferencesからフォントサイズを読み込む
+      // 【永続化形式】: 新形式（enum name文字列）を優先し、旧形式（enum index int）が
+      // 残っている場合は読み替えた上でstring形式へマイグレーションする
+      // 🔵 青信号: TC-014（null安全性）、TC-072-008（旧形式からの復元）に対応
+      final fontSize = await _restoreEnumWithMigration(
+        'fontSize',
+        FontSize.values,
+        FontSize.medium,
+      );
 
-      // 【テーマ復元】: SharedPreferencesからテーマのindex値を読み込む
-      // 【null安全性】: getInt()がnullを返した場合はデフォルト値（light.index）を使用
-      // 🔵 青信号: TC-009（テーマ復元）、TC-014（null安全性）に対応
-      final themeIndex = _prefs!.getInt('theme') ?? AppTheme.light.index;
+      // 【テーマ復元】: SharedPreferencesからテーマを読み込む
+      // 【永続化形式】: 新形式（enum name文字列）を優先し、旧形式（enum index int）が
+      // 残っている場合は読み替えた上でstring形式へマイグレーションする
+      // 🔵 青信号: TC-009（テーマ復元）、TC-014（null安全性）、TC-073-006（旧形式からの復元）に対応
+      final theme = await _restoreEnumWithMigration(
+        'theme',
+        AppTheme.values,
+        AppTheme.light,
+      );
 
       // 【TTS速度復元】: SharedPreferencesからTTS速度を安全に復元
       // 【DRY改善】: 共通のenum復元パターンをヘルパーメソッドで実装
@@ -85,6 +95,11 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       );
       final hasAcceptedAIPrivacyPolicy =
           _prefs!.getBool('ai_privacy_consent') ?? false;
+
+      // 【シンプルモード復元】: SharedPreferencesからシンプルモードのON/OFFを復元
+      // 【永続化形式】: bool値をそのまま保存（enum化不要のためマイグレーション対象外）
+      // 🟡 信頼性レベル: 黄信号 - fix/improvement-p0-p2で追加
+      final simpleMode = _prefs!.getBool('simple_mode') ?? false;
 
       // 【TTS速度のエンジンへの反映について】: 復元した速度を実際のTTSエンジンへ
       // 反映する処理は、ここ（SettingsNotifier.build()）からTTSNotifierへ
@@ -113,15 +128,16 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       // 本来の目的は満たされるため、逆方向のpushは行わない。
       // 🔵 信頼性レベル: REQ-404（読み上げ速度設定）、REQ-5003（設定永続化）に基づく
 
-      // 【設定復元】: index値からenumに変換してAppSettingsインスタンスを生成
-      // 【境界値チェック】: index値が範囲外の場合はデフォルト値を使用
+      // 【設定復元】: 復元済みのenum値からAppSettingsインスタンスを生成
+      // 【境界値チェック】: 旧形式の index値が範囲外の場合はデフォルト値を使用
       // 🔵 青信号: TC-015、TC-016（境界値テスト）に対応
       return AppSettings(
-        fontSize: FontSize.values[fontSizeIndex],
-        theme: AppTheme.values[themeIndex],
+        fontSize: fontSize,
+        theme: theme,
         ttsSpeed: ttsSpeed,
         aiPoliteness: aiPoliteness,
         hasAcceptedAIPrivacyPolicy: hasAcceptedAIPrivacyPolicy,
+        simpleMode: simpleMode,
       );
     } catch (e) {
       // 【エラーハンドリング】: SharedPreferences初期化失敗時の処理
@@ -187,6 +203,68 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     }
   }
 
+  /// 【ヘルパー関数】: SharedPreferencesからenum値を安全に復元し、旧形式（int index）
+  /// で保存されていた場合は新形式（String name）へマイグレーションする
+  /// 【背景】: enumの並び替え・要素追加が起きると、int indexでの永続化は
+  /// 既存ユーザーの設定値が別の値に化ける危険がある（例: TTSSpeedへのverySlow追加）。
+  /// 本メソッドはfontSize/themeの永続化キーをString name方式に統一するための
+  /// 後方互換読み込み・書き戻し処理を担う。
+  /// 🔵 信頼性レベル: REQ-5003（設定永続化）、NFR-304（堅牢性）に基づく
+  ///
+  /// パラメータ:
+  /// - `key`: SharedPreferencesのキー名
+  /// - `enumValues`: 変換対象のenumのvaluesリスト
+  /// - `defaultValue`: 未保存・不正値時のデフォルト値
+  ///
+  /// 【処理フロー】:
+  /// 1. `SharedPreferences.get()`で型を問わず生の値を取得する
+  /// 2. Stringの場合（新形式） → `_restoreEnumFromName`で復元
+  /// 3. intの場合（旧形式） → 範囲内ならenumへ変換し、String形式で再保存
+  ///    （マイグレーション）。範囲外ならデフォルト値
+  /// 4. null・その他の型 → デフォルト値
+  ///
+  /// 戻り値: 復元されたenum値（旧形式からの読み替え、または新形式からの復元）
+  Future<T> _restoreEnumWithMigration<T extends Enum>(
+    String key,
+    List<T> enumValues,
+    T defaultValue,
+  ) async {
+    // 【型を問わない取得】: getString()/getInt()は保存済みの値の型と異なると
+    // 例外を投げる可能性があるため、型を問わないget()で安全に読み取る
+    // 🔵 青信号: SharedPreferencesのAPI仕様に基づく
+    final raw = _prefs!.get(key);
+
+    if (raw is String) {
+      // 【新形式】: enum name文字列として復元
+      return _restoreEnumFromName(raw, enumValues, defaultValue);
+    }
+
+    if (raw is int) {
+      // 【旧形式】: enum indexとして復元を試みる
+      // 【境界値チェック】: 範囲外の場合はデフォルト値にフォールバック
+      // 🔵 青信号: TC-072-010、TC-073-010（範囲外index）に対応
+      if (raw < 0 || raw >= enumValues.length) {
+        return defaultValue;
+      }
+
+      final migrated = enumValues[raw];
+
+      // 【マイグレーション】: 次回以降はString形式で読み込めるよう再保存する
+      // 【エラーハンドリング】: 再保存に失敗しても、今回の読み込み結果自体は
+      // 正しく返す（NFR-301: 基本機能継続）
+      try {
+        await _prefs!.setString(key, migrated.name);
+      } catch (_) {
+        // 再保存失敗時もアプリはクラッシュさせない
+      }
+
+      return migrated;
+    }
+
+    // 【null・未知の型】: デフォルト値を使用
+    return defaultValue;
+  }
+
   /// 【機能概要】: フォントサイズを変更する
   /// 【実装方針】: 楽観的更新でUI即座反映、SharedPreferencesに非同期保存
   /// 【テスト対応】: TC-002（small）、TC-004（large）、TC-015（境界値）
@@ -213,9 +291,11 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     // 【非同期保存】: バックグラウンドで保存処理を実行
     // 🔵 青信号: REQ-5003（設定永続化）に基づく
     try {
-      // 【保存処理】: enum indexをintとして保存
+      // 【保存処理】: enum nameを文字列として保存
+      // 【フォーマット統一】: index保存はenumの並び替え・追加で値が化けるため、
+      // name文字列で保存する（読み込み側は_restoreEnumWithMigrationで旧形式もサポート）
       // 🔵 青信号: SharedPreferencesの標準的な保存方法
-      await _prefs?.setInt('fontSize', fontSize.index);
+      await _prefs?.setString('fontSize', fontSize.name);
     } catch (e) {
       // 【エラーハンドリング】: 保存失敗時の処理
       // 【楽観的更新維持】: 保存失敗してもUI状態は更新済み（REQ-2007）
@@ -253,9 +333,11 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     // 【非同期保存】: バックグラウンドで保存処理を実行
     // 🔵 青信号: REQ-5003（設定永続化）に基づく
     try {
-      // 【保存処理】: enum indexをintとして保存
+      // 【保存処理】: enum nameを文字列として保存
+      // 【フォーマット統一】: index保存はenumの並び替え・追加で値が化けるため、
+      // name文字列で保存する（読み込み側は_restoreEnumWithMigrationで旧形式もサポート）
       // 🔵 青信号: SharedPreferencesの標準的な保存方法
-      await _prefs?.setInt('theme', theme.index);
+      await _prefs?.setString('theme', theme.name);
     } catch (e) {
       // 【エラーハンドリング】: 保存失敗時の処理
       // 【楽観的更新維持】: 保存失敗してもUI状態は更新済み（REQ-2008）
@@ -362,6 +444,26 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       await _prefs?.setBool('ai_privacy_consent', accepted);
     } catch (e) {
       // 保存失敗時も現在セッションでは同意状態を保持する。
+    }
+  }
+
+  /// 【機能概要】: シンプルモードのON/OFFを切り替える
+  /// 【実装方針】: 楽観的更新でUI即座反映、SharedPreferencesに非同期保存
+  /// 【背景】: 疲労時・症状進行時に文字盤なしの大ボタン画面へ切り替えるための設定。
+  /// 誤操作で意図せず切り替わったままにならないよう、ホーム画面・設定画面
+  /// 双方から同じメソッドで確実にトグルできるようにする。
+  /// 🟡 信頼性レベル: 黄信号 - fix/improvement-p0-p2で追加
+  Future<void> setSimpleMode(bool enabled) async {
+    final currentSettings = state.asData?.value;
+    if (currentSettings == null) return;
+
+    state = AsyncValue.data(currentSettings.copyWith(simpleMode: enabled));
+
+    try {
+      await _prefs?.setBool('simple_mode', enabled);
+    } catch (e) {
+      // 【エラーハンドリング】: 保存失敗時の処理
+      // 【楽観的更新維持】: 保存失敗してもUI状態は更新済み
     }
   }
 }

@@ -149,6 +149,34 @@ void main() {
     });
 
     // =========================================================================
+    // 2.1b 「入力欄へ」ボタンテスト
+    // =========================================================================
+    group('入力欄へボタンテスト', () {
+      testWidgets('「入力欄へ」ラベルが表示される', (WidgetTester tester) async {
+        final testFavorite = Favorite(
+          id: 'test_1',
+          content: 'こんにちは',
+          createdAt: DateTime.now(),
+          displayOrder: 0,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: FavoriteItemCard(
+                favorite: testFavorite,
+                onTap: () {},
+                onDelete: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('入力欄へ'), findsOneWidget);
+      });
+    });
+
+    // =========================================================================
     // 2.2 サイズ・アクセシビリティテスト
     // =========================================================================
     group('サイズ・アクセシビリティテスト', () {

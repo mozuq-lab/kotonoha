@@ -17,6 +17,7 @@ import '../../tts/domain/models/tts_state.dart';
 import 'widgets/favorite_item_card.dart';
 import 'widgets/empty_favorite_widget.dart';
 import 'constants/favorite_ui_constants.dart';
+import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 
 /// お気に入り画面ウィジェット
 ///
@@ -127,7 +128,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           key: Key('favorite_item_card_${favorite.id}'),
           favorite: favorite,
           onTap: () => _onFavoriteTap(favorite.content),
-          onDelete: () => _showDeleteDialog(context, favorite.id),
+          onDelete: () => _deleteFavoriteWithUndo(context, favorite.id),
         );
       },
     );
@@ -198,7 +199,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () => _showDeleteDialog(context, favorite.id),
+              onPressed: () => _deleteFavoriteWithUndo(context, favorite.id),
               tooltip: FavoriteUIConstants.deleteTooltip,
             ),
           ],
@@ -243,30 +244,26 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     ttsNotifier.speak(content);
   }
 
-  /// 個別削除確認ダイアログを表示
+  /// 個別削除処理（確認なし・即削除 + Undo）
   ///
-  /// FR-064-008: 削除時に確認ダイアログを表示
-  void _showDeleteDialog(BuildContext context, String id) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false, // FR-064-008: 誤操作防止
-      builder: (BuildContext dialogContext) {
-        return _ConfirmDialog(
-          title: FavoriteUIConstants.confirmDialogTitle,
-          content: FavoriteUIConstants.deleteConfirmMessage,
-          onConfirm: () {
-            Navigator.of(dialogContext).pop();
-            ref.read(favoriteProvider.notifier).deleteFavorite(id);
-          },
-          onCancel: () => Navigator.of(dialogContext).pop(),
-        );
-      },
+  /// 【改善】: 確認ダイアログは「はい」誤タップ時に復元できず、
+  /// タップ数も増えるため廃止した。即削除のうえ、SnackBarの
+  /// 「元に戻す」操作（8秒間）で誤操作から復元できるようにする。
+  void _deleteFavoriteWithUndo(BuildContext context, String id) {
+    ref.read(favoriteProvider.notifier).deleteFavorite(id);
+    showUndoSnackBar(
+      context,
+      message: '削除しました',
+      onUndo: () =>
+          ref.read(favoriteProvider.notifier).restoreLastDeletedFavorite(),
     );
   }
 
   /// 全削除確認ダイアログを表示
   ///
   /// FR-064-010: 全削除時に確認ダイアログを表示
+  /// 【改善】: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ、
+  /// 実行後にUndo SnackBarを表示し誤操作から復元できるようにする。
   void _showDeleteAllDialog(BuildContext context) {
     showDialog<void>(
       context: context,
@@ -278,6 +275,12 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           onConfirm: () {
             Navigator.of(dialogContext).pop();
             ref.read(favoriteProvider.notifier).clearAllFavorites();
+            showUndoSnackBar(
+              context,
+              message: 'すべて削除しました',
+              onUndo: () =>
+                  ref.read(favoriteProvider.notifier).restoreClearedFavorites(),
+            );
           },
           onCancel: () => Navigator.of(dialogContext).pop(),
         );

@@ -272,5 +272,90 @@ void main() {
         reason: '重複時にエラーメッセージが表示される必要がある',
       );
     });
+
+    /// TC-A11Y-STAR-001: 履歴カードの星ボタン（長押し不要のタップ代替）
+    ///
+    /// 【改善】: 履歴からのお気に入り追加が長押しメニューのみだったため、
+    /// タップ主体の操作要件（REQ-5005）に反していた。星アイコンによる
+    /// 明示的なタップ操作を追加する（長押しメニューは併存）。
+    testWidgets('TC-A11Y-STAR-001: 星ボタンタップでお気に入りに追加され、成功メッセージが表示される',
+        (WidgetTester tester) async {
+      final testHistory = createTestHistory(
+        id: 'test_1',
+        content: 'こんにちは',
+      );
+      final mockHistoryState = HistoryState(histories: [testHistory]);
+
+      final mockTTSNotifier = MockTTSNotifier();
+      when(() => mockTTSNotifier.speak(any())).thenAnswer((_) async {});
+      when(() => mockTTSNotifier.stop()).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            historyProviderOverride(mockHistoryState),
+            ttsProvider.overrideWith(() => mockTTSNotifier),
+          ],
+          child: const MaterialApp(
+            home: HistoryScreen(),
+          ),
+        ),
+      );
+
+      // 未お気に入りなのでstar_borderが表示される
+      expect(find.byIcon(Icons.star_border), findsOneWidget);
+
+      // When: 星ボタンをタップする
+      await tester.tap(find.byIcon(Icons.star_border));
+      await tester.pumpAndSettle();
+
+      // Then: お気に入りに追加され、成功メッセージが表示される
+      expect(find.text('お気に入りに追加しました'), findsOneWidget);
+      // 追加後は塗りつぶしのstarアイコンに切り替わる
+      expect(find.byIcon(Icons.star), findsOneWidget);
+    });
+
+    /// TC-A11Y-STAR-002: 既にお気に入り登録済みの履歴は塗りつぶし星で表示される
+    testWidgets('TC-A11Y-STAR-002: 既にお気に入り登録済みの履歴は塗りつぶしのstarアイコンで表示される',
+        (WidgetTester tester) async {
+      final testHistory = createTestHistory(
+        id: 'history_1',
+        content: 'こんにちは',
+      );
+      final mockHistoryState = HistoryState(histories: [testHistory]);
+
+      final mockFavoriteState = FavoriteState(
+        favorites: [
+          Favorite(
+            id: 'fav_1',
+            content: 'こんにちは',
+            createdAt: DateTime.now(),
+            displayOrder: 0,
+          ),
+        ],
+      );
+
+      final mockTTSNotifier = MockTTSNotifier();
+      when(() => mockTTSNotifier.speak(any())).thenAnswer((_) async {});
+      when(() => mockTTSNotifier.stop()).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            historyProviderOverride(mockHistoryState),
+            favoriteProvider
+                .overrideWith(() => _TestFavoriteNotifier(mockFavoriteState)),
+            ttsProvider.overrideWith(() => mockTTSNotifier),
+          ],
+          child: const MaterialApp(
+            home: HistoryScreen(),
+          ),
+        ),
+      );
+
+      // Then: 既に登録済みのため塗りつぶしのstarアイコンが表示される
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.star_border), findsNothing);
+    });
   });
 }

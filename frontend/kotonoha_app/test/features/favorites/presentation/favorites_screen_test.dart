@@ -466,17 +466,20 @@ void main() {
     // 1.4 削除機能テスト
     // =========================================================================
     group('削除機能', () {
-      /// TC-064-009: 個別削除ボタンをタップすると確認ダイアログが表示される 🔵
+      /// TC-064-009: 個別削除ボタンをタップすると確認ダイアログなしで即削除され、
+      /// 「元に戻す」操作付きSnackBarが表示される 🔵
+      ///
+      /// 【改善】: 個別削除の確認ダイアログは、誤タップで「はい」を選んでしまうと
+      /// 復元できない・タップ数が増えるという問題があったため廃止した。
+      /// 即削除のうえ、SnackBarの「元に戻す」操作（8秒間）で誤操作から
+      /// 復元できるようにする（全削除は影響が大きいため確認ダイアログを維持）。
       ///
       /// 優先度: P0 必須
-      /// 関連要件: FR-064-007, FR-064-008, FR-064-014, AC-064-004
-      /// 検証内容: 削除確認ダイアログの表示
-      testWidgets('TC-064-009: お気に入り項目の削除ボタンをタップすると確認ダイアログが表示される',
+      /// 関連要件: FR-064-007, FR-064-008(改訂), FR-064-014, AC-064-004(改訂)
+      /// 検証内容: 個別削除の即時実行とUndo SnackBarの表示
+      testWidgets(
+          'TC-064-009: お気に入り項目の削除ボタンをタップすると確認ダイアログなしで即削除され、元に戻すSnackBarが表示される',
           (WidgetTester tester) async {
-        // 【テスト目的】: 誤操作防止のための確認ダイアログ表示確認 🔵
-        // 【テスト内容】: 確認ダイアログが表示され、削除とキャンセルボタンが存在する
-        // 【期待される動作】: 確認ダイアログが表示され、削除とキャンセルボタンが存在する
-
         // Given: お気に入りデータを準備する
         final testFavorite = createTestFavorite(
           id: 'test_1',
@@ -500,47 +503,34 @@ void main() {
         await tester.tap(find.byIcon(Icons.delete));
         await tester.pumpAndSettle();
 
-        // Then: AlertDialogが表示される
+        // Then: 確認ダイアログは表示されず、即座に削除される
         expect(
           find.byType(AlertDialog),
-          findsOneWidget,
-          reason: '確認ダイアログが表示される必要がある',
+          findsNothing,
+          reason: '個別削除は確認ダイアログなしで即実行される必要がある',
+        );
+        expect(
+          find.text('こんにちは'),
+          findsNothing,
+          reason: '削除対象のお気に入りが即座にリストから消える必要がある',
         );
 
-        // 「このお気に入りを削除しますか?」メッセージが表示される
+        // 「削除しました」＋「元に戻す」のSnackBarが表示される
         expect(
-          find.text('このお気に入りを削除しますか?'),
+          find.text('削除しました'),
           findsOneWidget,
-          reason: '確認メッセージが表示される必要がある',
+          reason: '削除完了を伝えるSnackBarが表示される必要がある',
         );
-
-        // 「削除」ボタンが表示される
         expect(
-          find.widgetWithText(TextButton, '削除'),
+          find.text('元に戻す'),
           findsOneWidget,
-          reason: '削除ボタンが表示される必要がある',
-        );
-
-        // 「キャンセル」ボタンが表示される
-        expect(
-          find.widgetWithText(TextButton, 'キャンセル'),
-          findsOneWidget,
-          reason: 'キャンセルボタンが表示される必要がある',
+          reason: 'Undo操作のSnackBarActionが表示される必要がある',
         );
       });
 
-      /// TC-064-012: 削除確認ダイアログ外タップで閉じない 🔵
-      ///
-      /// 優先度: P0 必須
-      /// 関連要件: FR-064-008, REQ-5002
-      /// 検証内容: 誤操作防止（barrierDismissible: false）
-      testWidgets('TC-064-012: 削除確認ダイアログ外をタップしてもダイアログが閉じない',
+      /// TC-064-009-UNDO: 「元に戻す」タップで削除したお気に入りが復元される 🟡
+      testWidgets('TC-064-009-UNDO: 削除後に「元に戻す」をタップするとお気に入りが復元される',
           (WidgetTester tester) async {
-        // 【テスト目的】: 誤操作防止の確認 🔵
-        // 【テスト内容】: バリアタップでダイアログが閉じない
-        // 【期待される動作】: バリアタップでダイアログが閉じない
-
-        // Given: お気に入りデータを準備する
         final testFavorite = createTestFavorite(
           id: 'test_1',
           content: 'こんにちは',
@@ -559,8 +549,54 @@ void main() {
           ),
         );
 
-        // When: 削除ボタンをタップしてダイアログを表示する
         await tester.tap(find.byIcon(Icons.delete));
+        await tester.pumpAndSettle();
+
+        expect(find.text('こんにちは'), findsNothing);
+
+        // When: 「元に戻す」をタップする
+        await tester.tap(find.text('元に戻す'));
+        await tester.pumpAndSettle();
+
+        // Then: 削除したお気に入りが復元される
+        expect(
+          find.text('こんにちは'),
+          findsOneWidget,
+          reason: '「元に戻す」タップで削除したお気に入りが復元される必要がある',
+        );
+      });
+
+      /// TC-064-012: 全削除確認ダイアログ外タップで閉じない 🔵
+      ///
+      /// 【改善】: 個別削除は確認ダイアログを廃止（即削除+Undo）したため、
+      /// このテストは影響の大きい全削除ダイアログのバリアタップ検証に改訂した。
+      ///
+      /// 優先度: P0 必須
+      /// 関連要件: FR-064-010, REQ-5002
+      /// 検証内容: 誤操作防止（barrierDismissible: false）
+      testWidgets('TC-064-012: 全削除確認ダイアログ外をタップしてもダイアログが閉じない',
+          (WidgetTester tester) async {
+        // 【テスト目的】: 誤操作防止の確認 🔵
+        // 【テスト内容】: バリアタップでダイアログが閉じない
+        // 【期待される動作】: バリアタップでダイアログが閉じない
+
+        // Given: お気に入りデータを準備する（全削除ボタン表示のため複数件）
+        final testFavorites = createTestFavorites(5);
+        final mockState = FavoriteState(favorites: testFavorites);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              favoriteProviderOverride(mockState),
+            ],
+            child: const MaterialApp(
+              home: FavoritesScreen(),
+            ),
+          ),
+        );
+
+        // When: 全削除ボタンをタップしてダイアログを表示する
+        await tester.tap(find.byIcon(Icons.delete_sweep));
         await tester.pumpAndSettle();
 
         // ダイアログ外（バリア部分）をタップする

@@ -59,6 +59,15 @@ class HistoryNotifier extends Notifier<HistoryState> {
   /// UUID生成用インスタンス
   static const _uuid = Uuid();
 
+  /// 【Undo用】: 直近に個別削除した履歴を一時保持する
+  ///
+  /// 【改善】: 個別削除は確認ダイアログを廃止し即削除としたため、
+  /// 誤タップからの復元手段として「元に戻す」操作を提供する。
+  History? _lastDeletedHistory;
+
+  /// 【Undo用】: 直近に全削除する前の履歴一覧を一時保持する
+  List<History>? _lastClearedHistories;
+
   /// 【変換ヘルパー】: Hiveモデル HistoryItem → ドメイン History
   History _toDomain(HistoryItem item) => History(
         id: item.id,
@@ -110,6 +119,12 @@ class HistoryNotifier extends Notifier<HistoryState> {
   /// 【実装内容】: 指定IDの履歴を削除
   /// 🔵 信頼性レベル: 青信号 - REQ-603（履歴の削除）
   Future<void> deleteHistory(String id) async {
+    final index = state.histories.indexWhere((h) => h.id == id);
+    if (index == -1) return;
+
+    // 【Undo用】: 復元できるよう削除対象を退避しておく
+    _lastDeletedHistory = state.histories[index];
+
     final repo = ref.read(historyRepositoryProvider);
     if (repo != null) {
       // 【永続化】: Hiveから削除後、再読込
@@ -120,12 +135,31 @@ class HistoryNotifier extends Notifier<HistoryState> {
       return;
     }
 
-    final index = state.histories.indexWhere((h) => h.id == id);
-    if (index == -1) return;
-
     final updatedHistories = List<History>.from(state.histories);
     updatedHistories.removeAt(index);
     state = state.copyWith(histories: updatedHistories);
+  }
+
+  /// 【メソッド定義】: 直近に削除した履歴を復元する（Undo）
+  /// 【実装内容】: deleteHistory()で退避しておいた履歴を再度保存する
+  /// 🟡 信頼性レベル: 黄信号 - 誤操作防止のための改善（削除確認ダイアログ廃止に伴う代替手段）
+  Future<void> restoreLastDeleted() async {
+    final target = _lastDeletedHistory;
+    if (target == null) return;
+    _lastDeletedHistory = null;
+
+    final repo = ref.read(historyRepositoryProvider);
+    if (repo != null) {
+      await repo.save(_toItem(target));
+      state = state.copyWith(
+        histories: repo.loadAllSortedSync().map(_toDomain).toList(),
+      );
+      return;
+    }
+
+    final restored = [...state.histories, target]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    state = state.copyWith(histories: restored);
   }
 
   /// 【メソッド定義】: 履歴を検索する
@@ -158,12 +192,36 @@ class HistoryNotifier extends Notifier<HistoryState> {
   /// 【実装内容】: 全ての履歴を削除
   /// 🔵 信頼性レベル: 青信号 - REQ-603（履歴の削除）
   Future<void> clearAllHistories() async {
+    // 【Undo用】: 復元できるよう削除前の一覧を退避しておく
+    _lastClearedHistories = List<History>.from(state.histories);
+
     final repo = ref.read(historyRepositoryProvider);
     if (repo != null) {
       // 【永続化】: Hiveの全履歴を削除
       await repo.deleteAll();
     }
     state = state.copyWith(histories: []);
+  }
+
+  /// 【メソッド定義】: 直近の全削除を取り消し、履歴を復元する（Undo）
+  /// 🟡 信頼性レベル: 黄信号 - 誤操作防止のための改善
+  Future<void> restoreClearedHistories() async {
+    final cleared = _lastClearedHistories;
+    if (cleared == null || cleared.isEmpty) return;
+    _lastClearedHistories = null;
+
+    final repo = ref.read(historyRepositoryProvider);
+    if (repo != null) {
+      for (final history in cleared) {
+        await repo.save(_toItem(history));
+      }
+      state = state.copyWith(
+        histories: repo.loadAllSortedSync().map(_toDomain).toList(),
+      );
+      return;
+    }
+
+    state = state.copyWith(histories: cleared);
   }
 }
 

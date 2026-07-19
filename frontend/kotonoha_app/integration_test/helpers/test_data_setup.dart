@@ -10,7 +10,6 @@ import 'package:hive/hive.dart';
 
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
-import 'package:kotonoha_app/shared/models/app_settings.dart';
 
 /// テストデータセットアップ
 class TestDataSetup {
@@ -24,9 +23,6 @@ class TestDataSetup {
     }
     if (Hive.isBoxOpen('favorites')) {
       await Hive.box('favorites').clear();
-    }
-    if (Hive.isBoxOpen('settings')) {
-      await Hive.box<AppSettings>('settings').clear();
     }
   }
 
@@ -110,14 +106,6 @@ class TestDataSetup {
     for (final phrase in phrases) {
       await box.add(phrase);
     }
-  }
-
-  /// デフォルト設定をセットアップ
-  static Future<void> setupDefaultSettings() async {
-    final box = Hive.box<AppSettings>('settings');
-    await box.clear();
-
-    await box.put('app_settings', AppSettings.defaults());
   }
 
   /// 50件の履歴を生成（上限テスト用）

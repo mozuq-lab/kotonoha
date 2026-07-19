@@ -32,7 +32,11 @@ class AppSettings {
   // 🔵 青信号: NFR-102の初回同意要件に基づく
   final bool hasAcceptedAIPrivacyPolicy;
 
-  // 【コンストラクタ】: デフォルト値を設定（medium、light、normal、normal、false）
+  // 【シンプルモード】: 疲労時・症状進行時向けの、文字盤なし大ボタン画面への切替フラグ
+  // 🟡 黄信号: fix/improvement-p0-p2で追加。デフォルトはfalse（通常モード）
+  final bool simpleMode;
+
+  // 【コンストラクタ】: デフォルト値を設定（medium、light、normal、normal、false、false）
   // 【デフォルト値】: interfaces.dartで定義されたデフォルト値
   // 🔵 青信号: REQ-801、REQ-803、REQ-404、REQ-903のデフォルト値定義に基づく
   const AppSettings({
@@ -41,6 +45,7 @@ class AppSettings {
     this.ttsSpeed = TTSSpeed.normal,
     this.aiPoliteness = PolitenessLevel.normal,
     this.hasAcceptedAIPrivacyPolicy = false,
+    this.simpleMode = false,
   });
 
   /// 【機能概要】: 設定の一部を変更した新しいインスタンスを生成
@@ -53,6 +58,7 @@ class AppSettings {
     TTSSpeed? ttsSpeed,
     PolitenessLevel? aiPoliteness,
     bool? hasAcceptedAIPrivacyPolicy,
+    bool? simpleMode,
   }) {
     // 【実装内容】: 指定されたフィールドのみ更新し、それ以外は既存値を保持
     // 【null安全性】: Dart Null Safetyに準拠した実装
@@ -64,6 +70,7 @@ class AppSettings {
       aiPoliteness: aiPoliteness ?? this.aiPoliteness,
       hasAcceptedAIPrivacyPolicy:
           hasAcceptedAIPrivacyPolicy ?? this.hasAcceptedAIPrivacyPolicy,
+      simpleMode: simpleMode ?? this.simpleMode,
     );
   }
 
@@ -82,6 +89,7 @@ class AppSettings {
       'tts_speed': ttsSpeed.name,
       'ai_politeness': aiPoliteness.name,
       'ai_privacy_consent': hasAcceptedAIPrivacyPolicy,
+      'simple_mode': simpleMode,
     };
   }
 
@@ -152,6 +160,7 @@ class AppSettings {
       ttsSpeed: ttsSpeed,
       aiPoliteness: aiPoliteness,
       hasAcceptedAIPrivacyPolicy: json['ai_privacy_consent'] as bool? ?? false,
+      simpleMode: json['simple_mode'] as bool? ?? false,
     );
   }
 }

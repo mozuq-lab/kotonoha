@@ -13,11 +13,15 @@
 
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
 import 'package:kotonoha_app/features/preset_phrase/data/preset_phrase_repository.dart';
-import 'package:kotonoha_app/features/settings/data/app_settings_repository.dart';
-import 'package:kotonoha_app/shared/models/app_settings.dart';
+import 'package:kotonoha_app/features/settings/models/app_theme.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
+import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/history_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
@@ -30,7 +34,6 @@ void main() {
     late Box<PresetPhrase> presetBox;
     late Box<HistoryItem> historyBox;
     late PresetPhraseRepository presetRepository;
-    late AppSettingsRepository settingsRepository;
 
     setUp(() async {
       // Hive環境初期化
@@ -66,8 +69,6 @@ void main() {
       presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
       historyBox = await Hive.openBox<HistoryItem>('history');
       presetRepository = PresetPhraseRepository(box: presetBox);
-      final prefs = await SharedPreferences.getInstance();
-      settingsRepository = AppSettingsRepository(prefs: prefs);
 
       // 定型文100件を生成
       final phrases = List.generate(
@@ -100,13 +101,17 @@ void main() {
       }
 
       // 設定を保存
-      final settings = AppSettings(
-        fontSize: FontSize.large,
-        theme: AppTheme.dark,
-        ttsSpeed: TtsSpeed.fast,
-        politenessLevel: PolitenessLevel.polite,
-      );
-      await settingsRepository.saveAll(settings);
+      // 【実装対応】: 実際にアプリで使用されているSettingsNotifier
+      // （features/settings/providers/settings_provider.dart）を通して検証する
+      var settingsContainer = ProviderContainer();
+      await settingsContainer.read(settingsNotifierProvider.future);
+      final settingsNotifier =
+          settingsContainer.read(settingsNotifierProvider.notifier);
+      await settingsNotifier.setFontSize(FontSize.large);
+      await settingsNotifier.setTheme(AppTheme.dark);
+      await settingsNotifier.setTTSSpeed(TTSSpeed.fast);
+      await settingsNotifier.setAIPoliteness(PolitenessLevel.polite);
+      settingsContainer.dispose();
 
       // Boxを閉じる（アプリ終了をシミュレート）
       await Hive.close();
@@ -119,13 +124,14 @@ void main() {
       presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
       historyBox = await Hive.openBox<HistoryItem>('history');
       presetRepository = PresetPhraseRepository(box: presetBox);
-      final newPrefs = await SharedPreferences.getInstance();
-      settingsRepository = AppSettingsRepository(prefs: newPrefs);
+      // 設定用のProviderContainerも再構築（アプリ起動をシミュレート）
+      settingsContainer = ProviderContainer();
 
       // すべてのデータを読み込む
       final loadedPhrases = await presetRepository.loadAll();
       final loadedHistories = historyBox.values.toList();
-      final loadedSettings = await settingsRepository.load();
+      final loadedSettings =
+          await settingsContainer.read(settingsNotifierProvider.future);
 
       stopwatch.stop();
 
@@ -146,6 +152,8 @@ void main() {
       print('履歴: ${loadedHistories.length}件');
       print('データ読み込み時間: ${elapsedMs}ms');
       print('===================================');
+
+      settingsContainer.dispose();
     });
 
     test('TC-059-010-境界値: 200件の定型文読み込みパフォーマンス', () async {

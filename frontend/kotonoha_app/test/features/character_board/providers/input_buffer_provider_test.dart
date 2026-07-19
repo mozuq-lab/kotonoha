@@ -598,4 +598,108 @@ void main() {
       expect(container.read(inputBufferProvider), '新');
     });
   });
+
+  group('InputBufferNotifier - 濁点・半濁点キーテスト', () {
+    late ProviderContainer container;
+
+    setUp(() {
+      container = ProviderContainer();
+    });
+
+    tearDown(() {
+      container.dispose();
+    });
+
+    test('applyDakuten()で末尾の清音が濁音に変換されることを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('か');
+
+      notifier.applyDakuten();
+
+      expect(container.read(inputBufferProvider), 'が');
+    });
+
+    test('applyDakuten()を2回連続で呼ぶとトグルで清音に戻ることを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('か');
+
+      notifier.applyDakuten();
+      notifier.applyDakuten();
+
+      expect(container.read(inputBufferProvider), 'か');
+    });
+
+    test('applyDakuten()は末尾以外の文字に影響しないことを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('あか');
+
+      notifier.applyDakuten();
+
+      expect(container.read(inputBufferProvider), 'あが');
+    });
+
+    test('applyDakuten()は変換不能な文字の場合は何もしないことを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('あ');
+
+      notifier.applyDakuten();
+
+      expect(container.read(inputBufferProvider), 'あ');
+    });
+
+    test('applyDakuten()は空バッファの場合はエラーにならず何もしないことを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+
+      expect(() => notifier.applyDakuten(), returnsNormally);
+      expect(container.read(inputBufferProvider), '');
+    });
+
+    test('applyHandakuten()で末尾の清音が半濁音に変換されることを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('は');
+
+      notifier.applyHandakuten();
+
+      expect(container.read(inputBufferProvider), 'ぱ');
+    });
+
+    test('applyHandakuten()を2回連続で呼ぶとトグルで清音に戻ることを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('は');
+
+      notifier.applyHandakuten();
+      notifier.applyHandakuten();
+
+      expect(container.read(inputBufferProvider), 'は');
+    });
+
+    test('は行内で濁音→半濁音→清音の変換が連続して行えることを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('ば');
+
+      // ば → ぱ（半濁音キーで、は行内変換）
+      notifier.applyHandakuten();
+      expect(container.read(inputBufferProvider), 'ぱ');
+
+      // ぱ → は（半濁音キー再タップでトグル）
+      notifier.applyHandakuten();
+      expect(container.read(inputBufferProvider), 'は');
+    });
+
+    test('applyHandakuten()は変換不能な文字の場合は何もしないことを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('か');
+
+      notifier.applyHandakuten();
+
+      expect(container.read(inputBufferProvider), 'か');
+    });
+
+    test('applyHandakuten()は空バッファの場合はエラーにならず何もしないことを確認', () {
+      final notifier = container.read(inputBufferProvider.notifier);
+
+      expect(() => notifier.applyHandakuten(), returnsNormally);
+      expect(container.read(inputBufferProvider), '');
+    });
+  });
 }

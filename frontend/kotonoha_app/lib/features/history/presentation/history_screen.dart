@@ -11,12 +11,14 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/history_provider.dart';
+import '../domain/models/history.dart';
 import '../../favorite/providers/favorite_provider.dart';
 import '../../tts/providers/tts_provider.dart';
 import '../../tts/domain/models/tts_state.dart';
 import 'widgets/history_item_card.dart';
 import 'widgets/empty_history_widget.dart';
 import 'constants/history_ui_constants.dart';
+import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 
 /// 履歴画面ウィジェット
 ///
@@ -58,6 +60,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     // 履歴状態を監視
     final historyState = ref.watch(historyProvider);
     final histories = historyState.histories;
+
+    // 【星ボタン用】: お気に入り登録済みかどうかをcontent一致で判定する
+    // （既存のお気に入り重複判定ロジックと同様の方式）
+    final favoriteContents =
+        ref.watch(favoriteProvider).favorites.map((f) => f.content).toSet();
 
     // TTS状態を監視
     final ttsState = ref.watch(ttsProvider);
@@ -106,10 +113,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   key: Key('history_item_card_${history.id}'),
                   history: history,
                   isSpeaking: isSpeaking,
+                  isFavorited: favoriteContents.contains(history.content),
                   onTap: () => _onHistoryTap(history.id, history.content),
-                  onDelete: () => _showDeleteDialog(context, history.id),
+                  onDelete: () => _deleteHistoryWithUndo(context, history),
                   onStop: _onStop,
                   onLongPress: () => _showContextMenu(context, history.content),
+                  onFavoriteTap: () => _addToFavorite(context, history.content),
                 );
               },
             ),
@@ -137,30 +146,25 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     setState(() => _speakingId = null);
   }
 
-  /// 個別削除確認ダイアログを表示
+  /// 個別削除処理（確認なし・即削除 + Undo）
   ///
-  /// FR-061-008: 削除時に確認ダイアログを表示
-  void _showDeleteDialog(BuildContext context, String id) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false, // FR-061-008: 誤操作防止
-      builder: (BuildContext dialogContext) {
-        return _ConfirmDialog(
-          title: HistoryUIConstants.confirmDialogTitle,
-          content: HistoryUIConstants.deleteConfirmMessage,
-          onConfirm: () {
-            Navigator.of(dialogContext).pop();
-            ref.read(historyProvider.notifier).deleteHistory(id);
-          },
-          onCancel: () => Navigator.of(dialogContext).pop(),
-        );
-      },
+  /// 【改善】: 確認ダイアログは「はい」誤タップ時に復元できず、
+  /// タップ数も増えるため廃止した。即削除のうえ、SnackBarの
+  /// 「元に戻す」操作（8秒間）で誤操作から復元できるようにする。
+  void _deleteHistoryWithUndo(BuildContext context, History history) {
+    ref.read(historyProvider.notifier).deleteHistory(history.id);
+    showUndoSnackBar(
+      context,
+      message: '削除しました',
+      onUndo: () => ref.read(historyProvider.notifier).restoreLastDeleted(),
     );
   }
 
   /// 全削除確認ダイアログを表示
   ///
   /// FR-061-010: 全削除時に確認ダイアログを表示
+  /// 【改善】: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ、
+  /// 実行後にUndo SnackBarを表示し誤操作から復元できるようにする。
   void _showDeleteAllDialog(BuildContext context) {
     showDialog<void>(
       context: context,
@@ -172,6 +176,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           onConfirm: () {
             Navigator.of(dialogContext).pop();
             ref.read(historyProvider.notifier).clearAllHistories();
+            showUndoSnackBar(
+              context,
+              message: 'すべて削除しました',
+              onUndo: () =>
+                  ref.read(historyProvider.notifier).restoreClearedHistories(),
+            );
           },
           onCancel: () => Navigator.of(dialogContext).pop(),
         );

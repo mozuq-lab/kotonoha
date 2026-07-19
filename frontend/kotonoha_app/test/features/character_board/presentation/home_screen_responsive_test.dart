@@ -17,6 +17,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
+import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
+import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
+import 'package:kotonoha_app/features/history/providers/history_provider.dart';
 
 void main() {
   group('HomeScreen レスポンシブレイアウトテスト', () {
@@ -119,5 +122,49 @@ void main() {
         );
       },
     );
+
+    /// (d) 入力候補チップ行（fix/improvement-p0-p2: 頻度ベースの入力候補）が
+    ///     表示された状態でも、縦持ちスマホ・横持ちスマホ・タブレットの
+    ///     いずれでもRenderFlexオーバーフローが発生しないことを確認する。
+    for (final size in const [
+      Size(390, 844), // 縦持ちスマホ
+      Size(844, 390), // 横持ちスマホ
+      Size(768, 1024), // タブレット
+    ]) {
+      testWidgets(
+        '${size.width.toInt()}x${size.height.toInt()}: 入力候補チップ表示時もオーバーフローしない',
+        (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          final container = ProviderContainer();
+          addTearDown(container.dispose);
+
+          // 候補チップが表示されるよう、前方一致する履歴を用意しておく
+          await container
+              .read(historyProvider.notifier)
+              .addHistory('あいうえお', HistoryType.manualInput);
+
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: container,
+              child: const MaterialApp(home: HomeScreen()),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          // 「あ」を入力し、候補チップ行を表示させる
+          container.read(inputBufferProvider.notifier).addCharacter('あ');
+          await tester.pumpAndSettle();
+
+          expect(tester.takeException(), isNull);
+          expect(find.text('あいうえお'), findsOneWidget);
+        },
+      );
+    }
   });
 }

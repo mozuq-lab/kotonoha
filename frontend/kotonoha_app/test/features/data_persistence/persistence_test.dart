@@ -18,8 +18,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/data/preset_phrase_repository.dart';
-import 'package:kotonoha_app/features/settings/data/app_settings_repository.dart';
-import 'package:kotonoha_app/shared/models/app_settings.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/history_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
@@ -32,7 +32,6 @@ void main() {
     late Box<PresetPhrase> presetBox;
     late Box<HistoryItem> historyBox;
     late PresetPhraseRepository presetRepository;
-    late AppSettingsRepository settingsRepository;
 
     setUp(() async {
       // Hive環境初期化
@@ -68,8 +67,6 @@ void main() {
       presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
       historyBox = await Hive.openBox<HistoryItem>('history');
       presetRepository = PresetPhraseRepository(box: presetBox);
-      final prefs = await SharedPreferences.getInstance();
-      settingsRepository = AppSettingsRepository(prefs: prefs);
 
       // 定型文を5件追加
       final phrases = [
@@ -122,7 +119,14 @@ void main() {
       await presetRepository.saveAll(phrases);
 
       // 設定でフォントサイズを「大（large）」に変更
-      await settingsRepository.saveFontSize(FontSize.large);
+      // 【実装対応】: 実際にアプリで使用されているSettingsNotifier
+      // （features/settings/providers/settings_provider.dart）を通して検証する
+      var settingsContainer = ProviderContainer();
+      await settingsContainer.read(settingsNotifierProvider.future);
+      await settingsContainer
+          .read(settingsNotifierProvider.notifier)
+          .setFontSize(FontSize.large);
+      settingsContainer.dispose();
 
       // 履歴を3件保存
       final histories = [
@@ -160,12 +164,13 @@ void main() {
       presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
       historyBox = await Hive.openBox<HistoryItem>('history');
       presetRepository = PresetPhraseRepository(box: presetBox);
-      final newPrefs = await SharedPreferences.getInstance();
-      settingsRepository = AppSettingsRepository(prefs: newPrefs);
+      // 設定用のProviderContainerも再構築（アプリ再起動をシミュレート）
+      settingsContainer = ProviderContainer();
 
       // データを読み込む
       final loadedPhrases = await presetRepository.loadAll();
-      final loadedSettings = await settingsRepository.load();
+      final loadedSettings =
+          await settingsContainer.read(settingsNotifierProvider.future);
       final loadedHistories = historyBox.values.toList();
 
       // Then（検証フェーズ）
@@ -186,6 +191,8 @@ void main() {
       expect(loadedHistories.length, 3, reason: '履歴3件がすべて保持されている');
       expect(loadedHistories.map((h) => h.id).toSet(),
           {'hist-001', 'hist-002', 'hist-003'});
+
+      settingsContainer.dispose();
     });
   });
 
@@ -339,7 +346,6 @@ void main() {
     late Box<PresetPhrase> presetBox;
     late Box<HistoryItem> historyBox;
     late PresetPhraseRepository presetRepository;
-    late AppSettingsRepository settingsRepository;
 
     setUp(() async {
       // Hive環境初期化
@@ -375,8 +381,6 @@ void main() {
       presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
       historyBox = await Hive.openBox<HistoryItem>('history');
       presetRepository = PresetPhraseRepository(box: presetBox);
-      final prefs = await SharedPreferences.getInstance();
-      settingsRepository = AppSettingsRepository(prefs: prefs);
 
       // When（実行フェーズ）
       // ユーザーが定型文を3件追加
@@ -416,7 +420,14 @@ void main() {
       await presetRepository.save(favoritePhrase);
 
       // 設定でフォントサイズを「大（large）」に変更
-      await settingsRepository.saveFontSize(FontSize.large);
+      // 【実装対応】: 実際にアプリで使用されているSettingsNotifier
+      // （features/settings/providers/settings_provider.dart）を通して検証する
+      var settingsContainer = ProviderContainer();
+      await settingsContainer.read(settingsNotifierProvider.future);
+      await settingsContainer
+          .read(settingsNotifierProvider.notifier)
+          .setFontSize(FontSize.large);
+      settingsContainer.dispose();
 
       // 文字盤で「お水をください」と入力し、読み上げボタンをタップ（履歴に保存）
       final history = HistoryItem(
@@ -435,12 +446,13 @@ void main() {
       presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
       historyBox = await Hive.openBox<HistoryItem>('history');
       presetRepository = PresetPhraseRepository(box: presetBox);
-      final newPrefs = await SharedPreferences.getInstance();
-      settingsRepository = AppSettingsRepository(prefs: newPrefs);
+      // 設定用のProviderContainerも再構築（アプリ再起動をシミュレート）
+      settingsContainer = ProviderContainer();
 
       // すべてのデータを読み込む
       final loadedPhrases = await presetRepository.loadAll();
-      final loadedSettings = await settingsRepository.load();
+      final loadedSettings =
+          await settingsContainer.read(settingsNotifierProvider.future);
       final loadedHistories = historyBox.values.toList();
 
       // Then（検証フェーズ）
@@ -462,6 +474,8 @@ void main() {
       // すべてのデータが整合性を保っている
       expect(loadedPhrases.every((p) => p.id.isNotEmpty), true,
           reason: 'データの整合性が保たれている');
+
+      settingsContainer.dispose();
     });
   });
 }

@@ -15,6 +15,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
 
 /// 【機能概要】: 定型文アイテムウィジェット
 /// 【実装方針】: ListTileベースで44px以上のタップターゲットを確保
@@ -103,6 +104,9 @@ class PhraseListItem extends StatelessWidget {
                   onPressed: onFavoriteToggle,
                   tooltip: phrase.isFavorite ? 'お気に入りから削除' : 'お気に入りに追加',
                 ),
+                // 【入力欄へボタン】: REQ-102対応。タップ=即時読み上げのみだった
+                // 定型文を、入力欄に入れて編集・AI変換する動線として追加する。
+                SendToInputButton(text: phrase.content),
                 // 【編集アイコン】: 定型文を編集
                 // 🔵 信頼性レベル: 青信号 - REQ-104に基づく
                 if (onEdit != null)

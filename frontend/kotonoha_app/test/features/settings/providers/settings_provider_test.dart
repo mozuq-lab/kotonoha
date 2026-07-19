@@ -105,10 +105,12 @@ void main() {
           settings.fontSize, FontSize.small); // 【確認内容】: フォントサイズが正しく更新されていることを確認
 
       // 【検証項目】: SharedPreferencesに保存されていること
+      // 【永続化形式】: enum indexではなくenum name文字列で保存される
+      // （並び替え・要素追加でも値が化けないようにするため）
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('fontSize'),
-          FontSize.small.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+      expect(prefs.getString('fontSize'),
+          FontSize.small.name); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-004: フォントサイズ変更（large）
@@ -147,10 +149,11 @@ void main() {
           FontSize.large); // 【確認内容】: 最大フォントサイズに正しく更新されていることを確認
 
       // 【検証項目】: SharedPreferencesに保存されていること
+      // 【永続化形式】: enum indexではなくenum name文字列で保存される
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('fontSize'),
-          FontSize.large.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+      expect(prefs.getString('fontSize'),
+          FontSize.large.name); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-005: テーマモード変更（light）
@@ -187,10 +190,11 @@ void main() {
       expect(settings.theme, AppTheme.light); // 【確認内容】: ライトモードに正しく更新されていることを確認
 
       // 【検証項目】: SharedPreferencesに保存されていること
+      // 【永続化形式】: enum indexではなくenum name文字列で保存される
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('theme'),
-          AppTheme.light.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+      expect(prefs.getString('theme'),
+          AppTheme.light.name); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-006: テーマモード変更（dark）
@@ -227,10 +231,11 @@ void main() {
       expect(settings.theme, AppTheme.dark); // 【確認内容】: ダークモードに正しく更新されていることを確認
 
       // 【検証項目】: SharedPreferencesに保存されていること
+      // 【永続化形式】: enum indexではなくenum name文字列で保存される
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('theme'),
-          AppTheme.dark.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+      expect(prefs.getString('theme'),
+          AppTheme.dark.name); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-007: テーマモード変更（highContrast）
@@ -269,12 +274,13 @@ void main() {
           AppTheme.highContrast); // 【確認内容】: 高コントラストモードに正しく更新されていることを確認
 
       // 【検証項目】: SharedPreferencesに保存されていること
+      // 【永続化形式】: enum indexではなくenum name文字列で保存される
       // 🔵 青信号: REQ-5003の永続化要件に基づく
       final prefs = await SharedPreferences.getInstance();
       expect(
-          prefs.getInt('theme'),
+          prefs.getString('theme'),
           AppTheme
-              .highContrast.index); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
+              .highContrast.name); // 【確認内容】: SharedPreferencesに正しく保存されていることを確認
     });
 
     // TC-008: アプリ再起動後の設定復元（フォントサイズ）
@@ -288,6 +294,8 @@ void main() {
       // 【テストデータ準備】: SharedPreferencesに事前にフォントサイズ「large」を保存
       // 【初期条件設定】: 前回のアプリセッションでユーザーが「大」を選択していた状態
       // 【前提条件確認】: アプリを終了し、翌日再度起動したとき
+      // 【後方互換性】: 旧形式（enum index int）で保存されたデータでも
+      // 正しく復元できることを検証する（マイグレーション対応）
       SharedPreferences.setMockInitialValues({
         'fontSize': FontSize.large.index,
       });
@@ -320,6 +328,8 @@ void main() {
       // 【テストデータ準備】: SharedPreferencesに事前にテーマ「dark」を保存
       // 【初期条件設定】: 前回のセッションでダークモードを選択していた状態
       // 【前提条件確認】: 夜間にアプリを使用し、翌朝再起動したとき
+      // 【後方互換性】: 旧形式（enum index int）で保存されたデータでも
+      // 正しく復元できることを検証する（マイグレーション対応）
       SharedPreferences.setMockInitialValues({
         'theme': AppTheme.dark.index,
       });
@@ -504,10 +514,11 @@ void main() {
         expect(settings.fontSize, fontSize); // 【確認内容】: フォントサイズが正しく設定されていることを確認
 
         // 【検証項目】: SharedPreferencesに正しく保存されていること
+        // 【永続化形式】: enum indexではなくenum name文字列で保存される
         // 🔵 青信号: enum境界値の安全性
         final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getInt('fontSize'),
-            fontSize.index); // 【確認内容】: index値が正しく保存されていることを確認
+        expect(prefs.getString('fontSize'),
+            fontSize.name); // 【確認内容】: name値が正しく保存されていることを確認
 
         container.dispose();
       }
@@ -552,10 +563,11 @@ void main() {
         expect(settings.theme, theme); // 【確認内容】: テーマが正しく設定されていることを確認
 
         // 【検証項目】: SharedPreferencesに正しく保存されていること
+        // 【永続化形式】: enum indexではなくenum name文字列で保存される
         // 🔵 青信号: WCAG準拠含むすべてのテーマが動作
         final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getInt('theme'),
-            theme.index); // 【確認内容】: index値が正しく保存されていることを確認
+        expect(prefs.getString('theme'),
+            theme.name); // 【確認内容】: name値が正しく保存されていることを確認
 
         container.dispose();
       }

@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import '../../../favorite/domain/models/favorite.dart';
 import 'package:intl/intl.dart';
 import '../constants/favorite_ui_constants.dart';
+import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
 
 /// お気に入り項目カードウィジェット
 ///
@@ -102,6 +103,8 @@ class FavoriteItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                // 【入力欄へボタン】: お気に入りの内容を入力欄に入れて編集する動線（REQ-102）
+                SendToInputButton(text: favorite.content),
                 // 削除ボタン
                 IconButton(
                   icon: const Icon(Icons.delete),

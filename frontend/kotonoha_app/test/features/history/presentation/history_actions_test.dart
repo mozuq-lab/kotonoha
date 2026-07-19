@@ -93,6 +93,18 @@ class MockHistoryNotifier extends HistoryNotifier with Mock {
       super.noSuchMethod(Invocation.method(#clearAllHistories, []))
           as Future<void>? ??
       Future<void>.value();
+
+  @override
+  Future<void> restoreLastDeleted() =>
+      super.noSuchMethod(Invocation.method(#restoreLastDeleted, []))
+          as Future<void>? ??
+      Future<void>.value();
+
+  @override
+  Future<void> restoreClearedHistories() =>
+      super.noSuchMethod(Invocation.method(#restoreClearedHistories, []))
+          as Future<void>? ??
+      Future<void>.value();
 }
 
 /// TTSNotifierのモック
@@ -445,28 +457,32 @@ void main() {
     });
 
     // =========================================================================
-    // 2.3 削除ダイアログのキャンセル機能テスト
+    // 2.3 削除・Undo機能テスト
     // =========================================================================
-    group('削除ダイアログのキャンセル機能', () {
-      /// TC-063-012: 個別削除ダイアログの「キャンセル」ボタンテスト 🔵
+    group('削除・Undo機能', () {
+      /// TC-063-012: 個別削除の即時実行とUndoテスト（改訂） 🔵
+      ///
+      /// 【改善】: 個別削除の確認ダイアログは、誤タップで「はい」を選んでしまうと
+      /// 復元できないという問題があったため廃止した。削除ボタンタップで
+      /// 確認ダイアログなしに即座にdeleteHistory()が呼ばれ、代わりに表示される
+      /// 「元に戻す」SnackBarアクションでrestoreLastDeleted()が呼ばれることを検証する。
       ///
       /// 優先度: P0 必須
-      /// 関連要件: FR-063-005, AC-063-004
-      /// 検証内容: 削除確認ダイアログで「キャンセル」を選択すると削除されないこと
-      testWidgets('TC-063-012: 個別削除ダイアログで「キャンセル」選択時に削除されない',
+      /// 関連要件: FR-063-005(改訂), AC-063-004(改訂)
+      /// 検証内容: 個別削除ボタンタップで確認ダイアログが表示されず即削除、Undoが機能する
+      testWidgets(
+          'TC-063-012: 個別削除ボタンタップで確認ダイアログなしに即削除され、「元に戻す」でrestoreLastDeletedが呼ばれる',
           (WidgetTester tester) async {
-        // 【テスト目的】: キャンセル選択時に削除が実行されないことを検証 🔵
-        // 【テスト内容】: ダイアログが閉じ、履歴が削除されない（5件のまま）
-        // 【期待される動作】: HistoryRepository.delete()が呼ばれない
-
         // Given: 5件の履歴データを準備する
         final testHistories = createTestHistories(5);
         final mockState = HistoryState(histories: testHistories);
 
-        // HistoryNotifierをモック化して削除メソッドを監視
+        // HistoryNotifierをモック化して削除・復元メソッドを監視
         final mockHistoryNotifier = MockHistoryNotifier();
         mockHistoryNotifier.mockInitialState = mockState;
         when(() => mockHistoryNotifier.deleteHistory(any()))
+            .thenAnswer((_) async {});
+        when(() => mockHistoryNotifier.restoreLastDeleted())
             .thenAnswer((_) async {});
 
         // TTSプロバイダーをオーバーライド（HistoryScreenが必要とするため）
@@ -485,22 +501,23 @@ void main() {
           ),
         );
 
-        // When: 削除ボタンをタップしてダイアログを表示する
+        // When: 削除ボタンをタップする
         await tester.tap(find.byIcon(Icons.delete).first);
         await tester.pumpAndSettle();
 
-        // ダイアログが表示されることを確認
-        expect(find.byType(AlertDialog), findsOneWidget);
+        // Then: 確認ダイアログは表示されず、即座に削除される
+        expect(find.byType(AlertDialog), findsNothing);
+        verify(() => mockHistoryNotifier.deleteHistory('test_0')).called(1);
 
-        // 「キャンセル」ボタンをタップする
-        await tester.tap(find.widgetWithText(TextButton, 'キャンセル'));
+        // 「元に戻す」SnackBarActionが表示される
+        expect(find.text('元に戻す'), findsOneWidget);
+
+        // When: 「元に戻す」をタップする
+        await tester.tap(find.text('元に戻す'));
         await tester.pumpAndSettle();
 
-        // Then: ダイアログが閉じる
-        expect(find.byType(AlertDialog), findsNothing);
-
-        // HistoryNotifier.deleteHistory()が呼ばれない
-        verifyNever(() => mockHistoryNotifier.deleteHistory(any()));
+        // Then: restoreLastDeleted()が呼ばれる
+        verify(() => mockHistoryNotifier.restoreLastDeleted()).called(1);
       });
 
       /// TC-063-015: 全削除ダイアログの「キャンセル」ボタンテスト 🔵
@@ -610,11 +627,9 @@ void main() {
         expect(find.text('テスト履歴0'), findsOneWidget);
         expect(find.text('テスト履歴1'), findsOneWidget);
 
-        // When: 1件目の履歴を削除する（削除ダイアログで「削除」選択）
+        // When: 1件目の履歴を削除する
+        // 【改善】: 個別削除は確認ダイアログを廃止したため、削除ボタンタップのみで即実行される
         await tester.tap(find.byIcon(Icons.delete).first);
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.widgetWithText(TextButton, '削除'));
         await tester.pumpAndSettle();
 
         // Then: リストが自動的に更新される
