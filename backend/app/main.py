@@ -53,12 +53,39 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await ai_client_module.ai_client.aclose()
 
 
+# ドキュメント（Swagger UI / ReDoc / OpenAPI）を公開する環境のallowlist。
+# staging/production等、allowlist外の環境では実装詳細の漏えい防止のため非公開にする。
+_DOCS_ENABLED_ENVIRONMENTS = frozenset({"development", "test"})
+
+
+def _resolve_docs_urls(environment: str) -> tuple[str | None, str | None, str | None]:
+    """環境に応じたSwagger UI / ReDoc / OpenAPIの公開URLを解決する。
+
+    allowlist外の環境（staging, production等）ではすべて None を返し、
+    FastAPIにドキュメントエンドポイント自体を生成させない。
+
+    Args:
+        environment: 現在の実行環境（settings.ENVIRONMENT）。
+
+    Returns:
+        tuple[str | None, str | None, str | None]:
+            (docs_url, redoc_url, openapi_url)。非公開時はすべて None。
+    """
+    if environment not in _DOCS_ENABLED_ENVIRONMENTS:
+        return None, None, None
+    # 後方互換性のため、openapi_urlはルートレベル（/openapi.json）を維持
+    return "/docs", "/redoc", "/openapi.json"
+
+
+_docs_url, _redoc_url, _openapi_url = _resolve_docs_urls(settings.ENVIRONMENT)
+
 # FastAPIアプリケーション作成
-# 後方互換性のため、openapi_urlはルートレベル（/openapi.json）を維持
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    openapi_url="/openapi.json",
+    openapi_url=_openapi_url,
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
     description="文字盤コミュニケーション支援アプリ バックエンドAPI",
     lifespan=lifespan,
 )

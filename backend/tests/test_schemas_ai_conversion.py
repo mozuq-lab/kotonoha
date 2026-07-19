@@ -533,6 +533,38 @@ class TestAIRegenerateRequest:
         assert request.previous_result is not None
         assert len(request.previous_result.strip()) > 0
 
+    def test_previous_result_max_length_boundary_succeeds(self) -> None:
+        """
+        TC-D06: previous_resultが上限文字数（1000文字）ちょうどは成功
+
+        【テスト内容】: previous_resultが1000文字ちょうどの場合に成功することを確認
+        【期待結果】: インスタンスが正常に生成される
+        【関連要件】: VR-3（previous_resultの無制限な長さによるDB/プロンプト膨張防止）
+        """
+        previous_result = "あ" * 1000
+        request = AIRegenerateRequest(
+            input_text="テスト",
+            politeness_level=PolitenessLevel.NORMAL,
+            previous_result=previous_result,
+        )
+        assert len(request.previous_result) == 1000
+
+    def test_previous_result_exceeds_max_length_error(self) -> None:
+        """
+        TC-D07: previous_resultが上限文字数（1000文字）超過はエラー
+
+        【テスト内容】: previous_resultが1001文字の場合にValidationErrorになることを確認
+        【期待結果】: ValidationError発生
+        【関連要件】: VR-3
+        """
+        previous_result = "あ" * 1001
+        with pytest.raises(ValidationError):
+            AIRegenerateRequest(
+                input_text="テスト",
+                politeness_level=PolitenessLevel.NORMAL,
+                previous_result=previous_result,
+            )
+
 
 # ==============================================================================
 # E. ApiResponseラッパーテスト

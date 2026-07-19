@@ -60,6 +60,13 @@ class Settings(BaseSettings):
     RATE_LIMIT_TIMES: int = 1
     RATE_LIMIT_SECONDS: int = 10
 
+    # レート制限カウンタの保存先URI（slowapi/limitsが解釈できる形式）。
+    # 空文字列（デフォルト）: プロセス内メモリに保存する。マルチワーカー/マルチインスタンス
+    # 構成では各プロセスが独立したカウンタを持つため実質的な制限が緩くなり、
+    # プロセス再起動でもリセットされてしまう。本番でマルチワーカー/マルチインスタンス
+    # 運用する場合は Redis 等の共有ストレージURIを指定すること（例: "redis://host:6379"）。
+    RATE_LIMIT_STORAGE_URI: str = ""
+
     # 信頼するリバースプロキシの段数。
     # 0 の場合: X-Forwarded-For を信頼せず、接続元IP（request.client）でレート制限する。
     # N>=1 の場合: 自身が運用するプロキシ N 段を信頼し、X-Forwarded-For の右からN番目を
@@ -78,8 +85,24 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str | None = None
     ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
     DEFAULT_AI_PROVIDER: str = "anthropic"
-    AI_API_TIMEOUT: int = 30
-    AI_MAX_RETRIES: int = 3
+
+    # AI API呼び出し1試行あたりのタイムアウト秒数（SDKクライアントに直接渡す値）。
+    # フロントエンド（Dio）のconnect/receiveタイムアウト（各10秒）を踏まえ、
+    # 1試行がそれを超えて居座らないよう8秒に設定する。
+    AI_API_TIMEOUT: int = 8
+
+    # リトライ回数（試行回数ではなく、初回呼び出しに加えて許容する再試行回数）。
+    # 接続エラー（APIConnectionError。ただしタイムアウトは含まない）とレート制限
+    # （429 / RateLimitError）のみを対象にリトライする。APIタイムアウトはリトライせず
+    # AI_CALL_DEADLINE_SECONDSによる全体デッドラインに委ねる。
+    # デフォルト1: 最大1回まで再試行する（初回+1回、合計最大2試行）。
+    AI_MAX_RETRIES: int = 1
+
+    # AI呼び出し1リクエスト全体（リトライ試行すべてを含む）に課す最大所要秒数。
+    # フロントエンド（Dio）のconnect/receiveタイムアウト（各10秒）と整合させ、
+    # クライアントが待受を諦めた後もバックエンドがAI APIへの課金呼び出しを
+    # 継続してしまう事態を防ぐ。超過時はタイムアウトエラーとして扱われる。
+    AI_CALL_DEADLINE_SECONDS: float = 10.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

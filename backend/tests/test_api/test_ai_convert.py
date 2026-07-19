@@ -159,12 +159,14 @@ class TestAIConvertSuccess:
                 assert response_json["converted_text"] == "誠にありがとうございます"
 
     @pytest.mark.asyncio
-    async def test_tc005_レスポンスヘッダー検証テスト(self):
+    async def test_tc005_見せかけのレート制限ヘッダーが含まれないことを検証(self):
         """
-        【テスト目的】: レスポンスにX-RateLimit-*ヘッダーが含まれることを確認
-        【テスト内容】: レート制限ヘッダーの存在と値を検証
-        【期待される動作】: X-RateLimit-Limit, Remaining, Resetが返される
-        🔵 testcases.md TC-005（AC-004）に基づく
+        【テスト目的】: 実カウンタに基づかない固定値のX-RateLimit-*ヘッダーが
+                        レスポンスに含まれないことを確認
+        【テスト内容】: 成功レスポンスのヘッダーを検証
+        【期待される動作】: X-RateLimit-Limit/Remaining/Resetが存在しない
+                            （常に固定値TIMES-1を返す見せかけのヘッダーは廃止）
+        🔵 信頼性改善: 誤解を招く固定値ヘッダーの削除
         """
         request_body = {"input_text": "テスト入力", "politeness_level": "normal"}
 
@@ -181,14 +183,10 @@ class TestAIConvertSuccess:
 
                 assert response.status_code == 200
 
-                # 【結果検証】: X-RateLimit-*ヘッダーが存在することを確認
-                assert "x-ratelimit-limit" in response.headers
-                assert "x-ratelimit-remaining" in response.headers
-                assert "x-ratelimit-reset" in response.headers
-
-                # 【結果検証】: ヘッダー値が正しいことを確認
-                assert response.headers["x-ratelimit-limit"] == "1"
-                assert response.headers["x-ratelimit-remaining"] == "0"
+                # 【結果検証】: 見せかけのX-RateLimit-*ヘッダーが存在しないことを確認
+                assert "x-ratelimit-limit" not in response.headers
+                assert "x-ratelimit-remaining" not in response.headers
+                assert "x-ratelimit-reset" not in response.headers
 
     @pytest.mark.asyncio
     async def test_tc006_processing_time_ms正値検証テスト(self):
@@ -948,3 +946,143 @@ class TestAIConvertLogging:
         column_names = [c.name for c in AIConversionLog.__table__.columns]
         assert "converted_text" not in column_names
         assert "output_length" in column_names
+
+
+# ================================================================================
+# カテゴリF: 信頼性テストケース（DB障害時の応答保全・プロバイダー記録）
+# ================================================================================
+
+
+class TestAIConvertReliability:
+    """DB障害時の応答保全と実際のAIプロバイダー記録に関するテスト"""
+
+    @pytest.mark.asyncio
+    async def test_tc410_成功時にdb書き込みが失敗しても成功応答が返る(self):
+        """
+        【テスト目的】: AI変換成功後のログ書き込みがDB障害で失敗しても、
+                        成功した変換結果を捨てずに200を返すことを確認
+        【テスト内容】: create_conversion_logが例外を送出する状況を再現
+        【期待される動作】: 200 OKとAI変換結果が返される（DB例外はログのみで握りつぶす）
+        """
+        request_body = {"input_text": "DB障害時テスト", "politeness_level": "normal"}
+
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch(
+                "app.api.v1.endpoints.ai.create_conversion_log",
+                new_callable=AsyncMock,
+                side_effect=Exception("database is down"),
+            ),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換結果", 900))
+
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                response = await client.post("/api/v1/ai/convert", json=request_body)
+
+                # 【結果検証】: DB障害があっても成功応答が返ることを確認
+                assert response.status_code == 200
+                response_json = response.json()
+                assert response_json["converted_text"] == "変換結果"
+
+    @pytest.mark.asyncio
+    async def test_tc411_既知エラー時にdb書き込みが失敗しても意図したエラー応答が返る(self):
+        """
+        【テスト目的】: AI変換の既知エラー（レート制限）発生時、エラーログ書き込みが
+                        DB障害で失敗しても、意図した429応答がDBエラー応答にすり替わらないことを確認
+        【テスト内容】: create_conversion_logが例外を送出する状況を再現
+        【期待される動作】: 429 Too Many RequestsとエラーコードAI_RATE_LIMITが返される
+        """
+        request_body = {"input_text": "DB障害時エラーテスト", "politeness_level": "normal"}
+
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch(
+                "app.api.v1.endpoints.ai.create_conversion_log",
+                new_callable=AsyncMock,
+                side_effect=Exception("database is down"),
+            ),
+        ):
+            mock_ai_client.convert_text = AsyncMock(
+                side_effect=AIRateLimitException("AI API rate limit exceeded")
+            )
+
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                response = await client.post("/api/v1/ai/convert", json=request_body)
+
+                # 【結果検証】: DB障害があっても意図した429応答が返ることを確認
+                assert response.status_code == 429
+                response_json = response.json()
+                assert response_json["error"]["code"] == "AI_RATE_LIMIT"
+
+    @pytest.mark.asyncio
+    async def test_tc412_予期しないエラー時にdb書き込みが失敗しても500応答が返る(self):
+        """
+        【テスト目的】: 予期しないエラー発生時、エラーログ書き込みがDB障害で失敗しても、
+                        未捕捉例外としてクラッシュせず統一形式の500応答が返ることを確認
+        【テスト内容】: AIClient・create_conversion_logの両方が例外を送出する状況を再現
+        【期待される動作】: 500 Internal Server ErrorとエラーコードINTERNAL_ERRORが返される
+        """
+        request_body = {"input_text": "DB障害時予期しないエラー", "politeness_level": "normal"}
+
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch(
+                "app.api.v1.endpoints.ai.create_conversion_log",
+                new_callable=AsyncMock,
+                side_effect=Exception("database is down"),
+            ),
+        ):
+            mock_ai_client.convert_text = AsyncMock(side_effect=RuntimeError("unexpected"))
+
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                response = await client.post("/api/v1/ai/convert", json=request_body)
+
+                # 【結果検証】: DB障害が二重に発生しても統一形式の500応答が返ることを確認
+                assert response.status_code == 500
+                response_json = response.json()
+                assert response_json["error"]["code"] == "INTERNAL_ERROR"
+
+    @pytest.mark.asyncio
+    async def test_tc413_実際のaiプロバイダーがログに記録される(
+        self, test_client_with_db, db_session: AsyncSession
+    ):
+        """
+        【テスト目的】: create_conversion_logに実際のDEFAULT_AI_PROVIDER値が渡され、
+                        固定値"anthropic"ではなく設定値どおりに記録されることを確認
+        【テスト内容】: DEFAULT_AI_PROVIDERを"openai"にパッチしてAI変換を実行
+        【期待される動作】: AIConversionLog.ai_providerが"openai"で記録される
+        """
+        from app.core.config import settings
+
+        input_text = "プロバイダー記録テスト_TC413"
+        expected_hash = hashlib.sha256(input_text.encode("utf-8")).hexdigest()
+        request_body = {"input_text": input_text, "politeness_level": "normal"}
+
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch.object(settings, "DEFAULT_AI_PROVIDER", "openai"),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換結果", 700))
+
+            async with AsyncClient(
+                transport=ASGITransport(app=test_client_with_db), base_url="http://test"
+            ) as client:
+                response = await client.post("/api/v1/ai/convert", json=request_body)
+                assert response.status_code == 200
+
+        result = await db_session.execute(
+            select(AIConversionLog)
+            .where(AIConversionLog.input_text_hash == expected_hash)
+            .order_by(AIConversionLog.created_at.desc())
+        )
+        log = result.scalars().first()
+
+        # 【結果検証】: 実際に使用したプロバイダー（openai）が記録されていることを確認
+        assert log is not None
+        assert log.ai_provider == "openai"

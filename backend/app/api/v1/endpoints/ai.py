@@ -38,18 +38,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _rate_limit_headers(remaining: int | None = None) -> dict[str, str]:
-    """設定値に基づくレート制限ヘッダーを生成する。"""
-    remaining_count = (
-        max(settings.RATE_LIMIT_TIMES - 1, 0) if remaining is None else max(remaining, 0)
-    )
-    return {
-        "X-RateLimit-Limit": str(settings.RATE_LIMIT_TIMES),
-        "X-RateLimit-Remaining": str(remaining_count),
-        "X-RateLimit-Reset": str(settings.RATE_LIMIT_SECONDS),
-    }
-
-
 @dataclass(frozen=True)
 class ErrorInfo:
     """エラー情報を保持するデータクラス"""
@@ -115,14 +103,60 @@ def _create_error_response(error_info: ErrorInfo) -> JSONResponse:
                 "status_code": error_info.status_code,
             },
         },
-        headers=_rate_limit_headers(remaining=0 if error_info.status_code == 429 else None),
     )
+
+
+async def _log_conversion_success(
+    db: AsyncSession,
+    input_text: str,
+    output_text: str,
+    politeness_level: str,
+    conversion_time_ms: int,
+    ai_provider: str,
+    session_id: uuid.UUID,
+) -> None:
+    """
+    AI変換成功ログを記録する
+
+    【機能概要】: 変換成功時のログを記録する
+    【実装方針】: DB書き込み失敗時は警告ログのみとし、例外を再送出しない。
+                  ログ記録はAI変換成功という応答経路の主目的から見て副次的な処理であり、
+                  DB障害を理由に成功した変換結果を捨てて500エラーへすり替えてはならない。
+
+    Args:
+        db: データベースセッション
+        input_text: 入力テキスト
+        output_text: 変換後テキスト
+        politeness_level: 丁寧さレベル
+        conversion_time_ms: 変換処理時間（ミリ秒）
+        ai_provider: 実際に使用したAIプロバイダー名
+        session_id: セッションID
+    """
+    try:
+        await create_conversion_log(
+            db=db,
+            input_text=input_text,
+            output_text=output_text,
+            politeness_level=politeness_level,
+            conversion_time_ms=conversion_time_ms,
+            ai_provider=ai_provider,
+            session_id=session_id,
+            is_success=True,
+        )
+    except Exception:
+        logger.warning(
+            "Failed to persist successful AI conversion log (session_id=%s); "
+            "continuing to return the successful response.",
+            session_id,
+            exc_info=True,
+        )
 
 
 async def _log_conversion_error(
     db: AsyncSession,
     input_text: str,
     politeness_level: str,
+    ai_provider: str,
     session_id: uuid.UUID,
     error: Exception,
 ) -> None:
@@ -130,24 +164,37 @@ async def _log_conversion_error(
     AI変換エラーをログに記録
 
     【機能概要】: 変換失敗時のログを統一的に記録
-    【実装方針】: 共通のログ記録パターンを抽出
+    【実装方針】: 共通のログ記録パターンを抽出。DB書き込み失敗時は警告ログのみとし、
+                  例外を再送出しない。ここで例外を送出すると、呼び出し元が意図した
+                  エラーレスポンス（429/503/504等）がDBエラーによる別レスポンスに
+                  すり替わってしまうため。
 
     Args:
         db: データベースセッション
         input_text: 入力テキスト
         politeness_level: 丁寧さレベル
+        ai_provider: 実際に使用したAIプロバイダー名
         session_id: セッションID
         error: 発生したエラー
     """
-    await create_conversion_log(
-        db=db,
-        input_text=input_text,
-        output_text="",
-        politeness_level=politeness_level,
-        session_id=session_id,
-        is_success=False,
-        error_message=str(error),
-    )
+    try:
+        await create_conversion_log(
+            db=db,
+            input_text=input_text,
+            output_text="",
+            politeness_level=politeness_level,
+            ai_provider=ai_provider,
+            session_id=session_id,
+            is_success=False,
+            error_message=str(error),
+        )
+    except Exception:
+        logger.warning(
+            "Failed to persist AI conversion error log (session_id=%s); "
+            "continuing to return the intended error response.",
+            session_id,
+            exc_info=True,
+        )
 
 
 def _get_error_info(error: Exception) -> ErrorInfo:
@@ -200,6 +247,8 @@ async def convert_text(
     input_text = conversion_request.input_text
     politeness_level = conversion_request.politeness_level.value
     session_id = uuid.uuid4()
+    # 実際に使用されるAIプロバイダー（リクエストで明示指定できないため、常にデフォルト値）
+    ai_provider = settings.DEFAULT_AI_PROVIDER
 
     try:
         # AI変換を実行
@@ -208,15 +257,15 @@ async def convert_text(
             politeness_level=politeness_level,
         )
 
-        # 成功時のログ記録
-        await create_conversion_log(
-            db=db,
-            input_text=input_text,
-            output_text=converted_text,
-            politeness_level=politeness_level,
-            conversion_time_ms=processing_time_ms,
-            session_id=session_id,
-            is_success=True,
+        # 成功時のログ記録（DB障害があっても成功応答は必ず返す）
+        await _log_conversion_success(
+            db,
+            input_text,
+            converted_text,
+            politeness_level,
+            processing_time_ms,
+            ai_provider,
+            session_id,
         )
 
         # 成功レスポンス
@@ -227,10 +276,7 @@ async def convert_text(
             "processing_time_ms": processing_time_ms,
         }
 
-        return JSONResponse(
-            content=response_data,
-            headers=_rate_limit_headers(),
-        )
+        return JSONResponse(content=response_data)
 
     except (
         AITimeoutException,
@@ -241,13 +287,13 @@ async def convert_text(
         # 既知のAI変換エラー
         error_info = _get_error_info(e)
         logger.error(f"AI conversion error ({error_info.code}): {e}")
-        await _log_conversion_error(db, input_text, politeness_level, session_id, e)
+        await _log_conversion_error(db, input_text, politeness_level, ai_provider, session_id, e)
         return _create_error_response(error_info)
 
     except Exception as e:
         # 予期しないエラー
         logger.exception(f"Unexpected error during AI conversion: {e}")
-        await _log_conversion_error(db, input_text, politeness_level, session_id, e)
+        await _log_conversion_error(db, input_text, politeness_level, ai_provider, session_id, e)
         return _create_error_response(DEFAULT_ERROR)
 
 
@@ -287,6 +333,8 @@ async def regenerate_text(
     politeness_level = regenerate_request.politeness_level.value
     previous_result = regenerate_request.previous_result
     session_id = uuid.uuid4()
+    # 実際に使用されるAIプロバイダー（リクエストで明示指定できないため、常にデフォルト値）
+    ai_provider = settings.DEFAULT_AI_PROVIDER
 
     try:
         # AI再変換を実行
@@ -296,15 +344,15 @@ async def regenerate_text(
             previous_result=previous_result,
         )
 
-        # 成功時のログ記録
-        await create_conversion_log(
-            db=db,
-            input_text=input_text,
-            output_text=converted_text,
-            politeness_level=politeness_level,
-            conversion_time_ms=processing_time_ms,
-            session_id=session_id,
-            is_success=True,
+        # 成功時のログ記録(DB障害があっても成功応答は必ず返す)
+        await _log_conversion_success(
+            db,
+            input_text,
+            converted_text,
+            politeness_level,
+            processing_time_ms,
+            ai_provider,
+            session_id,
         )
 
         # 成功レスポンス
@@ -315,10 +363,7 @@ async def regenerate_text(
             "processing_time_ms": processing_time_ms,
         }
 
-        return JSONResponse(
-            content=response_data,
-            headers=_rate_limit_headers(),
-        )
+        return JSONResponse(content=response_data)
 
     except (
         AITimeoutException,
@@ -329,11 +374,11 @@ async def regenerate_text(
         # 既知のAI変換エラー
         error_info = _get_error_info(e)
         logger.error(f"AI regeneration error ({error_info.code}): {e}")
-        await _log_conversion_error(db, input_text, politeness_level, session_id, e)
+        await _log_conversion_error(db, input_text, politeness_level, ai_provider, session_id, e)
         return _create_error_response(error_info)
 
     except Exception as e:
         # 予期しないエラー
         logger.exception(f"Unexpected error during AI regeneration: {e}")
-        await _log_conversion_error(db, input_text, politeness_level, session_id, e)
+        await _log_conversion_error(db, input_text, politeness_level, ai_provider, session_id, e)
         return _create_error_response(DEFAULT_ERROR)

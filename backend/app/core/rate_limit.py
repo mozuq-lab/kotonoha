@@ -58,10 +58,26 @@ def get_client_ip(request: Request) -> str:
 AI_RATE_LIMIT = f"{settings.RATE_LIMIT_TIMES}/{settings.RATE_LIMIT_SECONDS}seconds"
 
 
+def resolve_storage_uri() -> str | None:
+    """設定値からLimiterに渡すstorage_uriを解決する。
+
+    settings.RATE_LIMIT_STORAGE_URI が空文字列（デフォルト）の場合は None を返し、
+    slowapi/limitsにプロセス内メモリストレージを使用させる。値が設定されている
+    場合はそのまま返す（例: "redis://host:6379"）。マルチワーカー/マルチインスタンス
+    構成では、共有ストレージ（Redis等）を指定しないとレート制限がプロセスごとに
+    独立してしまい、実質的な制限が設定値より緩くなる点に注意。
+
+    Returns:
+        str | None: Limiterに渡すstorage_uri（未設定時はNone）。
+    """
+    return settings.RATE_LIMIT_STORAGE_URI or None
+
+
 # Limiterインスタンス作成
 limiter = Limiter(
     key_func=get_client_ip,
     default_limits=[],  # デフォルトは制限なし（AI系のみ制限）
+    storage_uri=resolve_storage_uri(),
 )
 
 
