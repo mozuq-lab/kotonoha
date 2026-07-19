@@ -84,7 +84,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-204
-      /// 検証内容: AssetSource('audio/emergency_alarm.mp3')が使用される
+      /// 検証内容: AssetSource('audio/emergency_alarm.m4a')が使用される
       test('TC-047-004: 緊急音ファイルがアセットから読み込まれる', () async {
         // Arrange - 特定のアセットパスを検証するためにキャプチャ
         Source? capturedSource;
@@ -98,7 +98,7 @@ void main() {
         // Assert
         expect(capturedSource, isA<AssetSource>());
         expect((capturedSource as AssetSource).path,
-            equals('audio/emergency_alarm.mp3'));
+            equals('audio/emergency_alarm.m4a'));
       });
 
       /// TC-047-005: 緊急音が停止できる

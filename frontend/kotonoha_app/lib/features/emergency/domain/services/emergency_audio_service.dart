@@ -36,7 +36,7 @@ import 'package:audioplayers/audioplayers.dart';
 /// 緊急音再生に関する定数
 abstract class _EmergencyAudioConstants {
   /// 緊急音ファイルのパス（assetsフォルダからの相対パス）
-  static const String audioPath = 'audio/emergency_alarm.mp3';
+  static const String audioPath = 'audio/emergency_alarm.m4a';
 
   /// 最大音量
   static const double maxVolume = 1.0;

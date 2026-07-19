@@ -218,10 +218,19 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   /// 緊急メッセージを構築
   ///
   /// 「緊急呼び出し中」のメインメッセージを白文字で表示。
+  ///
+  /// Semantics(liveRegion: true)を設定し、スクリーンリーダーが
+  /// 緊急状態への遷移を即座にアナウンスできるようにする。
   Widget _buildEmergencyMessage() {
-    return const Text(
-      _EmergencyAlertConstants.semanticsLabelScreen,
-      style: _messageTextStyle,
+    // NOTE: Semantics()のデフォルトコンストラクタはconstにできないため
+    // （constが必要な場合はSemantics.fromPropertiesを使う設計）、
+    // 子のTextのみconst化する。
+    return Semantics(
+      liveRegion: true,
+      child: const Text(
+        _EmergencyAlertConstants.semanticsLabelScreen,
+        style: _messageTextStyle,
+      ),
     );
   }
 
