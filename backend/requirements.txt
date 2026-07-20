@@ -16,5 +16,6 @@ pytest-cov==7.0.0
 ruff==0.14.7
 black==26.1.0
 slowapi==0.1.9
+redis==8.0.1
 anthropic==0.39.0
 openai==2.9.0

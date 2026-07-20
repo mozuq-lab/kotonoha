@@ -763,3 +763,38 @@ class TestResolveStorageUri:
         from app.core.rate_limit import limiter
 
         assert isinstance(limiter._storage, MemoryStorage)
+
+    def test_redis_storage_uri_builds_limiter_without_running_server(self):
+        """RATE_LIMIT_STORAGE_URI=redis://...でLimiterが構築できることを確認
+
+        【目的】: Codexレビュー指摘（P1）の回帰防止。redisパッケージ未導入の場合、
+        limitsライブラリはLimiter構築時（モジュールimport時点）に
+        ConfigurationErrorを送出し、アプリが起動すらできなくなる。
+        redisパッケージ導入後は、実際のRedisサーバーが起動していなくても
+        （limitsは接続を遅延するため）Limiterの構築自体は成功するはず。
+        """
+        from limits.storage.redis import RedisStorage
+
+        from app.core.rate_limit import _build_limiter
+
+        built = _build_limiter("redis://localhost:6379")
+        assert isinstance(built._storage, RedisStorage)
+
+    def test_unsupported_scheme_raises_clear_rate_limit_storage_error(self):
+        """未対応スキームの場合、診断しやすいRateLimitStorageErrorで起動を失敗させることを確認
+
+        生の limits.errors.ConfigurationError をそのまま伝播させるのではなく、
+        原因（未対応スキーム/依存パッケージ不足）と対処方法が分かるメッセージで
+        送出することを検証する。
+        """
+        from limits.errors import ConfigurationError
+
+        from app.core.rate_limit import RateLimitStorageError, _build_limiter
+
+        with pytest.raises(RateLimitStorageError) as exc_info:
+            _build_limiter("foobar://localhost:6379")
+
+        # 元の例外（ConfigurationError）がcauseとして保持されていることを確認
+        assert isinstance(exc_info.value.__cause__, ConfigurationError)
+        # メッセージにRATE_LIMIT_STORAGE_URIと対処のヒントが含まれることを確認
+        assert "RATE_LIMIT_STORAGE_URI" in str(exc_info.value)

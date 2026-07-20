@@ -9,12 +9,16 @@ TASK-0025: レート制限ミドルウェア実装
 🔵 NFR-002: AI変換の応答時間を平均3秒以内（レート制限チェックは10ms以内）
 """
 
+import logging
+
 from fastapi import Request, Response
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from starlette.responses import JSONResponse
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def get_client_ip(request: Request) -> str:
@@ -73,12 +77,61 @@ def resolve_storage_uri() -> str | None:
     return settings.RATE_LIMIT_STORAGE_URI or None
 
 
+class RateLimitStorageError(RuntimeError):
+    """レート制限ストレージの構築に失敗した場合の例外。
+
+    RATE_LIMIT_STORAGE_URIが未対応のスキームであったり、スキームが要求する
+    依存パッケージ（例: redis://系スキームには`redis`パッケージ）が
+    インストールされていない場合に送出する。原因の生例外（limits.errors.
+    ConfigurationError等）は`__cause__`として保持される。
+    """
+
+
+def _build_limiter(storage_uri: str | None) -> Limiter:
+    """Limiterインスタンスを構築する。
+
+    【実装方針】: limits/slowapiはストレージバックエンドの構築失敗時に
+    `limits.errors.ConfigurationError`を送出するが、そのメッセージだけでは
+    「起動できない」という事実と「何を直せばよいか」が伝わりにくい。
+    本関数はストレージ構築を試み、失敗した場合は原因（未対応スキーム／
+    依存パッケージ不足等）と対処方法が分かるメッセージで`RateLimitStorageError`
+    を送出し、エラーログにも記録することで、起動失敗の診断を容易にする。
+
+    注意: ここではストレージオブジェクトの構築のみを検証し、Redis等の
+    実サーバーへの接続確認は行わない（limits/slowapiは接続を遅延して行うため）。
+
+    Args:
+        storage_uri: resolve_storage_uri()で解決したstorage_uri
+            （Noneの場合はインメモリストレージが使われる）。
+
+    Returns:
+        Limiter: 構築されたLimiterインスタンス。
+
+    Raises:
+        RateLimitStorageError: ストレージの構築に失敗した場合
+            （未対応スキーム、依存パッケージ不足等）。
+    """
+    try:
+        return Limiter(
+            key_func=get_client_ip,
+            default_limits=[],  # デフォルトは制限なし（AI系のみ制限）
+            storage_uri=storage_uri,
+        )
+    except Exception as exc:
+        message = (
+            "レート制限ストレージの初期化に失敗しました "
+            f"(RATE_LIMIT_STORAGE_URI={storage_uri!r})。"
+            "RATE_LIMIT_STORAGE_URIのスキームが未対応であるか、"
+            "そのスキームが要求する依存パッケージ（例: redis://系スキームには"
+            "'redis'パッケージ）がインストールされていない可能性があります。"
+            "requirements.txtの内容とインストール状況を確認してください。"
+        )
+        logger.error(message, exc_info=exc)
+        raise RateLimitStorageError(message) from exc
+
+
 # Limiterインスタンス作成
-limiter = Limiter(
-    key_func=get_client_ip,
-    default_limits=[],  # デフォルトは制限なし（AI系のみ制限）
-    storage_uri=resolve_storage_uri(),
-)
+limiter = _build_limiter(resolve_storage_uri())
 
 
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
