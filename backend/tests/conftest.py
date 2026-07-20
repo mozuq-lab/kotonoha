@@ -47,6 +47,7 @@ def _alembic_schema():
     """
     from alembic import command
     from alembic.config import Config
+
     from app.core.config import settings
 
     # 【URL制御】: env.py は settings.DATABASE_URL_SYNC（POSTGRES_* から構築）を参照する。
