@@ -134,6 +134,14 @@ Future<Box<T>?> openBoxWithRecovery<T>(
     // 【復旧処理: 削除】: バックアップ退避済みの破損Boxファイルを削除する
     // 🔵 信頼性レベル: 青信号 - test/core/utils/hive_init_corruption_test.dartの復旧パターンに基づく
     //
+    // 【大小文字に関する確認】: [Hive.deleteBoxFromDisk]は内部で`name`を
+    // 小文字化してからファイルを解決・削除するため（hive 2.2.3 hive_impl.dartの
+    // `deleteBoxFromDisk`内`name.toLowerCase()`）、ここで渡す`name`（呼び出し元の
+    // 大小文字のまま）をこちらで小文字化する必要はない。大小文字の不一致に
+    // 起因する問題は[backupCorruptBoxFile]側（hive_box_backup_io.dartの
+    // resolveBoxFilePath/resolveBoxBackupFilePath）でのみ対応が必要だった
+    // （Codexレビュー指摘 P1）。
+    //
     // 【削除失敗を致命的エラーにしない理由】: Hive内部では、openBox失敗時の
     // クリーンアップ（失敗したBoxインスタンスのclose()）がawaitされず
     // 実行される（hiveパッケージ内部の既知の挙動）。このクリーンアップも

@@ -4,6 +4,16 @@
 //   - 削除は破損を示す例外（HiveError/FormatException/RangeError）に限定し、
 //     FileSystemException等の環境起因の失敗ではBoxを削除しないことを検証
 //   - 削除前に破損Boxファイルをバックアップ（<boxName>.hive.corrupt.bak）することを検証
+//   - Hiveは内部でBox名を小文字化してからファイル名を組み立てるため
+//     （hive 2.2.3 hive_impl.dart `_openBox`の`name.toLowerCase()`）、
+//     本ファイルで破損データを直接書き込むテスト用ファイルパスも、
+//     camelCaseのBox名（例: presetPhrases）に対して実際にHiveが読み書きする
+//     小文字ファイル名（presetphrases.hive）を使用する。大文字混在のまま
+//     パスを組み立てると、macOS等の大小文字非区別ファイルシステムでは
+//     偶然パスが一致してテストが通ってしまうが、Android/Linux等の
+//     大小文字を区別する環境（CIのLinux含む）では実際のBoxファイルを
+//     見つけられず、テストが本来検証すべき破損検知・バックアップ経路を
+//     通過しなくなる（CIで実際に失敗していた原因）。
 //
 // テストフレームワーク: flutter_test + Hive
 // 対象: Hive初期化処理（Box破損時の復旧、openBoxWithRecovery）
@@ -80,7 +90,7 @@ void main() {
       await box.close();
 
       // Boxファイルを破損させる
-      final boxFile = File('${tempDir.path}/presetPhrases.hive');
+      final boxFile = File('${tempDir.path}/presetphrases.hive');
       if (boxFile.existsSync()) {
         await boxFile.writeAsString('INVALID_DATA_CORRUPTION_TEST');
       }
@@ -116,7 +126,7 @@ void main() {
       var box = await Hive.openBox<PresetPhrase>('presetPhrases');
       await box.close();
 
-      final boxFile = File('${tempDir.path}/presetPhrases.hive');
+      final boxFile = File('${tempDir.path}/presetphrases.hive');
       await boxFile.writeAsString('CORRUPTED_BEFORE_INIT');
       final corruptedBytes = await boxFile.readAsBytes();
 
@@ -144,7 +154,7 @@ void main() {
 
       // 【バックアップ検証】: 削除前に破損ファイルが<boxName>.hive.corrupt.bakとして
       // 退避されていること、かつその内容が削除前の（破損した）データと一致すること
-      final backupFile = File('${tempDir.path}/presetPhrases.hive.corrupt.bak');
+      final backupFile = File('${tempDir.path}/presetphrases.hive.corrupt.bak');
       expect(backupFile.existsSync(), isTrue, reason: '削除前に破損ファイルがバックアップされる');
       final backupBytes = await backupFile.readAsBytes();
       expect(backupBytes, equals(corruptedBytes),
@@ -183,7 +193,7 @@ void main() {
       );
       await box.close();
 
-      final boxFile = File('${tempDir.path}/presetPhrases.hive');
+      final boxFile = File('${tempDir.path}/presetphrases.hive');
       expect(boxFile.existsSync(), isTrue, reason: '前提: Boxファイルが存在する');
       final originalBytes = await boxFile.readAsBytes();
 
@@ -227,7 +237,7 @@ void main() {
       var box = await Hive.openBox<PresetPhrase>('test_log_presetPhrases');
       await box.close();
 
-      final boxFile = File('${tempDir.path}/test_log_presetPhrases.hive');
+      final boxFile = File('${tempDir.path}/test_log_presetphrases.hive');
       await boxFile.writeAsString('CORRUPTED_DATA');
 
       // When（実行フェーズ）
@@ -254,7 +264,7 @@ void main() {
       await presetBox.close();
       await historyBox.close();
 
-      final presetFile = File('${tempDir.path}/multi_presetPhrases.hive');
+      final presetFile = File('${tempDir.path}/multi_presetphrases.hive');
       final historyFile = File('${tempDir.path}/multi_history.hive');
       await presetFile.writeAsString('CORRUPTED');
       await historyFile.writeAsString('CORRUPTED');
