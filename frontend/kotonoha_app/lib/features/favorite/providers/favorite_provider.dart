@@ -58,6 +58,15 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
   /// UUID生成用インスタンス
   static const _uuid = Uuid();
 
+  /// 【Undo用】: 直近に個別削除したお気に入りを一時保持する
+  ///
+  /// 【改善】: 個別削除は確認ダイアログを廃止し即削除としたため、
+  /// 誤タップからの復元手段として「元に戻す」操作を提供する。
+  Favorite? _lastDeletedFavorite;
+
+  /// 【Undo用】: 直近に全削除する前のお気に入り一覧を一時保持する
+  List<Favorite>? _lastClearedFavorites;
+
   /// 【変換ヘルパー】: Hiveモデル FavoriteItem → ドメイン Favorite
   Favorite _toDomain(FavoriteItem item) => Favorite(
         id: item.id,
@@ -114,6 +123,9 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     final index = state.favorites.indexWhere((f) => f.id == id);
     if (index == -1) return;
 
+    // 【Undo用】: 復元できるよう削除対象を退避しておく
+    _lastDeletedFavorite = state.favorites[index];
+
     final updatedFavorites = List<Favorite>.from(state.favorites);
     updatedFavorites.removeAt(index);
     state = state.copyWith(favorites: updatedFavorites);
@@ -122,6 +134,23 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
       await repo.delete(id);
+    }
+  }
+
+  /// 【メソッド定義】: 直近に削除したお気に入りを復元する（Undo）
+  /// 🟡 信頼性レベル: 黄信号 - 誤操作防止のための改善（削除確認ダイアログ廃止に伴う代替手段）
+  Future<void> restoreLastDeletedFavorite() async {
+    final target = _lastDeletedFavorite;
+    if (target == null) return;
+    _lastDeletedFavorite = null;
+
+    final updatedFavorites = [...state.favorites, target]
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    state = state.copyWith(favorites: updatedFavorites);
+
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      await repo.save(_toItem(target));
     }
   }
 
@@ -178,12 +207,32 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
   /// 【実装内容】: 全てのお気に入りを削除
   /// 🔵 信頼性レベル: 青信号 - REQ-703（お気に入り削除）
   Future<void> clearAllFavorites() async {
+    // 【Undo用】: 復元できるよう削除前の一覧を退避しておく
+    _lastClearedFavorites = List<Favorite>.from(state.favorites);
+
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
       // 【永続化】: Hiveの全お気に入りを削除
       await repo.deleteAll();
     }
     state = state.copyWith(favorites: []);
+  }
+
+  /// 【メソッド定義】: 直近の全削除を取り消し、お気に入りを復元する（Undo）
+  /// 🟡 信頼性レベル: 黄信号 - 誤操作防止のための改善
+  Future<void> restoreClearedFavorites() async {
+    final cleared = _lastClearedFavorites;
+    if (cleared == null || cleared.isEmpty) return;
+    _lastClearedFavorites = null;
+
+    state = state.copyWith(favorites: cleared);
+
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      for (final favorite in cleared) {
+        await repo.save(_toItem(favorite));
+      }
+    }
   }
 
   /// 【メソッド定義】: 定型文由来のお気に入りを追加する

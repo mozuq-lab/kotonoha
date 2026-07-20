@@ -139,3 +139,32 @@ async def test_openapi_spec_includes_all_endpoints():
         assert (
             "get" in paths[health_path]
         )  # 【確認内容】: ヘルスチェックエンドポイントのGETが定義されている 🔵
+
+
+# ================================================================================
+# カテゴリE: 環境別ドキュメント公開設定テスト
+# ================================================================================
+
+
+class TestResolveDocsUrls:
+    """_resolve_docs_urls() のテスト（環境別のSwagger UI/ReDoc/OpenAPI公開設定）"""
+
+    @pytest.mark.parametrize("environment", ["development", "test"])
+    def test_docs_enabled_environments_return_urls(self, environment: str):
+        """development/testではSwagger UI・ReDoc・OpenAPIのURLが有効になる"""
+        from app.main import _resolve_docs_urls
+
+        docs_url, redoc_url, openapi_url = _resolve_docs_urls(environment)
+        assert docs_url == "/docs"
+        assert redoc_url == "/redoc"
+        assert openapi_url == "/openapi.json"
+
+    @pytest.mark.parametrize("environment", ["staging", "production"])
+    def test_docs_disabled_environments_return_none(self, environment: str):
+        """staging/productionではSwagger UI・ReDoc・OpenAPIがすべて非公開（None）になる"""
+        from app.main import _resolve_docs_urls
+
+        docs_url, redoc_url, openapi_url = _resolve_docs_urls(environment)
+        assert docs_url is None
+        assert redoc_url is None
+        assert openapi_url is None

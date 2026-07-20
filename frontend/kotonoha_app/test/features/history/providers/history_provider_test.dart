@@ -212,5 +212,76 @@ void main() {
         expect(uuidRegex.hasMatch(id), true);
       });
     });
+
+    // =========================================================================
+    // Undo機能テスト（個別削除・全削除の復元）
+    // =========================================================================
+    group('Undo機能テスト', () {
+      test('restoreLastDeleted()で直近に削除した履歴が復元される', () async {
+        final notifier = container.read(historyProvider.notifier);
+        await notifier.addHistory('復元対象', HistoryType.manualInput);
+        final id = container.read(historyProvider).histories.first.id;
+
+        await notifier.deleteHistory(id);
+        expect(container.read(historyProvider).histories, isEmpty);
+
+        await notifier.restoreLastDeleted();
+
+        final state = container.read(historyProvider);
+        expect(state.histories.length, 1);
+        expect(state.histories.first.content, '復元対象');
+        expect(state.histories.first.id, id);
+      });
+
+      test('restoreLastDeleted()を削除していない状態で呼んでも何も起きない', () async {
+        final notifier = container.read(historyProvider.notifier);
+        await notifier.addHistory('そのまま', HistoryType.manualInput);
+
+        await notifier.restoreLastDeleted();
+
+        expect(container.read(historyProvider).histories.length, 1);
+      });
+
+      test('restoreLastDeleted()は1度しか復元できない（連続呼び出しでは増えない）', () async {
+        final notifier = container.read(historyProvider.notifier);
+        await notifier.addHistory('復元対象', HistoryType.manualInput);
+        final id = container.read(historyProvider).histories.first.id;
+
+        await notifier.deleteHistory(id);
+        await notifier.restoreLastDeleted();
+        await notifier.restoreLastDeleted();
+
+        expect(container.read(historyProvider).histories.length, 1);
+      });
+
+      test('restoreClearedHistories()で全削除前の履歴一覧が復元される', () async {
+        final notifier = container.read(historyProvider.notifier);
+        await notifier.addHistory('1番目', HistoryType.manualInput);
+        await notifier.addHistory('2番目', HistoryType.preset);
+        await notifier.addHistory('3番目', HistoryType.aiConverted);
+        expect(container.read(historyProvider).histories.length, 3);
+
+        await notifier.clearAllHistories();
+        expect(container.read(historyProvider).histories, isEmpty);
+
+        await notifier.restoreClearedHistories();
+
+        final state = container.read(historyProvider);
+        expect(state.histories.length, 3);
+        expect(
+          state.histories.map((h) => h.content).toSet(),
+          {'1番目', '2番目', '3番目'},
+        );
+      });
+
+      test('restoreClearedHistories()を全削除していない状態で呼んでも何も起きない', () async {
+        final notifier = container.read(historyProvider.notifier);
+        await notifier.addHistory('そのまま', HistoryType.manualInput);
+
+        await notifier.restoreClearedHistories();
+
+        expect(container.read(historyProvider).histories.length, 1);
+      });
+    });
   });
 }

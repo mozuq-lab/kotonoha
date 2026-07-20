@@ -24,6 +24,7 @@ from app.models.ai_conversion_logs import AIConversionLog
 from app.utils.exceptions import (
     AIConversionException,
     AIProviderException,
+    AIRateLimitException,
     AITimeoutException,
 )
 
@@ -179,11 +180,13 @@ class TestAIRegenerateSuccess:
                 assert response_json["converted_text"] == "心より感謝申し上げます"
 
     @pytest.mark.asyncio
-    async def test_tc505_レスポンスヘッダー検証テスト(self):
+    async def test_tc505_見せかけのレート制限ヘッダーが含まれないことを検証(self):
         """
-        【テスト目的】: レスポンスにX-RateLimit-*ヘッダーが含まれることを確認
-        【テスト内容】: レート制限ヘッダーの存在と値を検証
-        【期待される動作】: X-RateLimit-Limit, Remaining, Resetが返される
+        【テスト目的】: 実カウンタに基づかない固定値のX-RateLimit-*ヘッダーが
+                        レスポンスに含まれないことを確認
+        【テスト内容】: 成功レスポンスのヘッダーを検証
+        【期待される動作】: X-RateLimit-Limit/Remaining/Resetが存在しない
+                            （常に固定値TIMES-1を返す見せかけのヘッダーは廃止）
         """
         request_body = {
             "input_text": "テスト入力",
@@ -204,10 +207,10 @@ class TestAIRegenerateSuccess:
 
                 assert response.status_code == 200
 
-                # 【結果検証】: X-RateLimit-*ヘッダーが存在することを確認
-                assert "x-ratelimit-limit" in response.headers
-                assert "x-ratelimit-remaining" in response.headers
-                assert "x-ratelimit-reset" in response.headers
+                # 【結果検証】: 見せかけのX-RateLimit-*ヘッダーが存在しないことを確認
+                assert "x-ratelimit-limit" not in response.headers
+                assert "x-ratelimit-remaining" not in response.headers
+                assert "x-ratelimit-reset" not in response.headers
 
 
 # ================================================================================
@@ -527,4 +530,117 @@ class TestAIRegenerateLogging:
 
                 assert log is not None
                 assert log.is_success is True
-                assert log.politeness_level == "normal"
+
+
+# ================================================================================
+# カテゴリE: 信頼性テストケース（DB障害時の応答保全・プロバイダー記録）
+# ================================================================================
+
+
+class TestAIRegenerateReliability:
+    """DB障害時の応答保全と実際のAIプロバイダー記録に関するテスト"""
+
+    @pytest.mark.asyncio
+    async def test_tc701_成功時にdb書き込みが失敗しても成功応答が返る(self):
+        """
+        【テスト目的】: AI再変換成功後のログ書き込みがDB障害で失敗しても、
+                        成功した変換結果を捨てずに200を返すことを確認
+        【期待される動作】: 200 OKとAI変換結果が返される（DB例外はログのみで握りつぶす）
+        """
+        request_body = {
+            "input_text": "DB障害時再変換テスト",
+            "politeness_level": "normal",
+            "previous_result": "前回結果",
+        }
+
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch(
+                "app.api.v1.endpoints.ai.create_conversion_log",
+                new_callable=AsyncMock,
+                side_effect=Exception("database is down"),
+            ),
+        ):
+            mock_ai_client.regenerate_text = AsyncMock(return_value=("新しい変換結果", 900))
+
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+
+                assert response.status_code == 200
+                assert response.json()["converted_text"] == "新しい変換結果"
+
+    @pytest.mark.asyncio
+    async def test_tc702_既知エラー時にdb書き込みが失敗しても意図したエラー応答が返る(self):
+        """
+        【テスト目的】: AI再変換の既知エラー（レート制限）発生時、エラーログ書き込みが
+                        DB障害で失敗しても、意図した429応答がDBエラー応答にすり替わらないことを確認
+        【期待される動作】: 429 Too Many RequestsとエラーコードAI_RATE_LIMITが返される
+        """
+        request_body = {
+            "input_text": "DB障害時再変換エラーテスト",
+            "politeness_level": "normal",
+            "previous_result": "前回結果",
+        }
+
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch(
+                "app.api.v1.endpoints.ai.create_conversion_log",
+                new_callable=AsyncMock,
+                side_effect=Exception("database is down"),
+            ),
+        ):
+            mock_ai_client.regenerate_text = AsyncMock(
+                side_effect=AIRateLimitException("AI API rate limit exceeded")
+            )
+
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+
+                assert response.status_code == 429
+                assert response.json()["error"]["code"] == "AI_RATE_LIMIT"
+
+    @pytest.mark.asyncio
+    async def test_tc703_実際のaiプロバイダーがログに記録される(
+        self, test_client_with_db, db_session: AsyncSession
+    ):
+        """
+        【テスト目的】: create_conversion_logに実際のDEFAULT_AI_PROVIDER値が渡され、
+                        固定値"anthropic"ではなく設定値どおりに記録されることを確認
+        【期待される動作】: AIConversionLog.ai_providerが"openai"で記録される
+        """
+        from app.core.config import settings
+
+        input_text = "再変換プロバイダー記録テスト_TC703"
+        expected_hash = hashlib.sha256(input_text.encode("utf-8")).hexdigest()
+        request_body = {
+            "input_text": input_text,
+            "politeness_level": "normal",
+            "previous_result": "前回結果",
+        }
+
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch.object(settings, "DEFAULT_AI_PROVIDER", "openai"),
+        ):
+            mock_ai_client.regenerate_text = AsyncMock(return_value=("新しい変換結果", 700))
+
+            async with AsyncClient(
+                transport=ASGITransport(app=test_client_with_db), base_url="http://test"
+            ) as client:
+                response = await client.post("/api/v1/ai/regenerate", json=request_body)
+                assert response.status_code == 200
+
+        result = await db_session.execute(
+            select(AIConversionLog)
+            .where(AIConversionLog.input_text_hash == expected_hash)
+            .order_by(AIConversionLog.created_at.desc())
+        )
+        log = result.scalars().first()
+
+        assert log is not None
+        assert log.ai_provider == "openai"

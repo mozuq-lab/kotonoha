@@ -52,7 +52,7 @@ kotonohaは、発話困難な方が「できるだけ少ない操作で、自分
 - **ASGIサーバー**: Uvicorn
 - **ORM**: SQLAlchemy 2.x (async対応)
 - **マイグレーション**: Alembic 1.17+
-- **認証・セキュリティ**: JWT (JSON Web Token)、OAuth2 + Bearer Token
+- **認証・セキュリティ**: 端末APIキー認証（`X-API-Key`ヘッダー、MVP実装済み）。JWT (JSON Web Token)・OAuth2 + Bearer Tokenは将来的なユーザー管理機能向けの想定でMVP未実装
 - **バリデーション**: Pydantic 2.x
 
 **役割**:
@@ -133,7 +133,8 @@ kotonohaは、発話困難な方が「できるだけ少ない操作で、自分
 
 3. **通信セキュリティ** (NFR-104):
    - すべてのAPI通信をHTTPS/TLS 1.2+で暗号化
-   - JWT トークンによる認証（将来的なユーザー管理用）
+   - AI変換エンドポイントは端末APIキー認証（`X-API-Key`ヘッダー、複数キー対応）で保護。development/test環境のみAPIキー未設定時に認証をスキップ（それ以外は503でフェイルクローズ）
+   - JWT トークンによる認証は将来的なユーザー管理用（MVP未実装）
 
 4. **データ削除** (NFR-103):
    - 履歴・お気に入りをユーザーが任意に削除可能

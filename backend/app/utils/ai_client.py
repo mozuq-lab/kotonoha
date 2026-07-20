@@ -38,8 +38,8 @@ _T = TypeVar("_T")
 # プロバイダーSDKの型付き例外のキャッシュ（(タイムアウト型, レート制限型)）
 _PROVIDER_EXCEPTION_TYPES: tuple[tuple[type, ...], tuple[type, ...]] | None = None
 
-# リトライ対象の一時的例外型のキャッシュ
-_RETRYABLE_EXCEPTION_TYPES: tuple[type, ...] | None = None
+# リトライ対象の一時的例外型のキャッシュ（(接続エラー型, レート制限型)）
+_RETRYABLE_EXCEPTION_TYPES: tuple[tuple[type, ...], tuple[type, ...]] | None = None
 
 
 def _provider_exception_types() -> tuple[tuple[type, ...], tuple[type, ...]]:
@@ -73,41 +73,64 @@ def _provider_exception_types() -> tuple[tuple[type, ...], tuple[type, ...]]:
     return _PROVIDER_EXCEPTION_TYPES
 
 
-def _retryable_exception_types() -> tuple[type, ...]:
+def _retryable_exception_types() -> tuple[tuple[type, ...], tuple[type, ...]]:
     """リトライ対象の一時的例外型を収集する（SDK 未インストールでも安全）。
 
-    anthropic / openai の APITimeoutError・RateLimitError・APIConnectionError と
-    httpx.TimeoutException をリトライ対象とする。importlib で動的収集するため、
-    対象 SDK がインストールされていない環境でも例外を送出しない。
+    接続エラー（anthropic/openai の ``APIConnectionError``）とレート制限
+    （``RateLimitError`` / 429）のみをリトライ対象とする。``APITimeoutError`` は
+    ``APIConnectionError`` のサブクラスだが、意図的にリトライ対象から除外する
+    （タイムアウトのたびに再試行すると、クライアントが待受を諦めた後もAI APIへの
+    課金呼び出しを継続してしまい、フロントエンドのタイムアウト予算と乖離するため）。
+    タイムアウトは ``AIClient._call_with_retry`` の全体デッドラインに委ねる。
+    importlib で動的収集するため、対象 SDK がインストールされていない環境でも
+    例外を送出しない。
 
     Returns:
-        リトライ対象例外型のタプル（空タプルの場合はリトライしない）。
+        (接続エラー例外型のタプル, レート制限例外型のタプル)。
+        SDK未インストール等で収集できない場合は空タプル。
     """
     global _RETRYABLE_EXCEPTION_TYPES
     if _RETRYABLE_EXCEPTION_TYPES is not None:
         return _RETRYABLE_EXCEPTION_TYPES
 
-    types: list[type] = []
+    connection_types: list[type] = []
+    rate_types: list[type] = []
     for module_name in ("anthropic", "openai"):
         try:
             module = importlib.import_module(module_name)
         except ImportError:
             continue
-        for exc_name in ("APITimeoutError", "RateLimitError", "APIConnectionError"):
-            t = getattr(module, exc_name, None)
-            if isinstance(t, type):
-                types.append(t)
+        conn_type = getattr(module, "APIConnectionError", None)
+        if isinstance(conn_type, type):
+            connection_types.append(conn_type)
+        rate_type = getattr(module, "RateLimitError", None)
+        if isinstance(rate_type, type):
+            rate_types.append(rate_type)
 
-    try:
-        httpx_mod = importlib.import_module("httpx")
-        t = getattr(httpx_mod, "TimeoutException", None)
-        if isinstance(t, type):
-            types.append(t)
-    except ImportError:
-        pass
-
-    _RETRYABLE_EXCEPTION_TYPES = tuple(types)
+    _RETRYABLE_EXCEPTION_TYPES = (tuple(connection_types), tuple(rate_types))
     return _RETRYABLE_EXCEPTION_TYPES
+
+
+def _is_retryable_exception(error: Exception) -> bool:
+    """例外がリトライ対象（接続エラー or レート制限。タイムアウトを除く）か判定する。
+
+    ``APITimeoutError`` は ``APIConnectionError`` のサブクラスであるため、先に
+    タイムアウト型かどうかを判定して明示的に除外してからリトライ対象を判定する。
+
+    Args:
+        error: 発生した例外。
+
+    Returns:
+        bool: リトライすべき場合True。
+    """
+    timeout_types, _ = _provider_exception_types()
+    if timeout_types and isinstance(error, timeout_types):
+        return False
+
+    connection_types, rate_types = _retryable_exception_types()
+    if connection_types and isinstance(error, connection_types):
+        return True
+    return bool(rate_types and isinstance(error, rate_types))
 
 
 def _map_provider_exception(error: Exception, provider_label: str) -> Exception:
@@ -561,13 +584,21 @@ class AIClient:
             raise _map_provider_exception(e, "AI") from e
 
     async def _call_with_retry(self, factory: Callable[[], Awaitable[_T]]) -> _T:
-        """リトライ付き API 呼び出し。
+        """デッドライン・リトライ付き API 呼び出し。
 
-        一時的な例外（タイムアウト / レート制限 / 接続エラー）を
-        settings.AI_MAX_RETRIES 回まで指数バックオフで再試行する。
-        リトライ対象外の例外は即座に伝播させる。
+        接続エラー（タイムアウトを除く）とレート制限エラーのみを
+        settings.AI_MAX_RETRIES 回まで指数バックオフで再試行する
+        （settings.AI_MAX_RETRIES は「初回に加えて許容する再試行回数」）。
+        API タイムアウトやその他のリトライ対象外の例外は即座に伝播させる。
         リトライを使い切った場合は最後の例外を再 raise し、呼び出し元の
         ``except Exception`` ブロックに処理させる。
+
+        呼び出し全体（初回 + 全リトライ試行）に settings.AI_CALL_DEADLINE_SECONDS の
+        デッドラインを設ける。フロントエンド（Dio）のconnect/receiveタイムアウト
+        （各10秒）と整合させ、クライアントが待受を諦めた後もバックエンドがAI APIへの
+        課金呼び出しを継続する事態を防ぐ。デッドライン超過時は「timeout」を含む
+        メッセージの TimeoutError を送出し、呼び出し元の _map_provider_exception に
+        より AITimeoutException（504）へマッピングされる。
 
         Args:
             factory: 呼び出しごとに新しい awaitable を返す 0 引数 callable。
@@ -576,23 +607,34 @@ class AIClient:
             API レスポンス。
 
         Raises:
-            最後の試行で発生した例外（リトライ対象外の例外はそのまま伝播）。
+            リトライ対象外の例外、リトライ枯渇時の最後の例外、
+            またはデッドライン超過時の TimeoutError。
         """
-        max_retries = max(1, settings.AI_MAX_RETRIES)
-        retryable = _retryable_exception_types()
-        last_exc: BaseException | None = None
 
-        for attempt in range(max_retries):
-            try:
-                return await factory()
-            except Exception as exc:
-                if not retryable or not isinstance(exc, retryable):
-                    raise
-                last_exc = exc
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(0.5 * (2**attempt))
+        async def _run_with_retries() -> _T:
+            total_attempts = 1 + max(0, settings.AI_MAX_RETRIES)
+            last_exc: BaseException | None = None
 
-        raise last_exc  # type: ignore[misc]
+            for attempt in range(total_attempts):
+                try:
+                    return await factory()
+                except Exception as exc:
+                    if not _is_retryable_exception(exc):
+                        raise
+                    last_exc = exc
+                    if attempt < total_attempts - 1:
+                        await asyncio.sleep(0.5 * (2**attempt))
+
+            raise last_exc  # type: ignore[misc]
+
+        try:
+            return await asyncio.wait_for(
+                _run_with_retries(), timeout=settings.AI_CALL_DEADLINE_SECONDS
+            )
+        except asyncio.TimeoutError as exc:
+            raise TimeoutError(
+                f"AI call timeout: deadline of {settings.AI_CALL_DEADLINE_SECONDS}s exceeded"
+            ) from exc
 
     async def aclose(self) -> None:
         """保持しているHTTPクライアントを明示的にクローズする。

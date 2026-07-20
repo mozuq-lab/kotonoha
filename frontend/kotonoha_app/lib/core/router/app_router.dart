@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kotonoha_app/core/router/error_screen.dart';
 import 'package:kotonoha_app/core/widgets/app_shell.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
+import 'package:kotonoha_app/features/face_to_face/presentation/screens/face_to_face_screen.dart';
 import 'package:kotonoha_app/features/favorites/presentation/favorites_screen.dart';
 import 'package:kotonoha_app/features/help/presentation/screens/help_screen.dart';
 import 'package:kotonoha_app/features/history/presentation/history_screen.dart';
@@ -38,6 +39,9 @@ abstract final class AppRoutes {
 
   /// 定型文画面
   static const String presetPhrases = '/preset-phrases';
+
+  /// 対面表示モード画面
+  static const String faceToFace = '/face-to-face';
 }
 
 /// GoRouterプロバイダー
@@ -92,6 +96,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.presetPhrases,
             name: 'presetPhrases',
             builder: (context, state) => const PresetPhraseScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.faceToFace,
+            name: 'faceToFace',
+            // TASK-0052/0053: 対面表示モード。表示テキストは入力中テキスト/
+            // 直近の読み上げテキストを呼び出し元（HomeScreen）からextra経由で渡す。
+            builder: (context, state) => FaceToFaceScreen(
+              displayText: (state.extra as String?) ?? '',
+            ),
           ),
         ],
       ),

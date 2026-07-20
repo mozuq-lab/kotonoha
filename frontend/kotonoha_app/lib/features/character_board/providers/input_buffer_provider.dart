@@ -17,6 +17,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/features/character_board/domain/dakuten_converter.dart';
 
 /// 文字入力バッファのプロバイダー
 ///
@@ -86,5 +87,33 @@ class InputBufferNotifier extends Notifier<String> {
   /// 既存のテキストは上書きされる。
   void setText(String text) {
     state = text.length > maxLength ? text.substring(0, maxLength) : text;
+  }
+
+  /// 入力バッファ末尾の文字を濁音化（または清音に戻すトグル）する
+  ///
+  /// 文字盤の「゛」キー用。バッファが空、または変換不能な文字の場合は
+  /// 何もしない（無視する）。
+  void applyDakuten() {
+    if (state.isEmpty) return;
+
+    final lastChar = state[state.length - 1];
+    final converted = DakutenConverter.applyDakuten(lastChar);
+    if (converted == null) return;
+
+    state = state.substring(0, state.length - 1) + converted;
+  }
+
+  /// 入力バッファ末尾の文字を半濁音化（または清音に戻すトグル）する
+  ///
+  /// 文字盤の「゜」キー用。バッファが空、または変換不能な文字の場合は
+  /// 何もしない（無視する）。
+  void applyHandakuten() {
+    if (state.isEmpty) return;
+
+    final lastChar = state[state.length - 1];
+    final converted = DakutenConverter.applyHandakuten(lastChar);
+    if (converted == null) return;
+
+    state = state.substring(0, state.length - 1) + converted;
   }
 }

@@ -120,8 +120,43 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
         // 横幅に応じて列数を計算（最低5列）
         final spacing = AppSizes.characterBoardButtonSpacing;
         final availableWidth = constraints.maxWidth;
+        final availableHeight = constraints.maxHeight;
         final columnsCount = (availableWidth / (buttonSize + spacing)).floor();
         final columns = columnsCount.clamp(5, 10);
+
+        // 【fit-to-height対応】: 列数だけでなく行数・可視高さも考慮してセルの
+        // 高さを決定する。スマホ縦持ちのように高さが乏しい画面では、幅基準の
+        // 正方形セル（childAspectRatio: 1.0固定）だと1画面に収まらず大量の
+        // スクロールが発生するため、「幅基準セル」と「高さ基準セル」のうち
+        // 小さい方を採用してセルを縦に押し縮める。
+        // ただし44px未満には縮めない（アクセシビリティ: タップターゲット下限）。
+        // 44pxでも収まらない場合はGridView標準のスクロールに委ねる。
+        const gridPadding = AppSizes.paddingSmall;
+        final rows =
+            characters.isEmpty ? 0 : (characters.length / columns).ceil();
+
+        final contentWidth = availableWidth - gridPadding * 2;
+        final widthBasedCellSize = columns > 0
+            ? (contentWidth - spacing * (columns - 1)) / columns
+            : buttonSize;
+
+        double heightBasedCellSize = widthBasedCellSize;
+        if (rows > 0 && availableHeight.isFinite) {
+          final contentHeight = availableHeight - gridPadding * 2;
+          heightBasedCellSize = (contentHeight - spacing * (rows - 1)) / rows;
+        }
+
+        final smallerCellSize = widthBasedCellSize < heightBasedCellSize
+            ? widthBasedCellSize
+            : heightBasedCellSize;
+        final effectiveCellHeight = smallerCellSize < AppSizes.minTapTarget
+            ? AppSizes.minTapTarget
+            : smallerCellSize;
+
+        final childAspectRatio =
+            (widthBasedCellSize > 0 && effectiveCellHeight > 0)
+                ? widthBasedCellSize / effectiveCellHeight
+                : 1.0;
 
         return GridView.builder(
           padding: const EdgeInsets.all(AppSizes.paddingSmall),
@@ -129,7 +164,7 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
             crossAxisCount: columns,
             mainAxisSpacing: spacing,
             crossAxisSpacing: spacing,
-            childAspectRatio: 1.0,
+            childAspectRatio: childAspectRatio,
           ),
           itemCount: characters.length,
           itemBuilder: (context, index) {
@@ -145,6 +180,9 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
               child: CharacterButton(
                 key: ValueKey('character_button_$character'),
                 character: character,
+                displayLabel: CharacterData.getDisplayLabel(character),
+                accessibilityLabel:
+                    CharacterData.getAccessibilityLabel(character),
                 onTap: widget.isEnabled
                     ? () => widget.onCharacterTap(character)
                     : null,
@@ -170,11 +208,13 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
 class CharacterButton extends StatelessWidget {
   /// 文字ボタンを作成する。
   ///
-  /// [character] - 表示する文字
+  /// [character] - 表示する文字（タップ時にコールバックへ渡す値）
   /// [onTap] - タップ時のコールバック
   /// [size] - ボタンサイズ（デフォルト: 60.0）
   /// [isEnabled] - 有効/無効状態（デフォルト: true）
   /// [fontSize] - フォントサイズ設定（デフォルト: medium）
+  /// [displayLabel] - ボタンに表示するラベル（省略時は[character]をそのまま表示）
+  /// [accessibilityLabel] - スクリーンリーダー用ラベル（省略時は[character]を使用）
   const CharacterButton({
     super.key,
     required this.character,
@@ -182,9 +222,11 @@ class CharacterButton extends StatelessWidget {
     this.size = 60.0,
     this.isEnabled = true,
     this.fontSize = FontSize.medium,
+    this.displayLabel,
+    this.accessibilityLabel,
   });
 
-  /// 表示する文字
+  /// 表示する文字（タップ時にコールバックへ渡す値）
   final String character;
 
   /// タップ時のコールバック
@@ -199,6 +241,16 @@ class CharacterButton extends StatelessWidget {
   /// フォントサイズ設定
   final FontSize fontSize;
 
+  /// ボタンに表示するラベル（濁点・半濁点・空白キー等の特殊表示用）
+  ///
+  /// nullの場合は[character]をそのまま表示する。
+  final String? displayLabel;
+
+  /// スクリーンリーダー用ラベル（濁点・半濁点・空白キー等の特殊表示用）
+  ///
+  /// nullの場合は[character]をそのまま使用する。
+  final String? accessibilityLabel;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -209,7 +261,7 @@ class CharacterButton extends StatelessWidget {
     );
 
     return Semantics(
-      label: character,
+      label: accessibilityLabel ?? character,
       button: true,
       enabled: isEnabled,
       child: SizedBox(
@@ -235,7 +287,7 @@ class CharacterButton extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Text(
-                character,
+                displayLabel ?? character,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontSize: textSize,
                   color: isEnabled

@@ -623,5 +623,74 @@ void main() {
         expect(callbackCalled, isTrue); // 【確認内容】: 有効状態ではコールバックが呼ばれる 🟡
       });
     });
+
+    // =========================================================================
+    // 6. 濁点・半濁点・空白キーテスト（改善: 3タップ問題解消）
+    // =========================================================================
+    group('濁点・半濁点・空白キーテスト', () {
+      testWidgets('基本タブに濁点キーが表示され、タップでコールバックに濁点記号が渡される', (tester) async {
+        String? tappedCharacter;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CharacterBoardWidget(
+                onCharacterTap: (char) => tappedCharacter = char,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text(CharacterData.dakutenKey), findsOneWidget);
+
+        await tester.tap(find.text(CharacterData.dakutenKey));
+        await tester.pump();
+
+        expect(tappedCharacter, equals(CharacterData.dakutenKey));
+      });
+
+      testWidgets('基本タブに半濁点キーが表示され、タップでコールバックに半濁点記号が渡される', (tester) async {
+        String? tappedCharacter;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CharacterBoardWidget(
+                onCharacterTap: (char) => tappedCharacter = char,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text(CharacterData.handakutenKey), findsOneWidget);
+
+        await tester.tap(find.text(CharacterData.handakutenKey));
+        await tester.pump();
+
+        expect(tappedCharacter, equals(CharacterData.handakutenKey));
+      });
+
+      testWidgets('基本タブに空白キーが「空白」というラベルで表示され、タップで全角スペースが渡される', (tester) async {
+        String? tappedCharacter;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CharacterBoardWidget(
+                onCharacterTap: (char) => tappedCharacter = char,
+              ),
+            ),
+          ),
+        );
+
+        // 表示上は「空白」ラベル（全角スペースそのままでは視認できないため）
+        expect(find.text('空白'), findsOneWidget);
+
+        await tester.tap(find.text('空白'));
+        await tester.pump();
+
+        expect(tappedCharacter, equals(CharacterData.spaceKey));
+      });
+    });
   });
 }

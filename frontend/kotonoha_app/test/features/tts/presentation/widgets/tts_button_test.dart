@@ -16,6 +16,9 @@ import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
+import 'package:kotonoha_app/core/themes/light_theme.dart';
+import 'package:kotonoha_app/core/themes/dark_theme.dart';
+import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import '../../../../mocks/mock_flutter_tts.dart';
 
 /// TTSNotifierを作成するヘルパー関数（テスト用）
@@ -536,6 +539,160 @@ void main() {
             contains(TTSState.speaking)); // 【確認内容】: 状態変更がリスナーに通知されたことを確認 🔵
 
         container.dispose();
+      });
+    });
+
+    // =========================================================================
+    // 3. AA対応（コントラスト比）テスト
+    // =========================================================================
+    //
+    // 【AA対応】: 従来は停止ボタンにColors.red(#F44336)+白文字（約3.9:1）、
+    // 読み上げボタンにライトテーマのprimaryColor(#2196F3)+白文字（約3.1:1）を
+    // ハードコードしており、いずれもWCAG AA（4.5:1）未達だった。
+    // ここでは実際にレンダリングされたElevatedButtonの背景色・文字色を取得し、
+    // Color.computeLuminance()を用いたWCAG 2.1のコントラスト比計算式で
+    // ライト/ダーク/高コントラストの3テーマ×読み上げ/停止の2状態、
+    // 合計6パターンすべてがAA基準を満たすことを検証する。
+    group('AA対応（コントラスト比）テスト', () {
+      /// TTSButtonのElevatedButtonをレンダリングし、背景色と文字色のペアを取得する
+      Future<(Color background, Color foreground)> renderAndGetColors(
+        WidgetTester tester, {
+        required ThemeData theme,
+        required bool speaking,
+        required MockFlutterTts mock,
+      }) async {
+        final container = ProviderContainer(
+          overrides: [
+            ttsProvider.overrideWith(() => createTestTTSNotifier(mock)),
+          ],
+        );
+
+        if (speaking) {
+          final notifier = container.read(ttsProvider.notifier);
+          await notifier.initialize();
+          await notifier.speak('テスト');
+        }
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: theme,
+              home: Scaffold(
+                body: TTSButton(text: 'こんにちは', onSpeak: () {}),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 【SDK差異対応】: ElevatedButton.icon()はFlutter 3.38.1系では内部で
+        // 非公開サブクラス（_ElevatedButtonWithIcon extends ElevatedButton）を
+        // 返すため、find.byType(ElevatedButton)（runtimeTypeの完全一致）では
+        // 何も見つからずBad state: No elementで失敗する。Flutter 3.41.5系では
+        // ElevatedButton自身の名前付きコンストラクタとなり問題は起きないが、
+        // どちらのSDKでも安定して動作するようbySubtype（is判定・サブタイプ許容）
+        // を使用する。
+        final button =
+            tester.widget<ElevatedButton>(find.bySubtype<ElevatedButton>());
+        final style = button.style!;
+        final background = style.backgroundColor!.resolve(<WidgetState>{})!;
+        final foreground = style.foregroundColor!.resolve(<WidgetState>{})!;
+
+        container.dispose();
+        return (background, foreground);
+      }
+
+      /// WCAG 2.1のコントラスト比を計算する（(明るい方の輝度+0.05)/(暗い方の輝度+0.05)）
+      double contrastRatio(Color a, Color b) {
+        final luminanceA = a.computeLuminance();
+        final luminanceB = b.computeLuminance();
+        final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;
+        final darker = luminanceA > luminanceB ? luminanceB : luminanceA;
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      /// 指定テーマ・状態の組み合わせでAA基準（4.5:1以上）を満たすことを検証する共通処理
+      Future<void> expectMeetsAA(
+        WidgetTester tester, {
+        required String themeName,
+        required ThemeData theme,
+        required bool speaking,
+      }) async {
+        final mock = MockFlutterTts();
+        when(() => mock.setLanguage(any())).thenAnswer((_) async => 1);
+        when(() => mock.setSpeechRate(any())).thenAnswer((_) async => 1);
+        when(() => mock.speak(any())).thenAnswer((_) async => 1);
+        when(() => mock.stop()).thenAnswer((_) async => 1);
+
+        final (background, foreground) = await renderAndGetColors(
+          tester,
+          theme: theme,
+          speaking: speaking,
+          mock: mock,
+        );
+        final ratio = contrastRatio(foreground, background);
+
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason: '$themeName / speaking=$speaking: '
+              '背景=$background 文字=$foreground のコントラスト比は$ratioでWCAG AA(4.5:1)未達',
+        );
+      }
+
+      testWidgets('ライトテーマ・読み上げボタン(idle)がWCAG AAを満たす', (tester) async {
+        await expectMeetsAA(
+          tester,
+          themeName: 'light',
+          theme: lightTheme,
+          speaking: false,
+        );
+      });
+
+      testWidgets('ライトテーマ・停止ボタン(speaking)がWCAG AAを満たす', (tester) async {
+        await expectMeetsAA(
+          tester,
+          themeName: 'light',
+          theme: lightTheme,
+          speaking: true,
+        );
+      });
+
+      testWidgets('ダークテーマ・読み上げボタン(idle)がWCAG AAを満たす', (tester) async {
+        await expectMeetsAA(
+          tester,
+          themeName: 'dark',
+          theme: darkTheme,
+          speaking: false,
+        );
+      });
+
+      testWidgets('ダークテーマ・停止ボタン(speaking)がWCAG AAを満たす', (tester) async {
+        await expectMeetsAA(
+          tester,
+          themeName: 'dark',
+          theme: darkTheme,
+          speaking: true,
+        );
+      });
+
+      testWidgets('高コントラストテーマ・読み上げボタン(idle)がWCAG AAを満たす', (tester) async {
+        await expectMeetsAA(
+          tester,
+          themeName: 'highContrast',
+          theme: highContrastTheme,
+          speaking: false,
+        );
+      });
+
+      testWidgets('高コントラストテーマ・停止ボタン(speaking)がWCAG AAを満たす', (tester) async {
+        await expectMeetsAA(
+          tester,
+          themeName: 'highContrast',
+          theme: highContrastTheme,
+          speaking: true,
+        );
       });
     });
   });

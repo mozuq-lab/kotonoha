@@ -5,7 +5,7 @@
 /// 【TDD Greenフェーズ】: FavoritesScreen本実装
 ///
 /// 信頼性レベル: 🔵 青信号（要件定義書ベース）
-/// 関連要件: FR-064-001〜015, AC-064-001〜008, REQ-703
+/// 関連要件: FR-064-001〜015, AC-064-001〜008, REQ-703, REQ-704, REQ-2002
 library;
 
 import 'package:flutter/material.dart';
@@ -17,6 +17,7 @@ import '../../tts/domain/models/tts_state.dart';
 import 'widgets/favorite_item_card.dart';
 import 'widgets/empty_favorite_widget.dart';
 import 'constants/favorite_ui_constants.dart';
+import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 
 /// お気に入り画面ウィジェット
 ///
@@ -25,8 +26,8 @@ import 'constants/favorite_ui_constants.dart';
 /// 機能:
 /// - お気に入り一覧表示（displayOrder昇順）
 /// - お気に入りタップで再読み上げ
-/// - 個別削除機能
-/// - 全削除機能
+/// - 個別削除機能（確認ダイアログ＋Undo）
+/// - 全削除機能（確認ダイアログ＋Undo）
 /// - 空状態表示
 /// - 並び替え機能（REQ-703）
 ///
@@ -37,6 +38,7 @@ import 'constants/favorite_ui_constants.dart';
 /// - NFR-064-001: 100件を1秒以内に表示
 /// - NFR-064-005: タップターゲット44px以上
 /// - REQ-703: 並び替え機能
+/// - REQ-704 / REQ-2002: 個別削除時の確認ダイアログ表示
 class FavoritesScreen extends ConsumerStatefulWidget {
   /// お気に入り画面を作成する。
   const FavoritesScreen({super.key});
@@ -245,18 +247,21 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
   /// 個別削除確認ダイアログを表示
   ///
-  /// FR-064-008: 削除時に確認ダイアログを表示
+  /// REQ-704 / REQ-2002: お気に入り削除時は確認ダイアログを表示しなければ
+  /// ならない（🔵 要件定義書ベース）。「削除」タップで確認後に削除を実行し、
+  /// 追加の安全策としてUndo SnackBarも表示する（確認ダイアログ＋Undoの
+  /// 二段構え）。
   void _showDeleteDialog(BuildContext context, String id) {
     showDialog<void>(
       context: context,
-      barrierDismissible: false, // FR-064-008: 誤操作防止
+      barrierDismissible: false, // REQ-5002: 誤操作防止
       builder: (BuildContext dialogContext) {
         return _ConfirmDialog(
           title: FavoriteUIConstants.confirmDialogTitle,
           content: FavoriteUIConstants.deleteConfirmMessage,
           onConfirm: () {
             Navigator.of(dialogContext).pop();
-            ref.read(favoriteProvider.notifier).deleteFavorite(id);
+            _deleteFavoriteWithUndo(context, id);
           },
           onCancel: () => Navigator.of(dialogContext).pop(),
         );
@@ -264,9 +269,25 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     );
   }
 
+  /// 個別削除処理（確認ダイアログの「削除」タップ後に実行）+ Undo
+  ///
+  /// 確認ダイアログ通過後に削除を実行し、さらにSnackBarの「元に戻す」
+  /// 操作（8秒間）でも復元できるようにする（誤操作からの二重の安全策）。
+  void _deleteFavoriteWithUndo(BuildContext context, String id) {
+    ref.read(favoriteProvider.notifier).deleteFavorite(id);
+    showUndoSnackBar(
+      context,
+      message: '削除しました',
+      onUndo: () =>
+          ref.read(favoriteProvider.notifier).restoreLastDeletedFavorite(),
+    );
+  }
+
   /// 全削除確認ダイアログを表示
   ///
   /// FR-064-010: 全削除時に確認ダイアログを表示
+  /// 【改善】: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ、
+  /// 実行後にUndo SnackBarを表示し誤操作から復元できるようにする。
   void _showDeleteAllDialog(BuildContext context) {
     showDialog<void>(
       context: context,
@@ -278,6 +299,12 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           onConfirm: () {
             Navigator.of(dialogContext).pop();
             ref.read(favoriteProvider.notifier).clearAllFavorites();
+            showUndoSnackBar(
+              context,
+              message: 'すべて削除しました',
+              onUndo: () =>
+                  ref.read(favoriteProvider.notifier).restoreClearedFavorites(),
+            );
           },
           onCancel: () => Navigator.of(dialogContext).pop(),
         );

@@ -8,6 +8,7 @@ TASK-0026: 外部AI API連携実装（Claude/GPT プロキシ）
 【テスト範囲】: 初期化、プロンプト生成、API呼び出し、エラーハンドリング
 """
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -490,6 +491,11 @@ class TestProcessingTimeMeasurement:
 # ============================================================
 # 9. リトライ（_call_with_retry）テスト (review #4)
 # ============================================================
+#
+# 【方針変更】: リトライ対象は接続エラー（APIConnectionError、タイムアウトを除く）と
+# レート制限（RateLimitError/429）のみとし、APITimeoutErrorはリトライしない
+# （全体デッドラインに委ねる）。settings.AI_MAX_RETRIES は「初回に加えて許容する
+# 再試行回数」を表す（例: AI_MAX_RETRIES=2 なら最大3回試行）。
 
 _RREQ = httpx.Request("POST", "http://retry-test")
 
@@ -502,8 +508,8 @@ class TestCallWithRetry:
     """
 
     @pytest.mark.asyncio
-    async def test_retry_on_retryable_exception_eventually_succeeds(self):
-        """リトライ対象例外発生後、最終的に成功し、sleep が attempt 回数 -1 回呼ばれる。"""
+    async def test_retry_on_connection_error_eventually_succeeds(self):
+        """接続エラー発生後、最終的に成功し、sleep が attempt 回数 -1 回呼ばれる。"""
         from app.utils.ai_client import AIClient
 
         call_count = 0
@@ -512,7 +518,7 @@ class TestCallWithRetry:
             nonlocal call_count
             call_count += 1
             if call_count < 3:
-                raise anthropic.APITimeoutError(request=_RREQ)
+                raise anthropic.APIConnectionError(request=_RREQ)
             return "ok"
 
         sleep_mock = AsyncMock()
@@ -528,25 +534,57 @@ class TestCallWithRetry:
         assert sleep_mock.await_count == 2  # sleeps between attempt 0→1 and 1→2
 
     @pytest.mark.asyncio
+    async def test_retry_on_rate_limit_error_eventually_succeeds(self):
+        """レート制限エラー発生後、最終的に成功する（429もリトライ対象）。"""
+        from app.utils.ai_client import AIClient
+
+        call_count = 0
+        rate_limit_error = anthropic.RateLimitError(
+            "rate limited", response=httpx.Response(429, request=_RREQ), body=None
+        )
+
+        async def flaky() -> str:
+            nonlocal call_count
+            call_count += 1
+            if call_count < 2:
+                raise rate_limit_error
+            return "ok"
+
+        sleep_mock = AsyncMock()
+        with (
+            patch.object(_ai_client_mod.settings, "AI_MAX_RETRIES", 2),
+            patch("asyncio.sleep", sleep_mock),
+        ):
+            client = AIClient()
+            result = await client._call_with_retry(lambda: flaky())
+
+        assert result == "ok"
+        assert call_count == 2
+        assert sleep_mock.await_count == 1
+
+    @pytest.mark.asyncio
     async def test_retry_exhausted_reraises_sdk_exception_with_sleep(self):
-        """リトライ枯渇後、SDK 例外を再 raise し、max_retries-1 回 sleep する。"""
+        """リトライ枯渇後、SDK 例外を再 raise する。
+
+        AI_MAX_RETRIES=2（初回+2回=最大3試行）: attempt0→sleep, attempt1→sleep,
+        attempt2→raise（sleepなし）で計2回sleepする。
+        """
         from app.utils.ai_client import AIClient
 
         sleep_mock = AsyncMock()
 
         async def always_fail() -> None:
-            raise anthropic.APITimeoutError(request=_RREQ)
+            raise anthropic.APIConnectionError(request=_RREQ)
 
         with (
             patch.object(_ai_client_mod.settings, "AI_MAX_RETRIES", 2),
             patch("asyncio.sleep", sleep_mock),
         ):
             client = AIClient()
-            with pytest.raises(anthropic.APITimeoutError):
+            with pytest.raises(anthropic.APIConnectionError):
                 await client._call_with_retry(lambda: always_fail())
 
-        # max_retries=2: attempt 0 → sleep(0.5), attempt 1 → raise (no sleep)
-        assert sleep_mock.await_count == 1
+        assert sleep_mock.await_count == 2
 
     @pytest.mark.asyncio
     async def test_non_retryable_exception_propagates_without_sleep(self):
@@ -569,8 +607,50 @@ class TestCallWithRetry:
         sleep_mock.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_convert_text_anthropic_retries_on_timeout_and_succeeds(self):
-        """convert_text_anthropic: タイムアウトでリトライし最終成功する。"""
+    async def test_timeout_exception_is_not_retried(self):
+        """APITimeoutErrorはリトライ対象外であり、即座に伝播し sleep しない。
+
+        APITimeoutErrorはAPIConnectionErrorのサブクラスだが、全体デッドラインに
+        タイムアウト処理を委ねるため、意図的にリトライ対象から除外する。
+        """
+        from app.utils.ai_client import AIClient
+
+        call_count = 0
+
+        async def always_timeout() -> None:
+            nonlocal call_count
+            call_count += 1
+            raise anthropic.APITimeoutError(request=_RREQ)
+
+        sleep_mock = AsyncMock()
+        with (
+            patch.object(_ai_client_mod.settings, "AI_MAX_RETRIES", 3),
+            patch("asyncio.sleep", sleep_mock),
+        ):
+            client = AIClient()
+            with pytest.raises(anthropic.APITimeoutError):
+                await client._call_with_retry(lambda: always_timeout())
+
+        assert call_count == 1
+        sleep_mock.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_deadline_exceeded_raises_timeout_error(self):
+        """全体デッドライン超過時、"timeout"を含むTimeoutErrorが送出される。"""
+        from app.utils.ai_client import AIClient
+
+        async def hangs_forever() -> str:
+            await asyncio.sleep(5)
+            return "unreachable"
+
+        with patch.object(_ai_client_mod.settings, "AI_CALL_DEADLINE_SECONDS", 0.05):
+            client = AIClient()
+            with pytest.raises(TimeoutError, match="timeout"):
+                await client._call_with_retry(lambda: hangs_forever())
+
+    @pytest.mark.asyncio
+    async def test_convert_text_anthropic_retries_on_connection_error_and_succeeds(self):
+        """convert_text_anthropic: 接続エラーでリトライし最終成功する。"""
         from app.utils.ai_client import AIClient
 
         call_count = 0
@@ -579,7 +659,7 @@ class TestCallWithRetry:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                raise anthropic.APITimeoutError(request=_RREQ)
+                raise anthropic.APIConnectionError(request=_RREQ)
             return SimpleNamespace(content=[SimpleNamespace(text="変換済み")])
 
         sleep_mock = AsyncMock()
@@ -598,12 +678,16 @@ class TestCallWithRetry:
         assert sleep_mock.await_count == 1
 
     @pytest.mark.asyncio
-    async def test_convert_text_anthropic_retry_exhausted_raises_ai_timeout(self):
-        """convert_text_anthropic: リトライ枯渇後、AITimeoutException になり sleep を実施する。"""
+    async def test_convert_text_anthropic_timeout_is_not_retried(self):
+        """convert_text_anthropic: タイムアウトは即座にAITimeoutExceptionになり、リトライしない。"""
         from app.utils.ai_client import AIClient
         from app.utils.exceptions import AITimeoutException
 
+        call_count = 0
+
         async def always_timeout(**_: object) -> None:
+            nonlocal call_count
+            call_count += 1
             raise anthropic.APITimeoutError(request=_RREQ)
 
         sleep_mock = AsyncMock()
@@ -618,5 +702,25 @@ class TestCallWithRetry:
             with pytest.raises(AITimeoutException):
                 await client.convert_text_anthropic("テスト", "normal")
 
-        # max_retries=2: attempt 0 → sleep(0.5), attempt 1 → maps to AITimeoutException
-        assert sleep_mock.await_count == 1
+        assert call_count == 1
+        sleep_mock.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_convert_text_anthropic_deadline_exceeded_raises_ai_timeout(self):
+        """convert_text_anthropic: 全体デッドライン超過時にAITimeoutExceptionへマッピングされる。"""
+        from app.utils.ai_client import AIClient
+        from app.utils.exceptions import AITimeoutException
+
+        async def hangs_forever(**_: object) -> object:
+            await asyncio.sleep(5)
+            return SimpleNamespace(content=[SimpleNamespace(text="unreachable")])
+
+        with (
+            patch.object(_ai_client_mod.settings, "AI_CALL_DEADLINE_SECONDS", 0.05),
+            patch.object(_ai_client_mod.settings, "ANTHROPIC_MODEL", "claude-test", create=True),
+        ):
+            client = AIClient()
+            client.anthropic_client = MagicMock()
+            client.anthropic_client.messages.create = hangs_forever
+            with pytest.raises(AITimeoutException):
+                await client.convert_text_anthropic("テスト", "normal")

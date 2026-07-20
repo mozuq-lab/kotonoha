@@ -200,8 +200,9 @@ void main() {
         expect(settings.fontSize, FontSize.small);
 
         // SharedPreferencesに保存されていること
+        // 【永続化形式】: enum indexではなくenum name文字列で保存される
         final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getInt('fontSize'), FontSize.small.index);
+        expect(prefs.getString('fontSize'), FontSize.small.name);
 
         container.dispose();
       });
@@ -254,8 +255,9 @@ void main() {
         expect(settings.fontSize, FontSize.large);
 
         // SharedPreferencesに保存されていること
+        // 【永続化形式】: enum indexではなくenum name文字列で保存される
         final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getInt('fontSize'), FontSize.large.index);
+        expect(prefs.getString('fontSize'), FontSize.large.name);
 
         container.dispose();
       });
@@ -271,6 +273,8 @@ void main() {
         // 🔵 青信号: REQ-5003「永続化機構を実装」
 
         // Given: 【テストデータ準備】: SharedPreferencesに事前にフォントサイズ「large」を保存
+        // 【後方互換性】: 旧形式（enum index int）で保存されたデータでも
+        // 正しく復元できることを検証する（マイグレーション対応）
         SharedPreferences.setMockInitialValues({
           'fontSize': FontSize.large.index,
         });
@@ -443,8 +447,9 @@ void main() {
         expect(state.requireValue.fontSize, FontSize.small);
 
         // SharedPreferencesにも最終値が保存されていること
+        // 【永続化形式】: enum indexではなくenum name文字列で保存される
         final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getInt('fontSize'), FontSize.small.index);
+        expect(prefs.getString('fontSize'), FontSize.small.name);
 
         container.dispose();
       });

@@ -192,37 +192,67 @@ class _AIConversionButtonState extends ConsumerState<AIConversionButton> {
     // 🔵 信頼性レベル: 青信号 - REQ-3004
     final networkState = ref.watch(networkProvider);
     final isEnabled = _isButtonEnabled(networkState);
+    final isOffline = networkState != NetworkState.online;
+    final shortfall = kMinInputLength - widget.inputText.length;
 
     // 【UI構築】: AI変換ボタン
     // 🔵 信頼性レベル: 青信号 - REQ-901
-    return Semantics(
-      // 【アクセシビリティ】: スクリーンリーダー用ラベル
-      // 🟡 信頼性レベル: 黄信号 - REQ-5001から推測
-      label: _isLoading ? 'AI変換中' : 'AI変換ボタン',
-      button: true,
-      enabled: isEnabled,
-      child: SizedBox(
-        // 【アクセシビリティ対応】: 最小タップターゲットサイズを保証
-        // 🔵 信頼性レベル: 青信号 - REQ-5001
-        height: kMinTapTargetSize,
-        child: ElevatedButton(
-          // 【タップ処理】: 有効時のみ変換を実行
-          onPressed: isEnabled ? _executeConversion : null,
-          child: _isLoading
-              // 【ローディング表示】: 変換中はインジケーターを表示
-              // 🔵 信頼性レベル: 青信号 - REQ-2006
-              ? const SizedBox(
-                  width: _loadingIndicatorSize,
-                  height: _loadingIndicatorSize,
-                  child: CircularProgressIndicator(
-                    strokeWidth: _loadingIndicatorStrokeWidth,
-                  ),
-                )
-              // 【通常表示】: 「AI変換」ラベル
-              // 🔵 信頼性レベル: 青信号 - REQ-901
-              : const Text('AI変換'),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Semantics(
+          // 【アクセシビリティ】: スクリーンリーダー用ラベル
+          // 🟡 信頼性レベル: 黄信号 - REQ-5001から推測
+          label: _isLoading ? 'AI変換中' : 'AI変換ボタン',
+          button: true,
+          enabled: isEnabled,
+          child: SizedBox(
+            // 【アクセシビリティ対応】: 最小タップターゲットサイズを保証
+            // 🔵 信頼性レベル: 青信号 - REQ-5001
+            height: kMinTapTargetSize,
+            child: ElevatedButton(
+              // 【タップ処理】: 有効時のみ変換を実行
+              onPressed: isEnabled ? _executeConversion : null,
+              child: _isLoading
+                  // 【ローディング表示】: 変換中はインジケーターを表示
+                  // 🔵 信頼性レベル: 青信号 - REQ-2006
+                  ? const SizedBox(
+                      width: _loadingIndicatorSize,
+                      height: _loadingIndicatorSize,
+                      child: CircularProgressIndicator(
+                        strokeWidth: _loadingIndicatorStrokeWidth,
+                      ),
+                    )
+                  // 【通常表示】: 「AI変換」ラベル
+                  // 🔵 信頼性レベル: 青信号 - REQ-901
+                  : const Text('AI変換'),
+            ),
+          ),
         ),
-      ),
+        // 【無効理由の可視化】(fix/improvement-p0-p2): ボタンが無効な場合、
+        // オフライン・文字数不足のどちらが理由かをユーザーに見えるようにする。
+        // ローディング中（一時的にisEnabled=falseになる）は理由表示を出さない。
+        if (!_isLoading && !isEnabled)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: isOffline
+                ? const OfflineIndicator()
+                : (shortfall > 0
+                    ? Text(
+                        'あと$shortfall文字入力してください',
+                        // 【AA対応】: Colors.grey.shade700は背景がScaffoldの
+                        // 暗い背景色（ダークテーマ）になる場合、コントラスト比が
+                        // 約2.7:1程度までしか出ずWCAG AA（4.5:1）未達となる。
+                        // colorScheme.onSurfaceは各テーマのサーフェス系背景との
+                        // 組み合わせでAAを満たすよう定義済みのため、これを使う。
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 12,
+                        ),
+                      )
+                    : const SizedBox.shrink()),
+          ),
+      ],
     );
   }
 }

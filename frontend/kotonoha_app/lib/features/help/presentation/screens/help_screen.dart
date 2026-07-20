@@ -9,7 +9,10 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/features/help/providers/tutorial_provider.dart';
 import '../widgets/help_section_widget.dart';
 
 /// ヘルプ画面ウィジェット
@@ -21,28 +24,30 @@ import '../widgets/help_section_widget.dart';
 /// - 基本操作の説明（文字盤、定型文、TTS）
 /// - 緊急ボタンの使い方
 /// - iOS/Androidの誤操作防止設定方法（NFR-205）
+/// - チュートリアルの再表示導線（fix/improvement-p0-p2で配線）
 ///
 /// 実装要件:
 /// - FR-003: ルートパス「/help」でこの画面を表示
-/// - FR-005: StatelessWidget、constコンストラクタ、keyパラメータ
+/// - FR-005: ConsumerWidget、constコンストラクタ、keyパラメータ
 /// - NFR-205: ガイド付きアクセス/画面ピン留め設定説明
-class HelpScreen extends StatelessWidget {
+/// - REQ-3001: 初回チュートリアルをいつでも再表示できる導線
+class HelpScreen extends ConsumerWidget {
   /// ヘルプ画面を作成する。
   const HelpScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('使い方'),
       ),
-      body: const SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 【基本操作セクション】
-            HelpSectionWidget(
+            const HelpSectionWidget(
               title: '基本操作',
               icon: Icons.touch_app,
               children: [
@@ -68,7 +73,7 @@ class HelpScreen extends StatelessWidget {
             ),
 
             // 【緊急ボタンセクション】
-            HelpSectionWidget(
+            const HelpSectionWidget(
               title: '緊急ボタン',
               icon: Icons.warning_amber,
               children: [
@@ -83,13 +88,15 @@ class HelpScreen extends StatelessWidget {
             ),
 
             // 【便利な機能セクション】
-            HelpSectionWidget(
+            const HelpSectionWidget(
               title: '便利な機能',
               icon: Icons.lightbulb_outline,
               children: [
                 _HelpItem(
                   title: '対面表示モード',
-                  description: '画面を180度回転させて、'
+                  description: '画面右上のアイコンをタップすると、'
+                      '入力中のテキストを大きく表示できます。'
+                      '画面を180度回転させて、'
                       '向かい合った相手にテキストを見せることができます。',
                 ),
                 SizedBox(height: 16),
@@ -109,7 +116,7 @@ class HelpScreen extends StatelessWidget {
             ),
 
             // 【誤操作防止設定セクション】: NFR-205
-            HelpSectionWidget(
+            const HelpSectionWidget(
               title: '誤操作防止の設定',
               icon: Icons.security,
               children: [
@@ -134,7 +141,7 @@ class HelpScreen extends StatelessWidget {
             ),
 
             // 【設定セクション】
-            HelpSectionWidget(
+            const HelpSectionWidget(
               title: '設定について',
               icon: Icons.settings,
               children: [
@@ -152,10 +159,44 @@ class HelpScreen extends StatelessWidget {
                 ),
               ],
             ),
+
+            // 【チュートリアルセクション】: REQ-3001
+            // 初回起動時に表示されるチュートリアルを、いつでも再度見られる導線。
+            HelpSectionWidget(
+              title: 'チュートリアル',
+              icon: Icons.school,
+              children: [
+                const _HelpItem(
+                  title: '基本の使い方をもう一度確認する',
+                  description: '初回起動時に表示された簡単な使い方の説明を、'
+                      'いつでも見返すことができます。',
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: AppSizes.minTapTarget,
+                  child: ElevatedButton(
+                    onPressed: () => _showTutorialAgain(context, ref),
+                    child: const Text('チュートリアルをもう一度見る'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// チュートリアルを未完了状態に戻し、ホーム画面へ戻って再表示させる。
+  ///
+  /// チュートリアル表示自体はAppShellがtutorialProviderの状態を監視して
+  /// 行うため、ここではリセットして前の画面（多くの場合ホーム画面）へ
+  /// 戻るだけでよい。
+  Future<void> _showTutorialAgain(BuildContext context, WidgetRef ref) async {
+    await ref.read(tutorialProvider.notifier).resetTutorial();
+    if (context.mounted) {
+      Navigator.of(context).pop();
+    }
   }
 }
 

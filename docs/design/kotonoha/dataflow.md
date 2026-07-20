@@ -257,19 +257,22 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Start([通常モード])
-    Start --> FaceBtn[対面表示ボタンタップ]
-    FaceBtn --> EnlargeText[テキストを画面中央に拡大表示]
-    FaceBtn --> SimplifyBG[背景をシンプルに]
+    Start([ホーム画面])
+    Start --> FaceBtn[AppBarの対面表示アイコンをタップ]
+    FaceBtn --> TextCheck{入力欄は空か?}
+    TextCheck -->|入力中テキストあり| UseInput[入力中テキストを表示対象にする]
+    TextCheck -->|空| UseHistory[直近の読み上げ履歴を表示対象にする]
 
-    EnlargeText --> FaceMode[対面表示モード]
-    SimplifyBG --> FaceMode
+    UseInput --> Navigate[/face-to-faceルートへ遷移<br/>表示テキストを渡す/]
+    UseHistory --> Navigate
+
+    Navigate --> FaceMode[対面表示モード<br/>テキストを画面中央に拡大表示]
 
     FaceMode --> RotateCheck{画面回転ボタン}
-    RotateCheck -->|タップ| Rotate180[画面を180度回転<br/>相手側から正しい向き]
+    RotateCheck -->|タップ| Rotate180[Transform.rotateで180度回転<br/>相手側から正しい向き<br/>※OS側の画面自動回転設定とは独立]
     Rotate180 --> FaceMode
 
-    FaceMode --> BackBtn[通常モードに戻るボタンタップ]
+    FaceMode --> BackBtn[閉じるボタンタップ]
     BackBtn --> Start
 ```
 

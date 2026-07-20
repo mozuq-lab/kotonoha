@@ -258,6 +258,127 @@ void main() {
     });
 
     // =========================================================================
+    // 2.4 星ボタン（お気に入り追加のタップ代替）テスト
+    // =========================================================================
+    group('星ボタンテスト', () {
+      /// onFavoriteTapが指定されない場合、星ボタンは表示されない
+      testWidgets('onFavoriteTapが未指定の場合、星ボタンが表示されない',
+          (WidgetTester tester) async {
+        final testHistory = History(
+          id: 'test_1',
+          content: 'こんにちは',
+          type: HistoryType.manualInput,
+          createdAt: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: HistoryItemCard(
+                history: testHistory,
+                onTap: () {},
+                onDelete: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byIcon(Icons.star), findsNothing);
+        expect(find.byIcon(Icons.star_border), findsNothing);
+      });
+
+      /// 未お気に入りの場合、star_borderアイコンが表示されタップでコールバックが発火する
+      testWidgets('未お気に入りの場合star_borderが表示され、タップでonFavoriteTapが発火する',
+          (WidgetTester tester) async {
+        final testHistory = History(
+          id: 'test_1',
+          content: 'こんにちは',
+          type: HistoryType.manualInput,
+          createdAt: DateTime.now(),
+        );
+        var favoriteTapped = false;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: HistoryItemCard(
+                history: testHistory,
+                onTap: () {},
+                onDelete: () {},
+                isFavorited: false,
+                onFavoriteTap: () => favoriteTapped = true,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byIcon(Icons.star_border), findsOneWidget);
+        expect(find.byIcon(Icons.star), findsNothing);
+
+        await tester.tap(find.byIcon(Icons.star_border));
+        await tester.pump();
+
+        expect(favoriteTapped, isTrue);
+      });
+
+      /// 既にお気に入り登録済みの場合、塗りつぶしのstarアイコンが表示される
+      testWidgets('お気に入り登録済みの場合、塗りつぶしのstarアイコンが表示される',
+          (WidgetTester tester) async {
+        final testHistory = History(
+          id: 'test_1',
+          content: 'こんにちは',
+          type: HistoryType.manualInput,
+          createdAt: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: HistoryItemCard(
+                history: testHistory,
+                onTap: () {},
+                onDelete: () {},
+                isFavorited: true,
+                onFavoriteTap: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byIcon(Icons.star), findsOneWidget);
+        expect(find.byIcon(Icons.star_border), findsNothing);
+      });
+    });
+
+    // =========================================================================
+    // 2.5 「入力欄へ」ボタンテスト
+    // =========================================================================
+    group('入力欄へボタンテスト', () {
+      testWidgets('「入力欄へ」ラベルが表示される', (WidgetTester tester) async {
+        final testHistory = History(
+          id: 'test_1',
+          content: 'こんにちは',
+          type: HistoryType.manualInput,
+          createdAt: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: HistoryItemCard(
+                history: testHistory,
+                onTap: () {},
+                onDelete: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('入力欄へ'), findsOneWidget);
+      });
+    });
+
+    // =========================================================================
     // 2.3 サイズ・アクセシビリティテスト
     // =========================================================================
     group('サイズ・アクセシビリティテスト', () {

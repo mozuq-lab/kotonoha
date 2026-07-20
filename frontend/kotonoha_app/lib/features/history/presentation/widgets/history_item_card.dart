@@ -13,6 +13,7 @@ import '../../domain/models/history.dart';
 import '../../domain/models/history_type.dart';
 import 'package:intl/intl.dart';
 import '../constants/history_ui_constants.dart';
+import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
 
 /// 履歴項目カードウィジェット
 ///
@@ -36,6 +37,8 @@ class HistoryItemCard extends StatelessWidget {
     this.isSpeaking = false,
     this.onStop,
     this.onLongPress,
+    this.isFavorited = false,
+    this.onFavoriteTap,
     super.key,
   });
 
@@ -56,6 +59,16 @@ class HistoryItemCard extends StatelessWidget {
 
   /// 長押し時のコールバック（お気に入り追加メニュー表示用）
   final VoidCallback? onLongPress;
+
+  /// 既にお気に入り登録済みかどうか
+  ///
+  /// 【改善】: 履歴からお気に入り追加は従来長押しメニューのみで、
+  /// タップ主体の操作要件（REQ-5005）に反していた。星アイコンによる
+  /// 明示的なタップ操作を追加し、長押しメニューは併存させる。
+  final bool isFavorited;
+
+  /// 星ボタンタップ時のコールバック（お気に入り追加）
+  final VoidCallback? onFavoriteTap;
 
   /// 日時フォーマッター（パフォーマンス最適化のため静的）
   static final DateFormat _dateFormatter =
@@ -120,6 +133,24 @@ class HistoryItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                // 【星ボタン】: 長押し不要でお気に入り追加できるタップ代替（REQ-5005）
+                if (onFavoriteTap != null)
+                  IconButton(
+                    icon: Icon(
+                      isFavorited ? Icons.star : Icons.star_border,
+                      color: isFavorited
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    onPressed: onFavoriteTap,
+                    tooltip: isFavorited ? 'お気に入り登録済み' : 'お気に入りに追加',
+                    constraints: const BoxConstraints(
+                      minWidth: HistoryUIConstants.minTapTargetSize,
+                      minHeight: HistoryUIConstants.minTapTargetSize,
+                    ),
+                  ),
+                // 【入力欄へボタン】: 履歴の内容を入力欄に入れて編集する動線（REQ-102）
+                SendToInputButton(text: history.content),
                 // 読み上げ中は停止ボタン、それ以外は削除ボタン
                 if (isSpeaking && onStop != null)
                   IconButton(

@@ -45,6 +45,12 @@ class QuickResponseButtons extends StatefulWidget {
   /// FR-005: 8px以上、デフォルト12px
   final double? spacing;
 
+  /// ボタンの高さ（オプション）
+  /// 指定しない場合は各QuickResponseButtonのデフォルト値（60px）を使用。
+  /// 可視高さの乏しいレイアウト（スマホ縦持ち・横持ち）でのコンパクト化に使用。
+  /// 44px未満に丸められることはない（QuickResponseButton側で保証）。
+  final double? buttonHeight;
+
   /// QuickResponseButtonsを作成する
   const QuickResponseButtons({
     super.key,
@@ -52,6 +58,7 @@ class QuickResponseButtons extends StatefulWidget {
     this.onTTSSpeak,
     this.fontSize,
     this.spacing,
+    this.buttonHeight,
   });
 
   @override
@@ -107,6 +114,7 @@ class _QuickResponseButtonsState extends State<QuickResponseButtons>
               onPressed: () => _handleTap(type),
               onTTSSpeak: null, // デバウンスはこのウィジェットで管理
               fontSize: widget.fontSize,
+              height: widget.buttonHeight,
             ),
           ),
         );

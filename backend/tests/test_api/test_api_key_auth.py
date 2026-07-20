@@ -123,13 +123,22 @@ class TestAPIKeyEnforced:
 
 
 class TestAPIKeyNotConfigured:
-    """APIキー未設定時のフォールバック挙動（環境依存）"""
+    """APIキー未設定時のフォールバック挙動（環境依存・allowlist方式）"""
 
     @pytest.mark.asyncio
-    async def test_skips_auth_in_non_production(self, mock_ai_client, monkeypatch):
-        """非本番（test環境）でAPIキー未設定なら認証はスキップされる"""
+    async def test_skips_auth_in_test_environment(self, mock_ai_client, monkeypatch):
+        """allowlist対象（test環境）でAPIキー未設定なら認証はスキップされる"""
         monkeypatch.setattr(settings, "API_KEYS", "")
         monkeypatch.setattr(settings, "ENVIRONMENT", "test")
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post("/api/v1/ai/convert", json=CONVERT_BODY)
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_skips_auth_in_development_environment(self, mock_ai_client, monkeypatch):
+        """allowlist対象（development環境）でAPIキー未設定なら認証はスキップされる"""
+        monkeypatch.setattr(settings, "API_KEYS", "")
+        monkeypatch.setattr(settings, "ENVIRONMENT", "development")
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/convert", json=CONVERT_BODY)
         assert response.status_code == 200
@@ -142,4 +151,42 @@ class TestAPIKeyNotConfigured:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/ai/convert", json=CONVERT_BODY)
         assert response.status_code == 503
+        mock_ai_client.convert_text.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_rejects_in_staging_when_not_configured(self, mock_ai_client, monkeypatch):
+        """staging（allowlist対象外）でAPIキー未設定なら全リクエストを503で拒否（フェイルクローズ）"""
+        monkeypatch.setattr(settings, "API_KEYS", "")
+        monkeypatch.setattr(settings, "ENVIRONMENT", "staging")
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post("/api/v1/ai/convert", json=CONVERT_BODY)
+        assert response.status_code == 503
+        mock_ai_client.convert_text.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_accepts_valid_key_in_staging(self, mock_ai_client, monkeypatch):
+        """stagingでAPIキーが設定済みなら、正しいキーで200になる"""
+        monkeypatch.setattr(settings, "API_KEYS", VALID_KEY)
+        monkeypatch.setattr(settings, "ENVIRONMENT", "staging")
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                "/api/v1/ai/convert",
+                json=CONVERT_BODY,
+                headers={"X-API-Key": VALID_KEY},
+            )
+        assert response.status_code == 200
+        mock_ai_client.convert_text.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_non_ascii_key_returns_401_not_500(self, mock_ai_client, api_keys_configured):
+        """非ASCII文字を含むAPIキーは500ではなく401で拒否される"""
+        # httpxはstrヘッダー値をASCIIとして扱い非ASCII文字を拒否するため、
+        # 実際のHTTPクライアントが送信しうる生のUTF-8バイト列として明示的に渡す。
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                "/api/v1/ai/convert",
+                json=CONVERT_BODY,
+                headers={"X-API-Key": "日本語キー不正".encode()},
+            )
+        assert response.status_code == 401
         mock_ai_client.convert_text.assert_not_called()

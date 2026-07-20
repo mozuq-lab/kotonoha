@@ -150,6 +150,8 @@ void main() {
         // 🔵 青信号: REQ-5003「アプリ強制終了しても設定を失わない」
 
         // Given: 【テストデータ準備】: SharedPreferencesにダークテーマを保存
+        // 【後方互換性】: 旧形式（enum index int）で保存されたデータでも
+        // 正しく復元できることを検証する（マイグレーション対応）
         SharedPreferences.setMockInitialValues({
           'theme': AppTheme.dark.index,
         });

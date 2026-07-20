@@ -304,6 +304,26 @@ void main() {
     });
   });
 
+  group('PhraseListItem - 入力欄へボタンテスト', () {
+    /// 【REQ-102対応】: 定型文タップ=即時読み上げのみだったところに、
+    /// 入力欄へ入れて編集する動線として「入力欄へ」ボタンを追加した。
+    testWidgets('「入力欄へ」ラベルが表示される', (tester) async {
+      final phrase = createTestPhrase(id: '1', content: '入力欄へテスト');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PhraseListItem(
+              phrase: phrase,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('入力欄へ'), findsOneWidget);
+    });
+  });
+
   group('PhraseListItem - お気に入り切り替えテスト', () {
     // =========================================================================
     // TC-040-035: お気に入り切り替えコールバックが発火する

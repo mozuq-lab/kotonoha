@@ -92,21 +92,21 @@ async def test_tc001_正常リクエストテスト_制限内(mock_ai_client):
 
 
 @pytest.mark.asyncio
-async def test_tc002_x_ratelimit_ヘッダーテスト(mock_ai_client):
+async def test_tc002_見せかけのx_ratelimit_ヘッダーが含まれないことを確認(mock_ai_client):
     """
-    【テスト目的】: レスポンスにX-RateLimit-*ヘッダーが含まれることを確認
-    【テスト内容】: 正常レスポンスにレート制限情報ヘッダーが付与されることを検証
-    【期待される動作】: X-RateLimit-Limit、X-RateLimit-Remaining、X-RateLimit-Resetヘッダーが設定される
-    🔵 testcases.md TC-002（line 53-69）に基づく
+    【テスト目的】: 実カウンタに基づかない固定値のX-RateLimit-*ヘッダーが
+                    レスポンスに含まれないことを確認
+    【テスト内容】: 正常レスポンスのヘッダーを検証
+    【期待される動作】: X-RateLimit-Limit、X-RateLimit-Remaining、X-RateLimit-Resetヘッダーが
+                        存在しない（常に固定値TIMES-1を返す見せかけのヘッダーは廃止）
+    🔵 信頼性改善: 誤解を招く固定値ヘッダーの削除（TC-002を改訂）
 
     【テストシナリオ】:
     - Given: レート制限ミドルウェアが有効な状態
     - When: AI変換エンドポイントにリクエストを送信
-    - Then: レスポンスにレート制限ヘッダーが含まれる
+    - Then: レスポンスに見せかけのレート制限ヘッダーが含まれない
     """
     # 【テストデータ準備】: 有効なAI変換リクエストを作成
-    # 【初期条件設定】: レート制限情報を確認するための標準リクエスト
-    # 🔵 testcases.md TC-002（line 58-60）に基づく
     request_body = {"input_text": "テスト", "politeness_level": "normal"}
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -114,22 +114,11 @@ async def test_tc002_x_ratelimit_ヘッダーテスト(mock_ai_client):
         # 【処理内容】: レスポンスヘッダーの内容を確認
         response = await client.post("/api/v1/ai/convert", json=request_body)
 
-        # 【結果検証】: X-RateLimit-*ヘッダーが存在することを確認
-        # 【期待値確認】: クライアントがレート制限状況を把握するため
-        assert (
-            "x-ratelimit-limit" in response.headers
-        )  # 【確認内容】: X-RateLimit-Limitヘッダーが存在する 🔵
-        assert (
-            "x-ratelimit-remaining" in response.headers
-        )  # 【確認内容】: X-RateLimit-Remainingヘッダーが存在する 🔵
-        assert (
-            "x-ratelimit-reset" in response.headers
-        )  # 【確認内容】: X-RateLimit-Resetヘッダーが存在する 🔵
-
-        # 【結果検証】: ヘッダー値が正しいことを確認
-        # 【期待値確認】: 制限回数1、リクエスト後の残り0
-        assert response.headers["x-ratelimit-limit"] == "1"  # 【確認内容】: 制限回数が1 🔵
-        assert response.headers["x-ratelimit-remaining"] == "0"  # 【確認内容】: 残り回数が0 🔵
+        # 【結果検証】: 見せかけのX-RateLimit-*ヘッダーが存在しないことを確認
+        # 【期待値確認】: 実際の残数を反映しない固定値ヘッダーはクライアントを誤解させるため廃止
+        assert "x-ratelimit-limit" not in response.headers
+        assert "x-ratelimit-remaining" not in response.headers
+        assert "x-ratelimit-reset" not in response.headers
 
 
 @pytest.mark.asyncio
@@ -434,7 +423,7 @@ async def test_tc201_境界値テスト_ちょうど制限内(mock_ai_client):
     【テストシナリオ】:
     - Given: 制限カウンターが0の状態
     - When: 1回目のリクエストを送信
-    - Then: リクエストが許可され、残り回数が0になる
+    - Then: リクエストが許可される
     """
     # 【テストデータ準備】: 有効なAI変換リクエストを作成
     # 【初期条件設定】: 制限値=1の境界
@@ -447,7 +436,6 @@ async def test_tc201_境界値テスト_ちょうど制限内(mock_ai_client):
 
         # 【結果検証】: リクエストが許可されることを確認
         assert response.status_code == 200  # 【確認内容】: HTTPステータスコード200 🔵
-        assert response.headers["x-ratelimit-remaining"] == "0"  # 【確認内容】: 残り回数が0 🔵
 
 
 @pytest.mark.asyncio
@@ -741,3 +729,72 @@ async def test_tc304_高頻度リクエストテスト(mock_ai_client):
 
         # 【結果検証】: システムがクラッシュせずに全リクエストに応答
         assert len(responses) == num_requests  # 【確認内容】: 全リクエストに応答 🟡
+
+
+# ================================================================================
+# カテゴリE: レート制限ストレージ設定テスト
+# ================================================================================
+
+
+class TestResolveStorageUri:
+    """resolve_storage_uri() のテスト（RATE_LIMIT_STORAGE_URI設定→Limiter引数の解決）"""
+
+    def test_empty_setting_resolves_to_none(self, monkeypatch):
+        """RATE_LIMIT_STORAGE_URIが空文字列（既定）の場合、Noneを返す（インメモリ）"""
+        from app.core.rate_limit import resolve_storage_uri
+
+        monkeypatch.setattr(settings, "RATE_LIMIT_STORAGE_URI", "")
+        assert resolve_storage_uri() is None
+
+    def test_configured_setting_is_passed_through(self, monkeypatch):
+        """RATE_LIMIT_STORAGE_URIが設定されている場合、そのまま返す（例: Redis URI）"""
+        from app.core.rate_limit import resolve_storage_uri
+
+        monkeypatch.setattr(settings, "RATE_LIMIT_STORAGE_URI", "redis://localhost:6379")
+        assert resolve_storage_uri() == "redis://localhost:6379"
+
+    def test_limiter_is_constructed_with_resolved_storage_uri(self):
+        """モジュールロード時のlimiterがresolve_storage_uri()の戻り値で構築されていることを確認
+
+        既定（RATE_LIMIT_STORAGE_URI未設定）ではインメモリストレージになる。
+        """
+        from limits.storage.memory import MemoryStorage
+
+        from app.core.rate_limit import limiter
+
+        assert isinstance(limiter._storage, MemoryStorage)
+
+    def test_redis_storage_uri_builds_limiter_without_running_server(self):
+        """RATE_LIMIT_STORAGE_URI=redis://...でLimiterが構築できることを確認
+
+        【目的】: Codexレビュー指摘（P1）の回帰防止。redisパッケージ未導入の場合、
+        limitsライブラリはLimiter構築時（モジュールimport時点）に
+        ConfigurationErrorを送出し、アプリが起動すらできなくなる。
+        redisパッケージ導入後は、実際のRedisサーバーが起動していなくても
+        （limitsは接続を遅延するため）Limiterの構築自体は成功するはず。
+        """
+        from limits.storage.redis import RedisStorage
+
+        from app.core.rate_limit import _build_limiter
+
+        built = _build_limiter("redis://localhost:6379")
+        assert isinstance(built._storage, RedisStorage)
+
+    def test_unsupported_scheme_raises_clear_rate_limit_storage_error(self):
+        """未対応スキームの場合、診断しやすいRateLimitStorageErrorで起動を失敗させることを確認
+
+        生の limits.errors.ConfigurationError をそのまま伝播させるのではなく、
+        原因（未対応スキーム/依存パッケージ不足）と対処方法が分かるメッセージで
+        送出することを検証する。
+        """
+        from limits.errors import ConfigurationError
+
+        from app.core.rate_limit import RateLimitStorageError, _build_limiter
+
+        with pytest.raises(RateLimitStorageError) as exc_info:
+            _build_limiter("foobar://localhost:6379")
+
+        # 元の例外（ConfigurationError）がcauseとして保持されていることを確認
+        assert isinstance(exc_info.value.__cause__, ConfigurationError)
+        # メッセージにRATE_LIMIT_STORAGE_URIと対処のヒントが含まれることを確認
+        assert "RATE_LIMIT_STORAGE_URI" in str(exc_info.value)

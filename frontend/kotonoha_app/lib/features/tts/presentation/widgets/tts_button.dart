@@ -85,12 +85,27 @@ class TTSButton extends ConsumerWidget {
     // TTSの状態を監視
     final ttsState = ref.watch(ttsProvider);
     final isSpeaking = ttsState.state == TTSState.speaking;
+    final colorScheme = Theme.of(context).colorScheme;
 
     // ボタンラベルと色を決定
+    // 【AA対応】: 停止時のColors.red(#F44336)+白文字は約3.9:1、
+    // 読み上げ時のライトテーマprimaryColor(#2196F3)+白文字は約3.1:1で
+    // いずれもWCAG AA（4.5:1）未達だった。ハードコード色をやめ、
+    // テーマのcolorSchemeの色（primary/error）を背景に使用することで
+    // 高コントラストテーマの枠線スタイル（ElevatedButtonThemeDataのside）も
+    // 活かされるようにする。
+    // 【文字色】: colorScheme.onError はライト/高コントラストテーマで
+    // デフォルト値（白）のままとなっており、実際の背景色との組み合わせでは
+    // AA基準（4.5:1）を満たさないケースがある（例: ダークテーマの
+    // error(#D32F2F)+黒文字は約4.2:1で未達、高コントラストテーマの
+    // error(#FF0000)+白文字は約4.0:1で未達）。そのため、実際の背景色の
+    // 輝度から黒・白のうちコントラスト比が高い方を都度算出して使用し、
+    // 3テーマ×2状態のすべてでWCAG AAを満たすことを保証する。
     final label = isSpeaking ? '停止' : '読み上げ';
     final backgroundColor = isSpeaking
-        ? (stopButtonColor ?? Colors.red)
-        : (speakButtonColor ?? Theme.of(context).primaryColor);
+        ? (stopButtonColor ?? colorScheme.error)
+        : (speakButtonColor ?? colorScheme.primary);
+    final foregroundColor = _bestContrastingTextColor(backgroundColor);
     final icon = isSpeaking ? Icons.stop : Icons.volume_up;
 
     return Semantics(
@@ -108,7 +123,7 @@ class TTSButton extends ConsumerWidget {
             onPressed: () => _handleTap(ref, isSpeaking),
             style: ElevatedButton.styleFrom(
               backgroundColor: backgroundColor,
-              foregroundColor: Colors.white,
+              foregroundColor: foregroundColor,
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.paddingMedium,
                 vertical: AppSizes.paddingSmall,
@@ -147,4 +162,28 @@ class TTSButton extends ConsumerWidget {
       notifier.speak(text);
     }
   }
+}
+
+/// 背景色に対してより高いコントラスト比を確保できる文字色（黒 or 白）を選ぶ
+///
+/// 【設計方針】: テーマが提供する`onError`/`onPrimary`に頼らず、実際の
+/// 背景色の相対輝度（[Color.computeLuminance]）からWCAG 2.1のコントラスト比
+/// （`(明るい方の輝度 + 0.05) / (暗い方の輝度 + 0.05)`）を算出し、黒・白の
+/// うちコントラスト比が高い方を採用する。これにより、テーマ側の色定義に
+/// 依存せず、どのテーマ・どの背景色でも常に最良のコントラストを確保できる。
+Color _bestContrastingTextColor(Color background) {
+  final whiteContrast = _contrastRatio(Colors.white, background);
+  final blackContrast = _contrastRatio(Colors.black, background);
+  return whiteContrast >= blackContrast ? Colors.white : Colors.black;
+}
+
+/// WCAG 2.1のコントラスト比を計算する
+///
+/// 計算式: `(L1 + 0.05) / (L2 + 0.05)`（L1は明るい方の相対輝度）
+double _contrastRatio(Color a, Color b) {
+  final luminanceA = a.computeLuminance();
+  final luminanceB = b.computeLuminance();
+  final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;
+  final darker = luminanceA > luminanceB ? luminanceB : luminanceA;
+  return (lighter + 0.05) / (darker + 0.05);
 }

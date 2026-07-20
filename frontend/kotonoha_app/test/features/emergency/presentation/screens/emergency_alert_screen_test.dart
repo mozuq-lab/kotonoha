@@ -546,6 +546,37 @@ void main() {
         expect(semanticsFinder, findsOneWidget);
       });
 
+      /// 緊急メッセージにliveRegionが設定され、スクリーンリーダーに
+      /// 緊急状態への遷移が即座にアナウンスされる（EDGE-203関連の補完対応）
+      ///
+      /// 優先度: P0（必須）
+      /// 関連要件: NFR-A001
+      testWidgets('緊急メッセージにSemantics(liveRegion: true)が設定されている',
+          (tester) async {
+        // Arrange & Act
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: EmergencyAlertScreen(onReset: () {}),
+            ),
+          ),
+        );
+
+        // Assert - 「緊急呼び出し中」テキストの祖先にliveRegion:trueのSemanticsが存在する
+        final liveRegionFinder = find.ancestor(
+          of: find.text('緊急呼び出し中'),
+          matching: find.byWidgetPredicate((widget) {
+            return widget is Semantics && widget.properties.liveRegion == true;
+          }),
+        );
+        expect(
+          liveRegionFinder,
+          findsOneWidget,
+          reason: 'スクリーンリーダーに緊急状態を即座に通知するため'
+              'liveRegionが設定されている必要がある',
+        );
+      });
+
       /// TC-047-061: リセットボタンにSemantics「緊急呼び出しを解除」が設定
       ///
       /// 優先度: P0（必須）

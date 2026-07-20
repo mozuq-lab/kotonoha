@@ -907,5 +907,100 @@ void main() {
         ); // 【確認内容】: 高コントラストモードでダイアログが表示されること 🟡
       });
     });
+
+    // =========================================================================
+    // 7. AA対応（コントラスト比）テスト
+    // =========================================================================
+    //
+    // 【AA対応】: 従来は「採用」ボタンの文字色にColors.white固定
+    // （ライトテーマのprimaryLight(#2196F3)背景では約3.1:1）、
+    // 「元の文」「変換結果」ラベルにColors.grey(#9E9E9E)固定
+    // （約2.8:1）を使用しており、いずれもWCAG AA（4.5:1）未達だった。
+    // ここでは実際にレンダリングされたウィジェットの色を取得し、
+    // Color.computeLuminance()を用いたWCAG 2.1のコントラスト比計算式で
+    // ライト/ダーク/高コントラストの3テーマすべてがAA基準を満たすことを検証する。
+    group('7. AA対応（コントラスト比）テスト', () {
+      /// WCAG 2.1のコントラスト比を計算する（(明るい方の輝度+0.05)/(暗い方の輝度+0.05)）
+      double contrastRatio(Color a, Color b) {
+        final luminanceA = a.computeLuminance();
+        final luminanceB = b.computeLuminance();
+        final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;
+        final darker = luminanceA > luminanceB ? luminanceB : luminanceA;
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      final themes = <String, ThemeData>{
+        'light': lightTheme,
+        'dark': darkTheme,
+        'highContrast': highContrastTheme,
+      };
+
+      for (final entry in themes.entries) {
+        final themeName = entry.key;
+        final theme = entry.value;
+
+        testWidgets('$themeNameテーマ: 「採用」ボタンの文字色がWCAG AAを満たす', (tester) async {
+          await tester.pumpWidget(
+            buildTestWidget(
+              originalText: '水 ぬるく',
+              convertedText: 'お水をぬるめでお願いします',
+              politenessLevel: PolitenessLevel.polite,
+              onAdopt: (_) {},
+              onRegenerate: () {},
+              onUseOriginal: (_) {},
+              theme: theme,
+            ),
+          );
+          await openDialog(tester);
+
+          final adoptButton = tester.widget<ElevatedButton>(
+            find.widgetWithText(ElevatedButton, '採用'),
+          );
+          final style = adoptButton.style!;
+          final background = style.backgroundColor!.resolve(<WidgetState>{})!;
+          final foreground = style.foregroundColor!.resolve(<WidgetState>{})!;
+          final ratio = contrastRatio(foreground, background);
+
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason: '$themeName: 背景=$background 文字=$foreground '
+                'のコントラスト比は$ratioでWCAG AA(4.5:1)未達',
+          );
+        });
+
+        testWidgets('$themeNameテーマ: 「元の文」「変換結果」ラベルの文字色がWCAG AAを満たす',
+            (tester) async {
+          await tester.pumpWidget(
+            buildTestWidget(
+              originalText: '水 ぬるく',
+              convertedText: 'お水をぬるめでお願いします',
+              politenessLevel: PolitenessLevel.polite,
+              onAdopt: (_) {},
+              onRegenerate: () {},
+              onUseOriginal: (_) {},
+              theme: theme,
+            ),
+          );
+          await openDialog(tester);
+
+          // ラベルはダイアログのcontent領域（surface系の背景）上に表示される
+          final background = theme.colorScheme.surface;
+
+          for (final label in ['元の文', '変換結果']) {
+            final textWidget = tester.widget<Text>(find.text(label));
+            final foreground = textWidget.style!.color!;
+            final ratio = contrastRatio(foreground, background);
+
+            expect(
+              ratio,
+              greaterThanOrEqualTo(4.5),
+              reason: '$themeName: ラベル"$label" 背景=$background '
+                  '文字=$foreground のコントラスト比は$ratioでWCAG AA(4.5:1)未達',
+            );
+          }
+        });
+      }
+    });
   });
 }

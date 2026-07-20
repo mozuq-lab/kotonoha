@@ -4,11 +4,16 @@
 環境変数から設定を読み込み、型安全に管理する。
 """
 
+from typing import Literal
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEV_SECRET_KEY = "dev-secret-key-change-me"  # noqa: S105
 DEV_POSTGRES_PASSWORD = "your_secure_password_here"  # noqa: S105
+
+# ENVIRONMENT に許可される値。表記ゆれ（"prod" 等）は起動時エラーとして拒否する。
+EnvironmentName = Literal["development", "test", "staging", "production"]
 
 
 class Settings(BaseSettings):
@@ -35,11 +40,13 @@ class Settings(BaseSettings):
     # 端末APIキー認証設定
     # AI変換APIへのアクセスに必要な端末APIキー（カンマ区切りで複数指定可）。
     # MVPはアカウント管理を持たないため、端末発行の共有シークレットで保護する。
-    # 未設定の場合: development/test では認証をスキップ、production では全リクエストを拒否。
+    # 未設定の場合: development/test では認証をスキップ、それ以外（staging/production等）は
+    # 全リクエストを拒否（フェイルクローズ、allowlist方式）。
     API_KEYS: str = ""
 
     # 環境設定
-    ENVIRONMENT: str = "development"
+    # 許可される値: development, test, staging, production のみ（表記ゆれは起動時エラー）。
+    ENVIRONMENT: EnvironmentName = "development"
 
     # CORS設定
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
@@ -52,6 +59,13 @@ class Settings(BaseSettings):
     # デフォルトは NFR-101（1リクエスト/10秒/IP）。
     RATE_LIMIT_TIMES: int = 1
     RATE_LIMIT_SECONDS: int = 10
+
+    # レート制限カウンタの保存先URI（slowapi/limitsが解釈できる形式）。
+    # 空文字列（デフォルト）: プロセス内メモリに保存する。マルチワーカー/マルチインスタンス
+    # 構成では各プロセスが独立したカウンタを持つため実質的な制限が緩くなり、
+    # プロセス再起動でもリセットされてしまう。本番でマルチワーカー/マルチインスタンス
+    # 運用する場合は Redis 等の共有ストレージURIを指定すること（例: "redis://host:6379"）。
+    RATE_LIMIT_STORAGE_URI: str = ""
 
     # 信頼するリバースプロキシの段数。
     # 0 の場合: X-Forwarded-For を信頼せず、接続元IP（request.client）でレート制限する。
@@ -71,8 +85,24 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str | None = None
     ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
     DEFAULT_AI_PROVIDER: str = "anthropic"
-    AI_API_TIMEOUT: int = 30
-    AI_MAX_RETRIES: int = 3
+
+    # AI API呼び出し1試行あたりのタイムアウト秒数（SDKクライアントに直接渡す値）。
+    # フロントエンド（Dio）のconnect/receiveタイムアウト（各10秒）を踏まえ、
+    # 1試行がそれを超えて居座らないよう8秒に設定する。
+    AI_API_TIMEOUT: int = 8
+
+    # リトライ回数（試行回数ではなく、初回呼び出しに加えて許容する再試行回数）。
+    # 接続エラー（APIConnectionError。ただしタイムアウトは含まない）とレート制限
+    # （429 / RateLimitError）のみを対象にリトライする。APIタイムアウトはリトライせず
+    # AI_CALL_DEADLINE_SECONDSによる全体デッドラインに委ねる。
+    # デフォルト1: 最大1回まで再試行する（初回+1回、合計最大2試行）。
+    AI_MAX_RETRIES: int = 1
+
+    # AI呼び出し1リクエスト全体（リトライ試行すべてを含む）に課す最大所要秒数。
+    # フロントエンド（Dio）のconnect/receiveタイムアウト（各10秒）と整合させ、
+    # クライアントが待受を諦めた後もバックエンドがAI APIへの課金呼び出しを
+    # 継続してしまう事態を防ぐ。超過時はタイムアウトエラーとして扱われる。
+    AI_CALL_DEADLINE_SECONDS: float = 10.0
 
     model_config = SettingsConfigDict(
         env_file=".env",
