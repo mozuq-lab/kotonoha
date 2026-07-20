@@ -26,7 +26,11 @@ dependencies:
 
   # HTTP通信
   dio: ^5.9.1
-  retrofit: ^4.1.0
+  # NOTE: retrofit_generator >=10.2.3 requires retrofit >=4.9.2 (adds
+  # Parser.DartMappable, referenced by the generator). Keep both floors in
+  # lockstep so a future `pub upgrade` cannot re-resolve an incompatible
+  # combination (see retrofit_generator CHANGELOG / pubspec history).
+  retrofit: ">=4.9.2 <5.0.0"
 
   # JSON
   json_annotation: ^4.9.0
@@ -70,7 +74,8 @@ dev_dependencies:
   build_runner: ^2.6.1
   riverpod_generator: ^4.0.0+1
   json_serializable: ^6.11.2
-  retrofit_generator: ^10.0.0
+  # See NOTE next to the `retrofit` dependency above.
+  retrofit_generator: ">=10.2.3 <11.0.0"
 
   # テスト
   mocktail: ^1.0.4
