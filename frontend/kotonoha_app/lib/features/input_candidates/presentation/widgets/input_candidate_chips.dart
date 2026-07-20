@@ -54,6 +54,16 @@ class InputCandidateChips extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    // 【チップ最大幅の算出】: 長文候補（履歴文など）でチップが際限なく
+    // 横に伸び、後続候補が実質表示されなくなる問題を防ぐため、
+    // 画面幅を基準にした上限を設ける（画面幅の約60%、ただし
+    // AppSizes.candidateChipMaxWidthを絶対上限とする）。
+    // 🟡 信頼性レベル: 黄信号 - Codexレビュー指摘（P2）に基づく
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final chipMaxWidth = (screenWidth * 0.6)
+        .clamp(AppSizes.minTapTarget, AppSizes.candidateChipMaxWidth)
+        .toDouble();
+
     return SizedBox(
       height: AppSizes.inputCandidateRowHeight,
       child: ListView.separated(
@@ -75,6 +85,7 @@ class InputCandidateChips extends StatelessWidget {
             child: _CandidateChip(
               text: candidate.text,
               fontSize: _fontSizeValue,
+              maxWidth: chipMaxWidth,
               onTap: () => onSelect(candidate.text),
             ),
           );
@@ -87,11 +98,13 @@ class InputCandidateChips extends StatelessWidget {
 class _CandidateChip extends StatelessWidget {
   final String text;
   final double fontSize;
+  final double maxWidth;
   final VoidCallback onTap;
 
   const _CandidateChip({
     required this.text,
     required this.fontSize,
+    required this.maxWidth,
     required this.onTap,
   });
 
@@ -101,9 +114,10 @@ class _CandidateChip extends StatelessWidget {
       button: true,
       label: '候補: $text',
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
+        constraints: BoxConstraints(
           minWidth: AppSizes.minTapTarget,
           minHeight: AppSizes.minTapTarget,
+          maxWidth: maxWidth,
         ),
         child: SizedBox(
           height: AppSizes.minTapTarget,
@@ -122,18 +136,19 @@ class _CandidateChip extends StatelessWidget {
                 AppSizes.minTapTarget,
                 AppSizes.minTapTarget,
               ),
+              // 【長文候補対応】: maxWidthを超えないよう、ボタンの最大サイズも
+              // 明示的に制約する（未指定の場合、内容の幅までボタンが伸びうる）。
+              // これによりText側のoverflow: TextOverflow.ellipsisが正しく機能する。
+              maximumSize: Size(maxWidth, double.infinity),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppSizes.borderRadiusLarge),
               ),
             ),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: fontSize),
-              ),
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: fontSize),
             ),
           ),
         ),

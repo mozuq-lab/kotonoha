@@ -201,4 +201,79 @@ void main() {
       expect(find.textContaining('定型文'), findsAtLeastNWidgets(1));
     });
   });
+
+  group('TutorialOverlay 低背丈画面での高さ適応レイアウト（Codexレビュー指摘 P2）', () {
+    testWidgets('844x390(横持ちスマホ)でRenderFlexオーバーフローが発生せずNext/Skipボタンがタップ可能',
+        (tester) async {
+      tester.view.physicalSize = const Size(844, 390);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      bool completed = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: TutorialOverlay(
+            onComplete: () => completed = true,
+            child: const Scaffold(
+              body: Center(child: Text('メインコンテンツ')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // オーバーフローエラー等のレイアウト例外が発生していないことを確認
+      expect(tester.takeException(), isNull);
+
+      // Next(次へ)/Skip(スキップ)ボタンが可視であり、タップ可能であることを確認
+      expect(find.text('次へ'), findsOneWidget);
+      expect(find.text('スキップ'), findsOneWidget);
+      await tester.tap(find.text('次へ'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('スキップ'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(completed, isTrue, reason: '低背丈画面でもスキップボタンが正しく操作できる');
+    });
+
+    testWidgets('390x844(縦持ちスマホ)でRenderFlexオーバーフローが発生せずNext/Skipボタンがタップ可能',
+        (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: TutorialOverlay(
+            onComplete: () {},
+            child: const Scaffold(
+              body: Center(child: Text('メインコンテンツ')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('次へ'), findsOneWidget);
+      expect(find.text('スキップ'), findsOneWidget);
+
+      // 最後のステップまで進めてもオーバーフローが発生しないことを確認
+      while (find.text('次へ').evaluate().isNotEmpty) {
+        await tester.tap(find.text('次へ'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      }
+      expect(find.text('はじめる'), findsOneWidget);
+    });
+  });
 }

@@ -9,6 +9,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'package:kotonoha_app/core/constants/app_sizes.dart';
+
 /// チュートリアルステップデータ
 class _TutorialStep {
   /// タイトル
@@ -127,72 +129,130 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
           color: Colors.black54,
           child: SafeArea(
             child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Card(
-                  elevation: 8,
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // アイコン
-                        Icon(
-                          step.icon,
-                          size: 64,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(height: 16),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // 【高さ適応レイアウト】: 横持ちスマホ（例: 844×390）や分割画面など
+                  // 可視高さが低い環境でカードがビューポートを超えてオーバーフローしない
+                  // よう、可視高さに応じてアイコン・余白を縮小し、本文はスクロール可能にする。
+                  // Next/Skipボタンとステップインジケーターは常にスクロール領域外の
+                  // 固定位置に置き、タップ不能にならないようにする。
+                  // 🟡 信頼性レベル: 黄信号 - Codexレビュー指摘（P2）に基づく
+                  final availableHeight = constraints.maxHeight.isFinite
+                      ? constraints.maxHeight
+                      : MediaQuery.sizeOf(context).height;
+                  final isCompactHeight =
+                      availableHeight < AppSizes.compactHeightThreshold;
 
-                        // タイトル
-                        Text(
-                          step.title,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
+                  final outerPadding = isCompactHeight
+                      ? AppSizes.paddingSmall
+                      : AppSizes.paddingLarge;
+                  final innerPadding = isCompactHeight
+                      ? AppSizes.paddingMedium
+                      : AppSizes.paddingLarge;
+                  final iconSize = isCompactHeight ? 36.0 : 64.0;
+                  final smallGap = isCompactHeight
+                      ? AppSizes.paddingXSmall
+                      : AppSizes.paddingMedium;
+                  final largeGap = isCompactHeight
+                      ? AppSizes.paddingSmall
+                      : AppSizes.paddingLarge;
 
-                        // 説明
-                        Text(
-                          step.description,
-                          style: theme.textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
+                  return Padding(
+                    padding: EdgeInsets.all(outerPadding),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: availableHeight * 0.8,
+                      ),
+                      child: Card(
+                        elevation: 8,
+                        child: Padding(
+                          padding: EdgeInsets.all(innerPadding),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // スクロール可能な本文（アイコン・タイトル・説明）
+                              Flexible(
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // アイコン
+                                      Icon(
+                                        step.icon,
+                                        size: iconSize,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                      SizedBox(height: smallGap),
 
-                        // ステップインジケーター
-                        TutorialStepIndicator(
-                          totalSteps: _tutorialSteps.length,
-                          currentStep: _currentStep,
-                        ),
-                        const SizedBox(height: 24),
+                                      // タイトル
+                                      Text(
+                                        step.title,
+                                        style: theme.textTheme.headlineSmall
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      SizedBox(height: smallGap),
 
-                        // ボタン
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // スキップボタン
-                            if (!isLastStep) ...[
-                              TextButton(
-                                onPressed: _skip,
-                                child: const Text('スキップ'),
+                                      // 説明
+                                      Text(
+                                        step.description,
+                                        style: theme.textTheme.bodyLarge,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                              const SizedBox(width: 16),
-                            ],
+                              SizedBox(height: largeGap),
 
-                            // 次へ/はじめるボタン
-                            FilledButton(
-                              onPressed: _nextStep,
-                              child: Text(isLastStep ? 'はじめる' : '次へ'),
-                            ),
-                          ],
+                              // ステップインジケーター（常に可視・固定位置）
+                              TutorialStepIndicator(
+                                totalSteps: _tutorialSteps.length,
+                                currentStep: _currentStep,
+                              ),
+                              SizedBox(height: largeGap),
+
+                              // ボタン（常に可視・固定位置）
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // スキップボタン
+                                  if (!isLastStep) ...[
+                                    TextButton(
+                                      onPressed: _skip,
+                                      style: TextButton.styleFrom(
+                                        minimumSize: const Size(
+                                          AppSizes.minTapTarget,
+                                          AppSizes.minTapTarget,
+                                        ),
+                                      ),
+                                      child: const Text('スキップ'),
+                                    ),
+                                    SizedBox(width: smallGap),
+                                  ],
+
+                                  // 次へ/はじめるボタン
+                                  FilledButton(
+                                    onPressed: _nextStep,
+                                    style: FilledButton.styleFrom(
+                                      minimumSize: const Size(
+                                        AppSizes.minTapTarget,
+                                        AppSizes.minTapTarget,
+                                      ),
+                                    ),
+                                    child: Text(isLastStep ? 'はじめる' : '次へ'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ),

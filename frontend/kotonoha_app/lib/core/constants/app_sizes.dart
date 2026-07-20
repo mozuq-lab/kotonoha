@@ -81,6 +81,11 @@ class AppSizes {
   // 候補がない/入力が空のときは高さ0（行ごと非表示）になる。
   // 候補がある場合のみ、この高さの横スクロール1行を表示する。
   static const double inputCandidateRowHeight = 48.0;
+  // 候補チップ1件あたりの最大幅の絶対上限。
+  // 長文候補（履歴文など）でチップが際限なく伸び、後続候補が実質
+  // 表示されなくなることを防ぐための上限（画面幅の約60%と比較し、
+  // 小さい方が採用される）。
+  static const double candidateChipMaxWidth = 280.0;
 
   // ダイアログボタン (Dialog buttons)
   static const double dialogButtonWidth = 120.0;

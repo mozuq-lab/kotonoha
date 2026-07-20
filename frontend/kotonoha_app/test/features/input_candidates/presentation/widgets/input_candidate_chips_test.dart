@@ -117,5 +117,53 @@ void main() {
       final size = tester.getSize(find.byType(InputCandidateChips));
       expect(size.height, AppSizes.inputCandidateRowHeight);
     });
+
+    testWidgets('長文候補（200文字級）でもチップ幅が上限以下に収まり、後続候補チップが表示される', (tester) async {
+      // 【テスト目的】: Codexレビュー指摘（P2）- 長い履歴文がヒットした際に
+      // チップが全文幅（数千px）に伸びて後続候補が実質届かなくなる問題の回帰防止。
+      // 【前提】: 画面幅を広め(1000px)に取ることで、画面幅の60%(600px)が
+      // AppSizes.candidateChipMaxWidth(280px)を上回り、絶対上限280pxの方が
+      // 採用される状況を作る。これにより後続候補チップの表示スペースも十分確保される。
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final longText = 'あ' * 200;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: InputCandidateChips(
+              candidates: [
+                InputCandidate(text: longText, score: 10),
+                const InputCandidate(text: '後続候補', score: 5),
+              ],
+              onSelect: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // オーバーフロー等のレイアウト例外が発生していないこと
+      expect(tester.takeException(), isNull);
+
+      // 長文候補チップの幅がAppSizes.candidateChipMaxWidth(280px)以下に
+      // 収まっていること（全文幅まで伸びていないこと）
+      final longChipSize = tester.getSize(find.byType(ElevatedButton).first);
+      expect(
+        longChipSize.width,
+        lessThanOrEqualTo(AppSizes.candidateChipMaxWidth),
+      );
+
+      // 後続候補チップがリスト内に存在し、表示できる状態であること
+      expect(find.text('後続候補'), findsOneWidget);
+
+      // Semanticsラベルには全文が保持されていること（省略表示は見た目のみ）
+      expect(find.bySemanticsLabel('候補: $longText'), findsOneWidget);
+    });
   });
 }
