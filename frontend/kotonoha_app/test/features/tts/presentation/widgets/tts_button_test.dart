@@ -586,8 +586,15 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        // 【SDK差異対応】: ElevatedButton.icon()はFlutter 3.38.1系では内部で
+        // 非公開サブクラス（_ElevatedButtonWithIcon extends ElevatedButton）を
+        // 返すため、find.byType(ElevatedButton)（runtimeTypeの完全一致）では
+        // 何も見つからずBad state: No elementで失敗する。Flutter 3.41.5系では
+        // ElevatedButton自身の名前付きコンストラクタとなり問題は起きないが、
+        // どちらのSDKでも安定して動作するようbySubtype（is判定・サブタイプ許容）
+        // を使用する。
         final button =
-            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+            tester.widget<ElevatedButton>(find.bySubtype<ElevatedButton>());
         final style = button.style!;
         final background = style.backgroundColor!.resolve(<WidgetState>{})!;
         final foreground = style.foregroundColor!.resolve(<WidgetState>{})!;
