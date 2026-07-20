@@ -5,7 +5,7 @@
 /// 【TDD Greenフェーズ】: FavoritesScreen本実装
 ///
 /// 信頼性レベル: 🔵 青信号（要件定義書ベース）
-/// 関連要件: FR-064-001〜015, AC-064-001〜008, REQ-703
+/// 関連要件: FR-064-001〜015, AC-064-001〜008, REQ-703, REQ-704, REQ-2002
 library;
 
 import 'package:flutter/material.dart';
@@ -26,8 +26,8 @@ import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 /// 機能:
 /// - お気に入り一覧表示（displayOrder昇順）
 /// - お気に入りタップで再読み上げ
-/// - 個別削除機能
-/// - 全削除機能
+/// - 個別削除機能（確認ダイアログ＋Undo）
+/// - 全削除機能（確認ダイアログ＋Undo）
 /// - 空状態表示
 /// - 並び替え機能（REQ-703）
 ///
@@ -38,6 +38,7 @@ import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 /// - NFR-064-001: 100件を1秒以内に表示
 /// - NFR-064-005: タップターゲット44px以上
 /// - REQ-703: 並び替え機能
+/// - REQ-704 / REQ-2002: 個別削除時の確認ダイアログ表示
 class FavoritesScreen extends ConsumerStatefulWidget {
   /// お気に入り画面を作成する。
   const FavoritesScreen({super.key});
@@ -128,7 +129,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           key: Key('favorite_item_card_${favorite.id}'),
           favorite: favorite,
           onTap: () => _onFavoriteTap(favorite.content),
-          onDelete: () => _deleteFavoriteWithUndo(context, favorite.id),
+          onDelete: () => _showDeleteDialog(context, favorite.id),
         );
       },
     );
@@ -199,7 +200,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () => _deleteFavoriteWithUndo(context, favorite.id),
+              onPressed: () => _showDeleteDialog(context, favorite.id),
               tooltip: FavoriteUIConstants.deleteTooltip,
             ),
           ],
@@ -244,11 +245,34 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     ttsNotifier.speak(content);
   }
 
-  /// 個別削除処理（確認なし・即削除 + Undo）
+  /// 個別削除確認ダイアログを表示
   ///
-  /// 【改善】: 確認ダイアログは「はい」誤タップ時に復元できず、
-  /// タップ数も増えるため廃止した。即削除のうえ、SnackBarの
-  /// 「元に戻す」操作（8秒間）で誤操作から復元できるようにする。
+  /// REQ-704 / REQ-2002: お気に入り削除時は確認ダイアログを表示しなければ
+  /// ならない（🔵 要件定義書ベース）。「削除」タップで確認後に削除を実行し、
+  /// 追加の安全策としてUndo SnackBarも表示する（確認ダイアログ＋Undoの
+  /// 二段構え）。
+  void _showDeleteDialog(BuildContext context, String id) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false, // REQ-5002: 誤操作防止
+      builder: (BuildContext dialogContext) {
+        return _ConfirmDialog(
+          title: FavoriteUIConstants.confirmDialogTitle,
+          content: FavoriteUIConstants.deleteConfirmMessage,
+          onConfirm: () {
+            Navigator.of(dialogContext).pop();
+            _deleteFavoriteWithUndo(context, id);
+          },
+          onCancel: () => Navigator.of(dialogContext).pop(),
+        );
+      },
+    );
+  }
+
+  /// 個別削除処理（確認ダイアログの「削除」タップ後に実行）+ Undo
+  ///
+  /// 確認ダイアログ通過後に削除を実行し、さらにSnackBarの「元に戻す」
+  /// 操作（8秒間）でも復元できるようにする（誤操作からの二重の安全策）。
   void _deleteFavoriteWithUndo(BuildContext context, String id) {
     ref.read(favoriteProvider.notifier).deleteFavorite(id);
     showUndoSnackBar(

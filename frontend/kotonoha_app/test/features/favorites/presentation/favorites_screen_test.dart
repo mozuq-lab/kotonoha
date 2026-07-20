@@ -466,19 +466,20 @@ void main() {
     // 1.4 削除機能テスト
     // =========================================================================
     group('削除機能', () {
-      /// TC-064-009: 個別削除ボタンをタップすると確認ダイアログなしで即削除され、
-      /// 「元に戻す」操作付きSnackBarが表示される 🔵
+      /// TC-064-009: 個別削除ボタンをタップすると確認ダイアログが表示され、
+      /// 「削除」をタップすると削除が実行されて「元に戻す」操作付き
+      /// SnackBarが表示される 🔵
       ///
-      /// 【改善】: 個別削除の確認ダイアログは、誤タップで「はい」を選んでしまうと
-      /// 復元できない・タップ数が増えるという問題があったため廃止した。
-      /// 即削除のうえ、SnackBarの「元に戻す」操作（8秒間）で誤操作から
-      /// 復元できるようにする（全削除は影響が大きいため確認ダイアログを維持）。
+      /// 【P1修正】: REQ-704/REQ-2002はお気に入り削除時の確認ダイアログ表示を
+      /// 明記しているため、1タップ即削除＋Undoのみへの置換は仕様後退だった。
+      /// 確認ダイアログを維持しつつ、削除完了後の追加安全策としてUndo
+      /// SnackBarも表示する（確認ダイアログ＋Undoの二段構え）。
       ///
       /// 優先度: P0 必須
-      /// 関連要件: FR-064-007, FR-064-008(改訂), FR-064-014, AC-064-004(改訂)
-      /// 検証内容: 個別削除の即時実行とUndo SnackBarの表示
+      /// 関連要件: FR-064-007, FR-064-008, FR-064-014, AC-064-004, REQ-704, REQ-2002
+      /// 検証内容: 個別削除確認ダイアログの表示、削除実行、Undo SnackBarの表示
       testWidgets(
-          'TC-064-009: お気に入り項目の削除ボタンをタップすると確認ダイアログなしで即削除され、元に戻すSnackBarが表示される',
+          'TC-064-009: お気に入り項目の削除ボタンをタップすると確認ダイアログが表示され、「削除」で削除+元に戻すSnackBarが表示される',
           (WidgetTester tester) async {
         // Given: お気に入りデータを準備する
         final testFavorite = createTestFavorite(
@@ -503,16 +504,37 @@ void main() {
         await tester.tap(find.byIcon(Icons.delete));
         await tester.pumpAndSettle();
 
-        // Then: 確認ダイアログは表示されず、即座に削除される
+        // Then: 確認ダイアログが表示される（REQ-704 / REQ-2002）
+        expect(
+          find.byType(AlertDialog),
+          findsOneWidget,
+          reason: '個別削除時に確認ダイアログが表示される必要がある（REQ-704/REQ-2002）',
+        );
+        expect(
+          find.text('このお気に入りを削除しますか?'),
+          findsOneWidget,
+          reason: '削除確認メッセージが表示される必要がある',
+        );
+        expect(
+          find.text('こんにちは'),
+          findsOneWidget,
+          reason: '確認ダイアログ表示中はまだ削除されていない必要がある',
+        );
+
+        // When: 「削除」ボタンをタップする
+        await tester.tap(find.widgetWithText(TextButton, '削除'));
+        await tester.pumpAndSettle();
+
+        // Then: ダイアログが閉じ、対象のお気に入りが削除される
         expect(
           find.byType(AlertDialog),
           findsNothing,
-          reason: '個別削除は確認ダイアログなしで即実行される必要がある',
+          reason: '「削除」タップ後は確認ダイアログが閉じる必要がある',
         );
         expect(
           find.text('こんにちは'),
           findsNothing,
-          reason: '削除対象のお気に入りが即座にリストから消える必要がある',
+          reason: '削除対象のお気に入りがリストから消える必要がある',
         );
 
         // 「削除しました」＋「元に戻す」のSnackBarが表示される
@@ -528,7 +550,99 @@ void main() {
         );
       });
 
-      /// TC-064-009-UNDO: 「元に戻す」タップで削除したお気に入りが復元される 🟡
+      /// TC-064-009-CANCEL: 確認ダイアログで「キャンセル」をタップすると削除されない 🔵
+      ///
+      /// 関連要件: REQ-704, REQ-2002
+      testWidgets('TC-064-009-CANCEL: 個別削除確認ダイアログで「キャンセル」をタップすると削除されない',
+          (WidgetTester tester) async {
+        final testFavorite = createTestFavorite(
+          id: 'test_1',
+          content: 'こんにちは',
+          displayOrder: 0,
+        );
+        final mockState = FavoriteState(favorites: [testFavorite]);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              favoriteProviderOverride(mockState),
+            ],
+            child: const MaterialApp(
+              home: FavoritesScreen(),
+            ),
+          ),
+        );
+
+        // When: 削除ボタンをタップして確認ダイアログを開き、「キャンセル」をタップする
+        await tester.tap(find.byIcon(Icons.delete));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(TextButton, 'キャンセル'));
+        await tester.pumpAndSettle();
+
+        // Then: ダイアログが閉じ、お気に入りは削除されない
+        expect(
+          find.byType(AlertDialog),
+          findsNothing,
+          reason: 'キャンセル後は確認ダイアログが閉じる必要がある',
+        );
+        expect(
+          find.text('こんにちは'),
+          findsOneWidget,
+          reason: 'キャンセルした場合はお気に入りが削除されない必要がある',
+        );
+        expect(
+          find.text('削除しました'),
+          findsNothing,
+          reason: 'キャンセルした場合はUndo SnackBarも表示されない必要がある',
+        );
+      });
+
+      /// TC-064-009-BARRIER: 個別削除確認ダイアログ外タップで閉じない 🔵
+      ///
+      /// 関連要件: REQ-704, REQ-2002, REQ-5002（誤操作防止）
+      testWidgets('TC-064-009-BARRIER: 個別削除確認ダイアログ外をタップしてもダイアログが閉じない',
+          (WidgetTester tester) async {
+        final testFavorite = createTestFavorite(
+          id: 'test_1',
+          content: 'こんにちは',
+          displayOrder: 0,
+        );
+        final mockState = FavoriteState(favorites: [testFavorite]);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              favoriteProviderOverride(mockState),
+            ],
+            child: const MaterialApp(
+              home: FavoritesScreen(),
+            ),
+          ),
+        );
+
+        // When: 削除ボタンをタップして確認ダイアログを開く
+        await tester.tap(find.byIcon(Icons.delete));
+        await tester.pumpAndSettle();
+
+        // ダイアログ外（バリア部分）をタップする
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+
+        // Then: ダイアログが閉じず、引き続き表示される
+        expect(
+          find.byType(AlertDialog),
+          findsOneWidget,
+          reason: 'バリアタップではダイアログが閉じない必要がある（誤操作防止）',
+        );
+        expect(
+          find.text('こんにちは'),
+          findsOneWidget,
+          reason: 'ダイアログ表示中はお気に入りが削除されない必要がある',
+        );
+      });
+
+      /// TC-064-009-UNDO: 確認ダイアログで削除後、「元に戻す」タップで
+      /// 削除したお気に入りが復元される 🟡
       testWidgets('TC-064-009-UNDO: 削除後に「元に戻す」をタップするとお気に入りが復元される',
           (WidgetTester tester) async {
         final testFavorite = createTestFavorite(
@@ -549,7 +663,10 @@ void main() {
           ),
         );
 
+        // 確認ダイアログを経て削除する
         await tester.tap(find.byIcon(Icons.delete));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(TextButton, '削除'));
         await tester.pumpAndSettle();
 
         expect(find.text('こんにちは'), findsNothing);
@@ -567,9 +684,6 @@ void main() {
       });
 
       /// TC-064-012: 全削除確認ダイアログ外タップで閉じない 🔵
-      ///
-      /// 【改善】: 個別削除は確認ダイアログを廃止（即削除+Undo）したため、
-      /// このテストは影響の大きい全削除ダイアログのバリアタップ検証に改訂した。
       ///
       /// 優先度: P0 必須
       /// 関連要件: FR-064-010, REQ-5002
