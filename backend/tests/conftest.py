@@ -45,9 +45,8 @@ def _alembic_schema():
     【注意】: test_engine フィクスチャが依存し、セッション全体で1回だけ実行される
     🔵 この内容は要件定義書（line 60-69, line 169-183）に基づく
     """
-    from alembic.config import Config
-
     from alembic import command
+    from alembic.config import Config
     from app.core.config import settings
 
     # 【URL制御】: env.py は settings.DATABASE_URL_SYNC（POSTGRES_* から構築）を参照する。
@@ -182,15 +181,21 @@ async def test_client_with_db(test_engine, test_session_maker):
     テスト用データベースを使用するFastAPIテストクライアントを作成
 
     【テスト目的】: テスト用データベースに接続するFastAPIアプリケーションを提供
-    【テスト内容】: get_db_session依存性をオーバーライドし、テスト用DBセッションを使用
-    【期待される動作】: API呼び出しがテスト用データベースに接続する
-    【実装方針】: FastAPIの依存性オーバーライド機能を使用
+    【テスト内容】: get_db_session・get_session_factory依存性をオーバーライドし、
+                    テスト用DBセッション／セッションファクトリを使用
+    【期待される動作】: API呼び出し（および応答後に実行されるバックグラウンドタスクの
+                        ログ書き込み）がテスト用データベースに接続する
+    【実装方針】: FastAPIの依存性オーバーライド機能を使用。AI変換エンドポイントの
+                  ログ書き込みはBackgroundTasks経由でget_session_factoryが返す
+                  ファクトリから独立したセッションを取得するため、get_db_sessionだけ
+                  でなくget_session_factoryも本番用（本物のDB）ではなくtest_session_maker
+                  を返すようにオーバーライドする。
     🔵 FastAPI公式ドキュメント、テストパターンに基づく
 
     Yields:
         FastAPI: テスト用データベースに接続するFastAPIアプリケーション
     """
-    from app.api.deps import get_db_session
+    from app.api.deps import get_db_session, get_session_factory
     from app.db.session import get_db
     from app.main import app
 
@@ -212,6 +217,10 @@ async def test_client_with_db(test_engine, test_session_maker):
     # get_db_sessionとget_db両方をオーバーライド（healthエンドポイント対応）
     app.dependency_overrides[get_db_session] = override_get_db
     app.dependency_overrides[get_db] = override_get_db
+
+    # 【依存性オーバーライド】: バックグラウンドタスク（AI変換ログ書き込み）が
+    # 独立したセッションを取得する際も、本番用DBではなくテスト用DBに向ける
+    app.dependency_overrides[get_session_factory] = lambda: test_session_maker
 
     yield app
 

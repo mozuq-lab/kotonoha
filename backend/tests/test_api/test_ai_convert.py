@@ -10,7 +10,9 @@ TASK-0027: AI変換エンドポイント実装（POST /api/v1/ai/convert）
 🔵 TASK-0027-testcases.md に基づく実装
 """
 
+import asyncio
 import hashlib
+import time
 import uuid
 from unittest.mock import AsyncMock, patch
 
@@ -1086,3 +1088,141 @@ class TestAIConvertReliability:
         # 【結果検証】: 実際に使用したプロバイダー（openai）が記録されていることを確認
         assert log is not None
         assert log.ai_provider == "openai"
+
+
+# ================================================================================
+# カテゴリG: バックグラウンドログ書き込みテストケース
+# （DBログを応答経路から分離するBackgroundTasks化に関するテスト）
+# ================================================================================
+
+
+class TestAIConvertBackgroundLogging:
+    """BackgroundTasks経由のログ書き込みに関するテスト"""
+
+    @pytest.mark.asyncio
+    async def test_tc414_セッションファクトリが例外を送出しても成功応答が返る(self):
+        """
+        【テスト目的】: バックグラウンドタスクが独立したセッションを取得する際に
+                        session_factory自体（呼び出し）が例外を送出しても、
+                        既に返却済みのAI変換成功応答には一切影響しないことを確認
+        【テスト内容】: get_session_factory依存性をオーバーライドし、呼び出し時に
+                        例外を送出するファクトリを返すようにする
+        【期待される動作】: 200 OKとAI変換結果が返される
+                            （ログ書き込み失敗は警告ログのみで握りつぶす）
+        """
+        from app.api.deps import get_session_factory
+
+        def _broken_session_factory():
+            raise RuntimeError("cannot open independent database session")
+
+        request_body = {
+            "input_text": "セッションファクトリ例外テスト",
+            "politeness_level": "normal",
+        }
+
+        app.dependency_overrides[get_session_factory] = lambda: _broken_session_factory
+        try:
+            with patch("app.utils.ai_client.ai_client") as mock_ai_client:
+                mock_ai_client.convert_text = AsyncMock(return_value=("変換結果", 900))
+
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as client:
+                    response = await client.post("/api/v1/ai/convert", json=request_body)
+
+                    # 【結果検証】: session_factory自体が壊れていても成功応答が返ることを確認
+                    assert response.status_code == 200
+                    response_json = response.json()
+                    assert response_json["converted_text"] == "変換結果"
+        finally:
+            app.dependency_overrides.pop(get_session_factory, None)
+
+    @pytest.mark.asyncio
+    async def test_tc415_ログ書き込みがハングしても応答はタイムアウトで打ち切られる(self):
+        """
+        【テスト目的】: バックグラウンドのログ書き込みが長時間ハングする状況でも、
+                        asyncio.wait_forによる短いタイムアウトで打ち切られ、
+                        接続プール待ちやcommitのハングが無期限に続かないことを確認
+        【テスト内容】: create_conversion_logをタイムアウト設定より十分長くsleepする
+                        AsyncMockに差し替え、BACKGROUND_LOG_TIMEOUT_SECONDSを短く
+                        パッチして検証を高速化する
+        【期待される動作】: 200 OKが返り、かつ全体の所要時間がタイムアウト値近辺に収まる
+                            （ハングの全時間である5秒を待たない）
+        """
+        import app.api.v1.endpoints.ai as ai_module
+
+        request_body = {"input_text": "ログハングテスト", "politeness_level": "normal"}
+
+        async def _hanging_create_log(*args, **kwargs):
+            await asyncio.sleep(5)
+
+        with (
+            patch("app.utils.ai_client.ai_client") as mock_ai_client,
+            patch.object(ai_module, "BACKGROUND_LOG_TIMEOUT_SECONDS", 0.1),
+            patch(
+                "app.api.v1.endpoints.ai.create_conversion_log",
+                new_callable=AsyncMock,
+                side_effect=_hanging_create_log,
+            ),
+        ):
+            mock_ai_client.convert_text = AsyncMock(return_value=("変換結果", 900))
+
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                start = time.monotonic()
+                response = await client.post("/api/v1/ai/convert", json=request_body)
+                elapsed = time.monotonic() - start
+
+                # 【結果検証】: ログ書き込みがハングしても成功応答が返ることを確認
+                assert response.status_code == 200
+                response_json = response.json()
+                assert response_json["converted_text"] == "変換結果"
+
+                # 【結果検証】: タイムアウト（0.1秒）で打ち切られ、
+                # ハングの全時間（5秒）を待たないことを確認
+                assert (
+                    elapsed < 2.0
+                ), f"Expected background timeout to cut off the hang, took {elapsed}s"
+
+    @pytest.mark.asyncio
+    async def test_tc416_エラー応答時にもバックグラウンドでエラーログが記録される(
+        self, test_client_with_db, db_session: AsyncSession
+    ):
+        """
+        【テスト目的】: AIプロバイダーエラー（503）を返すパスでも、BackgroundTasks経由の
+                        エラーログ書き込みが確実に実行されることを確認。
+                        本エンドポイントはHTTPExceptionを送出せず常にJSONResponseを
+                        返すため、エラー応答時でもBackgroundTasksが動作する設計になっている。
+        【テスト内容】: AIClientがAIProviderExceptionを送出する状況を再現し、
+                        応答後にAIConversionLog（is_success=False）が作成されることを検証
+        【期待される動作】: 503 Service Unavailableかつエラーログがis_success=Falseで記録される
+        """
+        input_text = "バックグラウンドエラーログテスト_TC416"
+        expected_hash = hashlib.sha256(input_text.encode("utf-8")).hexdigest()
+        request_body = {"input_text": input_text, "politeness_level": "normal"}
+
+        with patch("app.utils.ai_client.ai_client") as mock_ai_client:
+            mock_ai_client.convert_text = AsyncMock(
+                side_effect=AIProviderException("Anthropic API key is not configured")
+            )
+
+            async with AsyncClient(
+                transport=ASGITransport(app=test_client_with_db), base_url="http://test"
+            ) as client:
+                response = await client.post("/api/v1/ai/convert", json=request_body)
+
+                assert response.status_code == 503
+
+        # 【結果検証】: バックグラウンドタスク完了後にエラーログが記録されていることを確認
+        result = await db_session.execute(
+            select(AIConversionLog)
+            .where(AIConversionLog.input_text_hash == expected_hash)
+            .order_by(AIConversionLog.created_at.desc())
+        )
+        log = result.scalars().first()
+
+        assert log is not None
+        assert log.is_success is False
+        assert log.error_message is not None
+        assert "Anthropic API key is not configured" in log.error_message

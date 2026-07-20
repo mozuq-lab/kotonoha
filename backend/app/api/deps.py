@@ -21,11 +21,11 @@ from collections.abc import AsyncGenerator
 
 from fastapi import HTTPException, Security, status
 from fastapi.security import APIKeyHeader
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import settings
 from app.core.security import is_valid_api_key
-from app.db.session import get_db
+from app.db.session import async_session_maker, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,35 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     async for session in get_db():
         yield session
+
+
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    """独立した短命セッションを生成するファクトリを取得する依存性関数。
+
+    バックグラウンドタスク（FastAPIの`BackgroundTasks`）内でDB書き込みを行う場合、
+    リクエストスコープのセッション（`get_db_session`が提供するもの）は応答返却後に
+    既にクローズされている可能性があるため再利用できない。この関数が返す
+    ファクトリを呼び出す都度、新規セッションを開いて使い終わったら明示的に
+    クローズすること。
+
+    テストでは本関数をFastAPIの依存性オーバーライド機構でオーバーライドし、
+    テスト用データベースにバックグラウンド書き込みを向けられるようにする。
+
+    Returns:
+        async_sessionmaker[AsyncSession]: 新規セッションを生成するファクトリ
+
+    Example:
+        バックグラウンドタスクでの使用例::
+
+            async def write_log(session_factory: async_sessionmaker[AsyncSession]) -> None:
+                session = session_factory()
+                try:
+                    ...
+                    await session.commit()
+                finally:
+                    await session.close()
+    """
+    return async_session_maker
 
 
 async def require_api_key(
