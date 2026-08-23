@@ -145,10 +145,76 @@ jobs:
       - name: Run code generation
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
-      - name: Run integration tests (Chrome headless)
+      - name: Setup ChromeDriver
+        uses: nanasess/setup-chromedriver@v2
+
+      - name: Start ChromeDriver
         run: |
+          set -euo pipefail
+          # nohup でステップのシェル終了後もプロセスを残す。
+          # `chromedriver &` だけではステップ終了時に道連れになり得る。
+          # ポート4444は `flutter drive --driver-port` の既定値と一致させている。
+          nohup chromedriver --port=4444 > /tmp/chromedriver.log 2>&1 &
+          # listen 開始前に flutter drive が接続しに行く race を防ぐ。
+          # nc はrunnerに存在しない可能性があるため、chromedriver自身の
+          # /status エンドポイントを叩いて「起動済み かつ 応答可能」を確認する。
+          for _ in $(seq 1 30); do
+            if curl -sf http://localhost:4444/status > /dev/null; then
+              echo "ChromeDriver is ready on port 4444"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::ChromeDriver did not become ready on port 4444 within 30s"
+          cat /tmp/chromedriver.log || true
+          exit 1
+
+      - name: Run integration tests (headless web)
+        run: |
+          set -euo pipefail
           flutter config --enable-web
-          flutter test integration_test/ -d chrome --headless || echo "Integration tests completed"
+
+          # NOTE: `flutter test integration_test/ -d chrome` は web では未サポート。
+          # web では flutter drive + chromedriver 経由で1ターゲットずつ実行する。
+          # 失敗はジョブ失敗として扱う（`|| echo` による握り潰しは禁止）。
+          #
+          # 【CI対象外】以下は CI では実行しない。無言スキップにならないよう
+          # 除外理由と件数をログに出す。
+          # - ai_conversion_e2e_test.dart: AI変換APIとAPIキーが必要
+          # - performance_profiling_e2e_test.dart: 実性能測定でCIでは不安定
+          # - integration_test/device_test/: 実機前提（そもそもglob対象外）
+          EXCLUDED="ai_conversion_e2e_test.dart performance_profiling_e2e_test.dart"
+
+          targets=()
+          for target in integration_test/*_test.dart; do
+            base=$(basename "$target")
+            skip=""
+            for excluded in $EXCLUDED; do
+              if [ "$base" = "$excluded" ]; then skip="yes"; fi
+            done
+            if [ -n "$skip" ]; then
+              echo "::notice::skipped (CI対象外): $target"
+            else
+              targets+=("$target")
+            fi
+          done
+          echo "Running ${#targets[@]} integration test target(s); skipped $(echo $EXCLUDED | wc -w | tr -d ' ')"
+
+          for target in "${targets[@]}"; do
+            echo "::group::$target"
+            # 失敗時も endgroup を出してログの折りたたみが残らないようにする
+            if ! flutter drive \
+              --driver=test_driver/integration_test.dart \
+              --target="$target" \
+              -d web-server \
+              --browser-name=chrome \
+              --headless; then
+              echo "::endgroup::"
+              echo "::error::Integration test failed: $target"
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
 
   build-web:
     name: Build Web
@@ -274,7 +340,9 @@ jobs:
   deploy-web:
     name: Deploy Web to Vercel
     runs-on: ubuntu-latest
-    needs: [build-web, integration-test]
+    # NOTE: integration-test は現状CIでの実績がないため、まだデプロイの前提条件に
+    # しない（塞いでしまうため）。数回グリーンを確認できたら needs に追加すること。
+    needs: [build-web]
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
