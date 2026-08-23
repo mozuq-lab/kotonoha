@@ -38,7 +38,21 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-kotonoha_user}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@postgres:5432/${POSTGRES_DB:-kotonoha_db}
       TEST_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-kotonoha_user}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@postgres:5432/kotonoha_test
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
-      API_KEYS: ${API_KEYS:-}
+      #
+      # 【アプリ設定はここに書かないこと】
+      # backend/.env は ./backend:/app のマウント経由でコンテナ内の /app/.env となり、
+      # pydantic-settings（config.py の env_file=".env"）が読み込む。
+      # 一方 compose の environment は「OS環境変数」として渡るため .env より優先される。
+      # ここに AI キーやレート制限値を書くと、backend/.env に設定していても
+      # compose 側のデフォルト（空文字を含む）が勝ち、静かに上書きされる。
+      # 例: ANTHROPIC_API_KEY を書くと、未設定時に空文字が注入されAI変換が壊れる。
+      #
+      # そのため、ここに置くのはコンテナ間接続に必要な infra 層の値だけに限定する。
+      # アプリ設定（AI/レート制限/CORS/ログ/API_KEYS等）は backend/.env で管理すること。
+      #
+      # SECRET_KEY は `:?` で必須化しているため空文字上書きは起こらない。
+      # `${VAR:-}` 形式で書くと未設定時に空文字が注入され、backend/.env の値を
+      # 打ち消してしまうので使わないこと。
     ports:
       - "8000:8000"
     volumes:

@@ -79,10 +79,20 @@ cd kotonoha
 
 ### 2. 環境変数設定
 
+設定ファイルは2つあり、**役割が分かれています**。
+
 ```bash
+# ルート .env: docker-compose の変数展開に使う（DB接続情報・SECRET_KEY 等のinfra層）
 cp .env.example .env
-# .env ファイルを編集（DB接続情報、SECRET_KEY等）
+
+# backend/.env: アプリ設定（AI APIキー・API_KEYS・レート制限・CORS・ログ等）
+cp backend/.env.example backend/.env
 ```
+
+`docker-compose.yml` の `environment` に書いた値はOS環境変数として渡り、
+pydantic-settings では `backend/.env` より**優先**されます。そのため
+アプリ設定は compose に書かず `backend/.env` で管理する方針です。
+ルート `.env` にアプリ設定を書いてもコンテナには渡りません。
 
 ### 3. Docker環境起動
 
@@ -214,19 +224,32 @@ flutter test --coverage          # カバレッジ測定
 
 `.env.example` をコピーして `.env` を作成し、以下の環境変数を設定してください:
 
+**ルート `.env`**（docker-compose の変数展開・Flutterビルド）
+
 | 変数名 | 説明 | デフォルト値 |
 |--------|------|-------------|
-| `POSTGRES_USER` | PostgreSQLユーザー名 | - |
-| `POSTGRES_PASSWORD` | PostgreSQLパスワード | - |
-| `POSTGRES_DB` | データベース名 | - |
-| `POSTGRES_HOST` | データベースホスト | localhost |
+| `POSTGRES_USER` | PostgreSQLユーザー名 | kotonoha_user |
+| `POSTGRES_PASSWORD` | PostgreSQLパスワード（未設定だと起動を拒否） | - |
+| `POSTGRES_DB` | データベース名 | kotonoha_db |
 | `POSTGRES_PORT` | データベースポート | 5432 |
-| `SECRET_KEY` | JWT認証用シークレットキー | - |
-| `API_KEYS` | AI変換APIで許可する端末APIキー（カンマ区切り） | 空 |
+| `SECRET_KEY` | バックエンドの署名鍵（未設定だと起動を拒否） | - |
 | `API_BASE_URL` | Flutterビルド時に埋め込むバックエンドURL | http://localhost:8000 |
 | `AI_API_KEY` | Flutterビルド時に埋め込む端末APIキー。`API_KEYS` のいずれかを指定 | 空 |
-| `OPENAI_API_KEY` | OpenAI APIキー（オプション） | - |
+
+**`backend/.env`**（バックエンドのアプリ設定。主なもののみ。全項目は `backend/.env.example` 参照）
+
+| 変数名 | 説明 | デフォルト値 |
+|--------|------|-------------|
 | `ENVIRONMENT` | 環境設定 | development |
+| `API_KEYS` | AI変換APIで許可する端末APIキー（カンマ区切り） | 空 |
+| `ANTHROPIC_API_KEY` | Anthropic APIキー（オプション） | - |
+| `OPENAI_API_KEY` | OpenAI APIキー（オプション） | - |
+| `TRUSTED_PROXY_COUNT` | レート制限で信頼するプロキシ段数 | 0 |
+| `CORS_ORIGINS` | 許可するオリジン（カンマ区切り） | localhost:3000,5173,8080 |
+
+> **既存環境からの移行**: 以前はルート `.env` にアプリ設定を書く構成でした。
+> これらは docker-compose 経由で渡らなくなったため `backend/.env` へ移してください。
+> 移していない場合、APIキー認証は無効（development では認証スキップ）のまま動作します。
 
 `AI_API_KEY` はクライアントアプリに埋め込まれるため、強い秘密情報としては扱えません。
 匿名利用による過剰リクエストを抑える端末キーとして、リリースごとにローテーションできる値を指定してください。

@@ -383,11 +383,13 @@ kotonoha/
 git clone <repository-url>
 cd kotonoha
 
-# 環境変数設定（バックエンド）
-cd backend
+# 環境変数設定
+# ルート .env: docker-compose の変数展開とFlutterビルド用
 cp .env.example .env
-# .env ファイルを編集（DB接続情報等）
-cd ..
+
+# backend/.env: バックエンドのアプリ設定（AIキー・API_KEYS・レート制限等）
+# compose の environment はこれより優先されるため、アプリ設定はこちらに書く
+cp backend/.env.example backend/.env
 ```
 
 ### 2. Docker環境起動
@@ -485,6 +487,7 @@ pytest tests/test_api/   # 特定のテストのみ
 cd mobile
 flutter test                      # 単体テスト
 flutter test --coverage          # カバレッジ測定
+# web は flutter drive 経由（integration_test/README.md 参照）
 flutter test integration_test/   # 統合テスト
 ```
 
