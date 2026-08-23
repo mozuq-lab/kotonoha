@@ -1,49 +1,44 @@
 /// home_screen: AI変換結果ダイアログ表示メソッド内でのpop禁止を保証する回帰テスト
 ///
 /// 【テスト目的】: `_showConversionResult` の中でNavigatorのpopが行われていないことを
-/// ソースレベルで保証する
+/// 保証する
 ///
 /// 【背景（実障害）】:
 /// showDialogはroot Navigatorにダイアログを積む一方、呼び出し元contextは
 /// go_routerのShellRoute配下branch Navigatorに属する。呼び出し元contextで
 /// popすると、ダイアログではなく背後のページがpopされ、
-/// リリースビルドで画面が空白になり再操作不能になる。
+/// リリースビルドで画面が空白になり再操作不能になっていた。
 /// ダイアログのクローズは AIConversionResultDialog.show() 内部の
 /// dialogContext が担当するため、このメソッドはpopしてはならない。
 ///
 /// 【検査方針】:
-/// `_showConversionResult` メソッド本体に pop / popUntil / maybePop が
-/// 「一切現れないこと」だけを見る。
+/// analyzer でDartの構文木を解析し、`_showConversionResult` の本体に
+/// pop / popUntil / maybePop の呼び出しが一切現れないことを検証する。
 ///
-/// レシーバ（`Navigator.of(context)` なのか `context` なのか等）を解析せず、
+/// レシーバ（`Navigator.of(context)` なのか `context` なのか等）は問わない。
 /// メソッド内では全面禁止とすることで、`Navigator.pop(context)`・
 /// `context.pop()`・`GoRouter.of(context).pop()`・変数経由・カスケード・
-/// 総称呼び出し `pop<T>()` など、レシーバの書き方を問わず検出できる。
-/// レシーバ解析に由来する網羅漏れは発生しない。
+/// 総称呼び出し `pop<T>()` など記法を問わず検出できる。
 ///
-/// ダイアログ自身を閉じる正当なpop（`Navigator.of(dialogContext).pop()` 等）は
-/// AIConversionResultDialog.show() の内部と、home_screen内の別ダイアログに
-/// 存在するが、いずれもこのメソッドの外なので影響しない。
+/// 構文木を使うため、コメント・文字列リテラル・文字列補間・波括弧の対応は
+/// パーサが正しく扱う。自前の字句解析は不要。
 ///
 /// 【このテストの限界】:
-/// - ソース検査であり実行時の挙動は検証しない
+/// - 静的解析であり実行時の挙動は検証しない
 ///   （実挙動は ai_conversion_result_dialog_shell_route_test.dart が担当）
 /// - コールバック本体を別メソッドへ切り出し、そのメソッド内でpopする形は
 ///   検出できない。ダイアログ表示と同じメソッドに処理を保つこと
-/// - `_showConversionResult` を改名・移動・式本体化（`=> `）した場合や、
-///   総称メソッド・プレフィクス付き型・レコード型戻り値に変更した場合は
-///   抽出できず、健全性チェックで明示的に落ちる（偽陰性にはならない）
-/// - 行頭の `else` など一部のキーワードは戻り値型として吸われうるため、
-///   宣言ではなく呼び出し箇所に先行マッチして別ブロックを抽出することがある。
-///   その場合も健全性チェックが拾って落ちる
-/// - `pop` を実行しない tear-off（`onTap: nav.pop,`）は検出しない（実害なし）
-/// - 未終端の文字列リテラルがあると以降が空白化される（コンパイル不能なソースのみ）
+/// - tear-off（`onTap: nav.pop`）は呼び出しではないため検出しない（実害なし）
+/// - `_showConversionResult` を改名・移動した場合は健全性チェックで明示的に落ちる
 ///
 /// 🔵 信頼性レベル: 青信号 - P0障害（ShellRoute配下でのダイアログpop）の回帰防止
 library;
 
 import 'dart:io';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// 対象ソースのパス（パッケージルートからの相対）。
@@ -55,169 +50,41 @@ const String kHomeScreenPath =
 /// 検査対象のメソッド名。
 const String kTargetMethod = '_showConversionResult';
 
-/// Dartソースを検査可能な形に正規化する。
-///
-/// - コメント（行/ブロック/doc）を空白化する
-/// - 文字列リテラルの**中身**を空白化する（引用符と補間 `${...}` のコードは残す）
-///
-/// 文字列を素通しすると、`"http://x//y"` のようなURLの `//` を行コメント開始と
-/// 誤認して以降のコードを消してしまい、実在するpopを見逃す（偽陰性）。
-/// 逆に文字列の中身を残すと `'}'` のような閉じ波括弧でブレース計数が壊れる。
-/// そのため「引用符は残し中身だけ空白化」する。
-///
-/// 補間の内側は実際に実行されるコードなので、コードとして通す
-/// （`'${list.pop()}'` のpopは検出対象になる）。
-///
-/// 改行は原則として保持する（ただし行継続のバックスラッシュ＋改行は
-/// エスケープとして2文字まとめて空白化するため、その1箇所は詰まる）。
-String sanitizeDartSource(String source) {
-  final out = StringBuffer();
-  // 文字列フレームのスタック。補間 `${...}` の内側は「コード」として扱うため、
-  // 文字列に入るたび push し、補間を抜けたら再開する。
-  final stringStack = <({String quote, bool raw, int braceDepth})>[];
-  var i = 0;
+/// 禁止するNavigator操作。
+const Set<String> kForbiddenCalls = {'pop', 'popUntil', 'maybePop'};
 
-  bool inString() => stringStack.isNotEmpty && stringStack.last.braceDepth == 0;
+/// 指定名のメソッド宣言を探す。
+class _MethodDeclarationFinder extends RecursiveAstVisitor<void> {
+  _MethodDeclarationFinder(this.methodName);
 
-  while (i < source.length) {
-    if (inString()) {
-      final frame = stringStack.last;
-      if (!frame.raw && source[i] == r'\') {
-        out.write('  ');
-        i += 2;
-        continue;
-      }
-      if (source.startsWith(frame.quote, i)) {
-        out.write(frame.quote);
-        i += frame.quote.length;
-        stringStack.removeLast();
-        continue;
-      }
-      if (!frame.raw && source.startsWith(r'${', i)) {
-        // 補間開始: コードとして通す
-        stringStack[stringStack.length - 1] =
-            (quote: frame.quote, raw: frame.raw, braceDepth: 1);
-        out.write(r'${');
-        i += 2;
-        continue;
-      }
-      out.write(source[i] == '\n' ? '\n' : ' ');
-      i++;
-      continue;
-    }
+  final String methodName;
+  final List<MethodDeclaration> found = [];
 
-    // ---- コード領域（トップレベル or 補間の内側）----
-    if (stringStack.isNotEmpty) {
-      final frame = stringStack.last;
-      if (source[i] == '{') {
-        stringStack[stringStack.length - 1] = (
-          quote: frame.quote,
-          raw: frame.raw,
-          braceDepth: frame.braceDepth + 1
-        );
-      } else if (source[i] == '}') {
-        final d = frame.braceDepth - 1;
-        stringStack[stringStack.length - 1] =
-            (quote: frame.quote, raw: frame.raw, braceDepth: d);
-      }
+  @override
+  void visitMethodDeclaration(MethodDeclaration node) {
+    if (node.name.lexeme == methodName) {
+      found.add(node);
     }
-
-    if (source.startsWith('/*', i)) {
-      final end = source.indexOf('*/', i + 2);
-      final seg = source.substring(i, end < 0 ? source.length : end + 2);
-      out.write(seg.replaceAll(RegExp(r'[^\n]'), ' '));
-      i = end < 0 ? source.length : end + 2;
-      continue;
-    }
-    if (source.startsWith('//', i)) {
-      final end = source.indexOf('\n', i);
-      final stop = end < 0 ? source.length : end;
-      out.write(' ' * (stop - i));
-      i = stop;
-      continue;
-    }
-
-    // 文字列リテラル開始
-    var qStart = i;
-    var raw = false;
-    if (source[i] == 'r' &&
-        i + 1 < source.length &&
-        (source[i + 1] == "'" || source[i + 1] == '"')) {
-      raw = true;
-      qStart = i + 1;
-    }
-    String? quote;
-    for (final c in const ["'''", '"""', "'", '"']) {
-      if (source.startsWith(c, qStart)) {
-        quote = c;
-        break;
-      }
-    }
-    if (quote != null) {
-      if (raw) out.write('r');
-      out.write(quote);
-      i = qStart + quote.length;
-      stringStack.add((quote: quote, raw: raw, braceDepth: 0));
-      continue;
-    }
-
-    out.write(source[i]);
-    i++;
+    super.visitMethodDeclaration(node);
   }
-  return out.toString();
 }
 
-/// メソッド名から、その本体（波括弧ブロック）を抽出する。
-///
-/// 【重要】: 単に名前を検索すると、そのメソッドを呼び出している箇所
-/// （`_showConversionResult` は自身を再帰的に呼ぶ）に先にマッチしてしまう。
-/// そのため「行頭 + 戻り値型 + メソッド名 + (」という宣言の形に限定して探す。
-///
-/// 宣言から最初の `{` を探し、対応する `}` までを返す。
-/// 式本体（`=> ...`）やゲッターは対象外でnullを返す（呼び出し側で明示的に落ちる）。
-String? extractMethodBody(String source, String methodName) {
-  // 例: `  void _showConversionResult(` / `  Future<String> _convertWithAI(`
-  // 行頭が await/return/yield/throw の場合は「宣言」ではなく呼び出し式なので除外する。
-  // これが無いと `await _showConversionResult(...)` の行を宣言と誤認する。
-  const prefix = r'^[ \t]*(?:@\w+\s+)*(?!(?:await|return|yield|throw)\b)'
-      r'(?:static\s+)?[A-Za-z_][A-Za-z0-9_<>,\s\?]*\s+';
-  final declaration = RegExp(
-    '$prefix${RegExp.escape(methodName)}${r'\s*\('}',
-    multiLine: true,
-  );
-  final match = declaration.firstMatch(source);
-  if (match == null) return null;
+/// pop系の呼び出しを収集する。
+class _PopCallCollector extends RecursiveAstVisitor<void> {
+  final List<String> calls = [];
 
-  final braceStart = source.indexOf('{', match.end);
-  if (braceStart < 0) return null;
-
-  var depth = 0;
-  for (var i = braceStart; i < source.length; i++) {
-    final char = source[i];
-    if (char == '{') {
-      depth++;
-    } else if (char == '}') {
-      depth--;
-      if (depth == 0) return source.substring(braceStart, i + 1);
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (kForbiddenCalls.contains(node.methodName.name)) {
+      calls.add(node.toSource());
     }
+    super.visitMethodInvocation(node);
   }
-  return null;
-}
-
-/// pop系の呼び出しをすべて列挙する（レシーバは問わない）。
-///
-/// `pop<bool>(true)` のような総称呼び出しも対象にする。
-/// 結果を返すダイアログでよく使われる正当な記法のため、見逃すと偽陰性になる。
-List<String> findPopCalls(String source) {
-  final pattern = RegExp(
-    r'\b(?:pop|popUntil|maybePop)\s*(?:<[^<>{};()]*>)?\s*\(',
-  );
-  return pattern.allMatches(source).map((m) => m.group(0)!).toList();
 }
 
 void main() {
   group('home_screen: ダイアログ表示メソッド内のpop禁止', () {
-    late String code;
+    late CompilationUnit unit;
 
     setUpAll(() {
       final file = File(kHomeScreenPath);
@@ -226,32 +93,37 @@ void main() {
         isTrue,
         reason: '$kHomeScreenPath が見つからない（パス変更時は本テストも更新すること）',
       );
-      code = sanitizeDartSource(file.readAsStringSync());
+      // 構文エラーがあれば例外になる（＝解析結果を信用してよいことの保証）
+      unit = parseString(content: file.readAsStringSync()).unit;
     });
 
     test('$kTargetMethod 内にpopが一切存在しない', () {
-      final body = extractMethodBody(code, kTargetMethod);
+      final finder = _MethodDeclarationFinder(kTargetMethod);
+      unit.accept(finder);
+
       expect(
-        body,
-        isNotNull,
-        reason: '$kTargetMethod メソッドが見つからない'
-            '（改名・式本体化・別ファイルへの移動時は本テストも更新すること）',
+        finder.found,
+        hasLength(1),
+        reason: '$kTargetMethod がちょうど1つ見つかる必要がある'
+            '（改名・移動・多重定義時は本テストも更新すること）',
       );
 
-      // 【健全性】: 抽出範囲が空振り・早期終了していないこと。
-      // ここが落ちる場合は抽出ロジック側の問題であり、pop検査の結果は信用できない。
-      expect(body, contains('AIConversionResultDialog.show('),
-          reason: '抽出した本体にダイアログ呼び出しが含まれていない');
-      expect(body, contains('onAdopt'));
-      expect(body, contains('onRegenerate'));
-      expect(body, contains('onUseOriginal'));
+      final body = finder.found.single.body;
+
+      // 【健全性】: 検査対象が期待どおりのメソッドであること
+      final source = body.toSource();
+      expect(source, contains('AIConversionResultDialog.show'));
+      expect(source, contains('onAdopt'));
+      expect(source, contains('onRegenerate'));
+      expect(source, contains('onUseOriginal'));
 
       // 【結果検証】: このメソッドはダイアログを閉じる責務を持たない
-      final pops = findPopCalls(body!);
+      final collector = _PopCallCollector();
+      body.accept(collector);
       expect(
-        pops,
+        collector.calls,
         isEmpty,
-        reason: '$kTargetMethod 内にpop（${pops.join(", ")}）が存在する。'
+        reason: '$kTargetMethod 内にpop（${collector.calls.join(", ")}）が存在する。'
             'ダイアログのクローズは AIConversionResultDialog.show() 内部の '
             'dialogContext が行うため、このメソッドでpopしてはならない。'
             '呼び出し元contextはShellRoute配下のbranch Navigatorに属し、'
@@ -259,153 +131,66 @@ void main() {
       );
     });
 
-    group('検出ロジックの自己検証', () {
-      test('あらゆる記法のpopを検出できる', () {
-        const cases = <String, String>{
-          'Navigator.pop(context)': 'Navigator.pop(context);',
-          'Navigator.of(context).pop()': 'Navigator.of(context).pop();',
-          'rootNavigator付き':
-              'Navigator.of(context, rootNavigator: true).pop();',
-          'GoRouter.of(context).pop()': 'GoRouter.of(context).pop();',
-          'context.pop()': 'context.pop();',
-          'this.context.pop()': 'this.context.pop();',
-          '別名context': 'pageContext.pop();',
-          '変数経由': 'final nav = Navigator.of(context);\nnav.pop();',
-          'カスケード': 'nav..pop();',
-          'popUntil': 'Navigator.popUntil(context, (r) => r.isFirst);',
-          'maybePop': 'Navigator.maybePop(context);',
-          'メンバー経由': 'widget.navigator.pop();',
-          '総称呼び出し': 'Navigator.of(context).pop<bool>(true);',
-          '総称呼び出し（静的）': 'Navigator.pop<String>(context, "x");',
-        };
-
-        cases.forEach((label, snippet) {
-          expect(
-            findPopCalls(snippet),
-            isNotEmpty,
-            reason: '$label を検出できていない: $snippet',
-          );
-        });
-      });
-
-      test('pop以外の呼び出しを誤検出しない', () {
-        const cases = <String>[
-          'list.popular();',
-          'const populate = 1;',
-          'widget.population();',
-          'popupMenu();',
-        ];
-        for (final snippet in cases) {
-          expect(
-            findPopCalls(snippet),
-            isEmpty,
-            reason: '誤検出している: $snippet',
-          );
-        }
-      });
-
-      test('宣言ではなく呼び出し箇所にマッチしない', () {
-        // 【回帰防止】: 再帰呼び出しが先に現れても宣言側の本体を抽出すること
-        const snippet = '''
-void _caller(BuildContext context) {
-  _target(context);
-}
-
-void _target(BuildContext context) {
-  final marker = 1;
+    test('検出ロジックがあらゆる記法のpopを拾える', () {
+      // 【テスト自体の妥当性】: 常に空を返すだけの空テストでないことを保証する
+      const snippet = '''
+class Sample {
+  void a(BuildContext context) => Navigator.pop(context);
+  void b(BuildContext context) => Navigator.of(context).pop();
+  void c(BuildContext context) => Navigator.of(context, rootNavigator: true).pop();
+  void d(BuildContext context) => GoRouter.of(context).pop();
+  void e(BuildContext context) => context.pop();
+  void f() => this.context.pop();
+  void g(BuildContext context) => Navigator.of(context).pop<bool>(true);
+  void h(BuildContext context) => Navigator.popUntil(context, (r) => r.isFirst);
+  void i(BuildContext context) => Navigator.maybePop(context);
+  void j(NavigatorState nav) => nav..pop();
+  void k(NavigatorState nav) => nav.pop();
 }
 ''';
-        final body = extractMethodBody(sanitizeDartSource(snippet), '_target');
-        expect(body, isNotNull);
-        expect(body, contains('marker'), reason: '呼び出し箇所ではなく宣言の本体を抽出する必要がある');
-      });
+      final collector = _PopCallCollector();
+      parseString(content: snippet).unit.accept(collector);
+      expect(
+        collector.calls,
+        hasLength(11),
+        reason: '11通りの記法すべてを検出する必要がある: ${collector.calls}',
+      );
     });
 
-    group('ソース正規化の自己検証', () {
-      test('行コメント内のpopは検出対象から外れる', () {
-        const snippet = '// Navigator.of(context).pop() を呼んではならない';
-        expect(findPopCalls(sanitizeDartSource(snippet)), isEmpty);
-      });
-
-      test('doc comment内のpopも検出対象から外れる', () {
-        const snippet = '/// 例: Navigator.pop(context)';
-        expect(findPopCalls(sanitizeDartSource(snippet)), isEmpty);
-      });
-
-      test('ブロックコメント内のpopも検出対象から外れる', () {
-        const snippet = '/* Navigator.pop(context); */';
-        expect(findPopCalls(sanitizeDartSource(snippet)), isEmpty);
-      });
-
-      test('文字列内のURLの // でコードが消えない', () {
-        // 【回帰防止】: 文字列を素通しすると "http://x//y" の // を
-        // 行コメント開始と誤認し、以降の実在するpopを見逃す
-        const snippet = 'final u = "http://x//y"; Navigator.pop(c);';
-        expect(
-          findPopCalls(sanitizeDartSource(snippet)),
-          isNotEmpty,
-          reason: '文字列内のURLでpopを見逃している（偽陰性）',
-        );
-      });
-
-      test('文字列内のコメント記号でコードが消えない', () {
-        const snippet = 'final u = "a/*b"; Navigator.pop(c);';
-        expect(findPopCalls(sanitizeDartSource(snippet)), isNotEmpty);
-      });
-
-      test('文字列内のpopは誤検出しない', () {
-        const snippet = "final s = 'Navigator.pop(c)';";
-        expect(findPopCalls(sanitizeDartSource(snippet)), isEmpty);
-      });
-
-      test('補間内のpopはコードとして検出する', () {
-        const snippet = "final s = '\${list.pop()}';";
-        expect(findPopCalls(sanitizeDartSource(snippet)), isNotEmpty);
-      });
-
-      test('文字列内の閉じ波括弧でブレース計数が壊れない', () {
-        const snippet = "void _t() { final a = '}'; Navigator.pop(c); }";
-        final body = extractMethodBody(sanitizeDartSource(snippet), '_t');
-        expect(body, isNotNull);
-        expect(
-          findPopCalls(body!),
-          isNotEmpty,
-          reason: '文字列内の } で抽出が早期終了し、popを見逃している',
-        );
-      });
-
-      test('raw文字列・三重クォートを正しく抜ける', () {
-        const raws = <String>[
-          "final s = r'\\n pop(' ; Navigator.pop(c);",
-          "final s = '''a ' b''' ; Navigator.pop(c);",
-        ];
-        for (final snippet in raws) {
-          expect(findPopCalls(sanitizeDartSource(snippet)), isNotEmpty,
-              reason: '検出できていない: $snippet');
-        }
-      });
-
-      test('await付きの呼び出し行を宣言と誤認しない', () {
-        const snippet = '''
-void _caller() {
-  await _target(a, b);
-  if (x) { Navigator.pop(context); }
-}
-
-void _target(int a, int b) {
-  final marker = 1;
+    test('コメント・文字列内のpopは検出しない', () {
+      // 構文木を使うため字句レベルの誤検出は起きない
+      const snippet = '''
+class Sample {
+  // Navigator.pop(context) を呼んではならない
+  /// 例: Navigator.of(context).pop()
+  void a() {
+    final url = "http://example.com//path";
+    final message = 'Navigator.pop(context) と書いてはいけない';
+    final brace = '}';
+    debugPrint('\$url \$message \$brace');
+  }
 }
 ''';
-        final body = extractMethodBody(sanitizeDartSource(snippet), '_target');
-        expect(body, isNotNull);
-        expect(body, contains('marker'), reason: 'await付き呼び出し行を宣言として抽出している');
-        expect(findPopCalls(body!), isEmpty);
-      });
+      final collector = _PopCallCollector();
+      parseString(content: snippet).unit.accept(collector);
+      expect(collector.calls, isEmpty);
+    });
 
-      test('実コードのpopは除去されずに残る', () {
-        const snippet = '// comment\nNavigator.pop(context);';
-        expect(findPopCalls(sanitizeDartSource(snippet)), hasLength(1));
-      });
+    test('pop以外の呼び出しを誤検出しない', () {
+      const snippet = '''
+class Sample {
+  void a(List<int> list) {
+    list.removeLast();
+    popular();
+    showPopupMenu();
+  }
+  void popular() {}
+  void showPopupMenu() {}
+}
+''';
+      final collector = _PopCallCollector();
+      parseString(content: snippet).unit.accept(collector);
+      expect(collector.calls, isEmpty);
     });
   });
 }

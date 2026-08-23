@@ -80,6 +80,9 @@ dev_dependencies:
   # テスト
   mocktail: ^1.0.4
 
+  # ソース検査テスト用（Dartコードの構文解析）
+  analyzer: ^8.4.1
+
   # モックサーバー（E2Eテスト用）
   http_mock_adapter: ^0.6.1
 
