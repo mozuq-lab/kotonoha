@@ -1,15 +1,40 @@
 """
 app/core/config.py の Settings クラステスト
 
-【テスト対象】: Settings.ENVIRONMENT のバリデーション
-【目的】: "prod" 等の表記ゆれを起動時エラー（設定読み込み失敗）として拒否し、
-          フェイルオープンな認証スキップ（app/api/deps.py）を防ぐことを確認する。
+【テスト対象】: Settings.ENVIRONMENT のバリデーション、既定値、production固有の必須設定
+【目的】: 設定ミス・設定漏れを起動時エラー（設定読み込み失敗）として拒否することを確認する。
+          - "prod" 等の表記ゆれ → フェイルオープンな認証スキップ（app/api/deps.py）を防ぐ
+          - production での必須設定漏れ → 本番で気付かないまま稼働することを防ぐ
 """
 
 import pytest
 from pydantic import ValidationError
 
-from app.core.config import Settings
+from app.core.config import DEV_POSTGRES_PASSWORD, DEV_SECRET_KEY, Settings
+
+
+def _production_settings(**overrides) -> dict:
+    """production 環境として受理される最小構成の設定値を返す。
+
+    validate_production_settings が要求する項目（開発用デフォルトのままでは
+    起動できない項目）をすべて満たした辞書を返す。個別の必須項目を検証する
+    テストは、この辞書から該当キーを外して「起動が失敗すること」を確認する。
+
+    Args:
+        **overrides: 上書きしたい設定値。
+
+    Returns:
+        dict: Settings に渡すキーワード引数。
+    """
+    base = {
+        "_env_file": None,
+        "ENVIRONMENT": "production",
+        "SECRET_KEY": "a-sufficiently-random-production-secret",
+        "POSTGRES_PASSWORD": "a-sufficiently-random-production-password",
+        "RATE_LIMIT_STORAGE_URI": "redis://localhost:6379",
+    }
+    base.update(overrides)
+    return base
 
 
 class TestEnvironmentValidation:
@@ -23,16 +48,12 @@ class TestEnvironmentValidation:
 
     def test_accepts_production_with_required_overrides(self):
         """
-        production は SECRET_KEY / POSTGRES_PASSWORD を明示指定すれば受理される。
+        production は必須設定を明示指定すれば受理される。
 
         （開発用デフォルト値のままだと別バリデータ validate_production_settings が
         エラーにするため、production 固有の要件を満たした上でテストする）
         """
-        settings = Settings(
-            ENVIRONMENT="production",
-            SECRET_KEY="a-sufficiently-random-production-secret",  # noqa: S106
-            POSTGRES_PASSWORD="a-sufficiently-random-production-password",  # noqa: S106
-        )
+        settings = Settings(**_production_settings())
         assert settings.ENVIRONMENT == "production"
 
     @pytest.mark.parametrize(
@@ -76,3 +97,48 @@ class TestAIAndRateLimitDefaults:
         """RATE_LIMIT_STORAGE_URIは明示指定した値で上書きできる（例: Redis URI）"""
         settings = Settings(_env_file=None, RATE_LIMIT_STORAGE_URI="redis://localhost:6379")
         assert settings.RATE_LIMIT_STORAGE_URI == "redis://localhost:6379"
+
+
+class TestProductionSettingsValidation:
+    """validate_production_settings（production固有の必須設定）のテスト。
+
+    production で設定漏れがあった場合は「警告」ではなく「起動失敗」になることを検証する。
+    警告ログはデプロイ時に見落とされ、設定漏れのまま稼働してしまうため。
+    """
+
+    def test_rejects_production_without_rate_limit_storage_uri(self):
+        """
+        production で RATE_LIMIT_STORAGE_URI 未設定なら起動時エラーになる。
+
+        未設定＝プロセス内メモリのカウンタとなり、マルチワーカー/マルチインスタンス
+        構成では実効レート制限が「設定値 × プロセス数」まで緩む（NFR-101違反）。
+        """
+        settings_kwargs = _production_settings(RATE_LIMIT_STORAGE_URI="")
+
+        with pytest.raises(ValidationError, match="RATE_LIMIT_STORAGE_URI"):
+            Settings(**settings_kwargs)
+
+    def test_accepts_explicit_memory_storage_uri_in_production(self):
+        """
+        単一プロセス運用で意図的にインメモリを使う場合は "memory://" の明示で受理される。
+
+        「未設定（暗黙のインメモリ）」と「意図してインメモリを選んだ」を区別できるようにする。
+        """
+        settings = Settings(**_production_settings(RATE_LIMIT_STORAGE_URI="memory://"))
+        assert settings.RATE_LIMIT_STORAGE_URI == "memory://"
+
+    def test_rejects_production_with_dev_secret_key(self):
+        """production で SECRET_KEY が開発用デフォルトのままなら起動時エラーになる"""
+        with pytest.raises(ValidationError, match="SECRET_KEY"):
+            Settings(**_production_settings(SECRET_KEY=DEV_SECRET_KEY))
+
+    def test_rejects_production_with_dev_postgres_password(self):
+        """production で POSTGRES_PASSWORD が開発用デフォルトのままなら起動時エラーになる"""
+        with pytest.raises(ValidationError, match="POSTGRES_PASSWORD"):
+            Settings(**_production_settings(POSTGRES_PASSWORD=DEV_POSTGRES_PASSWORD))
+
+    @pytest.mark.parametrize("environment", ["development", "test", "staging"])
+    def test_does_not_require_rate_limit_storage_uri_outside_production(self, environment: str):
+        """production 以外では RATE_LIMIT_STORAGE_URI 未設定でも起動できる（開発体験を損なわない）"""
+        settings = Settings(_env_file=None, ENVIRONMENT=environment, RATE_LIMIT_STORAGE_URI="")
+        assert settings.RATE_LIMIT_STORAGE_URI == ""

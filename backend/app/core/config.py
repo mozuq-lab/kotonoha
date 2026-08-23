@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     # 構成では各プロセスが独立したカウンタを持つため実質的な制限が緩くなり、
     # プロセス再起動でもリセットされてしまう。本番でマルチワーカー/マルチインスタンス
     # 運用する場合は Redis 等の共有ストレージURIを指定すること（例: "redis://host:6379"）。
+    # ENVIRONMENT=production では未設定を許容しない（validate_production_settings が
+    # 起動時エラーにする）。単一プロセスで意図的にインメモリを使う場合も、暗黙の既定値
+    # ではなく "memory://" を明示すること。
     RATE_LIMIT_STORAGE_URI: str = ""
 
     # 信頼するリバースプロキシの段数。
@@ -138,7 +141,12 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_settings(self) -> "Settings":
-        """本番環境では開発用の弱い既定値を拒否する。"""
+        """本番環境では開発用の弱い既定値・安全でない既定値を拒否する。
+
+        本番で見落とすと実害が出る設定を起動時に検出し、`ValueError`（＝設定読み込み
+        失敗によるアプリ起動失敗）として弾く。警告ログではデプロイ時に見落とされ、
+        設定漏れのまま稼働してしまうため、フェイルファストで揃えている。
+        """
         if self.ENVIRONMENT != "production":
             return self
 
@@ -146,6 +154,20 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY must be set explicitly in production")
         if self.POSTGRES_PASSWORD == DEV_POSTGRES_PASSWORD:
             raise ValueError("POSTGRES_PASSWORD must be set explicitly in production")
+        # レート制限カウンタが未設定だとプロセス内メモリになる。本番はマルチワーカー
+        # （uvicorn --workers）／マルチインスタンス構成が前提であり、その場合カウンタが
+        # プロセスごとに分裂して実効レート制限が「設定値 × プロセス数」まで緩む
+        # （NFR-101違反）。単一プロセス運用であっても再起動でカウンタが消えるため、
+        # 本番では共有ストレージ（Redis等）の明示指定を必須とする。
+        # 単一プロセスで意図的にインメモリを使う場合は "memory://" を明示すること。
+        if not self.RATE_LIMIT_STORAGE_URI:
+            raise ValueError(
+                "RATE_LIMIT_STORAGE_URI must be set explicitly in production "
+                "(unset means per-process in-memory counters, which weakens the "
+                "effective rate limit under multi-worker/multi-instance deployments; "
+                'set a shared storage URI such as "redis://host:6379", or "memory://" '
+                "to opt in to in-memory counters intentionally)"
+            )
 
         return self
 
