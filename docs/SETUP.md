@@ -41,32 +41,56 @@ cd kotonoha
 
 ### 2. 環境変数の設定
 
+設定ファイルは**2つあり、役割が分かれています**。
+
 ```bash
-# 環境変数ファイルをコピー
+# ルート .env: docker-compose の変数展開とFlutterビルドに使う
 cp .env.example .env
+
+# backend/.env: バックエンドのアプリ設定
+cp backend/.env.example backend/.env
 ```
 
-`.env` ファイルを編集して、必要な値を設定します:
+`docker-compose.yml` の `environment` に書いた値はOS環境変数としてコンテナへ渡り、
+pydantic-settings では `backend/.env` より**優先**されます。そのため compose には
+infra層の値のみを置き、アプリ設定は `backend/.env` で管理します。
+**ルート `.env` にアプリ設定を書いてもバックエンドには届きません。**
+
+ルート `.env`（docker-compose とFlutterビルド用）:
 
 ```bash
-# データベース設定
 POSTGRES_USER=kotonoha_user
 POSTGRES_PASSWORD=your_secure_password_here  # 安全なパスワードに変更
 POSTGRES_DB=kotonoha_db
-POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-
-# バックエンドAPI設定
 SECRET_KEY=your_secret_key_here  # ランダムな文字列に変更
-API_HOST=0.0.0.0
-API_PORT=8000
 
-# AI変換機能設定（オプション）
-# OPENAI_API_KEY=sk-your-openai-api-key-here
+# Flutterビルド時に --dart-define で埋め込む値
+API_BASE_URL=http://localhost:8000
+AI_API_KEY=
+```
 
+`backend/.env`（バックエンドのアプリ設定）:
+
+```bash
 # 環境設定
 ENVIRONMENT=development
+
+# AI変換機能設定（オプション）
+# ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
+# OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# 端末APIキー認証（AI変換APIの保護用）
+API_KEYS=
+
+# レート制限で信頼するプロキシ段数（本番でALB等の背後に置く場合に設定）
+TRUSTED_PROXY_COUNT=0
 ```
+
+> **既存環境からの移行**: 以前はルート `.env` に `API_KEYS` 等のアプリ設定を
+> 書く構成でした。これらは compose 経由で渡らなくなったため、
+> `backend/.env` へ移してください。移していない場合、
+> APIキー認証は無効（development では認証スキップ）のまま動作します。
 
 > **注意**: `SECRET_KEY` はセキュリティ上重要です。本番環境では十分にランダムな文字列を使用してください。
 >

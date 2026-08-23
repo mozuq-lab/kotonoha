@@ -766,17 +766,20 @@ class HomeScreen extends ConsumerWidget {
     String convertedText,
     PolitenessLevel politenessLevel,
   ) {
+    // 【注意】ダイアログのクローズはAIConversionResultDialog.show()内部で
+    // dialogContext（root Navigator）を使って行われるため、ここで
+    // Navigator.of(context).pop()を呼んではならない。
+    // 呼び出し元contextはShellRoute配下のbranch Navigatorに属し、popすると
+    // ダイアログではなく背後のページが閉じられてしまう。
     AIConversionResultDialog.show(
       context: context,
       originalText: originalText,
       convertedText: convertedText,
       politenessLevel: politenessLevel,
       onAdopt: (result) {
-        Navigator.of(context).pop();
         ref.read(inputBufferProvider.notifier).setText(result);
       },
       onRegenerate: () {
-        Navigator.of(context).pop();
         Future<void>.microtask(() async {
           if (!context.mounted) return;
           try {
@@ -797,7 +800,6 @@ class HomeScreen extends ConsumerWidget {
         });
       },
       onUseOriginal: (original) {
-        Navigator.of(context).pop();
         ref.read(inputBufferProvider.notifier).setText(original);
       },
     );

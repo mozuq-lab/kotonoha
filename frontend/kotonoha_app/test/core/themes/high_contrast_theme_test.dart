@@ -7,51 +7,13 @@
 /// 【TDD Redフェーズ】: テーマのプロパティとWCAG準拠を検証
 library;
 
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 
-/// WCAG 2.1に準拠したコントラスト比を計算する関数
-///
-/// 相対輝度（relative luminance）を計算し、
-/// 2つの色のコントラスト比を算出する。
-///
-/// 参照: https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html
-double calculateContrastRatio(Color foreground, Color background) {
-  final luminance1 = _calculateRelativeLuminance(foreground);
-  final luminance2 = _calculateRelativeLuminance(background);
-
-  final lighter = math.max(luminance1, luminance2);
-  final darker = math.min(luminance1, luminance2);
-
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-/// 色の相対輝度を計算する
-///
-/// sRGB色空間からリニア空間への変換を行い、
-/// 相対輝度を算出する。
-double _calculateRelativeLuminance(Color color) {
-  // Flutter 3.38+では color.red/green/blue は非推奨。
-  // 代わりに color.r/g/b (0.0-1.0の範囲) を使用する。
-  final r = _linearize(color.r);
-  final g = _linearize(color.g);
-  final b = _linearize(color.b);
-
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/// sRGB値をリニア空間に変換する
-double _linearize(double value) {
-  if (value <= 0.03928) {
-    return value / 12.92;
-  }
-  return math.pow((value + 0.055) / 1.055, 2.4).toDouble();
-}
+import '../../support/contrast_helpers.dart';
 
 void main() {
   group('高コントラストテーマのプロパティテスト', () {
@@ -250,13 +212,13 @@ void main() {
       // Assert
       expect(textColor, isNotNull);
 
-      final contrastRatio = calculateContrastRatio(textColor!, backgroundColor);
+      final ratio = contrastRatio(textColor!, backgroundColor);
 
       // WCAG 2.1 AAレベル: 4.5:1以上
-      expect(contrastRatio, greaterThanOrEqualTo(4.5));
+      expect(ratio, greaterThanOrEqualTo(4.5));
 
       // 純白と純黒の組み合わせは21:1のコントラスト比
-      expect(contrastRatio, closeTo(21.0, 0.1));
+      expect(ratio, closeTo(21.0, 0.1));
     });
 
     /// TC-402: 高コントラストテーマのボタン背景/テキストコントラスト比が4.5:1以上である
@@ -278,14 +240,13 @@ void main() {
       expect(backgroundColor, isNotNull);
       expect(foregroundColor, isNotNull);
 
-      final contrastRatio =
-          calculateContrastRatio(foregroundColor!, backgroundColor!);
+      final ratio = contrastRatio(foregroundColor!, backgroundColor!);
 
       // WCAG 2.1 AAレベル: 4.5:1以上
-      expect(contrastRatio, greaterThanOrEqualTo(4.5));
+      expect(ratio, greaterThanOrEqualTo(4.5));
 
       // 白背景に黒テキストは21:1のコントラスト比
-      expect(contrastRatio, closeTo(21.0, 0.1));
+      expect(ratio, closeTo(21.0, 0.1));
     });
 
     /// TC-403: 高コントラストテーマのボーダー/背景コントラスト比が3:1以上である
@@ -303,29 +264,27 @@ void main() {
       final outlineColor = highContrastTheme.colorScheme.outline;
 
       // Assert
-      final contrastRatio =
-          calculateContrastRatio(outlineColor, backgroundColor);
+      final ratio = contrastRatio(outlineColor, backgroundColor);
 
       // WCAG 2.1 AA UIコンポーネント要件: 3:1以上
-      expect(contrastRatio, greaterThanOrEqualTo(3.0));
+      expect(ratio, greaterThanOrEqualTo(3.0));
 
       // 白背景に黒ボーダーは21:1のコントラスト比
-      expect(contrastRatio, closeTo(21.0, 0.1));
+      expect(ratio, closeTo(21.0, 0.1));
     });
 
     /// コントラスト比計算関数の検証テスト
     test('コントラスト比計算関数が正しく動作する', () {
       // 純白と純黒のコントラスト比は21:1
-      final whiteBlackRatio =
-          calculateContrastRatio(Colors.white, Colors.black);
+      final whiteBlackRatio = contrastRatio(Colors.white, Colors.black);
       expect(whiteBlackRatio, closeTo(21.0, 0.1));
 
       // 同じ色のコントラスト比は1:1
-      final sameColorRatio = calculateContrastRatio(Colors.white, Colors.white);
+      final sameColorRatio = contrastRatio(Colors.white, Colors.white);
       expect(sameColorRatio, closeTo(1.0, 0.01));
 
       // グレーと白のコントラスト比
-      final grayWhiteRatio = calculateContrastRatio(Colors.grey, Colors.white);
+      final grayWhiteRatio = contrastRatio(Colors.grey, Colors.white);
       expect(grayWhiteRatio, greaterThan(1.0));
     });
   });

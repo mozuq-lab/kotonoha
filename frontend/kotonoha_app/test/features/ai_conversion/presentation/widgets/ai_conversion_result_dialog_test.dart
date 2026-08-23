@@ -17,6 +17,8 @@ import 'package:kotonoha_app/core/themes/light_theme.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
 import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_result_dialog.dart';
 
+import '../../../../support/contrast_helpers.dart';
+
 void main() {
   group('TASK-0069: AI変換結果表示・選択UIテスト', () {
     // =========================================================================
@@ -558,29 +560,45 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-5002（誤操作防止）
       testWidgets('TC-069-014: 連続タップで複数回コールバックが呼ばれない', (tester) async {
-        // 【テスト目的】: 連続タップ防止機能の動作を確認 🔵
+        // 【テスト目的】: 連続タップ防止（_isProcessing ガード）の動作を確認 🔵
         // 【テスト内容】: 高速な連続タップでコールバックが1回のみ呼ばれることを検証
-        // 【期待される動作】: コールバックは1回のみ呼ばれる
+        // 【期待される動作】: 2回目以降はガードにより無視され、コールバックは1回
         // 🔵 青信号: REQ-5002の誤操作防止に基づく
+        //
+        // 【検証範囲】: このテストが担保するのは「早期リターン + disabled 化」の
+        // ガード全体であり、早期リターン単体ではない（片方だけ削除しても
+        // 次フレームで disabled になり callCount は1に留まる）。
+        //
+        // 【重要】: show() を経由せずウィジェットを直接pumpする。
+        // show() 経由だと1回目のタップでダイアログ自身がpopされ、
+        // 2回目以降は退場アニメーション中の IgnorePointer に吸われてボタンに
+        // 到達しない。それでは _isProcessing ガードを外しても callCount == 1 が
+        // 成立してしまい、連続タップ防止を検証したことにならない。
 
         // Given: 【テストデータ準備】: コールバック回数カウント用の変数を準備
         int callCount = 0;
 
         await tester.pumpWidget(
-          buildTestWidget(
-            originalText: '水 ぬるく',
-            convertedText: 'お水をぬるめでお願いします',
-            politenessLevel: PolitenessLevel.polite,
-            onAdopt: (_) => callCount++,
-            onRegenerate: () {},
-            onUseOriginal: (_) {},
+          MaterialApp(
+            theme: lightTheme,
+            home: Scaffold(
+              body: AIConversionResultDialog(
+                originalText: '水 ぬるく',
+                convertedText: 'お水をぬるめでお願いします',
+                politenessLevel: PolitenessLevel.polite,
+                onAdopt: (_) => callCount++,
+                onRegenerate: () {},
+                onUseOriginal: (_) {},
+              ),
+            ),
           ),
         );
 
-        await openDialog(tester);
-
-        // When: 【ユーザー操作実行】: 連続タップ
+        // 【前提確認】: ダイアログが表示され、ボタンが操作可能であること
         final adoptButton = find.text('採用');
+        expect(adoptButton, findsOneWidget);
+
+        // When: 【ユーザー操作実行】: 連続タップ（ダイアログはpopされない）
         await tester.tap(adoptButton);
         await tester.pump(const Duration(milliseconds: 10));
         await tester.tap(adoptButton);
@@ -592,6 +610,8 @@ void main() {
         expect(
           callCount,
           equals(1),
+          reason: '連続タップ防止（_handleTap の早期リターンと '
+              'onPressed の disabled 化）により2回目以降のタップは無視される必要がある',
         ); // 【確認内容】: コールバックが1回のみ呼ばれること 🔵
       });
     });
@@ -920,15 +940,6 @@ void main() {
     // Color.computeLuminance()を用いたWCAG 2.1のコントラスト比計算式で
     // ライト/ダーク/高コントラストの3テーマすべてがAA基準を満たすことを検証する。
     group('7. AA対応（コントラスト比）テスト', () {
-      /// WCAG 2.1のコントラスト比を計算する（(明るい方の輝度+0.05)/(暗い方の輝度+0.05)）
-      double contrastRatio(Color a, Color b) {
-        final luminanceA = a.computeLuminance();
-        final luminanceB = b.computeLuminance();
-        final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;
-        final darker = luminanceA > luminanceB ? luminanceB : luminanceA;
-        return (lighter + 0.05) / (darker + 0.05);
-      }
-
       final themes = <String, ThemeData>{
         'light': lightTheme,
         'dark': darkTheme,

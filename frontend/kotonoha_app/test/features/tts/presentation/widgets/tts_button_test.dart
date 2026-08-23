@@ -19,6 +19,8 @@ import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
 import 'package:kotonoha_app/core/themes/dark_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
+
+import '../../../../support/contrast_helpers.dart';
 import '../../../../mocks/mock_flutter_tts.dart';
 
 /// TTSNotifierを作成するヘルパー関数（テスト用）
@@ -601,15 +603,6 @@ void main() {
 
         container.dispose();
         return (background, foreground);
-      }
-
-      /// WCAG 2.1のコントラスト比を計算する（(明るい方の輝度+0.05)/(暗い方の輝度+0.05)）
-      double contrastRatio(Color a, Color b) {
-        final luminanceA = a.computeLuminance();
-        final luminanceB = b.computeLuminance();
-        final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;
-        final darker = luminanceA > luminanceB ? luminanceB : luminanceA;
-        return (lighter + 0.05) / (darker + 0.05);
       }
 
       /// 指定テーマ・状態の組み合わせでAA基準（4.5:1以上）を満たすことを検証する共通処理

@@ -8,8 +8,6 @@
 /// 【TDD Redフェーズ】: テーマ設定の全テストケースを作成
 library;
 
-import 'dart:math' show exp, log;
-import 'dart:ui' show Color;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,8 +16,11 @@ import 'package:kotonoha_app/features/settings/models/app_theme.dart';
 import 'package:kotonoha_app/core/themes/theme_provider.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
 import 'package:kotonoha_app/core/themes/dark_theme.dart';
+
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
+
+import '../../../support/contrast_helpers.dart';
 
 void main() {
   group('TASK-0073: テーマ設定 Providerテスト', () {
@@ -337,19 +338,18 @@ void main() {
         // コントラスト比の計算式: (L1 + 0.05) / (L2 + 0.05)
         // L1 = 白 (1.0), L2 = 黒 (0.0)
         // 白と黒のコントラスト比は 21:1
-        final contrastRatio =
-            _calculateContrastRatio(backgroundColor, textColor);
+        final ratio = contrastRatio(backgroundColor, textColor);
 
         // Then: 【結果検証】: コントラスト比が4.5:1以上であること
         expect(
-          contrastRatio,
+          ratio,
           greaterThanOrEqualTo(4.5),
           reason: '高コントラストモードはWCAG 2.1 AAレベル（4.5:1以上）を満たす必要があります',
         );
 
         // 追加検証: 実際には21:1（最大コントラスト）
         expect(
-          contrastRatio,
+          ratio,
           greaterThanOrEqualTo(21.0),
           reason: '白と黒のコントラスト比は21:1であるべき',
         );
@@ -398,40 +398,4 @@ void main() {
       });
     });
   });
-}
-
-/// コントラスト比を計算するヘルパー関数
-///
-/// WCAG 2.1のコントラスト比計算式に基づく
-/// コントラスト比 = (L1 + 0.05) / (L2 + 0.05)
-/// L1は明るい色の相対輝度、L2は暗い色の相対輝度
-double _calculateContrastRatio(Color color1, Color color2) {
-  final luminance1 = _getRelativeLuminance(color1);
-  final luminance2 = _getRelativeLuminance(color2);
-
-  final lighter = luminance1 > luminance2 ? luminance1 : luminance2;
-  final darker = luminance1 > luminance2 ? luminance2 : luminance1;
-
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-/// 相対輝度を計算するヘルパー関数
-///
-/// WCAG 2.1の相対輝度計算式に基づく
-double _getRelativeLuminance(Color color) {
-  // Flutter 3.10以降: color.red/green/blueは0-255の整数値
-  double r = color.red / 255.0;
-  double g = color.green / 255.0;
-  double b = color.blue / 255.0;
-
-  r = r <= 0.03928 ? r / 12.92 : _pow((r + 0.055) / 1.055, 2.4);
-  g = g <= 0.03928 ? g / 12.92 : _pow((g + 0.055) / 1.055, 2.4);
-  b = b <= 0.03928 ? b / 12.92 : _pow((b + 0.055) / 1.055, 2.4);
-
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/// べき乗計算のヘルパー関数
-double _pow(double base, double exponent) {
-  return base <= 0 ? 0 : exp(exponent * log(base));
 }

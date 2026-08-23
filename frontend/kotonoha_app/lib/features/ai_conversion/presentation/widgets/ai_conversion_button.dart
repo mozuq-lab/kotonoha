@@ -12,6 +12,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/constants/app_colors.dart';
 import '../../../network/domain/models/network_state.dart';
 import '../../../network/providers/network_provider.dart';
 import '../../domain/models/politeness_level.dart';
@@ -293,17 +295,22 @@ class OfflineIndicator extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.orange.shade100,
+          color: AppColors.warningContainer,
           borderRadius: BorderRadius.circular(4),
         ),
+        // 【アクセシビリティ】: AppColors.warningContainer (#FFE0B2) 背景に対し
+        // #6D2C00 でコントラスト比 8.2:1 となり WCAG 2.1 AA (4.5:1) を満たす。
+        // 従来の Colors.orange (#FF9800) は約1.7:1、orange.shade900 (#E65100) でも
+        // 約3.0:1 で AA 未達のため使用しない。
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.wifi_off, size: 16, color: Colors.orange),
+            Icon(Icons.wifi_off, size: 16, color: AppColors.onWarningContainer),
             SizedBox(width: 4),
             Text(
               'オフライン',
-              style: TextStyle(color: Colors.orange, fontSize: 12),
+              style:
+                  TextStyle(color: AppColors.onWarningContainer, fontSize: 12),
             ),
           ],
         ),

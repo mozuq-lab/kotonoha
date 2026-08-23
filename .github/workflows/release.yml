@@ -55,7 +55,7 @@ jobs:
 
       - name: Build Web (Release)
         run: >
-          flutter build web --release --web-renderer html
+          flutter build web --release
           --dart-define=API_BASE_URL="${API_BASE_URL}"
           --dart-define=AI_API_KEY="${AI_API_KEY}"
 
@@ -253,7 +253,7 @@ jobs:
     needs: [validate-tag, build-web]
     environment:
       name: production
-      url: ${{ steps.deploy.outputs.url }}
+      url: ${{ steps.deploy.outputs.preview-url }}
 
     steps:
       - uses: actions/checkout@v6
@@ -268,8 +268,44 @@ jobs:
         run: |
           unzip kotonoha-web-${{ needs.validate-tag.outputs.version }}.zip -d web-build
 
+      - name: Add Vercel config to build output
+        run: |
+          set -euo pipefail
+          # vercel.json はリポジトリ側にあり、成果物(build/web)には含まれないため、
+          # デプロイ対象ディレクトリへコピーする。これが無いと SPA rewrites と
+          # セキュリティヘッダーが本番で失われる。
+          # デプロイ対象は build/web の中身そのものなので outputDirectory は "." に上書きする。
+          python3 - <<'EOF'
+          import json
+          cfg = json.load(open('frontend/kotonoha_app/vercel.json'))
+          cfg['outputDirectory'] = '.'
+          json.dump(cfg, open('./web-build/vercel.json', 'w'), indent=2, ensure_ascii=False)
+          EOF
+          test -f ./web-build/vercel.json
+
+      - name: Check Vercel secrets
+        id: vercel_check
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          # secrets コンテキストは job-level `if:` で参照できないため、
+          # env 経由でステップ出力に落として後続ステップを条件分岐させる。
+          if [ -n "$VERCEL_TOKEN" ] && [ -n "$VERCEL_ORG_ID" ] && [ -n "$VERCEL_PROJECT_ID" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Vercel secrets が未設定のためデプロイをスキップします（VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID）"
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # secrets 設定済みのときのみ実行し、その場合の失敗はジョブ失敗として扱う
+      # （continue-on-error は付けない）。握り潰すと vercel.json のコピー漏れ等に
+      # 気付けないため。未設定環境では上の Check ステップでスキップされる。
       - name: Deploy to Vercel
         id: deploy
+        if: steps.vercel_check.outputs.configured == 'true'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -277,12 +313,8 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./web-build
           vercel-args: '--prod'
-        continue-on-error: true
 
       - name: Deployment status
+        if: steps.vercel_check.outputs.configured == 'true'
         run: |
-          if [ "${{ steps.deploy.outcome }}" == "success" ]; then
-            echo "✅ Deployed to: ${{ steps.deploy.outputs.url }}"
-          else
-            echo "⚠️ Deployment skipped or failed. Ensure Vercel secrets are configured."
-          fi
+          echo "✅ Deployed to: ${{ steps.deploy.outputs.preview-url }}"

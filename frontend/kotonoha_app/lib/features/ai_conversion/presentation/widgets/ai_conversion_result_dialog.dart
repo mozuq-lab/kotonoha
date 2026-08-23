@@ -46,19 +46,23 @@ const double kResultAreaMaxHeight = 200.0;
 ///   convertedText: 'お水をぬるめでお願いします',
 ///   politenessLevel: PolitenessLevel.polite,
 ///   onAdopt: (result) {
-///     Navigator.of(context).pop();
 ///     inputController.text = result;
 ///   },
 ///   onRegenerate: () {
-///     Navigator.of(context).pop();
 ///     startAIConversion();
 ///   },
 ///   onUseOriginal: (original) {
-///     Navigator.of(context).pop();
 ///     inputController.text = original;
 ///   },
 /// );
 /// ```
+///
+/// 【重要】show()ヘルパー経由で表示した場合、ボタンタップ時にダイアログは
+/// show()内部で自動的に閉じられる（builderのdialogContextでpopする）。
+/// そのためコールバック側でNavigator.pop()を呼んではならない。
+/// showDialogはroot Navigatorにダイアログを積む一方、呼び出し元contextは
+/// go_routerのShellRoute配下branch Navigatorに属するため、
+/// 呼び出し元contextでのpopはダイアログではなく背後のページを弾いてしまう。
 class AIConversionResultDialog extends StatefulWidget {
   /// 元の入力テキスト
   final String originalText;
@@ -99,6 +103,11 @@ class AIConversionResultDialog extends StatefulWidget {
   /// ダイアログを表示するヘルパーメソッド
   ///
   /// barrierDismissible: false で誤操作防止（REQ-5002）
+  ///
+  /// 【pop責任】このヘルパーはbuilderに渡されるdialogContext（root Navigator上）で
+  /// ダイアログ自身を閉じるため、コールバック側でNavigator.pop()を呼ぶ必要はない。
+  /// 呼び出し元のcontextはgo_router ShellRoute配下のbranch Navigatorに属するため、
+  /// そちらでpopするとダイアログではなく背後ページがpopされてしまう。
   static Future<void> show({
     required BuildContext context,
     required String originalText,
@@ -111,13 +120,22 @@ class AIConversionResultDialog extends StatefulWidget {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AIConversionResultDialog(
+      builder: (dialogContext) => AIConversionResultDialog(
         originalText: originalText,
         convertedText: convertedText,
         politenessLevel: politenessLevel,
-        onAdopt: onAdopt,
-        onRegenerate: onRegenerate,
-        onUseOriginal: onUseOriginal,
+        onAdopt: (result) {
+          Navigator.of(dialogContext).pop();
+          onAdopt(result);
+        },
+        onRegenerate: () {
+          Navigator.of(dialogContext).pop();
+          onRegenerate();
+        },
+        onUseOriginal: (original) {
+          Navigator.of(dialogContext).pop();
+          onUseOriginal(original);
+        },
       ),
     );
   }

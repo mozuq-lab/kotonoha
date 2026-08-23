@@ -8,40 +8,77 @@
 
 ### ローカル実行
 
+**Web（ヘッドレスChrome）**
+
+web では `flutter test integration_test/ -d chrome` は使えません。
+`flutter drive` とchromedriverを経由し、1ターゲットずつ実行します。
+
 ```bash
-# Web（Chrome）で実行
 cd frontend/kotonoha_app
-flutter test integration_test/ -d chrome
 
-# iOS シミュレーターで実行
-flutter test integration_test/ -d ios
+# 別ターミナルでchromedriverを起動（ポートは flutter drive の既定値 4444）
+chromedriver --port=4444
 
-# Android エミュレーターで実行
-flutter test integration_test/ -d android
+flutter drive \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/app_startup_test.dart \
+  -d web-server \
+  --browser-name=chrome \
+  --headless
+```
 
-# 特定のテストファイルのみ実行
-flutter test integration_test/app_startup_test.dart -d chrome
+**実機・シミュレーター**
+
+`-d` にはデバイスIDを渡します（`flutter devices` で確認）。
+
+```bash
+# 接続中のデバイス一覧を確認
+flutter devices
+
+# 指定デバイスで実行
+flutter test integration_test/ -d <device_id>
 ```
 
 ### CI環境での実行
 
-GitHub Actionsで自動実行されます。`.github/workflows/flutter-test.yml` を参照してください。
+`.github/workflows/flutter.yml` の `integration-test` ジョブで自動実行されます。
+上記のヘッドレスWeb手順を各ターゲットに対して順に実行し、
+**失敗はジョブ失敗として扱われます**（握り潰しはしません）。
+
+以下はCIの実行対象から除外しています（除外理由はワークフロー内のコメント参照）。
+
+| 除外対象 | 理由 |
+|---|---|
+| `ai_conversion_e2e_test.dart` | AI変換APIとAPIキーが必要 |
+| `performance_profiling_e2e_test.dart` | 実性能測定でCIでは不安定 |
+| `device_test/` 配下 | 実機前提（サブディレクトリのためglob対象外） |
 
 ## テストファイル構成
 
+`flutter drive` のドライバー本体は `integration_test/` ではなく
+**`test_driver/integration_test.dart`**（パッケージルート直下）にあります。
+
 ```
-integration_test/
-├── README.md                        # このファイル
-├── test_driver.dart                 # テストドライバー
-├── app_startup_test.dart            # アプリ起動テスト
-├── character_input_tts_test.dart    # 文字入力・読み上げテスト (TASK-0082)
-├── preset_phrase_test.dart          # 定型文テスト (TASK-0083)
-├── large_emergency_buttons_test.dart # 大ボタン・緊急ボタンテスト (TASK-0084)
-├── history_favorite_test.dart       # 履歴・お気に入りテスト (TASK-0085)
-└── helpers/
-    ├── helpers.dart                 # ヘルパーエクスポート
-    ├── test_helpers.dart            # テストユーティリティ
-    └── mock_api_server.dart         # モックAPIサーバー
+frontend/kotonoha_app/
+├── test_driver/
+│   └── integration_test.dart        # flutter drive のホスト側エントリ（integrationDriver）
+└── integration_test/
+    ├── README.md                        # このファイル
+    ├── test_driver.dart                 # 旧エントリ（未使用・*_test.dart に一致せず実行されない）
+    ├── app_startup_test.dart            # アプリ起動テスト
+    ├── character_input_tts_test.dart    # 文字入力・読み上げテスト (TASK-0082)
+    ├── preset_phrase_test.dart          # 定型文テスト (TASK-0083)
+    ├── large_emergency_buttons_test.dart # 大ボタン・緊急ボタンテスト (TASK-0084)
+    ├── history_favorite_test.dart       # 履歴・お気に入りテスト (TASK-0085)
+    ├── settings_accessibility_e2e_test.dart # 設定・アクセシビリティ
+    ├── ai_conversion_e2e_test.dart      # AI変換（CI除外: API必須）
+    ├── performance_profiling_e2e_test.dart # 性能計測（CI除外: 不安定）
+    ├── device_test/                     # 実機前提（CI除外）
+    └── helpers/
+        ├── helpers.dart                 # ヘルパーエクスポート
+        ├── test_helpers.dart            # テストユーティリティ
+        ├── test_data_setup.dart         # テストデータ投入
+        └── mock_api_server.dart         # モックAPIサーバー
 ```
 
 ## パフォーマンス要件

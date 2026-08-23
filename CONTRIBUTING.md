@@ -62,8 +62,9 @@ kotonohaプロジェクトへのコントリビューションを歓迎します
 git clone https://github.com/yourusername/kotonoha.git
 cd kotonoha
 
-# 環境変数を設定
-cp .env.example .env
+# 環境変数を設定（2ファイル。役割は docs/SETUP.md 参照）
+cp .env.example .env                    # docker-compose とFlutterビルド用
+cp backend/.env.example backend/.env    # バックエンドのアプリ設定
 
 # Docker環境を起動
 docker-compose up -d
