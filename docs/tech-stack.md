@@ -39,7 +39,6 @@
 
 ### HTTP通信
 - **dio**: 強力なHTTPクライアント、インターセプター対応
-- **retrofit**: 型安全なAPI呼び出し（dioベース）
 
 ### ローカルストレージ
 - **shared_preferences**: シンプルなkey-value保存
@@ -433,9 +432,6 @@ fvm use 3.38.1  # またはインストール済みの最新安定版
 
 # 依存関係インストール
 flutter pub get
-
-# コード生成（必要に応じて）
-flutter pub run build_runner build --delete-conflicting-outputs
 
 # iOS シミュレーター起動（macOS）
 open -a Simulator

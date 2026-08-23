@@ -26,7 +26,7 @@
 - **状態管理**: Riverpod 2.x
 - **ルーティング**: go_router
 - **ローカルストレージ**: Hive + shared_preferences
-- **HTTP通信**: dio + retrofit
+- **HTTP通信**: dio
 - **TTS**: flutter_tts
 
 ## 主要機能
@@ -95,11 +95,6 @@ lib/
 ```bash
 cd frontend/kotonoha_app
 flutter pub get
-```
-
-### コード生成
-```bash
-flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
 ### 実行

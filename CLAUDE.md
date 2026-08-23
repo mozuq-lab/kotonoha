@@ -114,9 +114,6 @@ flutter run -d chrome
 pytest                    # Backend
 flutter test              # Frontend
 
-# コード生成（Riverpod, Hive等）
-flutter pub run build_runner build --delete-conflicting-outputs
-
 # DBマイグレーション
 alembic upgrade head
 ```

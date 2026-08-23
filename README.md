@@ -120,7 +120,6 @@ uvicorn app.main:app --reload
 ```bash
 cd frontend/kotonoha_app
 flutter pub get
-flutter pub run build_runner build --delete-conflicting-outputs
 flutter run -d chrome
 ```
 
@@ -198,7 +197,6 @@ flutter run -d chrome             # Webで起動
 flutter test                      # テスト実行
 flutter test --coverage           # カバレッジ測定
 flutter analyze                   # 静的解析
-flutter pub run build_runner build --delete-conflicting-outputs  # コード生成
 ```
 
 ## テスト

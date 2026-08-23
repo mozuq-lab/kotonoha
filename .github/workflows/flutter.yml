@@ -40,9 +40,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
-
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
 
@@ -70,9 +67,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Run tests with coverage
         run: flutter test --coverage
@@ -157,9 +151,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Setup ChromeDriver
         uses: nanasess/setup-chromedriver@v2
@@ -279,9 +270,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
-
       - name: Build Web (Release)
         run: >
           flutter build web --release
@@ -323,9 +311,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
-
       - name: Build APK (Release)
         run: >
           flutter build apk --release --flavor internal
@@ -361,9 +346,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build iOS (no codesign)
         run: >
