@@ -113,8 +113,34 @@ class AppColors {
   /// 成功・完了表示用（緑）
   static const Color success = Color(0xFF4CAF50);
 
-  /// 警告表示用（オレンジ）
-  static const Color warning = Color(0xFFFF9800);
+  /// 警告表示の背景色（淡いオレンジ）
+  ///
+  /// 前景には [warningOnSurface]（テキスト・アイコン）と
+  /// [warningBorder]（枠線）を組み合わせること。
+  /// 🔵 信頼性レベル: 青信号 - 高コントラスト要件（4.5:1以上）
+  static const Color warningBackground = Color(0xFFFFE0B2);
+
+  /// 警告表示の前景色（テキスト・アイコン）
+  ///
+  /// [warningBackground] に対しコントラスト比 8.2:1 で WCAG 2.1 AA を満たす。
+  static const Color warningOnSurface = Color(0xFF6D2C00);
+
+  /// 警告表示の枠線色
+  ///
+  /// [warningBackground] に対しコントラスト比 6.1:1。
+  static const Color warningBorder = Color(0xFF8C3A00);
+
+  /// 警告アイコン色（自前の背景を持たず、テーマの surface に載せる場合）
+  ///
+  /// ライトテーマの背景 (#F5F5F5) に対し 5.4:1、
+  /// 高コントラストの白背景に対し 5.9:1。
+  static const Color warningIconOnSurfaceLight = Color(0xFFB23C00);
+
+  /// 警告アイコン色（ダークテーマ）
+  ///
+  /// ダークテーマの背景 (#1E1E1E) に対し 9.6:1。
+  /// ライト用の濃色をダークで使うと 2.81:1 まで落ちるため分ける。
+  static const Color warningIconOnSurfaceDark = Color(0xFFFFB74D);
 
   /// 情報表示用（青）
   static const Color info = Color(0xFF2196F3);

@@ -12,21 +12,11 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../constants/app_colors.dart';
+
 // =============================================================================
 // 警告アイコンの配色
 // =============================================================================
-
-/// 【設定定数】: ライトテーマでの警告アイコン色
-/// 背景 surfaceLight (#F5F5F5) に対し 5.4:1、高コントラストの白背景に対し 5.9:1。
-/// 従来の `Colors.orange[700]` (#F57C00) は 2.5〜2.7:1 で非テキスト基準(3:1)未達だった。
-/// 🔵 信頼性レベル: 青信号 - 高コントラスト要件
-const Color _warningIconLight = Color(0xFFB23C00);
-
-/// 【設定定数】: ダークテーマでの警告アイコン色
-/// 背景 surfaceDark (#1E1E1E) に対し 9.6:1。
-/// ライト用の濃色 (#B23C00) をダークで使うと 2.81:1 まで落ちるため、テーマごとに切り替える。
-/// 🔵 信頼性レベル: 青信号 - 高コントラスト要件
-const Color _warningIconDark = Color(0xFFFFB74D);
 
 /// 【設定定数】: エラースナックバーの背景色（Colors.red[700] 相当）
 const Color _snackBarBackground = Color(0xFFD32F2F);
@@ -42,8 +32,8 @@ const Color _snackBarForeground = Color(0xFFFFFFFF);
 /// 固定色ではライト・ダークの一方で必ずコントラスト不足になる。
 Color warningIconColor(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-        ? _warningIconDark
-        : _warningIconLight;
+        ? AppColors.warningIconOnSurfaceDark
+        : AppColors.warningIconOnSurfaceLight;
 
 // =============================================================================
 // 元テキスト表示ボックスの配色

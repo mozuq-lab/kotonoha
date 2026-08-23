@@ -12,6 +12,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/constants/app_colors.dart';
 import '../../../network/domain/models/network_state.dart';
 import '../../../network/providers/network_provider.dart';
 import '../../domain/models/politeness_level.dart';
@@ -37,12 +39,6 @@ const double _loadingIndicatorSize = 20.0;
 /// 【設定定数】: ローディングインジケーターのストローク幅
 /// 🟡 信頼性レベル: 黄信号 - 視認性を考慮した太さ
 const double _loadingIndicatorStrokeWidth = 2.0;
-
-/// 【設定定数】: オフライン表示の前景色
-/// 背景 `Colors.orange.shade100` (#FFE0B2) に対しコントラスト比 8.2:1 で
-/// WCAG 2.1 AA (4.5:1) を満たす。
-/// 🔵 信頼性レベル: 青信号 - 高コントラスト要件（4.5:1以上）
-const Color _offlineForeground = Color(0xFF6D2C00);
 
 // =============================================================================
 // AIConversionButton
@@ -299,7 +295,7 @@ class OfflineIndicator extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.orange.shade100,
+          color: AppColors.warningBackground,
           borderRadius: BorderRadius.circular(4),
         ),
         // 【アクセシビリティ】: orange.shade100 (#FFE0B2) 背景に対し
@@ -309,11 +305,11 @@ class OfflineIndicator extends ConsumerWidget {
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.wifi_off, size: 16, color: _offlineForeground),
+            Icon(Icons.wifi_off, size: 16, color: AppColors.warningOnSurface),
             SizedBox(width: 4),
             Text(
               'オフライン',
-              style: TextStyle(color: _offlineForeground, fontSize: 12),
+              style: TextStyle(color: AppColors.warningOnSurface, fontSize: 12),
             ),
           ],
         ),
