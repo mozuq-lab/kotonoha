@@ -26,11 +26,14 @@ import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_stat
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
+import 'package:kotonoha_app/features/preset_phrase/data/preset_phrase_repository.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
+import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 
 import '../mocks/mock_flutter_tts.dart';
 
@@ -42,6 +45,10 @@ import '../mocks/mock_flutter_tts.dart';
 class _TestablePresetPhraseNotifier extends PresetPhraseNotifier {
   void setStateForTest(PresetPhraseState value) => state = value;
 }
+
+/// テスト用: saveAll() の待機中に別経路がエラーを設定する状況を再現するための偽Repository
+class _FakePresetPhraseRepository extends Mock
+    implements PresetPhraseRepository {}
 
 class _TestableFavoriteNotifier extends FavoriteNotifier {
   void setStateForTest(FavoriteState value) => state = value;
@@ -217,15 +224,85 @@ void main() {
 
     tearDown(() => container.dispose());
 
-    test('無関係な更新（定型文追加）ではエラーが消えない', () async {
-      // 【回帰】: 旧実装では copyWith(phrases: ...) だけでエラーが黙って消えていた
+    /// 【回帰テスト】: エラー画面が恒久的に固着するシナリオ
+    ///
+    /// PresetPhraseScreen は state.error != null のときリスト全体を
+    /// エラー表示へ差し替える。エラーを消すのは loadPhrases() /
+    /// resetToDefaults()（どちらも lib/ に呼び出し元が無い）と
+    /// initializeDefaultPhrases()（phrases が非空だと早期return）だけなので、
+    /// 「初期化失敗 → 1件追加成功 → 画面再訪」でエラーが解除不能になる。
+    test('初期化失敗後に定型文を1件追加すると、画面再訪してもエラーが残らない', () async {
+      // 1. initializeDefaultPhrases() が失敗してエラー画面
       notifier.setStateForTest(errorState);
 
+      // 2. FABから定型文を1件追加（成功）
       await notifier.addPhrase('おはようございます', 'daily');
 
+      // 3. phrases が非空になる／エラーは操作成功時に解消される
+      final afterAdd = container.read(presetPhraseNotifierProvider);
+      expect(afterAdd.phrases.length, equals(1));
+      expect(afterAdd.error, isNull);
+
+      // 4. 画面を再訪しても（initializeDefaultPhrases は早期returnする）
+      //    エラーが復活しないこと
+      await notifier.initializeDefaultPhrases();
+      final afterRevisit = container.read(presetPhraseNotifierProvider);
+      expect(afterRevisit.phrases.length, equals(1),
+          reason: 'phrases が非空なので初期データ投入は早期returnする');
+      expect(afterRevisit.error, isNull);
+    });
+
+    /// 成功したCRUDはいずれもエラーを解消する。
+    /// メソッドごとに独立したテストにすることで、どれか1つでも
+    /// clearError を落とすと必ずどこかが失敗するようにしている。
+    PresetPhraseState stuckStateWithOnePhrase() {
+      notifier.setStateForTest(errorState);
+      return container.read(presetPhraseNotifierProvider);
+    }
+
+    test('updatePhrase() の成功でエラーが解消する', () async {
+      stuckStateWithOnePhrase();
+      await notifier.addPhrase('おはようございます', 'daily');
+      final id = container.read(presetPhraseNotifierProvider).phrases.first.id;
+      notifier.setStateForTest(
+        container.read(presetPhraseNotifierProvider).copyWith(error: 'エラー'),
+      );
+
+      await notifier.updatePhrase(id, content: 'こんばんは');
+
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, equals(1));
-      expect(state.error, equals('初期データの読み込みに失敗しました: Exception'));
+      expect(state.error, isNull);
+      expect(state.phrases.first.content, equals('こんばんは'));
+    });
+
+    test('toggleFavorite() の成功でエラーが解消する', () async {
+      stuckStateWithOnePhrase();
+      await notifier.addPhrase('おはようございます', 'daily');
+      final id = container.read(presetPhraseNotifierProvider).phrases.first.id;
+      notifier.setStateForTest(
+        container.read(presetPhraseNotifierProvider).copyWith(error: 'エラー'),
+      );
+
+      await notifier.toggleFavorite(id);
+
+      final state = container.read(presetPhraseNotifierProvider);
+      expect(state.error, isNull);
+      expect(state.phrases.first.isFavorite, isTrue);
+    });
+
+    test('deletePhrase() の成功でエラーが解消する', () async {
+      stuckStateWithOnePhrase();
+      await notifier.addPhrase('おはようございます', 'daily');
+      final id = container.read(presetPhraseNotifierProvider).phrases.first.id;
+      notifier.setStateForTest(
+        container.read(presetPhraseNotifierProvider).copyWith(error: 'エラー'),
+      );
+
+      await notifier.deletePhrase(id);
+
+      final state = container.read(presetPhraseNotifierProvider);
+      expect(state.error, isNull);
+      expect(state.phrases, isEmpty);
     });
 
     test('loadPhrases() 成功時はエラーを明示的にクリアする', () async {
@@ -238,7 +315,11 @@ void main() {
       expect(state.isLoading, isFalse);
     });
 
-    test('resetToDefaults() はエラーを明示的にクリアする', () async {
+    /// resetToDefaults() 自体は clearError を持たない。phrases を空にした直後に
+    /// 呼ぶ initializeDefaultPhrases() が早期returnせず必ずクリアするため、
+    /// 二重にクリアする必要がない（重複させるとテストで検証できない
+    /// デッドコードになる）。ここでは観測可能な最終状態のみを固定する。
+    test('resetToDefaults() の完了後はエラーが解消している', () async {
       notifier.setStateForTest(errorState);
 
       await notifier.resetToDefaults();
@@ -254,6 +335,39 @@ void main() {
       await notifier.initializeDefaultPhrases();
 
       final state = container.read(presetPhraseNotifierProvider);
+      expect(state.error, isNull);
+      expect(state.phrases, isNotEmpty);
+    });
+
+    /// 成功パスは冒頭のクリアに依存せず、自分でもクリアする必要がある。
+    /// `await repo.saveAll()` の待機中に他経路がエラーを設定し得るため。
+    test('initializeDefaultPhrases() は待機中に入ったエラーも成功時にクリアする', () async {
+      final repo = _FakePresetPhraseRepository();
+      when(repo.loadAllSync).thenReturn(<PresetPhrase>[]);
+
+      final repoContainer = ProviderContainer(
+        overrides: [
+          presetPhraseRepositoryProvider.overrideWithValue(repo),
+          presetPhraseNotifierProvider
+              .overrideWith(_TestablePresetPhraseNotifier.new),
+        ],
+      );
+      addTearDown(repoContainer.dispose);
+
+      final repoNotifier =
+          repoContainer.read(presetPhraseNotifierProvider.notifier)
+              as _TestablePresetPhraseNotifier;
+
+      // 保存の待機中に別経路がエラーを設定する
+      when(() => repo.saveAll(any())).thenAnswer((_) async {
+        repoNotifier.setStateForTest(const PresetPhraseState(
+          error: '待機中に発生した別経路のエラー',
+        ));
+      });
+
+      await repoNotifier.initializeDefaultPhrases();
+
+      final state = repoContainer.read(presetPhraseNotifierProvider);
       expect(state.error, isNull);
       expect(state.phrases, isNotEmpty);
     });
@@ -376,6 +490,23 @@ void main() {
       expect(
         container.read(ttsProvider).errorMessage,
         equals('読み上げ停止に失敗しました'),
+      );
+    });
+
+    test('未初期化のまま speak() して初期化に失敗した場合もエラーメッセージが残る', () async {
+      // 【回帰】: TTSService.initialize() が state を error にしないと、
+      // _syncStateFromService() が「エラーなし」と誤判定して
+      // 初期化失敗のメッセージを消してしまう
+      when(() => mockFlutterTts.setLanguage(any()))
+          .thenThrow(Exception('init error'));
+
+      final notifier = container.read(ttsProvider.notifier);
+      await notifier.speak('読み上げるテキスト');
+
+      expect(container.read(ttsProvider).state, equals(TTSState.error));
+      expect(
+        container.read(ttsProvider).errorMessage,
+        equals('TTS初期化に失敗しました'),
       );
     });
 
