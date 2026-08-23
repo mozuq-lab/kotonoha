@@ -1,16 +1,23 @@
 """
 app/core/config.py の Settings クラステスト
 
-【テスト対象】: Settings.ENVIRONMENT のバリデーション、既定値、production固有の必須設定
+【テスト対象】: Settings のバリデーション、既定値、production固有の必須設定、削除済みキーの移行措置
 【目的】: 設定ミス・設定漏れを起動時エラー（設定読み込み失敗）として拒否することを確認する。
           - "prod" 等の表記ゆれ → フェイルオープンな認証スキップ（app/api/deps.py）を防ぐ
           - production での必須設定漏れ → 本番で気付かないまま稼働することを防ぐ
 """
 
+import logging
+
 import pytest
 from pydantic import ValidationError
 
-from app.core.config import DEV_POSTGRES_PASSWORD, DEV_SECRET_KEY, Settings
+from app.core.config import (
+    _REMOVED_SETTINGS,
+    DEV_POSTGRES_PASSWORD,
+    DEV_SECRET_KEY,
+    Settings,
+)
 
 
 def _production_settings(**overrides) -> dict:
@@ -142,3 +149,52 @@ class TestProductionSettingsValidation:
         """production 以外では RATE_LIMIT_STORAGE_URI 未設定でも起動できる（開発体験を損なわない）"""
         settings = Settings(_env_file=None, ENVIRONMENT=environment, RATE_LIMIT_STORAGE_URI="")
         assert settings.RATE_LIMIT_STORAGE_URI == ""
+
+
+class TestRemovedSettingsMigration:
+    """削除済み設定キーの移行措置テスト。
+
+    pydantic-settings は extra="forbid" が既定のため、フィールドを削除すると
+    各開発者の backend/.env に残った古いキーで起動不能になる。既知の削除済みキー
+    （_REMOVED_SETTINGS）だけは読み捨て、それ以外の未知キーは従来どおり
+    起動時エラーにする、という切り分けを検証する。
+    """
+
+    def test_removed_key_in_env_file_does_not_break_startup(self, tmp_path, caplog):
+        """.env に削除済みキーが残っていても起動でき、警告ログが出る"""
+        env_file = tmp_path / ".env"
+        env_file.write_text(
+            "ACCESS_TOKEN_EXPIRE_MINUTES=11520\nPOSTGRES_USER=kotonoha_user\n",
+            encoding="utf-8",
+        )
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            settings = Settings(_env_file=env_file)
+
+        assert settings.POSTGRES_USER == "kotonoha_user"
+        assert not hasattr(settings, "ACCESS_TOKEN_EXPIRE_MINUTES")
+        assert "ACCESS_TOKEN_EXPIRE_MINUTES" in caplog.text
+        assert "backend/.env" in caplog.text
+
+    def test_removed_key_is_ignored_not_applied(self):
+        """削除済みキーは読み捨てられるだけで、他の設定値には影響しない"""
+        settings = Settings(_env_file=None, ACCESS_TOKEN_EXPIRE_MINUTES=11520)
+        assert settings.RATE_LIMIT_TIMES == 1
+        assert settings.RATE_LIMIT_SECONDS == 10
+
+    def test_unknown_key_is_still_rejected(self):
+        """未知キー（タイポ）は従来どおり起動時エラー
+
+        RATE_LIMIT_SECOND（末尾のSが無い）のようなタイポを黙って無視すると、
+        レート制限が意図せず既定値で動いてしまう。extra="ignore" に緩めず、
+        削除済みと分かっているキーだけを例外扱いしていることを保証する。
+        """
+        with pytest.raises(ValidationError, match="RATE_LIMIT_SECOND"):
+            Settings(_env_file=None, RATE_LIMIT_SECOND=10)
+
+    def test_removed_settings_table_documents_reasons(self):
+        """_REMOVED_SETTINGS の各エントリには削除理由が書かれている"""
+        assert _REMOVED_SETTINGS
+        for key, reason in _REMOVED_SETTINGS.items():
+            assert key.isupper(), f"{key} は環境変数名（大文字）であるべき"
+            assert reason.strip(), f"{key} に削除理由が書かれていない"

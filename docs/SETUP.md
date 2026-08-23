@@ -440,6 +440,22 @@ which python
 source /path/to/kotonoha/backend/venv/bin/activate
 ```
 
+#### 起動時に「Extra inputs are not permitted」で落ちる
+
+`backend/.env` に、既に削除された設定キーや、タイポしたキーが残っています。
+エラーメッセージに出ているキー名を `backend/.env` から削除してください。
+
+```
+ValidationError: 1 validation error for Settings
+ACCESS_TOKEN_EXPIRE_MINUTES
+  Extra inputs are not permitted
+```
+
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: JWT実装の削除に伴い廃止。読み捨てられますが、
+  起動時に警告ログが出るため `backend/.env` から削除してください
+- 上記以外のキー: タイポの可能性が高いので、`backend/.env.example` と綴りを照合してください
+  （タイポを黙って無視すると設定が効かないまま動いてしまうため、意図的に起動時エラーにしています）
+
 #### パッケージのインストールエラー
 
 ```bash
@@ -450,7 +466,7 @@ pip install --upgrade pip
 pip cache purge
 
 # 再インストール
-pip install -r requirements.txt --force-reinstall
+pip install -r requirements-dev.txt --force-reinstall
 ```
 
 #### マイグレーションエラー

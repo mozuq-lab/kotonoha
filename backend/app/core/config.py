@@ -4,16 +4,35 @@
 環境変数から設定を読み込み、型安全に管理する。
 """
 
-from typing import Literal
+import logging
+from typing import Any, Literal
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 DEV_SECRET_KEY = "dev-secret-key-change-me"  # noqa: S105
 DEV_POSTGRES_PASSWORD = "your_secure_password_here"  # noqa: S105
 
 # ENVIRONMENT に許可される値。表記ゆれ（"prod" 等）は起動時エラーとして拒否する。
 EnvironmentName = Literal["development", "test", "staging", "production"]
+
+# 過去に存在したが削除された設定キー（キー: 削除理由）。
+#
+# 本クラスは extra="forbid"（pydantic-settings既定）で動作するため、削除済みキーが
+# 各開発者の backend/.env や env ファイル方式のデプロイに残っていると、
+# "Extra inputs are not permitted" で起動できなくなる。.env.example を直しても
+# 既存の .env は自動では直らないため、既知の削除済みキーだけは読み捨てて警告する。
+#
+# extra="ignore" に緩めない理由: 未知キーを一律無視すると RATE_LIMIT_SECOND のような
+# タイポが黙って既定値で動いてしまい、レート制限の設定漏れを検出できなくなる。
+# ここに列挙した「削除済みと分かっているキー」だけを対象にし、それ以外の未知キーは
+# これまで通り起動時エラーとして弾く。
+_REMOVED_SETTINGS: dict[str, str] = {
+    # 未使用のJWT実装（create_access_token）と共に削除。MVPは端末APIキー認証のみ。
+    "ACCESS_TOKEN_EXPIRE_MINUTES": "JWT実装の削除に伴い廃止（この設定は無視されます）",
+}
 
 
 class Settings(BaseSettings):
@@ -27,6 +46,11 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "kotonoha_db"
 
     # API設定
+    # 【現状アプリ内に消費者はいない】JWT実装の削除により、SECRET_KEY を実際に使う
+    # コードは無くなった（参照は本定義と validate_production_settings のみ）。
+    # それでも残しているのは、docker-compose.yml が `:?` で必須化し CI もセットしている
+    # 運用上の契約であること、および署名用途が発生した際の受け皿を維持するため。
+    # 用途を追加しないまま棚卸しする場合は、docker-compose.yml とCIも併せて外すこと。
     SECRET_KEY: str = DEV_SECRET_KEY
     API_HOST: str = "0.0.0.0"  # noqa: S104
     API_PORT: int = 8000
@@ -49,6 +73,10 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
 
     # セッション設定
+    # 【現状アプリ内に消費者はいない】サーバー側セッション管理は未実装のため、
+    # この値を読むコードは存在しない。将来のセッション管理導入時の受け皿として
+    # 残している。棚卸しする場合は _REMOVED_SETTINGS への追加を忘れないこと
+    # （.env.example に載っており、各開発者の .env に残っているため）。
     SESSION_EXPIRE_MINUTES: int = 60
 
     # レート制限設定
@@ -135,6 +163,36 @@ class Settings(BaseSettings):
     def API_KEYS_LIST(self) -> list[str]:  # noqa: N802
         """有効な端末APIキーのリスト（空要素は除外）"""
         return [key.strip() for key in self.API_KEYS.split(",") if key.strip()]
+
+    @model_validator(mode="before")
+    @classmethod
+    def drop_removed_settings(cls, data: Any) -> Any:  # noqa: ANN401
+        """削除済みの設定キーを読み捨て、警告ログを出す。
+
+        .env に古いキーが残っているだけで起動不能になるのを防ぐための移行措置。
+        対象は `_REMOVED_SETTINGS` に明示したキーのみで、それ以外の未知キーは
+        extra="forbid" により従来どおり起動時エラーになる（タイポ検出を維持するため）。
+
+        Args:
+            data: バリデーション前の入力（BaseSettingsからは各ソースを統合した辞書が渡る）。
+
+        Returns:
+            Any: 削除済みキーを取り除いた入力。
+        """
+        if not isinstance(data, dict):
+            return data
+
+        for key, reason in _REMOVED_SETTINGS.items():
+            if key in data:
+                del data[key]
+                # setup_logging() 前に評価されるが、ハンドラ未設定でも WARNING は
+                # Python の last resort ハンドラにより stderr へ出力される。
+                logger.warning(
+                    "設定 %s は削除済みです（%s）。backend/.env から該当行を削除してください。",
+                    key,
+                    reason,
+                )
+        return data
 
     @model_validator(mode="after")
     def validate_production_settings(self) -> "Settings":

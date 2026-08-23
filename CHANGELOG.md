@@ -7,6 +7,42 @@
 
 ## [未リリース (Unreleased)]
 
+### 変更 (Changed)
+
+**バックエンドの本番運用向け改善**
+- `ENVIRONMENT=production` では `RATE_LIMIT_STORAGE_URI` の設定を必須化（未設定だと
+  レート制限カウンタがプロセスごとに分裂するため、起動時エラーで停止する）。
+  単一プロセスで意図的にインメモリを使う場合は `memory://` を明示すること
+- 開発用依存（pytest / ruff / black 等）を `backend/requirements-dev.txt` に分離。
+  本番イメージ（`backend/Dockerfile`）には含めない
+- ヘルスチェック（`/health` と `/api/v1/health`）の二重実装を統合。両パスとも
+  `app/api/v1/endpoints/health.py` の同一ハンドラが応答する（パスは両方とも維持）
+
+### 削除 (Removed)
+
+**未使用のJWT/パスワードハッシュ実装**
+- `create_access_token` / `verify_password` / `get_password_hash` と、
+  依存パッケージ `python-jose` / `bcrypt` を削除（アプリから未参照のデッドコード）。
+  MVPの認証は端末APIキー（`X-API-Key`）のみ
+- 上記に伴い設定 `ACCESS_TOKEN_EXPIRE_MINUTES` を削除
+
+#### ⚠️ 移行手順（既存の開発環境・デプロイ向け）
+
+`backend/.env` に `ACCESS_TOKEN_EXPIRE_MINUTES` の行が残っている場合は削除してください。
+
+```bash
+# backend/.env から該当行を削除
+sed -i '' '/^ACCESS_TOKEN_EXPIRE_MINUTES=/d' backend/.env   # macOS
+sed -i    '/^ACCESS_TOKEN_EXPIRE_MINUTES=/d' backend/.env   # Linux
+```
+
+削除しなくても起動はできますが（削除済みキーとして読み捨て、警告ログを出します）、
+設定ファイルを実態に合わせるため削除を推奨します。なお、これ以外の未知のキーは
+従来どおり起動時エラーになります（タイポ検出のため `extra="forbid"` を維持）。
+
+本番でレート制限の共有ストレージを使う場合は、あわせて
+`RATE_LIMIT_STORAGE_URI=redis://<host>:6379` を設定してください。
+
 ### 予定されている変更
 - Phase 2: 文字盤入力・定型文機能の実装
 
