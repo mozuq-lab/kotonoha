@@ -9,8 +9,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Python依存関係インストール
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# 開発用コンテナなので、コンテナ内で pytest / ruff / black を実行できるよう
+# requirements-dev.txt（先頭で requirements.txt を -r で取り込む）を入れる。
+# 本番イメージ（backend/Dockerfile）は requirements.txt のみを入れる。
+COPY backend/requirements.txt backend/requirements-dev.txt ./
+RUN pip install --no-cache-dir -r requirements-dev.txt
 
 # アプリケーションコピー
 COPY backend/ .

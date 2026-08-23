@@ -148,11 +148,11 @@ venv\Scripts\activate
 ### 2. 依存関係のインストール
 
 ```bash
-# 必須パッケージ
-pip install -r requirements.txt
+# 開発・テスト用（pytest / ruff / black を含む。先頭で requirements.txt を取り込む）
+pip install -r requirements-dev.txt
 
-# 開発用パッケージ（オプション）
-pip install -r requirements-dev.txt  # 存在する場合
+# 本番実行に必要な分だけ入れたい場合（開発ツールは入らない）
+pip install -r requirements.txt
 ```
 
 ### 3. データベースマイグレーション

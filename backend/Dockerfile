@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
+# 本番イメージには requirements.txt（本番用）のみを入れる。
+# テスト・静的解析ツールは requirements-dev.txt 側にあり、ここでは意図的に入れない。
 COPY requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
 
