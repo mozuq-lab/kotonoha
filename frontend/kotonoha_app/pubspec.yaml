@@ -81,7 +81,9 @@ dev_dependencies:
   mocktail: ^1.0.4
 
   # ソース検査テスト用（Dartコードの構文解析）
-  analyzer: ^8.4.1
+  # 上限を広めに取る。^8.4.1 だと analyzer 9系が出た際に、周辺パッケージが
+  # 追随してもここが手動bumpを要求するブロッカーになるため。
+  analyzer: ">=8.4.1 <10.0.0"
 
   # モックサーバー（E2Eテスト用）
   http_mock_adapter: ^0.6.1

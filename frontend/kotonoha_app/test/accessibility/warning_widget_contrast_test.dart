@@ -7,6 +7,7 @@
 /// 色定数を戻した場合に検知できるよう、実際に描画された色から比を計算して検証する。
 ///
 /// エラーダイアログ側は error_dialog_contrast_test.dart が担当する。
+/// 計算ヘルパー自体の妥当性検証は high_contrast_theme_test.dart が担当する。
 ///
 /// 🔵 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA・4.5:1以上）
 library;
@@ -22,26 +23,6 @@ import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_wi
 import '../support/contrast_helpers.dart';
 
 void main() {
-  group('コントラスト比計算ヘルパーの妥当性', () {
-    test('既知の値と一致する', () {
-      // 黒背景に白文字は最大比 21:1
-      expect(
-        contrastRatio(const Color(0xFFFFFFFF), const Color(0xFF000000)),
-        closeTo(21.0, 0.01),
-      );
-      // 同色同士は 1:1
-      expect(
-        contrastRatio(const Color(0xFF6D2C00), const Color(0xFF6D2C00)),
-        closeTo(1.0, 0.01),
-      );
-      // 修正前の組み合わせ（Colors.orange on orange.shade100）はAA未達であること
-      expect(
-        contrastRatio(const Color(0xFFFF9800), const Color(0xFFFFE0B2)),
-        lessThan(4.5),
-      );
-    });
-  });
-
   group('OfflineIndicator のコントラスト比', () {
     /// オフライン状態にして表示させる。
     Future<void> pumpOffline(WidgetTester tester) async {

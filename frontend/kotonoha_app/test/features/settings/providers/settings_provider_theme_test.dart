@@ -17,9 +17,10 @@ import 'package:kotonoha_app/core/themes/theme_provider.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
 import 'package:kotonoha_app/core/themes/dark_theme.dart';
 
-import '../../../support/contrast_helpers.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
+
+import '../../../support/contrast_helpers.dart';
 
 void main() {
   group('TASK-0073: テーマ設定 Providerテスト', () {

@@ -28,7 +28,8 @@
 ///   （実挙動は ai_conversion_result_dialog_shell_route_test.dart が担当）
 /// - コールバック本体を別メソッドへ切り出し、そのメソッド内でpopする形は
 ///   検出できない。ダイアログ表示と同じメソッドに処理を保つこと
-/// - tear-off（`onTap: nav.pop`）は呼び出しではないため検出しない（実害なし）
+/// - 呼び出しの形でないものは検出しない: tear-off（`onTap: nav.pop`）、
+///   `nav.pop.call()`、`(nav.pop)()`。いずれも旧実装でも検出できておらず実害はない
 /// - `_showConversionResult` を改名・移動した場合は健全性チェックで明示的に落ちる
 ///
 /// 🔵 信頼性レベル: 青信号 - P0障害（ShellRoute配下でのダイアログpop）の回帰防止
