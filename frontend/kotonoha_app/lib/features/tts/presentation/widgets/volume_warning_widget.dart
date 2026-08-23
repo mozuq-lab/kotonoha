@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 
+/// 音量警告ウィジェット
 ///
 /// OSの音量が0（ミュート）の場合に「音量が0です」という
 /// 視覚的警告を表示するウィジェット。
@@ -61,10 +62,10 @@ class VolumeWarningWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.warningBackground,
+          color: AppColors.warningContainer,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: AppColors.warningBorder,
+            color: AppColors.warningOutline,
             width: 2,
           ),
         ),
@@ -73,7 +74,7 @@ class VolumeWarningWidget extends StatelessWidget {
             // 音量オフアイコン
             const Icon(
               Icons.volume_off,
-              color: AppColors.warningOnSurface,
+              color: AppColors.onWarningContainer,
               size: 28,
             ),
             const SizedBox(width: 12),
@@ -84,7 +85,7 @@ class VolumeWarningWidget extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.warningOnSurface,
+                  color: AppColors.onWarningContainer,
                 ),
               ),
             ),
@@ -98,7 +99,7 @@ class VolumeWarningWidget extends StatelessWidget {
                 alignment: Alignment.center,
                 child: const Icon(
                   Icons.close,
-                  color: AppColors.warningOnSurface,
+                  color: AppColors.onWarningContainer,
                   size: 24,
                 ),
               ),

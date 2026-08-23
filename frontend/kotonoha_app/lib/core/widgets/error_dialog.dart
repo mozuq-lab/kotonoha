@@ -32,8 +32,8 @@ const Color _snackBarForeground = Color(0xFFFFFFFF);
 /// 固定色ではライト・ダークの一方で必ずコントラスト不足になる。
 Color warningIconColor(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-        ? AppColors.warningIconOnSurfaceDark
-        : AppColors.warningIconOnSurfaceLight;
+        ? AppColors.warningIconDark
+        : AppColors.warningIcon;
 
 // =============================================================================
 // 元テキスト表示ボックスの配色
