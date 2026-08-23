@@ -37,6 +37,17 @@ def trust_one_proxy(monkeypatch):
 
 
 @pytest.fixture
+def trust_two_proxies(monkeypatch):
+    """信頼プロキシ2段を設定する（例: CDN + ALB の背後）。
+
+    この設定下では X-Forwarded-For の右から2番目のみが識別子として使われ、
+    チェーンが2要素に満たないリクエストはヘッダーを採用せず接続元IPで識別される。
+    """
+    monkeypatch.setattr(settings, "TRUSTED_PROXY_COUNT", 2)
+    yield
+
+
+@pytest.fixture
 def mock_ai_client():
     """AIクライアントをモックするフィクスチャ"""
     with (
@@ -655,6 +666,41 @@ async def test_tc303_左側偽装によるレート制限回避を防止(mock_ai
 
         # 【結果検証】: 右端が同一のため同一クライアントとして制限される
         assert response2.status_code == 429  # 【確認内容】: 左側偽装では回避不可 🔵
+
+
+@pytest.mark.asyncio
+async def test_tc306_短いXFFチェーンではヘッダーを採用しない(mock_ai_client, trust_two_proxies):
+    """
+    【テスト目的】: XFFチェーンが信頼プロキシ段数に満たない場合に偽装値を採用しないことを確認
+    【テスト内容】: 信頼プロキシ2段の設定に対し、1要素だけのXFFを送っても識別子にならないことを検証
+    【期待される動作】: 毎回異なる単一IPのXFFを送っても、接続元IPで識別され2回目は429
+    🔵 セキュリティ修正（短いチェーン時に最左へフォールバックしない）の回帰テスト
+
+    【テストシナリオ】:
+    - Given: TRUSTED_PROXY_COUNT=2（信頼プロキシ2段の構成）
+    - When: 信頼プロキシを経由せず1要素だけのXFFを毎回変えて2回リクエスト
+    - Then: XFFは採用されず接続元IPで制限され、2回目は429（回避不可）
+    """
+    request_body = {"input_text": "テスト", "politeness_level": "normal"}
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # 【実際の処理実行】: 1回目（チェーン長1の偽装XFF-A）
+        response1 = await client.post(
+            "/api/v1/ai/convert",
+            json=request_body,
+            headers={"X-Forwarded-For": "203.0.113.1"},
+        )
+        assert response1.status_code == 200  # 【確認内容】: 1回目は成功 🔵
+
+        # 【実際の処理実行】: 2回目（チェーン長1の異なる偽装XFF-B）
+        response2 = await client.post(
+            "/api/v1/ai/convert",
+            json=request_body,
+            headers={"X-Forwarded-For": "203.0.113.2"},
+        )
+
+        # 【結果検証】: 短いチェーンは採用されず接続元IPで制限される
+        assert response2.status_code == 429  # 【確認内容】: 短チェーン偽装では回避不可 🔵
 
 
 @pytest.mark.asyncio

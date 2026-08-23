@@ -32,6 +32,8 @@ def get_client_ip(request: Request) -> str:
         本実装では settings.TRUSTED_PROXY_COUNT で「自身が運用する信頼できるプロキシ段数」
         を明示し、X-Forwarded-For の右からN番目（= 信頼プロキシが観測したクライアントIP）
         のみを採用する。0 の場合は X-Forwarded-For を一切信頼せず接続元IPを使用する。
+        また、チェーンが設定段数に満たない場合（＝信頼プロキシを経由していない、
+        あるいはヘッダーを偽装された場合）は X-Forwarded-For を採用せず接続元IPを使う。
 
     Args:
         request: FastAPIリクエストオブジェクト
@@ -45,10 +47,12 @@ def get_client_ip(request: Request) -> str:
         forwarded_for = request.headers.get("X-Forwarded-For", "")
         # カンマ区切りで複数IPが連なる。末尾が最も自身に近いプロキシが付与した値。
         parts = [ip.strip() for ip in forwarded_for.split(",") if ip.strip()]
-        if parts:
-            # 右からproxy_count番目（チェーンより短ければ最左）を採用
-            index = min(proxy_count, len(parts))
-            return parts[-index]
+        # チェーンが信頼プロキシ段数以上ある場合のみ、右からproxy_count番目を採用する。
+        # チェーンが想定より短い場合は「信頼プロキシが付与した値」が存在しないため、
+        # 最左（＝クライアントが自由に設定できる値）へフォールバックしてはならない。
+        # その場合は X-Forwarded-For を無視して接続元IPを使う（フェイルクローズ）。
+        if len(parts) >= proxy_count:
+            return parts[-proxy_count]
 
     # X-Forwarded-Forを信頼しない、または値が無い場合は接続元IPを使用
     if request.client and request.client.host:
