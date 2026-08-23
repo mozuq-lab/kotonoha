@@ -79,15 +79,27 @@ jobs:
 
       - name: Check coverage threshold
         run: |
+          set -euo pipefail
+
           # Check if coverage file exists
           if [ ! -f coverage/lcov.info ]; then
-            echo "::warning::Coverage file not found"
-            exit 0
+            echo "::error::Coverage file not found"
+            exit 1
           fi
 
           # Calculate coverage using simple line counting
-          TOTAL_LINES=$(grep -c "^DA:" coverage/lcov.info || echo "0")
-          COVERED_LINES=$(grep "^DA:" coverage/lcov.info | grep -v ",0$" | wc -l || echo "0")
+          #
+          # 【既知の制約】: `flutter test --coverage` は「どのテストからも import されない
+          # lib/ 配下のファイル」を lcov.info に出力しない。そのため母数(DA行)が過小になり、
+          # ここで算出される値は実際のカバレッジより高く出る（過大評価）。
+          # 厳密なゲートにするには全 lib/ ファイルを import する coverage helper テストの
+          # 追加、または very_good_cli 等の導入が必要。現状は下限チェックとしてのみ機能する。
+          # NOTE: `|| echo "0"` だと0件マッチ時に "0\n0" となり数値比較が壊れるため `|| true` を使う。
+          # `set -u` 下でも空文字にならないよう ${VAR:-0} で受ける。
+          TOTAL_LINES=$(grep -c "^DA:" coverage/lcov.info || true)
+          TOTAL_LINES=${TOTAL_LINES:-0}
+          COVERED_LINES=$(grep "^DA:" coverage/lcov.info | grep -vc ",0$" || true)
+          COVERED_LINES=${COVERED_LINES:-0}
 
           if [ "$TOTAL_LINES" -gt 0 ]; then
             COVERAGE=$(echo "scale=1; $COVERED_LINES * 100 / $TOTAL_LINES" | bc)
@@ -95,12 +107,13 @@ jobs:
 
             THRESHOLD=80
             if [ "$(echo "$COVERAGE < $THRESHOLD" | bc)" = "1" ]; then
-              echo "::warning::Coverage $COVERAGE% is below threshold $THRESHOLD%"
-            else
-              echo "✅ Coverage $COVERAGE% meets threshold $THRESHOLD%"
+              echo "::error::Coverage $COVERAGE% is below threshold $THRESHOLD%"
+              exit 1
             fi
+            echo "✅ Coverage $COVERAGE% meets threshold $THRESHOLD%"
           else
-            echo "::warning::No coverage data found"
+            echo "::error::No coverage data found"
+            exit 1
           fi
 
       - name: Upload coverage to Codecov
@@ -346,7 +359,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: ${{ steps.deploy.outputs.url }}
+      url: ${{ steps.deploy.outputs.preview-url }}
 
     steps:
       - uses: actions/checkout@v6
@@ -357,8 +370,44 @@ jobs:
           name: web-build
           path: ./web-build
 
+      - name: Add Vercel config to build output
+        run: |
+          set -euo pipefail
+          # vercel.json はリポジトリ側にあり、成果物(build/web)には含まれないため、
+          # デプロイ対象ディレクトリへコピーする。これが無いと SPA rewrites と
+          # セキュリティヘッダーが本番で失われる。
+          # デプロイ対象は build/web の中身そのものなので outputDirectory は "." に上書きする。
+          python3 - <<'EOF'
+          import json
+          cfg = json.load(open('frontend/kotonoha_app/vercel.json'))
+          cfg['outputDirectory'] = '.'
+          json.dump(cfg, open('./web-build/vercel.json', 'w'), indent=2, ensure_ascii=False)
+          EOF
+          test -f ./web-build/vercel.json
+
+      - name: Check Vercel secrets
+        id: vercel_check
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          # secrets コンテキストは job-level `if:` で参照できないため、
+          # env 経由でステップ出力に落として後続ステップを条件分岐させる。
+          if [ -n "$VERCEL_TOKEN" ] && [ -n "$VERCEL_ORG_ID" ] && [ -n "$VERCEL_PROJECT_ID" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Vercel secrets が未設定のためデプロイをスキップします（VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID）"
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # secrets 設定済みのときのみ実行し、その場合の失敗はジョブ失敗として扱う
+      # （continue-on-error は付けない）。握り潰すと vercel.json のコピー漏れ等に
+      # 気付けないため。未設定環境では上の Check ステップでスキップされる。
       - name: Deploy to Vercel
         id: deploy
+        if: steps.vercel_check.outputs.configured == 'true'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -366,12 +415,8 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./web-build
           vercel-args: '--prod'
-        continue-on-error: true
 
       - name: Deployment status
+        if: steps.vercel_check.outputs.configured == 'true'
         run: |
-          if [ "${{ steps.deploy.outcome }}" == "success" ]; then
-            echo "✅ Deployed to: ${{ steps.deploy.outputs.url }}"
-          else
-            echo "⚠️ Deployment skipped or failed. Ensure Vercel secrets are configured."
-          fi
+          echo "✅ Deployed to: ${{ steps.deploy.outputs.preview-url }}"

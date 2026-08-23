@@ -14,7 +14,11 @@ on:
 
 env:
   PYTHON_VERSION: '3.10'
-  COVERAGE_THRESHOLD: 90
+  # 表示用。実際のゲートは backend/pyproject.toml の
+  # [tool.coverage.report] fail_under が担う（pytest-cov が自動採用）。
+  # 値を変える場合は pyproject.toml 側を変更し、ここは表示を合わせること。
+  # CLAUDE.md / docs/tech-stack.md の「全体80%以上」とも揃えている。
+  COVERAGE_THRESHOLD: 80
 
 jobs:
   lint:
@@ -118,8 +122,21 @@ jobs:
           TEST_DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
         run: pytest --cov=app --cov-report=xml --cov-report=html --cov-report=term-missing -v
 
-      - name: Check coverage threshold
+      # NOTE: カバレッジ未達の判定は上の「Run tests with coverage」で完了している。
+      # pytest-cov は --cov-fail-under 未指定でも pyproject.toml の
+      # [tool.coverage.report] fail_under を採用するため、閾値未満なら
+      # pytest 自体が非ゼロ終了する（＝閾値の単一の情報源は pyproject.toml）。
+      # このステップは実測値をログに残すための表示専用。ここで二重に閾値判定を
+      # 行うと、基準が2箇所に分かれて食い違う原因になる。
+      - name: Report coverage
         run: |
+          set -euo pipefail
+
+          if [ ! -f coverage.xml ]; then
+            echo "::error::coverage.xml が生成されていない"
+            exit 1
+          fi
+
           # Extract coverage percentage from XML report
           COVERAGE=$(python -c "
           import xml.etree.ElementTree as ET
@@ -128,14 +145,7 @@ jobs:
           line_rate = float(root.get('line-rate', 0))
           print(f'{line_rate * 100:.1f}')
           " 2>/dev/null || echo "0")
-          echo "Coverage: $COVERAGE%"
-
-          # Check threshold
-          if [ "$(echo "$COVERAGE < ${{ env.COVERAGE_THRESHOLD }}" | bc -l)" = "1" ]; then
-            echo "::warning::Coverage $COVERAGE% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
-          else
-            echo "✅ Coverage $COVERAGE% meets threshold ${{ env.COVERAGE_THRESHOLD }}%"
-          fi
+          echo "Coverage: $COVERAGE%（閾値 ${{ env.COVERAGE_THRESHOLD }}% の判定は pytest 側で実施済み）"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
