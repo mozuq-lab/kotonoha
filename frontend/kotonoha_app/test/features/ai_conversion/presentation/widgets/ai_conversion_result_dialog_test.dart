@@ -17,6 +17,8 @@ import 'package:kotonoha_app/core/themes/light_theme.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
 import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_result_dialog.dart';
 
+import '../../../../support/contrast_helpers.dart';
+
 void main() {
   group('TASK-0069: AI変換結果表示・選択UIテスト', () {
     // =========================================================================
@@ -938,15 +940,6 @@ void main() {
     // Color.computeLuminance()を用いたWCAG 2.1のコントラスト比計算式で
     // ライト/ダーク/高コントラストの3テーマすべてがAA基準を満たすことを検証する。
     group('7. AA対応（コントラスト比）テスト', () {
-      /// WCAG 2.1のコントラスト比を計算する（(明るい方の輝度+0.05)/(暗い方の輝度+0.05)）
-      double contrastRatio(Color a, Color b) {
-        final luminanceA = a.computeLuminance();
-        final luminanceB = b.computeLuminance();
-        final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;
-        final darker = luminanceA > luminanceB ? luminanceB : luminanceA;
-        return (lighter + 0.05) / (darker + 0.05);
-      }
-
       final themes = <String, ThemeData>{
         'light': lightTheme,
         'dark': darkTheme,

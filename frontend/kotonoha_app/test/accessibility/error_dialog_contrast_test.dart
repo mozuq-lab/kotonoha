@@ -26,7 +26,7 @@ import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
 import 'package:kotonoha_app/core/widgets/error_dialog.dart';
 
-import 'contrast_helpers.dart';
+import '../support/contrast_helpers.dart';
 
 /// 検証対象の3テーマ
 final Map<String, ThemeData> _themes = {
@@ -71,7 +71,7 @@ void main() {
       );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
-      return resolvedIconColor(tester, Icons.wifi_off);
+      return resolvedIconColor(tester, find.byIcon(Icons.wifi_off));
     }
 
     for (final entry in _themes.entries) {

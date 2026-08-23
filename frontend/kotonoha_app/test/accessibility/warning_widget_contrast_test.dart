@@ -19,7 +19,7 @@ import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conv
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_widget.dart';
 
-import 'contrast_helpers.dart';
+import '../support/contrast_helpers.dart';
 
 void main() {
   group('コントラスト比計算ヘルパーの妥当性', () {
@@ -97,7 +97,7 @@ void main() {
       await pumpOffline(tester);
 
       final bg = background(tester);
-      final iconColor = resolvedIconColor(tester, Icons.wifi_off);
+      final iconColor = resolvedIconColor(tester, find.byIcon(Icons.wifi_off));
 
       expectOpaque(bg, 'オフライン表示の背景色');
       expectOpaque(iconColor, 'オフラインアイコンの色');
@@ -166,7 +166,8 @@ void main() {
       expectOpaque(background, '音量警告の背景色');
 
       // 音量オフアイコン
-      final volumeIconColor = resolvedIconColor(tester, Icons.volume_off);
+      final volumeIconColor =
+          resolvedIconColor(tester, find.byIcon(Icons.volume_off));
       final iconRatio = contrastRatio(volumeIconColor, background);
       expect(
         iconRatio,
@@ -176,7 +177,8 @@ void main() {
       );
 
       // 閉じるアイコン
-      final closeIconColor = resolvedIconColor(tester, Icons.close);
+      final closeIconColor =
+          resolvedIconColor(tester, find.byIcon(Icons.close));
       final closeRatio = contrastRatio(closeIconColor, background);
       expect(
         closeRatio,
