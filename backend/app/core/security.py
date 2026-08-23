@@ -1,21 +1,16 @@
 """
 セキュリティモジュール
 
-【機能概要】: JWT認証、パスワードハッシュ化など認証・認可機能を提供
-【実装方針】: jose, passlib を使用した標準的なセキュリティ実装
+【機能概要】: 端末APIキー認証（AI変換APIの保護）に必要な検証機能を提供
+【実装方針】: MVPはアカウント管理を持たないため、端末発行の共有シークレットを
+              タイミング攻撃に強い比較で照合するだけの最小構成とする。
+              JWT・パスワードハッシュ化はMVP範囲外（クラウド同期・アカウント管理は
+              実装しない）のため、本モジュールには置かない。
 """
 
 import hmac
-from datetime import datetime, timedelta, timezone
-from typing import Any
-
-import bcrypt
-from jose import jwt
 
 from app.core.config import settings
-
-# JWT暗号化アルゴリズム
-ALGORITHM = "HS256"
 
 
 def is_valid_api_key(api_key: str | None) -> bool:
@@ -47,59 +42,3 @@ def is_valid_api_key(api_key: str | None) -> bool:
         if hmac.compare_digest(candidate, allowed_bytes):
             valid = True
     return valid
-
-
-def create_access_token(
-    subject: str | Any,  # noqa: ANN401
-    expires_delta: timedelta | None = None,
-) -> str:
-    """
-    【機能概要】: アクセストークンを生成する
-    【実装方針】: JWTトークンを生成し、有効期限を設定
-
-    Args:
-        subject: トークンのサブジェクト（通常はユーザーID）
-        expires_delta: トークンの有効期限。Noneの場合はデフォルト値を使用
-
-    Returns:
-        str: 生成されたJWTトークン
-    """
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-
-    to_encode = {"exp": expire, "sub": str(subject)}
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    【機能概要】: プレーンテキストパスワードとハッシュ化パスワードを比較検証
-    【実装方針】: bcryptアルゴリズムを使用した安全な比較
-
-    Args:
-        plain_password: 検証するプレーンテキストパスワード
-        hashed_password: 保存されているハッシュ化パスワード
-
-    Returns:
-        bool: パスワードが一致する場合True
-    """
-    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
-
-
-def get_password_hash(password: str) -> str:
-    """
-    【機能概要】: パスワードをハッシュ化する
-    【実装方針】: bcryptアルゴリズムを使用した安全なハッシュ化
-
-    Args:
-        password: ハッシュ化するプレーンテキストパスワード
-
-    Returns:
-        str: ハッシュ化されたパスワード
-    """
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")

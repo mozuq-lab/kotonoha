@@ -34,9 +34,6 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "kotonoha API"
     VERSION: str = "1.0.0"
 
-    # 認証設定
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8日間
-
     # 端末APIキー認証設定
     # AI変換APIへのアクセスに必要な端末APIキー（カンマ区切りで複数指定可）。
     # MVPはアカウント管理を持たないため、端末発行の共有シークレットで保護する。

@@ -66,10 +66,8 @@
 - **asyncpg**: 非同期PostgreSQLドライバ
 
 ### 認証・セキュリティ
-- **JWT (JSON Web Token)**: トークンベース認証
-- **OAuth2 + Bearer Token**: FastAPI標準の認証方式
-- **passlib + bcrypt**: パスワードハッシュ化
-- **python-jose**: JWT生成・検証
+- **端末APIキー認証（`X-API-Key`ヘッダー）**: MVPで実際に採用している方式。アカウント管理を持たないため、端末に発行した共有シークレットを`hmac.compare_digest`で照合する（`app/core/security.py`）
+- **JWT / OAuth2 / パスワードハッシュ化（bcrypt）**: **MVP範囲外・未実装**。アカウント管理を導入する際に再検討する（かつて雛形として存在した`python-jose` / `bcrypt` 依存とJWT関数は、未使用のデッドコードだったため削除済み）
 
 ### バリデーション
 - **Pydantic**: 2.x (FastAPI標準、データバリデーション・型安全性)
@@ -235,10 +233,8 @@
 - **TLS 1.2+**: 暗号化通信
 
 ### 認証・認可
-- **JWT**: アクセストークン（短命、15分程度）
-- **Refresh Token**: リフレッシュトークン（長命、7日程度）
-- **OAuth2**: 標準的な認証フロー
-- **Password Hashing**: bcrypt（コスト係数12以上）
+- **端末APIキー（`X-API-Key`）**: MVPの認証方式。カンマ区切りで複数キーを登録でき、定数時間比較で照合する。未設定時はdevelopment/testのみ認証スキップ、それ以外は全拒否（フェイルクローズ）
+- **JWT / Refresh Token / OAuth2 / bcrypt**: アカウント管理を導入する場合の将来案（**MVPでは未実装**）
 
 ### API セキュリティ
 - **CORS**: 適切なオリジン設定
