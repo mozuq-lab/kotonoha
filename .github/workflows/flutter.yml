@@ -137,6 +137,9 @@ jobs:
     name: Integration Test
     runs-on: ubuntu-latest
     needs: test
+    # ハング時に既定の6時間を消費しないための予防措置。
+    # 6ターゲットでターゲットごとにビルドが走るため、実測4〜6分に対し十分な余裕を取る。
+    timeout-minutes: 30
 
     defaults:
       run:
@@ -213,6 +216,9 @@ jobs:
           done
           echo "Running ${#targets[@]} integration test target(s); skipped $(echo $EXCLUDED | wc -w | tr -d ' ')"
 
+          # 1本目で打ち切ると残りのターゲットの可否が分からず、除外対象を
+          # 事実ベースで判断できない。全ターゲットを実行してから集約して落とす。
+          failed=()
           for target in "${targets[@]}"; do
             echo "::group::$target"
             # 失敗時も endgroup を出してログの折りたたみが残らないようにする
@@ -223,11 +229,19 @@ jobs:
               --browser-name=chrome \
               --headless; then
               echo "::endgroup::"
-              echo "::error::Integration test failed: $target"
-              exit 1
+              echo "::warning::Integration test failed: $target"
+              failed+=("$target")
+            else
+              echo "::endgroup::"
             fi
-            echo "::endgroup::"
           done
+
+          if [ ${#failed[@]} -gt 0 ]; then
+            printf '::error::Integration test failed: %s\n' "${failed[@]}"
+            echo "Failed ${#failed[@]} of ${#targets[@]} target(s)"
+            exit 1
+          fi
+          echo "✅ All ${#targets[@]} integration test target(s) passed"
 
   build-web:
     name: Build Web
