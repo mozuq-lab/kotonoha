@@ -197,7 +197,6 @@ async def test_client_with_db(test_engine, test_session_maker):
         FastAPI: テスト用データベースに接続するFastAPIアプリケーション
     """
     from app.api.deps import get_db_session, get_session_factory
-    from app.db.session import get_db
     from app.main import app
 
     # 【依存性オーバーライド関数】: test_session_makerから新しいセッションを作成
@@ -215,9 +214,9 @@ async def test_client_with_db(test_engine, test_session_maker):
                 await session.close()
 
     # 【依存性オーバーライド】: 本番DBの代わりにテスト用DBを使用
-    # get_db_sessionとget_db両方をオーバーライド（healthエンドポイント対応）
+    # ルーティング上の全DB依存はget_db_sessionに統一されている
+    # （/health も /api/v1/health も同一ハンドラでget_db_sessionを使う）
     app.dependency_overrides[get_db_session] = override_get_db
-    app.dependency_overrides[get_db] = override_get_db
 
     # 【依存性オーバーライド】: バックグラウンドタスク（AI変換ログ書き込み）が
     # 独立したセッションを取得する際も、本番用DBではなくテスト用DBに向ける

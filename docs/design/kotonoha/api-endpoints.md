@@ -294,6 +294,10 @@ Content-Type: application/json
 
 APIサーバーの稼働状況を確認します。
 
+> **エイリアス**: 後方互換のため `GET /health`（ルートレベル）でも同じレスポンスを返します。
+> ハンドラの実体は1つ（`app/api/v1/endpoints/health.py`）で、両パスに同じルーターを
+> マウントしています。新規の利用者は `/api/v1/health` を使ってください。
+
 #### リクエスト
 
 ```http

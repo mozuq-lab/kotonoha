@@ -82,10 +82,16 @@ async_session_maker = async_sessionmaker(
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """FastAPI依存性注入用のデータベースセッションジェネレータ。
+    """データベースセッションジェネレータ（セッション生成の実体）。
 
     非同期ジェネレータでセッションを提供し、自動クリーンアップを実現する。
     正常終了時はcommit、例外発生時はrollbackを実行。
+
+    【エンドポイントからは直接使わないこと】: ルーティングのDB依存は
+    `app.api.deps.get_db_session` に統一している。エンドポイントで
+    `Depends(get_db)` と書くと、`get_db_session` をオーバーライドする
+    テスト（tests/conftest.py の test_client_with_db）がそのエンドポイントに
+    効かず、テストだけ本番DBを見にいく事故が起きる。
 
     Yields:
         AsyncSession: 非同期データベースセッション

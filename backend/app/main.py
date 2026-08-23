@@ -8,16 +8,14 @@ FastAPIメインアプリケーション
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
-from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.api import api_router
-from app.api.v1.endpoints.health import get_ai_provider_status, get_current_timestamp
+from app.api.v1.endpoints.health import router as health_router
 from app.core.config import settings
 from app.core.exceptions import (
     database_exception_handler,
@@ -26,8 +24,7 @@ from app.core.exceptions import (
 )
 from app.core.logging_config import get_logger, setup_logging
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
-from app.db.session import get_db
-from app.schemas.health import HealthErrorResponse, HealthResponse, RootResponse
+from app.schemas.health import RootResponse
 
 # ロギング設定を初期化
 setup_logging()
@@ -113,6 +110,13 @@ app.add_middleware(
 # APIルーターを登録
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+# 【後方互換】ルートレベルの /health を提供する。
+# README・docs/SETUP.md・既存の運用手順が /health を参照しているため残すが、
+# ハンドラ実体は /api/v1/health と同一（app/api/v1/endpoints/health.py）にして
+# 二重実装を避ける。以前は main.py 側に別実装があり、DB依存も get_db と
+# get_db_session で食い違っていた。
+app.include_router(health_router, prefix="/health", tags=["health"])
+
 
 @app.get("/", response_model=RootResponse)
 async def root() -> RootResponse:
@@ -124,62 +128,3 @@ async def root() -> RootResponse:
         RootResponse: メッセージとバージョン情報を含むレスポンス
     """
     return RootResponse(message="kotonoha API is running", version=settings.VERSION)
-
-
-@app.get(
-    "/health",
-    response_model=HealthResponse,
-    responses={
-        200: {"description": "ヘルスチェック成功（データベース接続正常）"},
-        500: {
-            "description": "ヘルスチェック失敗（データベース接続失敗）",
-            "model": HealthErrorResponse,
-        },
-    },
-)
-async def health_check(
-    db: AsyncSession = Depends(get_db),
-) -> HealthResponse | HealthErrorResponse:
-    """
-    【機能概要】: ヘルスチェックエンドポイント - システム稼働状況とデータベース接続確認
-    【実装方針】: データベース接続確認（SELECT 1実行）、AIプロバイダー確認、タイムスタンプ、バージョン情報を含む
-    【後方互換性】: /health エンドポイントをルートレベルでも提供（/api/v1/health と同等）
-
-    Args:
-        db: データベースセッション（依存性注入）
-
-    Returns:
-        HealthResponse: ヘルスチェックレスポンス
-
-    Raises:
-        HTTPException: データベース接続失敗時に500エラーを返す
-
-    🔵 TASK-0029: AI プロバイダー確認機能を追加
-    """
-    try:
-        timestamp = get_current_timestamp()
-        await db.execute(text("SELECT 1"))
-
-        # AIプロバイダー確認
-        ai_provider = get_ai_provider_status()
-
-        return HealthResponse(
-            status="ok",
-            database="connected",
-            ai_provider=ai_provider,
-            version=settings.VERSION,
-            timestamp=timestamp,
-        )
-    except Exception as e:
-        error_message = (
-            str(e) if settings.ENVIRONMENT == "development" else "Database connection failed"
-        )
-        error_timestamp = get_current_timestamp()
-        error_response = HealthErrorResponse(
-            status="error",
-            database="disconnected",
-            error=error_message,
-            version=settings.VERSION,
-            timestamp=error_timestamp,
-        )
-        raise HTTPException(status_code=500, detail=error_response.model_dump()) from e

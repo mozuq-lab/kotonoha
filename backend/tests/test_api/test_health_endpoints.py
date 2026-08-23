@@ -289,7 +289,7 @@ async def test_health_endpoint_database_connection_failure_returns_500():
     # 🔵 testcases.md B-5（line 227-232）、NFR-304に基づく
 
     # 【モックの作成】: データベース接続失敗をシミュレート
-    # 【実装方針】: get_db依存性をオーバーライドし、接続エラーを発生させる
+    # 【実装方針】: get_db_session依存性をオーバーライドし、接続エラーを発生させる
     # 🔵 testcases.md B-5（line 227-246）に基づく
     class MockFailingSession:
         """データベース接続失敗をシミュレートするモックセッション"""
@@ -305,13 +305,13 @@ async def test_health_endpoint_database_connection_failure_returns_500():
         """データベース接続失敗をシミュレートするモック"""
         yield MockFailingSession()
 
-    # 【依存性オーバーライド】: get_db依存性をモックで置き換え
+    # 【依存性オーバーライド】: get_db_session依存性をモックで置き換え
     # 【実装方針】: FastAPIの依存性注入をオーバーライドし、エラーを発生させる
     # 🟡 FastAPIの依存性オーバーライド機能を使用（妥当な推測）
-    from app.db.session import get_db
+    from app.api.deps import get_db_session
     from app.main import app as test_app
 
-    test_app.dependency_overrides[get_db] = mock_failing_db
+    test_app.dependency_overrides[get_db_session] = mock_failing_db
 
     try:
         async with AsyncClient(
@@ -401,14 +401,14 @@ async def test_health_endpoint_ai_provider_with_mock():
     async def mock_get_db():
         yield mock_session
 
-    from app.db.session import get_db
+    from app.api.deps import get_db_session
     from app.main import app as test_app
 
-    test_app.dependency_overrides[get_db] = mock_get_db
+    test_app.dependency_overrides[get_db_session] = mock_get_db
 
     try:
-        # main.pyのget_ai_provider_status関数を直接モック
-        with patch("app.main.get_ai_provider_status", return_value="anthropic"):
+        # ハンドラ実体（app/api/v1/endpoints/health.py）のget_ai_provider_status関数を直接モック
+        with patch("app.api.v1.endpoints.health.get_ai_provider_status", return_value="anthropic"):
             async with AsyncClient(
                 transport=ASGITransport(app=test_app), base_url="http://test"
             ) as client:
@@ -439,13 +439,13 @@ async def test_health_endpoint_ai_provider_openai_with_mock():
     async def mock_get_db():
         yield mock_session
 
-    from app.db.session import get_db
+    from app.api.deps import get_db_session
     from app.main import app as test_app
 
-    test_app.dependency_overrides[get_db] = mock_get_db
+    test_app.dependency_overrides[get_db_session] = mock_get_db
 
     try:
-        with patch("app.main.get_ai_provider_status", return_value="openai"):
+        with patch("app.api.v1.endpoints.health.get_ai_provider_status", return_value="openai"):
             async with AsyncClient(
                 transport=ASGITransport(app=test_app), base_url="http://test"
             ) as client:
@@ -474,13 +474,13 @@ async def test_health_endpoint_ai_provider_none_with_mock():
     async def mock_get_db():
         yield mock_session
 
-    from app.db.session import get_db
+    from app.api.deps import get_db_session
     from app.main import app as test_app
 
-    test_app.dependency_overrides[get_db] = mock_get_db
+    test_app.dependency_overrides[get_db_session] = mock_get_db
 
     try:
-        with patch("app.main.get_ai_provider_status", return_value="none"):
+        with patch("app.api.v1.endpoints.health.get_ai_provider_status", return_value="none"):
             async with AsyncClient(
                 transport=ASGITransport(app=test_app), base_url="http://test"
             ) as client:
@@ -489,5 +489,99 @@ async def test_health_endpoint_ai_provider_none_with_mock():
                 assert response.status_code == 200
                 response_json = response.json()
                 assert response_json["ai_provider"] == "none"
+    finally:
+        test_app.dependency_overrides.clear()
+
+
+# ================================================================================
+# カテゴリD: /health と /api/v1/health の等価性（ハンドラ実体の一本化）
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_v1_health_endpoint_returns_database_connected(test_client_with_db):
+    """
+    【テスト目的】: 正式パス GET /api/v1/health が /health と同じ内容を返すことを確認
+    【テスト内容】: v1パスでもDB接続確認・AIプロバイダー・バージョン・タイムスタンプが返る
+    【期待される動作】: ステータス200、status="ok"、database="connected"
+    🔵 TASK-0029（GET /api/v1/health）に基づく
+
+    【背景】: v1パスは Dockerfile の HEALTHCHECK とフロントエンドの疎通確認が参照する
+              正式パスだが、これまでテストはルートレベルの /health しか叩いておらず、
+              main.py の重複実装だけが検証されている状態だった。
+    """
+    async with AsyncClient(
+        transport=ASGITransport(app=test_client_with_db), base_url="http://test"
+    ) as client:
+        response = await client.get("/api/v1/health")
+
+        assert response.status_code == 200  # 【確認内容】: HTTPステータスコード200 🔵
+        response_json = response.json()
+        assert response_json["status"] == "ok"  # 【確認内容】: statusが"ok" 🔵
+        assert response_json["database"] == "connected"  # 【確認内容】: databaseが"connected" 🔵
+        assert "ai_provider" in response_json  # 【確認内容】: ai_providerが存在する 🔵
+        assert "timestamp" in response_json  # 【確認内容】: timestampが存在する 🔵
+
+
+@pytest.mark.asyncio
+async def test_health_paths_share_the_same_handler(test_client_with_db):
+    """
+    【テスト目的】: /health と /api/v1/health が同一のハンドラ実体を共有することを確認
+    【テスト内容】: 両パスのレスポンスが（時刻を除き）一致することを検証
+    【期待される動作】: status / database / ai_provider / version がすべて一致する
+    🟡 二重実装の再発（片方だけ修正して挙動が食い違う事故）を検知するための回帰テスト
+
+    【テストシナリオ】:
+    - Given: FastAPIアプリケーションとテスト用データベースが起動している
+    - When: GET /health と GET /api/v1/health の両方にアクセス
+    - Then: timestamp以外のフィールドがすべて一致する
+    """
+    async with AsyncClient(
+        transport=ASGITransport(app=test_client_with_db), base_url="http://test"
+    ) as client:
+        root_response = await client.get("/health")
+        v1_response = await client.get("/api/v1/health")
+
+        assert root_response.status_code == v1_response.status_code == 200
+
+        # timestampは呼び出し時刻に依存するため比較対象から除外する
+        root_body = {k: v for k, v in root_response.json().items() if k != "timestamp"}
+        v1_body = {k: v for k, v in v1_response.json().items() if k != "timestamp"}
+        assert root_body == v1_body  # 【確認内容】: 両パスの応答内容が一致する 🟡
+
+
+@pytest.mark.asyncio
+async def test_v1_health_endpoint_returns_500_on_database_error():
+    """
+    【テスト目的】: v1パスでもDB接続失敗時に500とエラー内容を返すことを確認
+    【テスト内容】: get_db_sessionをエラー送出モックに差し替えて /api/v1/health を呼ぶ
+    【期待される動作】: ステータス500、detail.status="error"、detail.database="disconnected"
+    🔵 NFR-304（データベースエラー発生時の適切なエラーハンドリング）に基づく
+    """
+
+    class MockFailingSession:
+        """データベース接続失敗をシミュレートするモックセッション"""
+
+        async def execute(self, *args, **kwargs):
+            raise Exception("Database connection timeout")
+
+    async def mock_failing_db():
+        yield MockFailingSession()
+
+    from app.api.deps import get_db_session
+    from app.main import app as test_app
+
+    test_app.dependency_overrides[get_db_session] = mock_failing_db
+
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=test_app), base_url="http://test"
+        ) as client:
+            response = await client.get("/api/v1/health")
+
+            assert response.status_code == 500  # 【確認内容】: HTTPステータスコード500 🔵
+            detail = response.json()["detail"]
+            assert detail["status"] == "error"  # 【確認内容】: statusが"error" 🔵
+            assert detail["database"] == "disconnected"  # 【確認内容】: databaseが"disconnected" 🔵
     finally:
         test_app.dependency_overrides.clear()

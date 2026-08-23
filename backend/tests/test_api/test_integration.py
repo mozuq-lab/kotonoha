@@ -38,7 +38,7 @@ async def test_full_conversion_workflow_with_mock():
     mock_regenerate_response = ("ありがとうございます。深く感謝いたします。", 1200)
 
     with (
-        patch("app.main.get_ai_provider_status", return_value="anthropic"),
+        patch("app.api.v1.endpoints.health.get_ai_provider_status", return_value="anthropic"),
         patch("app.utils.ai_client.ai_client") as mock_ai_client,
         patch("app.api.v1.endpoints.ai.create_conversion_log", new_callable=AsyncMock),
     ):
