@@ -13,6 +13,84 @@ library;
 import 'package:flutter/material.dart';
 
 // =============================================================================
+// 警告アイコンの配色
+// =============================================================================
+
+/// 【設定定数】: ライトテーマでの警告アイコン色
+/// 背景 surfaceLight (#F5F5F5) に対し 5.4:1、高コントラストの白背景に対し 5.9:1。
+/// 従来の `Colors.orange[700]` (#F57C00) は 2.5〜2.7:1 で非テキスト基準(3:1)未達だった。
+/// 🔵 信頼性レベル: 青信号 - 高コントラスト要件
+const Color _warningIconLight = Color(0xFFB23C00);
+
+/// 【設定定数】: ダークテーマでの警告アイコン色
+/// 背景 surfaceDark (#1E1E1E) に対し 9.6:1。
+/// ライト用の濃色 (#B23C00) をダークで使うと 2.81:1 まで落ちるため、テーマごとに切り替える。
+/// 🔵 信頼性レベル: 青信号 - 高コントラスト要件
+const Color _warningIconDark = Color(0xFFFFB74D);
+
+/// 【設定定数】: エラースナックバーの背景色（Colors.red[700] 相当）
+const Color _snackBarBackground = Color(0xFFD32F2F);
+
+/// 【設定定数】: エラースナックバーの前景色
+/// 背景 #D32F2F に対し 4.98:1 で WCAG 2.1 AA (4.5:1) を満たす。
+/// 🔵 信頼性レベル: 青信号 - 高コントラスト要件
+const Color _snackBarForeground = Color(0xFFFFFFFF);
+
+/// 【機能概要】: テーマの明暗に応じた警告アイコン色を返す
+///
+/// これらのダイアログは背景色を自前で持たずテーマの surface に載るため、
+/// 固定色ではライト・ダークの一方で必ずコントラスト不足になる。
+Color warningIconColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? _warningIconDark
+        : _warningIconLight;
+
+// =============================================================================
+// 元テキスト表示ボックスの配色
+// =============================================================================
+
+/// 【型定義】: 元テキストボックスの配色一式
+typedef OriginalTextBoxColors = ({
+  Color background,
+  Color border,
+  Color label,
+  Color body,
+});
+
+/// 【機能概要】: テーマの明暗に応じた元テキストボックスの配色を返す
+///
+/// 従来は背景を `Colors.grey[100]` (#F5F5F5) に固定し、本文は色未指定で
+/// テーマ継承にしていた。そのためダークテーマでは白文字が near-white 背景に
+/// 載り 1.09:1 と判読不能だった。またラベルの `Colors.grey[600]` は
+/// テーマを問わず 4.23:1 でテキストのAA基準(4.5:1)未達だった。
+///
+/// 【判定基準】:
+/// - 本文・ラベル（テキスト）: ボックス背景に対し 4.5:1 以上
+/// - 枠線（非テキスト）: ダイアログ背景に対し 3:1 以上
+///   ボックス背景はダイアログ背景と近いため、枠線が唯一の境界になる
+///
+/// 🔵 信頼性レベル: 青信号 - 高コントラスト要件
+OriginalTextBoxColors originalTextBoxColors(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark
+      // 背景 #2A2A2A に対し 本文14.4:1 / ラベル7.6:1、枠線はダイアログ背景に5.1:1
+      ? (
+          background: const Color(0xFF2A2A2A),
+          border: const Color(0xFF8E8E8E),
+          label: const Color(0xFFBDBDBD),
+          body: const Color(0xFFFFFFFF),
+        )
+      // 背景 #EEEEEE に対し 本文13.9:1 / ラベル5.8:1、枠線はダイアログ背景に4.7:1
+      // （高コントラストの白背景に対しても 5.1:1）
+      : (
+          background: const Color(0xFFEEEEEE),
+          border: const Color(0xFF6E6E6E),
+          label: const Color(0xFF5C5C5C),
+          body: const Color(0xFF212121),
+        );
+}
+
+// =============================================================================
 // 汎用エラーダイアログ
 // =============================================================================
 
@@ -87,10 +165,20 @@ void showErrorSnackBar({
         children: [
           const Icon(Icons.error_outline, color: Colors.white, size: 20),
           const SizedBox(width: 8),
-          Expanded(child: Text(message)),
+          // 背景を固定色にしているため本文色も明示する。
+          // 色を指定しないと SnackBar のコンテンツ色（colorScheme.onInverseSurface）
+          // を継承し、ダークテーマでは #1E1E1E が #D32F2F 背景に載って
+          // 3.35:1 とAA未達になる。同じ Row の Icon / SnackBarAction は
+          // もともと白を明示しており、本文だけが浮いていた。
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: _snackBarForeground),
+            ),
+          ),
         ],
       ),
-      backgroundColor: Colors.red[700],
+      backgroundColor: _snackBarBackground,
       duration: duration,
       action: showRetry && onRetry != null
           ? SnackBarAction(
@@ -124,7 +212,7 @@ Future<void> showNetworkErrorDialog({
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.wifi_off, color: Colors.orange[700]),
+          Icon(Icons.wifi_off, color: warningIconColor(context)),
           const SizedBox(width: 8),
           const Text('ネットワークエラー'),
         ],
@@ -191,7 +279,7 @@ Future<void> showAIConversionErrorDialog({
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.auto_fix_off, color: Colors.orange[700]),
+          Icon(Icons.auto_fix_off, color: warningIconColor(context)),
           const SizedBox(width: 8),
           const Text('AI変換エラー'),
         ],
@@ -205,30 +293,35 @@ Future<void> showAIConversionErrorDialog({
             '元のテキストをそのまま使用することができます。',
           ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '元のテキスト:',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+          Builder(
+            builder: (context) {
+              final boxColors = originalTextBoxColors(context);
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: boxColors.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: boxColors.border),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  originalText,
-                  style: const TextStyle(fontSize: 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '元のテキスト:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: boxColors.label,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      originalText,
+                      style: TextStyle(fontSize: 14, color: boxColors.body),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -276,7 +369,7 @@ Future<void> showTTSErrorDialog({
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.volume_off, color: Colors.orange[700]),
+          Icon(Icons.volume_off, color: warningIconColor(context)),
           const SizedBox(width: 8),
           const Text('読み上げエラー'),
         ],
