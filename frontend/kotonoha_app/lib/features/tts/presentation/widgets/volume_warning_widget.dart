@@ -12,6 +12,24 @@ library;
 
 import 'package:flutter/material.dart';
 
+// =============================================================================
+// 定数定義
+// =============================================================================
+
+/// 【設定定数】: 警告表示の背景色
+const Color _warningBackground = Color(0xFFFFE0B2); // Colors.orange.shade100 相当
+
+/// 【設定定数】: 警告表示の前景色（テキスト・アイコン）
+/// 背景 #FFE0B2 に対しコントラスト比 8.2:1 で WCAG 2.1 AA (4.5:1) を満たす。
+/// 従来の orange.shade800/900 は約2.5〜3.0:1 で AA 未達だったため使用しない。
+/// 🔵 信頼性レベル: 青信号 - 高コントラスト要件（4.5:1以上）
+const Color _warningForeground = Color(0xFF6D2C00);
+
+/// 【設定定数】: 警告表示の枠線色
+/// 非テキストUI要素の要件（3:1以上）を満たす。前景と同系色で統一する。
+/// 🔵 信頼性レベル: 青信号 - WCAG 2.1 AA 非テキストコントラスト
+const Color _warningBorder = Color(0xFF8C3A00);
+
 /// 音量警告ウィジェット
 ///
 /// OSの音量が0（ミュート）の場合に「音量が0です」という
@@ -60,30 +78,30 @@ class VolumeWarningWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.orange.shade100,
+          color: _warningBackground,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Colors.orange.shade700,
+            color: _warningBorder,
             width: 2,
           ),
         ),
         child: Row(
           children: [
             // 音量オフアイコン
-            Icon(
+            const Icon(
               Icons.volume_off,
-              color: Colors.orange.shade800,
+              color: _warningForeground,
               size: 28,
             ),
             const SizedBox(width: 12),
             // 警告メッセージ
-            Expanded(
+            const Expanded(
               child: Text(
                 '音量が0です',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.orange.shade900,
+                  color: _warningForeground,
                 ),
               ),
             ),
@@ -95,9 +113,9 @@ class VolumeWarningWidget extends StatelessWidget {
                 width: 44,
                 height: 44,
                 alignment: Alignment.center,
-                child: Icon(
+                child: const Icon(
                   Icons.close,
-                  color: Colors.orange.shade800,
+                  color: _warningForeground,
                   size: 24,
                 ),
               ),

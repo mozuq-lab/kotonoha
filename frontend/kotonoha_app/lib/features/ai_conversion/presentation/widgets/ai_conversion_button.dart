@@ -38,6 +38,12 @@ const double _loadingIndicatorSize = 20.0;
 /// 🟡 信頼性レベル: 黄信号 - 視認性を考慮した太さ
 const double _loadingIndicatorStrokeWidth = 2.0;
 
+/// 【設定定数】: オフライン表示の前景色
+/// 背景 `Colors.orange.shade100` (#FFE0B2) に対しコントラスト比 8.2:1 で
+/// WCAG 2.1 AA (4.5:1) を満たす。
+/// 🔵 信頼性レベル: 青信号 - 高コントラスト要件（4.5:1以上）
+const Color _offlineForeground = Color(0xFF6D2C00);
+
 // =============================================================================
 // AIConversionButton
 // =============================================================================
@@ -296,14 +302,18 @@ class OfflineIndicator extends ConsumerWidget {
           color: Colors.orange.shade100,
           borderRadius: BorderRadius.circular(4),
         ),
+        // 【アクセシビリティ】: orange.shade100 (#FFE0B2) 背景に対し
+        // #6D2C00 でコントラスト比 8.2:1 となり WCAG 2.1 AA (4.5:1) を満たす。
+        // 従来の Colors.orange (#FF9800) は約1.7:1、orange.shade900 (#E65100) でも
+        // 約3.0:1 で AA 未達のため使用しない。
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.wifi_off, size: 16, color: Colors.orange),
+            Icon(Icons.wifi_off, size: 16, color: _offlineForeground),
             SizedBox(width: 4),
             Text(
               'オフライン',
-              style: TextStyle(color: Colors.orange, fontSize: 12),
+              style: TextStyle(color: _offlineForeground, fontSize: 12),
             ),
           ],
         ),
