@@ -13,14 +13,23 @@ repos:
       - id: check-added-large-files
         args: ['--maxkb=1000']
 
-  # Python: Ruff (linter + formatter)
+  # Python: Ruff (linter)
+  # NOTE: フォーマッタは black に統一する。CI（.github/workflows/python.yml）が
+  # `black --check` を回すため、ここで ruff-format を使うと両者が食い違い、
+  # ローカルで整形したファイルが CI で落ちる（assert文の折り返し等で差が出る）。
+  # rev は backend/requirements.txt の ruff および CI の pip install と揃えること。
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.5
+    rev: v0.14.7
     hooks:
       - id: ruff
         args: [--fix]
         files: ^backend/
-      - id: ruff-format
+
+  # Python: Black (formatter) — CI と同一のフォーマッタを使う
+  - repo: https://github.com/psf/black
+    rev: 26.1.0
+    hooks:
+      - id: black
         files: ^backend/
 
   # Python: Type checking (optional, uncomment if using mypy)

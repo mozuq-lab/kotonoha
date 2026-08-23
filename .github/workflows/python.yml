@@ -38,7 +38,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff black
+          # ruff / black のバージョンは .pre-commit-config.yaml および
+          # backend/requirements.txt と揃えること。揃っていないと、
+          # ローカルで整形・検査を通したファイルが CI で落ちる。
+          pip install ruff==0.14.7 black==26.1.0
 
       - name: Run Ruff lint check
         run: ruff check app tests
