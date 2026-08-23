@@ -40,15 +40,21 @@ class PresetPhraseState {
     this.error,
   });
 
+  /// 【状態コピー】: 指定したフィールドのみを更新した新しい状態を返す
+  ///
+  /// 【エラーの扱い】: `error` を省略した場合は現在のエラーを保持する。
+  /// 明示的に消したい場合は `clearError: true` を指定すること。
+  /// AIConversionState.copyWith と同じ「clearXxxフラグ方式」に統一している。
   PresetPhraseState copyWith({
     List<PresetPhrase>? phrases,
     bool? isLoading,
     String? error,
+    bool clearError = false,
   }) {
     return PresetPhraseState(
       phrases: phrases ?? this.phrases,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }
@@ -231,14 +237,16 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     final repo = ref.read(presetPhraseRepositoryProvider);
     if (repo != null) {
       // 【永続化】: Hiveから読み込み、お気に入り順でソートして反映
+      // 【エラークリア】: 読み込みに成功したので直前のエラーは明示的に消す
       state = state.copyWith(
         phrases: _sortPhrases(repo.loadAllSync()),
         isLoading: false,
+        clearError: true,
       );
       return;
     }
     // 【フォールバック】: インメモリ管理のみ
-    state = state.copyWith(isLoading: false);
+    state = state.copyWith(isLoading: false, clearError: true);
   }
 
   /// 【メソッド】: 初期定型文データを投入する
@@ -254,7 +262,8 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       return;
     }
 
-    state = state.copyWith(isLoading: true);
+    // 【エラークリア】: 再試行なので前回の失敗メッセージを残さない
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final allPhrases = DefaultPhrases.getAllPhrases();
@@ -307,7 +316,8 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     if (repo != null) {
       await repo.deleteAll();
     }
-    state = state.copyWith(phrases: [], isLoading: true);
+    // 【エラークリア】: 初期状態に戻す操作なので直前のエラーも消す
+    state = state.copyWith(phrases: [], isLoading: true, clearError: true);
     await initializeDefaultPhrases();
   }
 
