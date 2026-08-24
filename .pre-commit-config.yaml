@@ -43,15 +43,21 @@ repos:
   # Flutter/Dart: Analyze and Format
   - repo: local
     hooks:
+      # NOTE: entry の先頭で GIT_DIR 等を unset している。
+      # git はフック実行時に GIT_DIR / GIT_INDEX_FILE / GIT_WORK_TREE を設定するが、
+      # flutter は内部で git を呼んで SDK バージョンを判定するため、これらが
+      # 設定されているとリポジトリ側を見てしまい `0.0.0-unknown` と誤認する。
+      # 結果 `pub get` が解決不能になり、git worktree からのコミットが常に失敗する。
+      # （通常のリポジトリでは顕在化しないが、worktree では必ず起きる）
       - id: flutter-analyze
         name: Flutter Analyze
-        entry: bash -c 'cd frontend/kotonoha_app && flutter analyze --no-fatal-infos'
+        entry: bash -c 'unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE; cd frontend/kotonoha_app && flutter analyze --no-fatal-infos'
         language: system
         files: ^frontend/kotonoha_app/.*\.dart$
         pass_filenames: false
       - id: dart-format
         name: Dart Format Check
-        entry: bash -c 'cd frontend/kotonoha_app && dart format --set-exit-if-changed .'
+        entry: bash -c 'unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE; cd frontend/kotonoha_app && dart format --set-exit-if-changed .'
         language: system
         files: ^frontend/kotonoha_app/.*\.dart$
         pass_filenames: false
