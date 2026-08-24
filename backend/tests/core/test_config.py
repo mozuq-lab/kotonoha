@@ -16,7 +16,9 @@ from app.core.config import (
     _REMOVED_SETTINGS,
     DEV_POSTGRES_PASSWORD,
     DEV_SECRET_KEY,
+    ProductionSettingsError,
     Settings,
+    validate_production_settings,
 )
 
 
@@ -25,7 +27,7 @@ def _production_settings(**overrides) -> dict:
 
     validate_production_settings が要求する項目（開発用デフォルトのままでは
     起動できない項目）をすべて満たした辞書を返す。個別の必須項目を検証する
-    テストは、この辞書から該当キーを外して「起動が失敗すること」を確認する。
+    テストは、この辞書の該当キーを不正な値にして「検証が失敗すること」を確認する。
 
     Args:
         **overrides: 上書きしたい設定値。
@@ -57,8 +59,8 @@ class TestEnvironmentValidation:
         """
         production は必須設定を明示指定すれば受理される。
 
-        （開発用デフォルト値のままだと別バリデータ validate_production_settings が
-        エラーにするため、production 固有の要件を満たした上でテストする）
+        （開発用デフォルト値のままだと validate_production_settings がエラーに
+        するため、production 固有の要件を満たした上でテストする）
         """
         settings = Settings(**_production_settings())
         assert settings.ENVIRONMENT == "production"
@@ -111,6 +113,10 @@ class TestProductionSettingsValidation:
 
     production で設定漏れがあった場合は「警告」ではなく「起動失敗」になることを検証する。
     警告ログはデプロイ時に見落とされ、設定漏れのまま稼働してしまうため。
+
+    【検証のタイミング】: この検査は Settings() の生成時ではなく、APIアプリの
+    エントリーポイント（app/main.py）が明示的に呼ぶ。app.core.config を import する
+    だけのプロセス（alembic 等）を巻き添えにしないため。
     """
 
     def test_rejects_production_without_rate_limit_storage_uri(self):
@@ -120,10 +126,10 @@ class TestProductionSettingsValidation:
         未設定＝プロセス内メモリのカウンタとなり、マルチワーカー/マルチインスタンス
         構成では実効レート制限が「設定値 × プロセス数」まで緩む（NFR-101違反）。
         """
-        settings_kwargs = _production_settings(RATE_LIMIT_STORAGE_URI="")
+        settings = Settings(**_production_settings(RATE_LIMIT_STORAGE_URI=""))
 
-        with pytest.raises(ValidationError, match="RATE_LIMIT_STORAGE_URI"):
-            Settings(**settings_kwargs)
+        with pytest.raises(ProductionSettingsError, match="RATE_LIMIT_STORAGE_URI"):
+            validate_production_settings(settings)
 
     def test_accepts_explicit_memory_storage_uri_in_production(self):
         """
@@ -132,23 +138,94 @@ class TestProductionSettingsValidation:
         「未設定（暗黙のインメモリ）」と「意図してインメモリを選んだ」を区別できるようにする。
         """
         settings = Settings(**_production_settings(RATE_LIMIT_STORAGE_URI="memory://"))
+        validate_production_settings(settings)
         assert settings.RATE_LIMIT_STORAGE_URI == "memory://"
 
     def test_rejects_production_with_dev_secret_key(self):
         """production で SECRET_KEY が開発用デフォルトのままなら起動時エラーになる"""
-        with pytest.raises(ValidationError, match="SECRET_KEY"):
-            Settings(**_production_settings(SECRET_KEY=DEV_SECRET_KEY))
+        settings = Settings(**_production_settings(SECRET_KEY=DEV_SECRET_KEY))
+
+        with pytest.raises(ProductionSettingsError, match="SECRET_KEY"):
+            validate_production_settings(settings)
 
     def test_rejects_production_with_dev_postgres_password(self):
         """production で POSTGRES_PASSWORD が開発用デフォルトのままなら起動時エラーになる"""
-        with pytest.raises(ValidationError, match="POSTGRES_PASSWORD"):
-            Settings(**_production_settings(POSTGRES_PASSWORD=DEV_POSTGRES_PASSWORD))
+        settings = Settings(**_production_settings(POSTGRES_PASSWORD=DEV_POSTGRES_PASSWORD))
+
+        with pytest.raises(ProductionSettingsError, match="POSTGRES_PASSWORD"):
+            validate_production_settings(settings)
 
     @pytest.mark.parametrize("environment", ["development", "test", "staging"])
     def test_does_not_require_rate_limit_storage_uri_outside_production(self, environment: str):
         """production 以外では RATE_LIMIT_STORAGE_URI 未設定でも起動できる（開発体験を損なわない）"""
         settings = Settings(_env_file=None, ENVIRONMENT=environment, RATE_LIMIT_STORAGE_URI="")
+
+        validate_production_settings(settings)
+
         assert settings.RATE_LIMIT_STORAGE_URI == ""
+
+    @pytest.mark.parametrize(
+        "overrides",
+        [
+            {"RATE_LIMIT_STORAGE_URI": ""},
+            {"SECRET_KEY": DEV_SECRET_KEY},
+            {"POSTGRES_PASSWORD": DEV_POSTGRES_PASSWORD},
+        ],
+        ids=["missing_storage_uri", "dev_secret_key", "dev_postgres_password"],
+    )
+    def test_error_message_does_not_leak_secret_values(self, overrides: dict):
+        """
+        設定漏れの例外メッセージに実際のシークレットが含まれないこと。
+
+        【この回帰テストの理由】: 以前はこの検査を @model_validator の中で行っていたため、
+        pydantic が ValidationError に包む際に「統合済みの設定辞書」の repr を
+        メッセージへ埋め込み、ANTHROPIC_API_KEY 等が平文で stderr / コンテナログに
+        出力されていた。本番の設定漏れは実物のシークレットが読み込まれている状況で
+        起きるため、例外メッセージには設定値を一切含めない。
+        """
+        secrets = {
+            "ANTHROPIC_API_KEY": "sk-ant-do-not-leak-this-value",
+            "OPENAI_API_KEY": "sk-openai-do-not-leak-this-value",
+            "API_KEYS": "device-key-do-not-leak-this-value",
+        }
+        settings = Settings(**_production_settings(**secrets, **overrides))
+
+        with pytest.raises(ProductionSettingsError) as exc_info:
+            validate_production_settings(settings)
+
+        message = str(exc_info.value)
+        for secret_value in secrets.values():
+            assert secret_value not in message
+        # 開発用デフォルト値を検出する経路でも、実パスワードは漏らさない
+        assert settings.POSTGRES_PASSWORD not in message
+
+
+class TestSettingsImportDoesNotValidateProduction:
+    """Settings の生成そのものは production 固有の検査を行わないことのテスト。
+
+    【この回帰テストの理由】: 検査を @model_validator に置くと、app.core.config を
+    import するだけで例外になる。alembic/env.py は settings を無条件に import し、
+    Dockerfile は alembic/ を本番イメージに含めるため、レート制限と無関係な
+    `alembic upgrade head` が RATE_LIMIT_STORAGE_URI 未設定で実行不能になっていた。
+    """
+
+    def test_production_settings_can_be_constructed_without_rate_limit_storage_uri(self):
+        """production でも Settings() の生成自体は成功する（＝マイグレーションは実行できる）"""
+        settings = Settings(**_production_settings(RATE_LIMIT_STORAGE_URI=""))
+
+        assert settings.ENVIRONMENT == "production"
+        assert settings.RATE_LIMIT_STORAGE_URI == ""
+
+    def test_production_settings_can_be_constructed_with_dev_defaults(self):
+        """開発用デフォルトのままでも Settings() の生成自体は成功する"""
+        settings = Settings(
+            _env_file=None,
+            ENVIRONMENT="production",
+            SECRET_KEY=DEV_SECRET_KEY,
+            POSTGRES_PASSWORD=DEV_POSTGRES_PASSWORD,
+        )
+
+        assert settings.SECRET_KEY == DEV_SECRET_KEY
 
 
 class TestRemovedSettingsMigration:
@@ -160,8 +237,15 @@ class TestRemovedSettingsMigration:
     起動時エラーにする、という切り分けを検証する。
     """
 
-    def test_removed_key_in_env_file_does_not_break_startup(self, tmp_path, caplog):
-        """.env に削除済みキーが残っていても起動でき、警告ログが出る"""
+    def test_removed_key_in_env_file_does_not_break_startup(self, tmp_path, caplog, monkeypatch):
+        """.env に削除済みキーが残っていても起動でき、警告ログが出る
+
+        【POSTGRES_USER を環境変数から外す理由】: pydantic-settings の優先順位は
+        init引数 > 環境変数 > .envファイル であり、CI（.github/workflows/python.yml）は
+        POSTGRES_USER を環境変数として渡している。外さないと .env の値が必ず負け、
+        「.envが実際に読まれたこと」を確認できないままCIでのみ失敗する。
+        """
+        monkeypatch.delenv("POSTGRES_USER", raising=False)
         env_file = tmp_path / ".env"
         env_file.write_text(
             "ACCESS_TOKEN_EXPIRE_MINUTES=11520\nPOSTGRES_USER=kotonoha_user\n",
@@ -177,10 +261,21 @@ class TestRemovedSettingsMigration:
         assert "backend/.env" in caplog.text
 
     def test_removed_key_is_ignored_not_applied(self):
-        """削除済みキーは読み捨てられるだけで、他の設定値には影響しない"""
-        settings = Settings(_env_file=None, ACCESS_TOKEN_EXPIRE_MINUTES=11520)
-        assert settings.RATE_LIMIT_TIMES == 1
-        assert settings.RATE_LIMIT_SECONDS == 10
+        """削除済みキーを渡しても、他の設定値は渡した値のまま影響を受けない
+
+        削除済みキーの読み捨ては drop_removed_settings が入力辞書から該当キーを
+        取り除くことで行われる。取り除き方が壊れて他のキーまで落ちると、
+        明示的に渡した値が既定値へ戻ってしまうため、init引数で固定した値が
+        そのまま残ることを確認する（環境変数の影響を受けないよう明示指定する）。
+        """
+        settings = Settings(
+            _env_file=None,
+            ACCESS_TOKEN_EXPIRE_MINUTES=11520,
+            RATE_LIMIT_TIMES=5,
+            RATE_LIMIT_SECONDS=60,
+        )
+        assert settings.RATE_LIMIT_TIMES == 5
+        assert settings.RATE_LIMIT_SECONDS == 60
 
     def test_unknown_key_is_still_rejected(self):
         """未知キー（タイポ）は従来どおり起動時エラー

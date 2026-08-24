@@ -18,6 +18,20 @@ DEV_POSTGRES_PASSWORD = "your_secure_password_here"  # noqa: S105
 # ENVIRONMENT に許可される値。表記ゆれ（"prod" 等）は起動時エラーとして拒否する。
 EnvironmentName = Literal["development", "test", "staging", "production"]
 
+
+class ProductionSettingsError(RuntimeError):
+    """本番環境の必須設定が満たされていない場合に送出される。
+
+    【pydanticのバリデータではなく独立した例外にしている理由】:
+    `@model_validator` の中で例外を投げると、pydantic が `ValidationError` に
+    包む際に「バリデーション対象の入力（＝統合済みの設定辞書）」の repr を
+    メッセージへ埋め込む。本番の設定漏れはまさに実物のシークレットが
+    読み込まれている状況で起きるため、ANTHROPIC_API_KEY や POSTGRES_PASSWORD が
+    そのまま stderr／コンテナログへ出力されてしまう。
+    設定値を一切含まない独立した例外として送出することで、これを防ぐ。
+    """
+
+
 # 過去に存在したが削除された設定キー（キー: 削除理由）。
 #
 # 本クラスは extra="forbid"（pydantic-settings既定）で動作するため、削除済みキーが
@@ -90,8 +104,9 @@ class Settings(BaseSettings):
     # 構成では各プロセスが独立したカウンタを持つため実質的な制限が緩くなり、
     # プロセス再起動でもリセットされてしまう。本番でマルチワーカー/マルチインスタンス
     # 運用する場合は Redis 等の共有ストレージURIを指定すること（例: "redis://host:6379"）。
-    # ENVIRONMENT=production では未設定を許容しない（validate_production_settings が
-    # 起動時エラーにする）。単一プロセスで意図的にインメモリを使う場合も、暗黙の既定値
+    # ENVIRONMENT=production では未設定を許容しない（app/main.py が起動時に呼ぶ
+    # validate_production_settings がアプリ起動を失敗させる。alembic 等 API を
+    # 起動しないタスクは対象外）。単一プロセスで意図的にインメモリを使う場合も、暗黙の既定値
     # ではなく "memory://" を明示すること。
     RATE_LIMIT_STORAGE_URI: str = ""
 
@@ -194,37 +209,51 @@ class Settings(BaseSettings):
                 )
         return data
 
-    @model_validator(mode="after")
-    def validate_production_settings(self) -> "Settings":
-        """本番環境では開発用の弱い既定値・安全でない既定値を拒否する。
 
-        本番で見落とすと実害が出る設定を起動時に検出し、`ValueError`（＝設定読み込み
-        失敗によるアプリ起動失敗）として弾く。警告ログではデプロイ時に見落とされ、
-        設定漏れのまま稼働してしまうため、フェイルファストで揃えている。
-        """
-        if self.ENVIRONMENT != "production":
-            return self
+def validate_production_settings(target: "Settings") -> None:
+    """本番環境では開発用の弱い既定値・安全でない既定値を拒否する。
 
-        if self.SECRET_KEY == DEV_SECRET_KEY:
-            raise ValueError("SECRET_KEY must be set explicitly in production")
-        if self.POSTGRES_PASSWORD == DEV_POSTGRES_PASSWORD:
-            raise ValueError("POSTGRES_PASSWORD must be set explicitly in production")
-        # レート制限カウンタが未設定だとプロセス内メモリになる。本番はマルチワーカー
-        # （uvicorn --workers）／マルチインスタンス構成が前提であり、その場合カウンタが
-        # プロセスごとに分裂して実効レート制限が「設定値 × プロセス数」まで緩む
-        # （NFR-101違反）。単一プロセス運用であっても再起動でカウンタが消えるため、
-        # 本番では共有ストレージ（Redis等）の明示指定を必須とする。
-        # 単一プロセスで意図的にインメモリを使う場合は "memory://" を明示すること。
-        if not self.RATE_LIMIT_STORAGE_URI:
-            raise ValueError(
-                "RATE_LIMIT_STORAGE_URI must be set explicitly in production "
-                "(unset means per-process in-memory counters, which weakens the "
-                "effective rate limit under multi-worker/multi-instance deployments; "
-                'set a shared storage URI such as "redis://host:6379", or "memory://" '
-                "to opt in to in-memory counters intentionally)"
-            )
+    本番で見落とすと実害が出る設定を検出し、`ProductionSettingsError`（＝アプリ
+    起動失敗）として弾く。警告ログではデプロイ時に見落とされ、設定漏れのまま
+    稼働してしまうため、フェイルファストで揃えている。
 
-        return self
+    【`Settings` 生成時ではなくアプリ起動時に呼ぶ理由】:
+    以前はこの検査を `@model_validator(mode="after")` として `Settings()` の
+    生成時に走らせていたが、それだと `app.core.config` を import するだけの
+    プロセスまで巻き添えになる。とくに `alembic/env.py` は settings を無条件に
+    import するため、レート制限と無関係な `alembic upgrade head` が
+    RATE_LIMIT_STORAGE_URI 未設定で起動不能になっていた。
+    本関数は API アプリのエントリーポイント（`app/main.py`）から明示的に呼ぶ。
+    マイグレーション等、APIを起動しないタスクは対象外となる。
+
+    Args:
+        target: 検査対象の設定インスタンス。
+
+    Raises:
+        ProductionSettingsError: 本番で必須の設定が満たされていない場合。
+            例外メッセージには設定値を一切含めない（ログ経由の漏えいを防ぐため）。
+    """
+    if target.ENVIRONMENT != "production":
+        return
+
+    if target.SECRET_KEY == DEV_SECRET_KEY:
+        raise ProductionSettingsError("SECRET_KEY must be set explicitly in production")
+    if target.POSTGRES_PASSWORD == DEV_POSTGRES_PASSWORD:
+        raise ProductionSettingsError("POSTGRES_PASSWORD must be set explicitly in production")
+    # レート制限カウンタが未設定だとプロセス内メモリになる。本番はマルチワーカー
+    # （uvicorn --workers）／マルチインスタンス構成が前提であり、その場合カウンタが
+    # プロセスごとに分裂して実効レート制限が「設定値 × プロセス数」まで緩む
+    # （NFR-101違反）。単一プロセス運用であっても再起動でカウンタが消えるため、
+    # 本番では共有ストレージ（Redis等）の明示指定を必須とする。
+    # 単一プロセスで意図的にインメモリを使う場合は "memory://" を明示すること。
+    if not target.RATE_LIMIT_STORAGE_URI:
+        raise ProductionSettingsError(
+            "RATE_LIMIT_STORAGE_URI must be set explicitly in production "
+            "(unset means per-process in-memory counters, which weakens the "
+            "effective rate limit under multi-worker/multi-instance deployments; "
+            'set a shared storage URI such as "redis://host:6379", or "memory://" '
+            "to opt in to in-memory counters intentionally)"
+        )
 
 
 # グローバル設定インスタンス

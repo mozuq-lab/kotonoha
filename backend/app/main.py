@@ -16,7 +16,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.api import api_router
 from app.api.v1.endpoints.health import router as health_router
-from app.core.config import settings
+from app.core.config import settings, validate_production_settings
 from app.core.exceptions import (
     database_exception_handler,
     global_exception_handler,
@@ -29,6 +29,14 @@ from app.schemas.health import RootResponse
 # ロギング設定を初期化
 setup_logging()
 logger = get_logger(__name__)
+
+# 本番固有の必須設定を検証する（未設定ならここでアプリ起動を失敗させる）。
+#
+# 【config.py の import 時ではなくここで呼ぶ理由】: 検証を Settings 生成時に行うと、
+# app.core.config を import するだけのプロセス（例: alembic/env.py）まで巻き添えになり、
+# レート制限と無関係な `alembic upgrade head` が RATE_LIMIT_STORAGE_URI 未設定で
+# 起動不能になる。APIアプリのエントリーポイントである本ファイルでのみ検証する。
+validate_production_settings(settings)
 
 
 @asynccontextmanager
