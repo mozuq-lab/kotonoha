@@ -247,15 +247,18 @@ class TestRemovedSettingsMigration:
         """
         monkeypatch.delenv("POSTGRES_USER", raising=False)
         env_file = tmp_path / ".env"
+        # 【値が "kotonoha_user" ではない理由】: それは POSTGRES_USER の既定値でもあるため、
+        # dotenv の読み込みが完全に壊れてもアサーションが通ってしまう。
+        # 既定値からは絶対に出てこない値を使い、.env が実際に読まれたことを保証する。
         env_file.write_text(
-            "ACCESS_TOKEN_EXPIRE_MINUTES=11520\nPOSTGRES_USER=kotonoha_user\n",
+            "ACCESS_TOKEN_EXPIRE_MINUTES=11520\nPOSTGRES_USER=dotenv_only_user\n",
             encoding="utf-8",
         )
 
         with caplog.at_level(logging.WARNING, logger="app.core.config"):
             settings = Settings(_env_file=env_file)
 
-        assert settings.POSTGRES_USER == "kotonoha_user"
+        assert settings.POSTGRES_USER == "dotenv_only_user"
         assert not hasattr(settings, "ACCESS_TOKEN_EXPIRE_MINUTES")
         assert "ACCESS_TOKEN_EXPIRE_MINUTES" in caplog.text
         assert "backend/.env" in caplog.text

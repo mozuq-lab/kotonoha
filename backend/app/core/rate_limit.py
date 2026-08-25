@@ -10,6 +10,7 @@ TASK-0025: レート制限ミドルウェア実装
 """
 
 import logging
+from urllib.parse import urlsplit
 
 from fastapi import Request, Response
 from slowapi import Limiter
@@ -91,6 +92,48 @@ class RateLimitStorageError(RuntimeError):
     """
 
 
+def redact_storage_uri(storage_uri: str | None) -> str:
+    """ストレージURIから資格情報を取り除いた、ログに出して安全な表現を返す。
+
+    【この関数がある理由】: ENVIRONMENT=production では RATE_LIMIT_STORAGE_URI が
+    必須であり、共有ストレージの実体は通常 `rediss://:password@host:6379` のように
+    **パスワードを含むURI**になる。初期化失敗時のメッセージへ生のURIを埋めると、
+    起動失敗のたびにパスワードが stderr とコンテナログへ出力される。
+    診断に必要なスキーム・ホスト・ポート・パスは残し、認証情報とクエリだけを伏せる。
+
+    Args:
+        storage_uri: resolve_storage_uri() が返したURI（Noneはインメモリ）。
+
+    Returns:
+        str: ログ出力に使える文字列。解析できない値は全体を伏せる。
+    """
+    if storage_uri is None:
+        return "None（未設定＝プロセス内メモリ）"
+
+    try:
+        parts = urlsplit(storage_uri)
+    except ValueError:
+        # 解析できない値は形すら推測できないため、スキームも含めて伏せる。
+        return "<解析不能なURI（内容は秘匿）>"
+
+    if not parts.scheme:
+        # スキームが無いものはURIとして扱えない。誤設定の中身は出さない。
+        return "<スキーム無しのURI（内容は秘匿）>"
+
+    host = parts.hostname or ""
+    if parts.port is not None:
+        host = f"{host}:{parts.port}"
+
+    # userinfo（user:password）が付いていた場合のみ、その存在を示して中身は伏せる。
+    netloc = f"***@{host}" if "@" in parts.netloc else host
+
+    redacted = f"{parts.scheme}://{netloc}{parts.path}"
+    if parts.query:
+        # クエリにも password= 等が載りうるため、キーごと出さない。
+        redacted += "?<クエリは秘匿>"
+    return redacted
+
+
 def _build_limiter(storage_uri: str | None) -> Limiter:
     """Limiterインスタンスを構築する。
 
@@ -122,9 +165,10 @@ def _build_limiter(storage_uri: str | None) -> Limiter:
             storage_uri=storage_uri,
         )
     except Exception as exc:
+        # 資格情報を含みうるため、生のURIではなく秘匿済みの表現を使う。
         message = (
             "レート制限ストレージの初期化に失敗しました "
-            f"(RATE_LIMIT_STORAGE_URI={storage_uri!r})。"
+            f"(RATE_LIMIT_STORAGE_URI={redact_storage_uri(storage_uri)})。"
             "RATE_LIMIT_STORAGE_URIのスキームが未対応であるか、"
             "そのスキームが要求する依存パッケージ（例: redis://系スキームには"
             "'redis'パッケージ）がインストールされていない可能性があります。"

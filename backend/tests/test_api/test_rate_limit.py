@@ -844,3 +844,76 @@ class TestResolveStorageUri:
         assert isinstance(exc_info.value.__cause__, ConfigurationError)
         # メッセージにRATE_LIMIT_STORAGE_URIと対処のヒントが含まれることを確認
         assert "RATE_LIMIT_STORAGE_URI" in str(exc_info.value)
+
+
+class TestRedactStorageUri:
+    """redact_storage_uri() のテスト（ログに出すURIから資格情報を落とす）。
+
+    【この回帰テストの理由】: ENVIRONMENT=production では RATE_LIMIT_STORAGE_URI が
+    必須であり、共有ストレージのURIは通常パスワードを含む。初期化失敗のメッセージへ
+    生のURIを埋めると、起動失敗のたびにパスワードが stderr とコンテナログに出る。
+    設定読み込み側（ProductionSettingsError）で同じ漏えいを塞いだのと対で必要になる。
+    """
+
+    def test_uri_without_credentials_is_kept_readable(self):
+        """資格情報が無いURIは診断のためそのまま読める形で返す"""
+        from app.core.rate_limit import redact_storage_uri
+
+        assert redact_storage_uri("redis://localhost:6379") == "redis://localhost:6379"
+
+    def test_password_only_userinfo_is_masked(self):
+        """`rediss://:password@host` 形式のパスワードが伏せられる"""
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri("rediss://:s3cr3t-pw@prod-redis:6379/0")
+
+        assert "s3cr3t-pw" not in redacted
+        # スキーム・ホスト・ポート・パスは診断に必要なので残す
+        assert redacted == "rediss://***@prod-redis:6379/0"
+
+    def test_user_and_password_userinfo_is_masked(self):
+        """`redis://user:password@host` 形式のユーザー名とパスワードが伏せられる"""
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri("redis://admin:s3cr3t-pw@prod-redis:6379")
+
+        assert "s3cr3t-pw" not in redacted
+        assert "admin" not in redacted
+        assert redacted == "redis://***@prod-redis:6379"
+
+    def test_query_string_is_dropped(self):
+        """クエリにも password= 等が載りうるため、キーごと落とす"""
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri("redis://host:6379?password=s3cr3t-pw")
+
+        assert "s3cr3t-pw" not in redacted
+        assert "password" not in redacted
+
+    def test_none_is_described_as_in_memory(self):
+        """未設定（None）はインメモリであることが分かる表現になる"""
+        from app.core.rate_limit import redact_storage_uri
+
+        assert "None" in redact_storage_uri(None)
+
+    def test_unparsable_value_is_fully_masked(self):
+        """URIとして解釈できない値は、誤設定の中身ごと伏せる"""
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri("not-a-uri-just-a-password")
+
+        assert "not-a-uri-just-a-password" not in redacted
+
+    def test_build_limiter_failure_message_does_not_leak_password(self):
+        """初期化失敗の例外・ログの双方にパスワードが出ないこと（実経路での確認）"""
+        from app.core.rate_limit import RateLimitStorageError, _build_limiter
+
+        secret = "s3cr3t-pw-must-not-appear"
+
+        with pytest.raises(RateLimitStorageError) as exc_info:
+            _build_limiter(f"foobar://:{secret}@prod-redis:6379")
+
+        assert secret not in str(exc_info.value)
+        # 診断に必要な情報は残っていること
+        assert "RATE_LIMIT_STORAGE_URI" in str(exc_info.value)
+        assert "foobar" in str(exc_info.value)
