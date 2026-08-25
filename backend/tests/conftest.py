@@ -197,6 +197,7 @@ async def test_client_with_db(test_engine, test_session_maker):
         FastAPI: テスト用データベースに接続するFastAPIアプリケーション
     """
     from app.api.deps import get_db_session, get_session_factory
+    from app.db import session as db_session_module
     from app.main import app
 
     # 【依存性オーバーライド関数】: test_session_makerから新しいセッションを作成
@@ -216,18 +217,25 @@ async def test_client_with_db(test_engine, test_session_maker):
     # 【依存性オーバーライド】: 本番DBの代わりにテスト用DBを使用
     # ルーティング（エンドポイントのDepends）上のDB依存はget_db_sessionに統一されている。
     # （/health も /api/v1/health も同一ハンドラでget_db_sessionを使う）。
-    # なお app/core/exceptions.py のエラーログ書き込みは async_session_maker を
-    # 直接使うため、この依存性オーバーライドは通らない（＝全DBアクセスではない）。
     app.dependency_overrides[get_db_session] = override_get_db
 
     # 【依存性オーバーライド】: バックグラウンドタスク（AI変換ログ書き込み）が
     # 独立したセッションを取得する際も、本番用DBではなくテスト用DBに向ける
     app.dependency_overrides[get_session_factory] = lambda: test_session_maker
 
-    yield app
+    # 【依存性注入を経由しない書き込みの差し替え】: app/core/exceptions.py の
+    # エラーログ書き込みは例外ハンドラから呼ばれるためDependsを通らず、
+    # dependency_overrides が効かない。差し替えないと、500を発生させるテストが
+    # 開発用DBの error_logs に行を書き込んでしまう（CIでは失敗が握り潰される）。
+    original_get_session_maker = db_session_module.get_session_maker
+    db_session_module.get_session_maker = lambda: test_session_maker
 
-    # 【テスト後処理】: 依存性オーバーライドをクリア
-    app.dependency_overrides.clear()
+    try:
+        yield app
+    finally:
+        # 【テスト後処理】: 依存性オーバーライドと差し替えを元に戻す
+        db_session_module.get_session_maker = original_get_session_maker
+        app.dependency_overrides.clear()
 
 
 # ============================================================================

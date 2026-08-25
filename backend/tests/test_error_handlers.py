@@ -130,7 +130,11 @@ async def test_log_error_to_db_function():
     from app.core.exceptions import log_error_to_db
 
     # モックセッションを使用してデータベース保存をテスト
-    with patch("app.core.exceptions.async_session_maker") as mock_session_maker:
+    # 【パッチ先が get_session_maker である理由】: log_error_to_db は依存性注入を
+    # 経由しないため、セッションファクトリを get_session_maker() 経由で解決する
+    # （tests/conftest.py もここを差し替えてテスト用DBへ向けている）。
+    with patch("app.db.session.get_session_maker") as mock_get_session_maker:
+        mock_session_maker = mock_get_session_maker.return_value
         mock_session = AsyncMock()
         mock_session_maker.return_value.__aenter__.return_value = mock_session
 
@@ -146,6 +150,10 @@ async def test_log_error_to_db_function():
         # セッションにaddが呼ばれたことを確認
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
+        # 【この確認の理由】: async_session_maker をモジュール変数として直接参照する
+        # 実装に戻ると、conftest の差し替えが効かずテスト実行中のエラーログが
+        # 開発用DBへ書き込まれる。間接参照が維持されていることを固定する。
+        mock_get_session_maker.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -159,7 +167,8 @@ async def test_log_error_to_db_handles_failure():
     from app.core.exceptions import log_error_to_db
 
     # データベース保存が失敗するようにモック
-    with patch("app.core.exceptions.async_session_maker") as mock_session_maker:
+    with patch("app.db.session.get_session_maker") as mock_get_session_maker:
+        mock_session_maker = mock_get_session_maker.return_value
         mock_session_maker.return_value.__aenter__.side_effect = Exception("DB Error")
 
         # 例外が伝播せずに完了することを確認

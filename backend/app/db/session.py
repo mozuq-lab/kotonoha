@@ -16,12 +16,12 @@ Example:
 
         from fastapi import Depends
         from sqlalchemy.ext.asyncio import AsyncSession
-        from app.db.session import get_db
+        from app.api.deps import get_db_session
 
         @app.post("/api/v1/ai/convert")
         async def convert_text(
             request: AIConversionRequest,
-            db: AsyncSession = Depends(get_db)
+            db: AsyncSession = Depends(get_db_session)
         ):
             log = AIConversionLog.create_log(...)
             db.add(log)
@@ -30,7 +30,8 @@ Example:
 """
 
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -81,6 +82,57 @@ async_session_maker = async_sessionmaker(
 )
 
 
+def get_session_maker() -> async_sessionmaker[AsyncSession]:
+    """現在有効なセッションファクトリを返す。
+
+    【この間接参照がある理由】: 依存性注入を経由しない箇所（例外ハンドラの
+    エラーログ書き込み等）が `async_session_maker` をモジュール変数として
+    直接参照すると、FastAPIの依存性オーバーライドが効かず、テスト実行中の
+    書き込みが開発用DBへ飛んでしまう。DIを使えない箇所は本関数を経由し、
+    テストは本関数を差し替えて書き込み先をテスト用DBへ向ける。
+
+    Returns:
+        async_sessionmaker[AsyncSession]: セッションファクトリ。
+    """
+    return async_session_maker
+
+
+@asynccontextmanager
+async def db_session_scope() -> AsyncIterator[AsyncSession]:
+    """セッションの生成・commit/rollback・closeを一手に担うコンテキストマネージャ。
+
+    【この関数がある理由】: 以前は本処理が `get_db()` の中に直接書かれており、
+    `app.api.deps.get_db_session` が `async for session in get_db():` で
+    ラップしていた。この形だと、エンドポイントが例外を投げたときに
+    FastAPI が投げ込む例外は外側のジェネレータで止まり、内側の `get_db()` には
+    伝播しない。内側は放置されて後から GeneratorExit で終了するため、
+    `except Exception` の rollback とエラーログが**一度も実行されない**
+    （close も遅延する）。セッション寿命を本コンテキストマネージャに集約し、
+    利用側は `async with` で包むことで、例外が確実に本ブロックへ届くようにする。
+
+    Yields:
+        AsyncSession: 非同期データベースセッション。
+
+    Raises:
+        Exception: データベース操作中に発生した例外を、rollback後に再スローする。
+    """
+    async with async_session_maker() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            logger.error(
+                "Database session error: %s: %s",
+                type(e).__name__,
+                str(e),
+                exc_info=True,
+            )
+            raise
+        finally:
+            await session.close()
+
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """データベースセッションジェネレータ（セッション生成の実体）。
 
@@ -105,24 +157,11 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             @app.post("/api/v1/ai/convert")
             async def convert_text(
                 request: AIConversionRequest,
-                db: AsyncSession = Depends(get_db)
+                db: AsyncSession = Depends(get_db_session)
             ):
                 log = AIConversionLog.create_log(...)
                 db.add(log)
-                # get_db()が自動的にcommitを実行
+                # セッションのcommitは呼び出し側の依存性が自動的に行う
     """
-    async with async_session_maker() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception as e:
-            await session.rollback()
-            logger.error(
-                "Database session error: %s: %s",
-                type(e).__name__,
-                str(e),
-                exc_info=True,
-            )
-            raise
-        finally:
-            await session.close()
+    async with db_session_scope() as session:
+        yield session

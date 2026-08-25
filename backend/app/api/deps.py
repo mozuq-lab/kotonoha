@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import settings
 from app.core.security import is_valid_api_key
-from app.db.session import async_session_maker, get_db
+from app.db.session import async_session_maker, db_session_scope
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +44,13 @@ _AUTH_OPTIONAL_ENVIRONMENTS = frozenset({"development", "test"})
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """データベースセッションを取得する依存性関数。
 
-    get_db関数をラップして、依存性注入で使用可能にする。
+    `db_session_scope()` を依存性注入で使える形にする。
     この関数は将来的に追加の前処理・後処理を行う拡張ポイントとして機能する。
+
+    【`async for` でラップしない理由】: 以前は `async for session in get_db():`
+    と書いていたが、その形だとエンドポイントが例外を投げたときに FastAPI が
+    投げ込む例外が内側のジェネレータへ伝播せず、rollback とエラーログが
+    実行されないまま放置される。`async with` なら例外が確実に届く。
 
     Yields:
         AsyncSession: 非同期データベースセッション
@@ -61,7 +66,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
                 db.add(User(**user.model_dump()))
                 await db.commit()
     """
-    async for session in get_db():
+    async with db_session_scope() as session:
         yield session
 
 

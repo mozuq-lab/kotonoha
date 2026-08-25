@@ -339,3 +339,86 @@ async def test_pool_overflow_handling(db_session: AsyncSession) -> None:
     for i in range(query_count):
         result = await db_session.execute(text(f"SELECT {i}"))
         assert result.scalar() == i
+
+
+class TestGetDbSessionPropagatesErrorsToScope:
+    """`get_db_session` の例外伝播テスト。
+
+    【この回帰テストの理由】: 以前 `get_db_session` は
+    `async for session in get_db():` で内側のジェネレータをラップしていた。
+    この形だと、エンドポイントが例外を投げたときに FastAPI が投げ込む例外は
+    外側で止まり、内側の `get_db()` へ伝播しない。内側は放置されて後から
+    GeneratorExit で終了するため、rollback とエラーログが**一度も実行されず**
+    close も遅延する。ルーティングのDB依存は `get_db_session` に統一されている
+    ので、この不具合はアプリの全エンドポイントに効いていた。
+    """
+
+    @pytest.mark.asyncio
+    async def test_rollback_runs_when_consumer_raises(self, monkeypatch):
+        """依存性の利用側が例外を投げたとき rollback と close が実行される"""
+        from app.api.deps import get_db_session
+
+        calls: list[str] = []
+
+        class _FakeSession:
+            async def commit(self):
+                calls.append("commit")
+
+            async def rollback(self):
+                calls.append("rollback")
+
+            async def close(self):
+                calls.append("close")
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc_info):
+                return False
+
+        monkeypatch.setattr("app.db.session.async_session_maker", lambda: _FakeSession())
+
+        gen = get_db_session()
+        await gen.__anext__()
+
+        with pytest.raises(RuntimeError, match="endpoint failed"):
+            await gen.athrow(RuntimeError("endpoint failed"))
+
+        assert (
+            "rollback" in calls
+        ), "利用側の例外が db_session_scope まで伝播せず rollback が実行されていない"
+        assert "close" in calls
+        assert "commit" not in calls
+
+    @pytest.mark.asyncio
+    async def test_commit_runs_on_normal_completion(self, monkeypatch):
+        """正常終了時は commit と close が実行される"""
+        from app.api.deps import get_db_session
+
+        calls: list[str] = []
+
+        class _FakeSession:
+            async def commit(self):
+                calls.append("commit")
+
+            async def rollback(self):
+                calls.append("rollback")
+
+            async def close(self):
+                calls.append("close")
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc_info):
+                return False
+
+        monkeypatch.setattr("app.db.session.async_session_maker", lambda: _FakeSession())
+
+        gen = get_db_session()
+        await gen.__anext__()
+        with pytest.raises(StopAsyncIteration):
+            await gen.__anext__()
+
+        assert calls == ["commit", "close"]
+        assert "rollback" not in calls

@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
-from app.db.session import async_session_maker
+from app.db import session as db_session
 from app.models.error_logs import ErrorLog
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,13 @@ async def log_error_to_db(
     🔵 NFR-304に基づく
     """
     try:
-        async with async_session_maker() as session:
+        # 【async_session_maker を直接使わない理由】: 本関数は例外ハンドラから
+        # 呼ばれ、FastAPIの依存性注入を経由しない。モジュール変数を直接参照すると
+        # 依存性オーバーライドが効かず、テスト実行中のエラーログ書き込みが
+        # 開発用DBへ飛んでしまう（tests/conftest.py が差し替えられるよう、
+        # 必ず get_session_maker() 経由で解決する）。
+        session_maker = db_session.get_session_maker()
+        async with session_maker() as session:
             error_log = ErrorLog(
                 error_type=error_type,
                 error_message=error_message[:500],  # メッセージ長を制限
