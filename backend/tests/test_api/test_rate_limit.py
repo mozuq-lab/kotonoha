@@ -896,6 +896,60 @@ class TestRedactStorageUri:
 
         assert "None" in redact_storage_uri(None)
 
+    def test_userinfo_without_double_slash_is_masked(self):
+        """`//` を欠いた `redis:pw@host` 形式でもパスワードが伏せられる
+
+        【この回帰テストの理由】: urlsplit は `//` が無いと userinfo を netloc ではなく
+        path に入れる。netloc だけを見てマスク判定していたため、必須設定のありがちな
+        タイポである `redis:pw@host` がそのまま出力され、秘匿するための関数が
+        秘匿すべきものを漏らしていた。
+        """
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri("redis:s3cr3t-pw@prod-redis:6379")
+
+        assert "s3cr3t-pw" not in redacted
+        # スキームは診断に有用なので残す
+        assert redacted.startswith("redis")
+
+    def test_invalid_port_does_not_raise(self):
+        """ポート部が数値でなくても例外を投げない
+
+        【この回帰テストの理由】: `parts.port` を try の外で読んでいたため、
+        ポートが数値でないと ValueError が飛んだ。本関数は _build_limiter の
+        except 節から呼ばれるので、ここで例外が出ると診断用の
+        RateLimitStorageError に到達せず、運用者には不透明な ValueError しか届かない。
+        """
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri("redis://host:abc")
+
+        assert isinstance(redacted, str)
+        assert redacted.startswith("redis")
+
+    def test_invalid_port_with_password_does_not_leak(self):
+        """ポート不正かつパスワード付きでも漏らさない"""
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri("rediss://:s3cr3t-pw@host:99999999")
+
+        assert "s3cr3t-pw" not in redacted
+
+    def test_build_limiter_reports_storage_error_for_invalid_port(self):
+        """ポート不正でも診断用の RateLimitStorageError に到達する（実経路）"""
+        from app.core.rate_limit import RateLimitStorageError, _build_limiter
+
+        with pytest.raises(RateLimitStorageError) as exc_info:
+            _build_limiter("foobar://host:abc")
+
+        assert "RATE_LIMIT_STORAGE_URI" in str(exc_info.value)
+
+    def test_memory_scheme_stays_readable(self):
+        """`memory://` は診断のためそのまま読める形で返す"""
+        from app.core.rate_limit import redact_storage_uri
+
+        assert redact_storage_uri("memory://") == "memory://"
+
     def test_unparsable_value_is_fully_masked(self):
         """URIとして解釈できない値は、誤設定の中身ごと伏せる"""
         from app.core.rate_limit import redact_storage_uri

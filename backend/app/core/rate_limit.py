@@ -99,13 +99,18 @@ def redact_storage_uri(storage_uri: str | None) -> str:
     必須であり、共有ストレージの実体は通常 `rediss://:password@host:6379` のように
     **パスワードを含むURI**になる。初期化失敗時のメッセージへ生のURIを埋めると、
     起動失敗のたびにパスワードが stderr とコンテナログへ出力される。
-    診断に必要なスキーム・ホスト・ポート・パスは残し、認証情報とクエリだけを伏せる。
+
+    【フェイルクローズで書く】: 本関数は `_build_limiter` の except 節から呼ばれる。
+    つまり「URIが想定どおりに解釈できなかった」状況こそが本番の呼び出し文脈である。
+    したがって、構造を確信できたときだけ読める形で返し、少しでも解釈に失敗したら
+    スキーム以外は伏せる。また、ここで例外を投げると診断用の
+    `RateLimitStorageError` に到達できなくなるため、本関数は例外を投げない。
 
     Args:
         storage_uri: resolve_storage_uri() が返したURI（Noneはインメモリ）。
 
     Returns:
-        str: ログ出力に使える文字列。解析できない値は全体を伏せる。
+        str: ログ出力に使える文字列。解釈できない部分は伏せる。
     """
     if storage_uri is None:
         return "None（未設定＝プロセス内メモリ）"
@@ -113,21 +118,37 @@ def redact_storage_uri(storage_uri: str | None) -> str:
     try:
         parts = urlsplit(storage_uri)
     except ValueError:
-        # 解析できない値は形すら推測できないため、スキームも含めて伏せる。
-        return "<解析不能なURI（内容は秘匿）>"
+        # 解析できない値は形すら推測できないため、全体を伏せる。
+        return "<解析できないURI（内容は秘匿）>"
 
-    if not parts.scheme:
+    scheme = parts.scheme
+    if not scheme:
         # スキームが無いものはURIとして扱えない。誤設定の中身は出さない。
         return "<スキーム無しのURI（内容は秘匿）>"
 
-    host = parts.hostname or ""
-    if parts.port is not None:
-        host = f"{host}:{parts.port}"
+    if not parts.netloc:
+        # 【`//` を欠いた形】: urlsplit は `redis:pw@host:6379` のような入力の
+        # userinfo を netloc ではなく path に入れる。ホストと資格情報を安全に
+        # 切り分ける手段が無いため、スキーム以外は伏せる
+        # （必須設定のタイポとして現実的に起こりうる形である）。
+        if parts.path or parts.query:
+            return f"{scheme}:<以降は秘匿（資格情報を含む可能性）>"
+        return f"{scheme}://"
+
+    try:
+        hostname = parts.hostname or ""
+        port = parts.port
+    except ValueError:
+        # ポート部が数値でない等。ホスト側を安全に取り出せないので伏せる。
+        # （例外を投げると呼び出し元の except 節を壊すため、必ず値を返す）
+        return f"{scheme}://<ホスト部を解析できないため秘匿>"
+
+    host = f"{hostname}:{port}" if port is not None else hostname
 
     # userinfo（user:password）が付いていた場合のみ、その存在を示して中身は伏せる。
     netloc = f"***@{host}" if "@" in parts.netloc else host
 
-    redacted = f"{parts.scheme}://{netloc}{parts.path}"
+    redacted = f"{scheme}://{netloc}{parts.path}"
     if parts.query:
         # クエリにも password= 等が載りうるため、キーごと出さない。
         redacted += "?<クエリは秘匿>"
