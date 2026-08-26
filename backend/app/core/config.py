@@ -254,6 +254,29 @@ def validate_production_settings(target: "Settings") -> None:
             'set a shared storage URI such as "redis://host:6379", or "memory://" '
             "to opt in to in-memory counters intentionally)"
         )
+    # API_KEYS が未設定でも起動自体はできてしまうが、app/api/deps.py の
+    # require_api_key は development / test 以外では全リクエストを 503 で拒否する
+    # （フェイルクローズ）。つまり本番では「起動はするがAI変換が全滅する」状態になり、
+    # 設定漏れに気付くのが本番トラフィックを受けた後になる。起動時に落とす。
+    if not target.API_KEYS_LIST:
+        raise ProductionSettingsError(
+            "API_KEYS must be set explicitly in production "
+            "(unset means every AI-conversion request is rejected with 503 by "
+            "require_api_key, so the outage would only surface from production traffic)"
+        )
+
+    # TRUSTED_PROXY_COUNT は 0 が正当な構成（ALB等を挟まない直接公開）でもあるため
+    # 起動失敗にはしない。ただし ALB / CDN 配下で 0 のままだと X-Forwarded-For を
+    # 一切信用せず全リクエストがプロキシの接続元IPに収束し、レート制限が
+    # 全ユーザー共有＝実質的なサービス停止になる。取り違えが起きやすいので警告する。
+    if target.TRUSTED_PROXY_COUNT == 0:
+        logger.warning(
+            "TRUSTED_PROXY_COUNT=0 in production: X-Forwarded-For is ignored and the "
+            "connecting IP is used for rate limiting. This is correct only when the app "
+            "is exposed directly. Behind a reverse proxy (ALB/CDN), set it to the actual "
+            "number of trusted proxy hops, or all clients will share a single rate-limit "
+            "counter."
+        )
 
 
 # グローバル設定インスタンス

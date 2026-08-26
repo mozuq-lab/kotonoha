@@ -41,6 +41,7 @@ def _production_settings(**overrides) -> dict:
         "SECRET_KEY": "a-sufficiently-random-production-secret",
         "POSTGRES_PASSWORD": "a-sufficiently-random-production-password",
         "RATE_LIMIT_STORAGE_URI": "redis://localhost:6379",
+        "API_KEYS": "a-production-device-key",
     }
     base.update(overrides)
     return base
@@ -154,6 +155,48 @@ class TestProductionSettingsValidation:
 
         with pytest.raises(ProductionSettingsError, match="POSTGRES_PASSWORD"):
             validate_production_settings(settings)
+
+    def test_rejects_production_without_api_keys(self):
+        """production で API_KEYS 未設定なら起動時エラーになる
+
+        未設定でも起動はできてしまうが、require_api_key が development / test 以外では
+        全リクエストを 503 で拒否するため、AI変換が全滅した状態で稼働してしまう。
+        設定漏れは本番トラフィックを受ける前に検出する。
+        """
+        settings = Settings(**_production_settings(API_KEYS=""))
+
+        with pytest.raises(ProductionSettingsError, match="API_KEYS"):
+            validate_production_settings(settings)
+
+    def test_rejects_production_with_only_blank_api_keys(self):
+        """カンマ区切りの中身が空白だけの場合も未設定として扱う"""
+        settings = Settings(**_production_settings(API_KEYS="  ,  , "))
+
+        with pytest.raises(ProductionSettingsError, match="API_KEYS"):
+            validate_production_settings(settings)
+
+    def test_warns_but_starts_when_trusted_proxy_count_is_zero(self, caplog):
+        """TRUSTED_PROXY_COUNT=0 は起動を止めないが警告を出す
+
+        0 は「ALB等を挟まない直接公開」という正当な構成でもあるため起動失敗にはしない。
+        ただしリバースプロキシ配下で 0 のままだと全リクエストがプロキシの接続元IPに
+        収束し、レート制限が全ユーザー共有＝実質的なサービス停止になる。
+        """
+        settings = Settings(**_production_settings(TRUSTED_PROXY_COUNT=0))
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            validate_production_settings(settings)
+
+        assert "TRUSTED_PROXY_COUNT" in caplog.text
+
+    def test_does_not_warn_when_trusted_proxy_count_is_configured(self, caplog):
+        """TRUSTED_PROXY_COUNT が明示されていれば警告は出ない"""
+        settings = Settings(**_production_settings(TRUSTED_PROXY_COUNT=1))
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            validate_production_settings(settings)
+
+        assert "TRUSTED_PROXY_COUNT" not in caplog.text
 
     @pytest.mark.parametrize("environment", ["development", "test", "staging"])
     def test_does_not_require_rate_limit_storage_uri_outside_production(self, environment: str):
