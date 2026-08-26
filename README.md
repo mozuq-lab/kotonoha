@@ -82,7 +82,7 @@ cd kotonoha
 設定ファイルは2つあり、**役割が分かれています**。
 
 ```bash
-# ルート .env: docker-compose の変数展開に使う（DB接続情報・SECRET_KEY 等のinfra層）
+# ルート .env: docker-compose の変数展開に使う（DB接続情報等のinfra層）
 cp .env.example .env
 
 # backend/.env: アプリ設定（AI APIキー・API_KEYS・レート制限・CORS・ログ等）
@@ -232,7 +232,6 @@ flutter test --coverage          # カバレッジ測定
 | `POSTGRES_PASSWORD` | PostgreSQLパスワード（未設定だと起動を拒否） | - |
 | `POSTGRES_DB` | データベース名 | kotonoha_db |
 | `POSTGRES_PORT` | データベースポート | 5432 |
-| `SECRET_KEY` | バックエンドの署名鍵（未設定だと起動を拒否） | - |
 | `API_BASE_URL` | Flutterビルド時に埋め込むバックエンドURL | http://localhost:8000 |
 | `AI_API_KEY` | Flutterビルド時に埋め込む端末APIキー。`API_KEYS` のいずれかを指定 | 空 |
 

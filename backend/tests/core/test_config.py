@@ -15,7 +15,6 @@ from pydantic import ValidationError
 from app.core.config import (
     _REMOVED_SETTINGS,
     DEV_POSTGRES_PASSWORD,
-    DEV_SECRET_KEY,
     ProductionSettingsError,
     Settings,
     validate_production_settings,
@@ -38,7 +37,6 @@ def _production_settings(**overrides) -> dict:
     base = {
         "_env_file": None,
         "ENVIRONMENT": "production",
-        "SECRET_KEY": "a-sufficiently-random-production-secret",
         "POSTGRES_PASSWORD": "a-sufficiently-random-production-password",
         "RATE_LIMIT_STORAGE_URI": "redis://localhost:6379",
         "API_KEYS": "a-production-device-key",
@@ -142,13 +140,6 @@ class TestProductionSettingsValidation:
         validate_production_settings(settings)
         assert settings.RATE_LIMIT_STORAGE_URI == "memory://"
 
-    def test_rejects_production_with_dev_secret_key(self):
-        """production で SECRET_KEY が開発用デフォルトのままなら起動時エラーになる"""
-        settings = Settings(**_production_settings(SECRET_KEY=DEV_SECRET_KEY))
-
-        with pytest.raises(ProductionSettingsError, match="SECRET_KEY"):
-            validate_production_settings(settings)
-
     def test_rejects_production_with_dev_postgres_password(self):
         """production で POSTGRES_PASSWORD が開発用デフォルトのままなら起動時エラーになる"""
         settings = Settings(**_production_settings(POSTGRES_PASSWORD=DEV_POSTGRES_PASSWORD))
@@ -211,10 +202,9 @@ class TestProductionSettingsValidation:
         "overrides",
         [
             {"RATE_LIMIT_STORAGE_URI": ""},
-            {"SECRET_KEY": DEV_SECRET_KEY},
             {"POSTGRES_PASSWORD": DEV_POSTGRES_PASSWORD},
         ],
-        ids=["missing_storage_uri", "dev_secret_key", "dev_postgres_password"],
+        ids=["missing_storage_uri", "dev_postgres_password"],
     )
     def test_error_message_does_not_leak_secret_values(self, overrides: dict):
         """
@@ -264,11 +254,10 @@ class TestSettingsImportDoesNotValidateProduction:
         settings = Settings(
             _env_file=None,
             ENVIRONMENT="production",
-            SECRET_KEY=DEV_SECRET_KEY,
             POSTGRES_PASSWORD=DEV_POSTGRES_PASSWORD,
         )
 
-        assert settings.SECRET_KEY == DEV_SECRET_KEY
+        assert settings.POSTGRES_PASSWORD == DEV_POSTGRES_PASSWORD
 
 
 class TestRemovedSettingsMigration:
@@ -322,6 +311,18 @@ class TestRemovedSettingsMigration:
         )
         assert settings.RATE_LIMIT_TIMES == 5
         assert settings.RATE_LIMIT_SECONDS == 60
+
+    def test_secret_key_is_read_and_discarded(self):
+        """廃止した SECRET_KEY が .env に残っていても起動でき、フィールドにもならない
+
+        JWT実装の削除により署名用途が無くなり消費者がゼロになったため設定ごと廃止した。
+        既存の backend/.env や env ファイル方式のデプロイには残っているので、
+        ACCESS_TOKEN_EXPIRE_MINUTES と同じく読み捨てて警告する。
+        """
+        # S106: 削除済みキーが読み捨てられることの確認用ダミー値（秘密ではない）
+        settings = Settings(_env_file=None, SECRET_KEY="left-over-value")  # noqa: S106
+
+        assert not hasattr(settings, "SECRET_KEY")
 
     def test_unknown_key_is_still_rejected(self):
         """未知キー（タイポ）は従来どおり起動時エラー

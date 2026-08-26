@@ -63,7 +63,6 @@ POSTGRES_USER=kotonoha_user
 POSTGRES_PASSWORD=your_secure_password_here  # 安全なパスワードに変更
 POSTGRES_DB=kotonoha_db
 POSTGRES_PORT=5432
-SECRET_KEY=your_secret_key_here  # ランダムな文字列に変更
 
 # Flutterビルド時に --dart-define で埋め込む値
 API_BASE_URL=http://localhost:8000
@@ -92,7 +91,7 @@ TRUSTED_PROXY_COUNT=0
 > `backend/.env` へ移してください。移していない場合、
 > APIキー認証は無効（development では認証スキップ）のまま動作します。
 
-> **注意**: `SECRET_KEY` はセキュリティ上重要です。本番環境では十分にランダムな文字列を使用してください。
+> **注意**: `POSTGRES_PASSWORD` はセキュリティ上重要です。本番環境では十分にランダムな文字列を使用してください。
 >
 > 生成例: `python -c "import secrets; print(secrets.token_urlsafe(32))"`
 

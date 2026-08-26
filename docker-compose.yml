@@ -37,7 +37,6 @@ services:
       POSTGRES_PORT: 5432
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-kotonoha_user}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@postgres:5432/${POSTGRES_DB:-kotonoha_db}
       TEST_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-kotonoha_user}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@postgres:5432/kotonoha_test
-      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
       #
       # 【アプリ設定はここに書かないこと】
       # backend/.env は ./backend:/app のマウント経由でコンテナ内の /app/.env となり、
@@ -50,9 +49,8 @@ services:
       # そのため、ここに置くのはコンテナ間接続に必要な infra 層の値だけに限定する。
       # アプリ設定（AI/レート制限/CORS/ログ/API_KEYS等）は backend/.env で管理すること。
       #
-      # SECRET_KEY は `:?` で必須化しているため空文字上書きは起こらない。
-      # `${VAR:-}` 形式で書くと未設定時に空文字が注入され、backend/.env の値を
-      # 打ち消してしまうので使わないこと。
+      # 値を渡す必要が生じたら `${VAR:?...}` で必須化すること。`${VAR:-}` 形式は
+      # 未設定時に空文字が注入され、backend/.env の値を打ち消すので使わない。
     ports:
       - "8000:8000"
     volumes:

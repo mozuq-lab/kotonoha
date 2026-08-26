@@ -68,25 +68,15 @@ void main() {
       });
     });
 
-    group('TC-105-002: SECRET_KEYが環境変数から読み込まれる', () {
-      test('バックエンドのconfig.pyでSECRET_KEYが環境変数から読み込まれる', () async {
-        // backend/app/core/config.py を確認
-        final configFile = File('../../backend/app/core/config.py');
-
-        if (!configFile.existsSync()) {
-          // ファイルパスが異なる場合は別のパスを試行
-          final altConfigFile = File('../backend/app/core/config.py');
-          if (!altConfigFile.existsSync()) {
-            // テスト環境によってはスキップ
-            return;
-          }
-        }
-
-        // 設計検証: Settingsクラスで SECRET_KEY: str が定義されている
-        // pydantic-settingsにより.envから自動読み込みされる
-        expect(true, isTrue);
-      });
-    });
+    // 【TC-105-002 をここから外した理由】:
+    // 元は「バックエンドの config.py で SECRET_KEY が環境変数から読み込まれる」を
+    // 検証する体裁だったが、本体は `expect(true, isTrue)` で何も検証していなかった。
+    // 加えて SECRET_KEY は JWT実装の削除により消費者がゼロになったため設定ごと廃止した。
+    // NFR-105 が求めているのは「秘密情報をハードコードせず環境変数から読む」ことで
+    // 特定のキー名ではないため、TC-105-002 は現に使われている秘密
+    // （POSTGRES_PASSWORD）を対象として backend 側で検証する:
+    //   backend/tests/test_security/test_env_variables.py::test_secret_key_from_env
+    // Python のソースに対する検証を Flutter 側から二重に持たない。
 
     group('TC-105-003: データベース接続情報が環境変数から読み込まれる', () {
       test('POSTGRES_*環境変数が使用される', () {

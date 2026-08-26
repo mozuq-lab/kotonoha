@@ -12,7 +12,7 @@ app/main.py からの明示的な1行の呼び出しに変更した。
 その結果、ガード全体がテストされていない1行に依存するようになった。
 validate_production_settings() を直接呼ぶテストと「Settings 生成時には
 検査しない」テストだけでは、main.py からその1行を消しても全テストが通ってしまい、
-本番が開発用 SECRET_KEY とプロセス内メモリのカウンタで静かに起動してしまう。
+本番がプロセス内メモリのカウンタや APIキー未設定のまま静かに起動してしまう。
 
 【サブプロセスで検証する理由】:
 検査は import 時に一度だけ走るため、同一プロセス内では再現できない
@@ -33,7 +33,6 @@ _BACKEND_ROOT = Path(__file__).resolve().parents[1]
 # 本番として成立する最小構成。RATE_LIMIT_STORAGE_URI だけを欠けさせて検査を発火させる。
 _PRODUCTION_ENV = {
     "ENVIRONMENT": "production",
-    "SECRET_KEY": "a-sufficiently-random-production-secret",
     "POSTGRES_PASSWORD": "a-sufficiently-random-production-password",
     "API_KEYS": "device-key-must-not-leak",
     "ANTHROPIC_API_KEY": "sk-ant-must-not-leak",
@@ -55,7 +54,7 @@ def _run_import(
 
     env = os.environ.copy()
     # 開発者ローカルの環境変数が結果を左右しないよう、関係するキーを一度落とす。
-    for key in ("ENVIRONMENT", "RATE_LIMIT_STORAGE_URI", "SECRET_KEY", "POSTGRES_PASSWORD"):
+    for key in ("ENVIRONMENT", "RATE_LIMIT_STORAGE_URI", "POSTGRES_PASSWORD"):
         env.pop(key, None)
     env.update(env_overrides)
     env["PYTHONPATH"] = str(_BACKEND_ROOT)

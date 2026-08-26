@@ -12,7 +12,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
 
-DEV_SECRET_KEY = "dev-secret-key-change-me"  # noqa: S105
 DEV_POSTGRES_PASSWORD = "your_secure_password_here"  # noqa: S105
 
 # ENVIRONMENT に許可される値。表記ゆれ（"prod" 等）は起動時エラーとして拒否する。
@@ -46,6 +45,10 @@ class ProductionSettingsError(RuntimeError):
 _REMOVED_SETTINGS: dict[str, str] = {
     # 未使用のJWT実装（create_access_token）と共に削除。MVPは端末APIキー認証のみ。
     "ACCESS_TOKEN_EXPIRE_MINUTES": "JWT実装の削除に伴い廃止（この設定は無視されます）",
+    # JWT実装の削除により署名用途が無くなり、アプリ内の消費者がゼロになったため削除。
+    # 何も署名しない値を本番で用意・ローテーションし続ける運用コストだけが残っていた。
+    # 署名用途が再び必要になったら、その用途と一緒に定義し直すこと。
+    "SECRET_KEY": "JWT実装の削除により消費者が無くなったため廃止（この設定は無視されます）",
 }
 
 
@@ -60,12 +63,6 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "kotonoha_db"
 
     # API設定
-    # 【現状アプリ内に消費者はいない】JWT実装の削除により、SECRET_KEY を実際に使う
-    # コードは無くなった（参照は本定義と validate_production_settings のみ）。
-    # それでも残しているのは、docker-compose.yml が `:?` で必須化し CI もセットしている
-    # 運用上の契約であること、および署名用途が発生した際の受け皿を維持するため。
-    # 用途を追加しないまま棚卸しする場合は、docker-compose.yml とCIも併せて外すこと。
-    SECRET_KEY: str = DEV_SECRET_KEY
     API_HOST: str = "0.0.0.0"  # noqa: S104
     API_PORT: int = 8000
     API_V1_STR: str = "/api/v1"
@@ -236,8 +233,6 @@ def validate_production_settings(target: "Settings") -> None:
     if target.ENVIRONMENT != "production":
         return
 
-    if target.SECRET_KEY == DEV_SECRET_KEY:
-        raise ProductionSettingsError("SECRET_KEY must be set explicitly in production")
     if target.POSTGRES_PASSWORD == DEV_POSTGRES_PASSWORD:
         raise ProductionSettingsError("POSTGRES_PASSWORD must be set explicitly in production")
     # レート制限カウンタが未設定だとプロセス内メモリになる。本番はマルチワーカー

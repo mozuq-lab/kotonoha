@@ -49,15 +49,22 @@ class TestEnvironmentVariables:
             ), f"OpenAI APIキーが {py_file} にハードコードされています"
 
     def test_secret_key_from_env(self, backend_app_dir: Path):
-        """TC-105-002: SECRET_KEYが環境変数から読み込まれる"""
+        """TC-105-002: 秘密情報が環境変数から読み込まれる
+
+        【検証対象が SECRET_KEY から POSTGRES_PASSWORD に変わった理由】:
+        SECRET_KEY は JWT実装の削除により署名用途が無くなり、アプリ内の消費者が
+        ゼロになったため設定ごと廃止した（config.py の _REMOVED_SETTINGS を参照）。
+        NFR-105 が求めているのは「秘密情報をハードコードせず環境変数から読む」ことで、
+        特定のキー名ではない。現に使われている秘密である POSTGRES_PASSWORD で検証する。
+        """
         config_file = backend_app_dir / "core" / "config.py"
         if not config_file.exists():
             pytest.skip("config.py not found")
 
         content = config_file.read_text()
 
-        # Settingsクラスで SECRET_KEY が定義されていることを確認
-        assert "SECRET_KEY" in content, "SECRET_KEY が config.py に定義されていません"
+        # Settingsクラスで POSTGRES_PASSWORD が定義されていることを確認
+        assert "POSTGRES_PASSWORD" in content, "POSTGRES_PASSWORD が config.py に定義されていません"
 
         # pydantic_settingsを使用していることを確認
         assert (
