@@ -441,19 +441,34 @@ source /path/to/kotonoha/backend/venv/bin/activate
 
 #### 起動時に「Extra inputs are not permitted」で落ちる
 
-`backend/.env` に、既に削除された設定キーや、タイポしたキーが残っています。
-エラーメッセージに出ているキー名を `backend/.env` から削除してください。
+`backend/.env` に**タイポしたキー**が残っています。タイポを黙って無視すると
+設定が効かないまま動いてしまうため、意図的に起動時エラーにしています。
+エラーメッセージに出ているキー名を `backend/.env.example` と綴りを照合してください。
 
 ```
 ValidationError: 1 validation error for Settings
-ACCESS_TOKEN_EXPIRE_MINUTES
+RATE_LIMIT_SECOND
   Extra inputs are not permitted
 ```
 
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: JWT実装の削除に伴い廃止。読み捨てられますが、
-  起動時に警告ログが出るため `backend/.env` から削除してください
-- 上記以外のキー: タイポの可能性が高いので、`backend/.env.example` と綴りを照合してください
-  （タイポを黙って無視すると設定が効かないまま動いてしまうため、意図的に起動時エラーにしています）
+（この例では末尾の `S` が抜けており、正しくは `RATE_LIMIT_SECONDS`）
+
+#### 起動時に「設定 XXX は削除済みです」という警告が出る
+
+**廃止済みのキー**が残っています。こちらは起動を妨げません（値は読み込まれず、
+警告ログが出るだけです）。設定を実態に合わせるため削除を推奨します。
+
+| キー | 廃止理由 |
+|------|---------|
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT実装の削除に伴い廃止 |
+| `SECRET_KEY` | JWT実装の削除により署名用途が無くなり、読むコードが存在しなくなったため |
+
+**設定ファイルだけでなく、環境変数で渡している箇所も確認してください。**
+`SECRET_KEY` は従来 `docker-compose.yml` と CI が環境変数として渡していました。
+警告メッセージは、該当した供給元（`backend/.env` ／ 環境変数）を名指しします。
+
+> `SECRET_KEY` は Django / Flask / CIランナー等でも使われる一般的な名前です。
+> 本アプリと無関係に export している場合は、この警告は無視して構いません。
 
 #### パッケージのインストールエラー
 

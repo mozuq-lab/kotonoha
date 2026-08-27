@@ -13,6 +13,17 @@
 - `ENVIRONMENT=production` では `RATE_LIMIT_STORAGE_URI` の設定を必須化（未設定だと
   レート制限カウンタがプロセスごとに分裂するため、起動時エラーで停止する）。
   単一プロセスで意図的にインメモリを使う場合は `memory://` を明示すること
+- **`ENVIRONMENT=production` では `API_KEYS` の設定も必須**（起動時エラー）。
+  未設定でも従来は起動できたが、`require_api_key` が development / test 以外では
+  全リクエストを 503 で拒否するため「起動はするが AI変換が全滅する」状態になっていた
+  - **起動時チェックの適用範囲を `development` / `test` 以外のすべてに拡大**。
+    従来は `production` のみを見ていたため `staging` が素通りしていた
+    （認証の fail-close は従来から staging にも効いていたため、挙動が食い違っていた）
+  - 複数の設定漏れは1回でまとめて報告する（漏れの数だけデプロイをやり直さずに済む）
+- `TRUSTED_PROXY_COUNT` に負値を指定できないよう制約を追加（`ge=0`）。
+  また `development` / `test` 以外で `0` の場合は起動時に警告ログを出す。
+  リバースプロキシ配下で `0` にすると全リクエストがプロキシの接続元IPに収束し、
+  レート制限が全ユーザー共有＝実質的なサービス停止になるため
 - 開発用依存（pytest / ruff / black 等）を `backend/requirements-dev.txt` に分離。
   本番イメージ（`backend/Dockerfile`）には含めない
 - ヘルスチェック（`/health` と `/api/v1/health`）の二重実装を統合。両パスとも

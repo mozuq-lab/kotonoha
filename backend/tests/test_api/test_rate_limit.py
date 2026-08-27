@@ -946,6 +946,41 @@ class TestRedactStorageUri:
 
         assert "RATE_LIMIT_STORAGE_URI" in str(exc_info.value)
 
+    def test_ipv6_host_keeps_brackets(self):
+        """IPv6ホストのブラケットが保たれる
+
+        【この回帰テストの理由】: hostname/port を分解して再構成していたため
+        `redis://[::1]:6379` が `redis://::1:6379` になり、設定した覚えのない
+        （しかも貼り戻せない）URIが運用者に提示されていた。
+        """
+        from app.core.rate_limit import redact_storage_uri
+
+        assert redact_storage_uri("redis://[::1]:6379") == "redis://[::1]:6379"
+        assert redact_storage_uri("redis://[2001:db8::1]:6379/0") == "redis://[2001:db8::1]:6379/0"
+
+    def test_multi_host_uri_keeps_hosts(self):
+        """複数ホストのURIでもホスト情報が残る
+
+        【この回帰テストの理由】: `parts.port` が `26379,h2:26379` で ValueError を
+        投げるため、ホスト部を丸ごと伏せていた。複数ホストは
+        RATE_LIMIT_STORAGE_URI を本番必須にした結果まさに推奨される
+        共有ストレージの形であり、それを診断不能にしていた。
+        """
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri("redis+sentinel://:pw@h1:26379,h2:26379/mymaster")
+
+        assert "pw" not in redacted
+        assert "h1:26379" in redacted
+        assert "h2:26379" in redacted
+        assert "mymaster" in redacted
+
+    def test_multi_host_without_credentials_is_unchanged(self):
+        """資格情報の無い複数ホストURIはそのまま読める"""
+        from app.core.rate_limit import redact_storage_uri
+
+        assert redact_storage_uri("redis+cluster://h1,h2") == "redis+cluster://h1,h2"
+
     def test_memory_scheme_stays_readable(self):
         """`memory://` は診断のためそのまま読める形で返す"""
         from app.core.rate_limit import redact_storage_uri
@@ -1005,6 +1040,49 @@ class TestRedactStorageUri:
 
         leaking = [name for name, text in channels.items() if secret in text]
         assert not leaking, f"資格情報が次の経路に漏えいしている: {leaking}"
+
+    @pytest.mark.parametrize(
+        "username",
+        ["e", "a", "default", "redis"],
+        ids=["one_char", "another_one_char", "redis_acl_default", "common_word"],
+    )
+    def test_short_or_common_username_does_not_shred_the_message(self, username):
+        """ユーザー名が短くても・ありふれていても原因メッセージが読める
+
+        【この回帰テストの理由】: userinfo を単なる部分文字列として全置換していたため、
+        `redis://e:pw@host` だと原因メッセージ中の 'e' がすべて置換され
+        `unknown storag*** sch***m***...` と読めなくなっていた。
+        Redis ACL の既定ユーザー名は `default` なので現実的な構成である。
+        ユーザー名は秘密ではない（秘密はパスワード）。
+        """
+        from app.core.rate_limit import _scrub_credentials
+
+        uri = f"redis://{username}:s3cr3t-password@prod-redis:6379"
+        text = "unknown storage scheme : please check the storage backend package"
+
+        scrubbed = _scrub_credentials(text, uri)
+
+        assert scrubbed == text, f"ユーザー名 '{username}' でメッセージが壊れている"
+
+    def test_password_is_still_scrubbed_when_it_appears_alone(self):
+        """パスワードが単独で現れた場合は置換される（全URI一致でなくても）"""
+        from app.core.rate_limit import _scrub_credentials
+
+        uri = "redis://user:s3cr3t-password@prod-redis:6379"
+
+        scrubbed = _scrub_credentials("auth failed for s3cr3t-password", uri)
+
+        assert "s3cr3t-password" not in scrubbed
+
+    def test_username_is_not_treated_as_a_secret(self):
+        """ユーザー名は秘密として扱わない（Redis ACL の default 等）"""
+        from app.core.rate_limit import _scrub_credentials
+
+        uri = "redis://default:s3cr3t-password@prod-redis:6379"
+
+        scrubbed = _scrub_credentials("connection to default host failed", uri)
+
+        assert "default" in scrubbed
 
     def test_failure_message_keeps_diagnostic_information(self):
         """秘匿しても診断に必要な情報は残ること

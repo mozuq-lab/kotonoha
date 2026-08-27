@@ -8,7 +8,7 @@ import logging
 import os
 from typing import Any, Literal
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
@@ -17,6 +17,18 @@ DEV_POSTGRES_PASSWORD = "your_secure_password_here"  # noqa: S105
 
 # ENVIRONMENT に許可される値。表記ゆれ（"prod" 等）は起動時エラーとして拒否する。
 EnvironmentName = Literal["development", "test", "staging", "production"]
+
+
+# 本番同等の必須設定チェックを免除する環境のallowlist。
+#
+# 【単一比較 (`== "production"`) にしない理由】: 免除されるべきなのは開発者の
+# ローカルとCIだけで、staging を含むそれ以外は本番同等に扱う必要がある。
+# 実際 require_api_key（app/api/deps.py）は _AUTH_OPTIONAL_ENVIRONMENTS
+# （development / test）以外で全リクエストを 503 で fail-close するため、
+# staging を免除すると「起動はするが AI変換が全滅する」状態が作れてしまう。
+# アプリ内の他の判定（deps.py の認証、main.py のドキュメント公開）と同じ
+# allowlist 方式に揃え、未知の環境名はフェイルクローズさせる。
+_SETTINGS_CHECK_OPTIONAL_ENVIRONMENTS = frozenset({"development", "test"})
 
 
 class ProductionSettingsError(RuntimeError):
@@ -112,7 +124,10 @@ class Settings(BaseSettings):
     # 0 の場合: X-Forwarded-For を信頼せず、接続元IP（request.client）でレート制限する。
     # N>=1 の場合: 自身が運用するプロキシ N 段を信頼し、X-Forwarded-For の右からN番目を
     # クライアントIPとして採用する（クライアントが偽装した左側の値による制限回避を防ぐ）。
-    TRUSTED_PROXY_COUNT: int = 0
+    # 負値は意味を持たない（get_client_ip の `proxy_count > 0` が false になり
+    # 挙動は 0 と同じ）。タイポやテンプレートの既定値 -1 が黙って通ると、
+    # 全ユーザーが単一のレート制限カウンタを共有する状態に警告なしで入るため拒否する。
+    TRUSTED_PROXY_COUNT: int = Field(default=0, ge=0)
 
     # ログ設定
     LOG_LEVEL: str = "INFO"
@@ -212,18 +227,31 @@ class Settings(BaseSettings):
 
             # 供給元に応じて直す場所を案内する（env ファイル方式でないデプロイに
             # 「backend/.env を直せ」と言っても該当ファイルが無い）。
+            # 両方に残っていることもあるので、該当するものをすべて挙げる。
+            locations = []
+            if supplied_from_env_file:
+                locations.append("backend/.env")
             if supplied_from_os_env:
-                location = "環境変数（docker-compose.yml / タスク定義 / CI設定など）"
-            else:
-                location = "backend/.env"
+                locations.append("環境変数（docker-compose.yml / タスク定義 / CI設定など）")
+
+            # 【無関係なツール由来の環境変数への配慮】: SECRET_KEY のような一般的な
+            # 名前は Django / Flask / CIランナー等が使うため、本アプリと無関係に
+            # export されていることがある。その場合に「消せ」とだけ言うと、
+            # 存在しない設定を探させることになる。値が読み込まれないことを明示し、
+            # 無視してよい場合があることも添える。
+            note = ""
+            if supplied_from_os_env:
+                note = "（本アプリと無関係に同名の環境変数を設定している場合は無視して構いません）"
 
             # setup_logging() 前に評価されるが、ハンドラ未設定でも WARNING は
             # Python の last resort ハンドラにより stderr へ出力される。
             logger.warning(
-                "設定 %s は削除済みです（%s）。%s から該当の指定を削除してください。",
+                "設定 %s は削除済みです（%s）。この値は読み込まれません。"
+                "指定が残っている場合は %s から削除してください。%s",
                 key,
                 reason,
-                location,
+                " / ".join(locations),
+                note,
             )
         return data
 
@@ -251,20 +279,25 @@ def validate_production_settings(target: "Settings") -> None:
         ProductionSettingsError: 本番で必須の設定が満たされていない場合。
             例外メッセージには設定値を一切含めない（ログ経由の漏えいを防ぐため）。
     """
-    if target.ENVIRONMENT != "production":
+    if target.ENVIRONMENT in _SETTINGS_CHECK_OPTIONAL_ENVIRONMENTS:
         return
 
+    # 【1件ずつ落とさない理由】: 最初の違反で止めると、漏れの数だけデプロイを
+    # やり直すことになる。フェイルファストの目的は「起動させないこと」であって
+    # 「1件ずつ知らせること」ではないので、まとめて報告する。
+    problems: list[str] = []
+
     if target.POSTGRES_PASSWORD == DEV_POSTGRES_PASSWORD:
-        raise ProductionSettingsError("POSTGRES_PASSWORD must be set explicitly in production")
-    # レート制限カウンタが未設定だとプロセス内メモリになる。本番はマルチワーカー
-    # （uvicorn --workers）／マルチインスタンス構成が前提であり、その場合カウンタが
-    # プロセスごとに分裂して実効レート制限が「設定値 × プロセス数」まで緩む
-    # （NFR-101違反）。単一プロセス運用であっても再起動でカウンタが消えるため、
-    # 本番では共有ストレージ（Redis等）の明示指定を必須とする。
-    # 単一プロセスで意図的にインメモリを使う場合は "memory://" を明示すること。
+        problems.append("POSTGRES_PASSWORD must be set explicitly (still the development default)")
+    # レート制限カウンタが未設定だとプロセス内メモリになる。マルチワーカー
+    # （uvicorn --workers）／マルチインスタンス構成ではカウンタがプロセスごとに
+    # 分裂して実効レート制限が「設定値 × プロセス数」まで緩む（NFR-101違反）。
+    # 単一プロセス運用であっても再起動でカウンタが消えるため、共有ストレージ
+    # （Redis等）の明示指定を必須とする。意図的にインメモリを使う場合は
+    # "memory://" を明示すること。
     if not target.RATE_LIMIT_STORAGE_URI:
-        raise ProductionSettingsError(
-            "RATE_LIMIT_STORAGE_URI must be set explicitly in production "
+        problems.append(
+            "RATE_LIMIT_STORAGE_URI must be set explicitly "
             "(unset means per-process in-memory counters, which weakens the "
             "effective rate limit under multi-worker/multi-instance deployments; "
             'set a shared storage URI such as "redis://host:6379", or "memory://" '
@@ -272,26 +305,34 @@ def validate_production_settings(target: "Settings") -> None:
         )
     # API_KEYS が未設定でも起動自体はできてしまうが、app/api/deps.py の
     # require_api_key は development / test 以外では全リクエストを 503 で拒否する
-    # （フェイルクローズ）。つまり本番では「起動はするがAI変換が全滅する」状態になり、
-    # 設定漏れに気付くのが本番トラフィックを受けた後になる。起動時に落とす。
+    # （フェイルクローズ）。つまり「起動はするがAI変換が全滅する」状態になり、
+    # 設定漏れに気付くのが実トラフィックを受けた後になる。起動時に落とす。
     if not target.API_KEYS_LIST:
-        raise ProductionSettingsError(
-            "API_KEYS must be set explicitly in production "
+        problems.append(
+            "API_KEYS must be set explicitly "
             "(unset means every AI-conversion request is rejected with 503 by "
-            "require_api_key, so the outage would only surface from production traffic)"
+            "require_api_key, so the outage would only surface from real traffic)"
+        )
+
+    if problems:
+        raise ProductionSettingsError(
+            f"ENVIRONMENT={target.ENVIRONMENT} requires the following settings: "
+            + " / ".join(problems)
         )
 
     # TRUSTED_PROXY_COUNT は 0 が正当な構成（ALB等を挟まない直接公開）でもあるため
     # 起動失敗にはしない。ただし ALB / CDN 配下で 0 のままだと X-Forwarded-For を
     # 一切信用せず全リクエストがプロキシの接続元IPに収束し、レート制限が
     # 全ユーザー共有＝実質的なサービス停止になる。取り違えが起きやすいので警告する。
+    # （負値はフィールド定義の ge=0 で拒否済み）
     if target.TRUSTED_PROXY_COUNT == 0:
         logger.warning(
-            "TRUSTED_PROXY_COUNT=0 in production: X-Forwarded-For is ignored and the "
+            "TRUSTED_PROXY_COUNT=0 in %s: X-Forwarded-For is ignored and the "
             "connecting IP is used for rate limiting. This is correct only when the app "
             "is exposed directly. Behind a reverse proxy (ALB/CDN), set it to the actual "
             "number of trusted proxy hops, or all clients will share a single rate-limit "
-            "counter."
+            "counter.",
+            target.ENVIRONMENT,
         )
 
 

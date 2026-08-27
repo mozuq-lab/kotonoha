@@ -87,8 +87,12 @@ class RateLimitStorageError(RuntimeError):
 
     RATE_LIMIT_STORAGE_URIが未対応のスキームであったり、スキームが要求する
     依存パッケージ（例: redis://系スキームには`redis`パッケージ）が
-    インストールされていない場合に送出する。原因の生例外（limits.errors.
-    ConfigurationError等）は`__cause__`として保持される。
+    インストールされていない場合に送出する。
+
+    【`__cause__` は保持しない】: limits は生のURIを例外メッセージへ埋め込むため、
+    原因例外を連鎖させると __cause__ / トレースバック / ログから資格情報が漏れる。
+    `from None` で連鎖を断ち、原因は資格情報を除いた1行要約として本文に含める。
+    連鎖を復活させないこと。
     """
 
 
@@ -135,18 +139,16 @@ def redact_storage_uri(storage_uri: str | None) -> str:
             return f"{scheme}:<以降は秘匿（資格情報を含む可能性）>"
         return f"{scheme}://"
 
-    try:
-        hostname = parts.hostname or ""
-        port = parts.port
-    except ValueError:
-        # ポート部が数値でない等。ホスト側を安全に取り出せないので伏せる。
-        # （例外を投げると呼び出し元の except 節を壊すため、必ず値を返す）
-        return f"{scheme}://<ホスト部を解析できないため秘匿>"
-
-    host = f"{hostname}:{port}" if port is not None else hostname
-
-    # userinfo（user:password）が付いていた場合のみ、その存在を示して中身は伏せる。
-    netloc = f"***@{host}" if "@" in parts.netloc else host
+    # 【hostname/port へ分解しない理由】: 分解して組み直すと
+    #   - IPv6 のブラケットが落ちる（`[::1]:6379` → `::1:6379` という無効なURI）
+    #   - 複数ホスト（`h1:26379,h2:26379`）で `parts.port` が ValueError を投げる
+    # という副作用が出る。複数ホストは共有ストレージとして推奨される形なので、
+    # 診断不能にしてはならない。userinfo は「最後の @ より前」と定義が明確なので、
+    # netloc を文字列として扱い、その部分だけを差し替える。
+    if "@" in parts.netloc:
+        netloc = f"***@{parts.netloc.rsplit('@', 1)[1]}"
+    else:
+        netloc = parts.netloc
 
     redacted = f"{scheme}://{netloc}{parts.path}"
     if parts.query:
@@ -155,42 +157,63 @@ def redact_storage_uri(storage_uri: str | None) -> str:
     return redacted
 
 
-def _credential_fragments(storage_uri: str | None) -> list[str]:
-    """URIに含まれる資格情報の断片（userinfo とその構成要素）を返す。
+# パスワードを部分文字列として置換する際の最小長。
+#
+# 【長さの下限を置く理由】: 短い値を無条件に全置換すると、原因メッセージ側の
+# 無関係な文字まで潰れて読めなくなる（実際、1文字のユーザー名で
+# `unknown storage scheme` が `unknown storag*** sch***m***` になっていた）。
+# 実在しうる本番パスワードはこの長さを下回らない。これを下回る値については
+# URI全体の一致による置換とフェイルクローズ判定が引き続き効く。
+_MIN_SCRUBBABLE_SECRET_LENGTH = 4
 
-    ライブラリがURIを丸ごとではなく一部だけメッセージに埋める場合に備えるため、
-    全体一致だけでなく断片でも検出できるようにする。
+
+def _password_fragment(storage_uri: str | None) -> str | None:
+    """URIの userinfo に含まれるパスワード部分を返す。
+
+    【ユーザー名を対象にしない理由】: 秘密はパスワードであってユーザー名ではない。
+    Redis ACL の既定ユーザー名は `default` であり、`redis` や1文字の名前も
+    普通に使われる。これらを秘密として全置換すると、残すべき原因メッセージを
+    壊してしまう。
 
     Args:
         storage_uri: 対象URI。
 
     Returns:
-        list[str]: 資格情報とみなす文字列。無ければ空リスト。
+        str | None: パスワード。無ければ None。
     """
     if not storage_uri:
-        return []
+        return None
     try:
         parts = urlsplit(storage_uri)
     except ValueError:
-        return []
+        return None
 
     # `//` 有りなら netloc、無ければ path 側に userinfo が入る
     source = parts.netloc or parts.path
     if "@" not in source:
-        return []
+        return None
 
     userinfo = source.rsplit("@", 1)[0]
-    fragments = {userinfo, *userinfo.split(":")}
-    return [f for f in fragments if f]
+    if ":" not in userinfo:
+        # `user@host` 形式。パスワードは含まれない。
+        return None
+    password = userinfo.split(":", 1)[1]
+    return password or None
 
 
 def _scrub_credentials(text: str, storage_uri: str | None) -> str:
-    """テキストから storage_uri 由来の資格情報を取り除く。"""
+    """テキストから storage_uri 由来の資格情報を取り除く。
+
+    第一の防御はURI全体の置換（limits は `unknown storage scheme : <URI全文>` の
+    ように丸ごと埋め込む）。パスワードが単独で現れる実装に備えて、
+    十分な長さのパスワードは追加で置換する。
+    """
     if not storage_uri:
         return text
     scrubbed = text.replace(storage_uri, redact_storage_uri(storage_uri))
-    for fragment in _credential_fragments(storage_uri):
-        scrubbed = scrubbed.replace(fragment, "***")
+    password = _password_fragment(storage_uri)
+    if password and len(password) >= _MIN_SCRUBBABLE_SECRET_LENGTH:
+        scrubbed = scrubbed.replace(password, "***")
     return scrubbed
 
 
@@ -210,8 +233,9 @@ def _describe_cause(exc: BaseException, storage_uri: str | None) -> str:
     """
     label = type(exc).__name__
     detail = _scrub_credentials(str(exc), storage_uri)
-    fragments = _credential_fragments(storage_uri)
-    if any(fragment in detail for fragment in fragments):
+    password = _password_fragment(storage_uri)
+    if password and password in detail:
+        # 想定外の埋め込み方をされている。読みやすさより安全側に倒す。
         return f"{label}: <原因メッセージに資格情報が含まれるため秘匿>"
     return f"{label}: {detail}"
 

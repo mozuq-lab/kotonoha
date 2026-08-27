@@ -30,10 +30,11 @@ Example:
 """
 
 import logging
-from collections.abc import AsyncGenerator, AsyncIterator
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from starlette.exceptions import HTTPException
 
 from app.core.config import settings
 
@@ -116,52 +117,35 @@ async def db_session_scope() -> AsyncIterator[AsyncSession]:
     Raises:
         Exception: データベース操作中に発生した例外を、rollback後に再スローする。
     """
-    async with async_session_maker() as session:
+    # 【get_session_maker() を経由する理由】: 解決点を1つにしないと、
+    # テストでの差し替えが一部の書き込み経路にしか効かない。
+    async with get_session_maker()() as session:
         try:
             yield session
             await session.commit()
         except Exception as e:
-            await session.rollback()
-            logger.error(
-                "Database session error: %s: %s",
-                type(e).__name__,
-                str(e),
-                exc_info=True,
-            )
+            # 【rollback を守る理由】: DB障害時は rollback 自体も失敗する。
+            # その例外が元の例外を置き換えると、エンドポイントが用意した
+            # エラーレスポンス（例: /health の database="disconnected"）が
+            # 汎用エラーに差し替わってしまう。
+            try:
+                await session.rollback()
+            except Exception:
+                logger.warning("セッションのロールバックに失敗した", exc_info=True)
+
+            # 【HTTPException を DBエラーとして記録しない理由】: 例外が本スコープへ
+            # 届くようになった結果、エンドポイントが投げる通常の 401/404/500 まで
+            # "Database session error" として ERROR＋トレースバックで記録されてしまう。
+            # /health は Docker の HEALTHCHECK が定期的に叩くため、DB障害時は
+            # ハンドラ自身のエラーに加えて偽のERRORが延々と出て、ログベースの
+            # アラートを誤らせる。HTTPException は「アプリが意図した応答」なので除く。
+            if not isinstance(e, HTTPException):
+                logger.error(
+                    "Database session error: %s: %s",
+                    type(e).__name__,
+                    str(e),
+                    exc_info=True,
+                )
             raise
-        finally:
-            await session.close()
-
-
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """データベースセッションジェネレータ（セッション生成の実体）。
-
-    非同期ジェネレータでセッションを提供し、自動クリーンアップを実現する。
-    正常終了時はcommit、例外発生時はrollbackを実行。
-
-    【エンドポイントからは直接使わないこと】: ルーティングのDB依存は
-    `app.api.deps.get_db_session` に統一している。エンドポイントで
-    `Depends(get_db)` と書くと、`get_db_session` をオーバーライドする
-    テスト（tests/conftest.py の test_client_with_db）がそのエンドポイントに
-    効かず、テストだけ本番DBを見にいく事故が起きる。
-
-    Yields:
-        AsyncSession: 非同期データベースセッション
-
-    Raises:
-        Exception: データベース操作中に発生した例外を再スロー
-
-    Example:
-        FastAPIエンドポイントでの使用::
-
-            @app.post("/api/v1/ai/convert")
-            async def convert_text(
-                request: AIConversionRequest,
-                db: AsyncSession = Depends(get_db_session)
-            ):
-                log = AIConversionLog.create_log(...)
-                db.add(log)
-                # セッションのcommitは呼び出し側の依存性が自動的に行う
-    """
-    async with db_session_scope() as session:
-        yield session
+        # close は async_session_maker のコンテキストマネージャが行う
+        # （ここで明示的に close すると二重になり、寿命の所有者が曖昧になる）

@@ -341,6 +341,35 @@ async def test_pool_overflow_handling(db_session: AsyncSession) -> None:
         assert result.scalar() == i
 
 
+class _FakeSession:
+    """db_session_scope の呼び出し順を記録するだけのセッション。
+
+    【__aexit__ で close する理由】: 実装が使う async_sessionmaker の
+    コンテキストマネージャは終了時に close() する。ここを no-op にすると
+    「db_session_scope 側の明示 close が無いと落ちるテスト」になってしまい、
+    冗長な close を削除できなくなる（テストが実装の重複を固定してしまう）。
+    """
+
+    def __init__(self, calls: list[str]) -> None:
+        self._calls = calls
+
+    async def commit(self) -> None:
+        self._calls.append("commit")
+
+    async def rollback(self) -> None:
+        self._calls.append("rollback")
+
+    async def close(self) -> None:
+        self._calls.append("close")
+
+    async def __aenter__(self) -> "_FakeSession":
+        return self
+
+    async def __aexit__(self, *exc_info: object) -> bool:
+        await self.close()
+        return False
+
+
 class TestGetDbSessionPropagatesErrorsToScope:
     """`get_db_session` の例外伝播テスト。
 
@@ -360,23 +389,9 @@ class TestGetDbSessionPropagatesErrorsToScope:
 
         calls: list[str] = []
 
-        class _FakeSession:
-            async def commit(self):
-                calls.append("commit")
-
-            async def rollback(self):
-                calls.append("rollback")
-
-            async def close(self):
-                calls.append("close")
-
-            async def __aenter__(self):
-                return self
-
-            async def __aexit__(self, *exc_info):
-                return False
-
-        monkeypatch.setattr("app.db.session.async_session_maker", lambda: _FakeSession())
+        monkeypatch.setattr(
+            "app.db.session.get_session_maker", lambda: (lambda: _FakeSession(calls))
+        )
 
         gen = get_db_session()
         await gen.__anext__()
@@ -397,23 +412,9 @@ class TestGetDbSessionPropagatesErrorsToScope:
 
         calls: list[str] = []
 
-        class _FakeSession:
-            async def commit(self):
-                calls.append("commit")
-
-            async def rollback(self):
-                calls.append("rollback")
-
-            async def close(self):
-                calls.append("close")
-
-            async def __aenter__(self):
-                return self
-
-            async def __aexit__(self, *exc_info):
-                return False
-
-        monkeypatch.setattr("app.db.session.async_session_maker", lambda: _FakeSession())
+        monkeypatch.setattr(
+            "app.db.session.get_session_maker", lambda: (lambda: _FakeSession(calls))
+        )
 
         gen = get_db_session()
         await gen.__anext__()
@@ -422,3 +423,110 @@ class TestGetDbSessionPropagatesErrorsToScope:
 
         assert calls == ["commit", "close"]
         assert "rollback" not in calls
+
+    @pytest.mark.asyncio
+    async def test_http_exception_is_not_logged_as_a_database_error(self, monkeypatch, caplog):
+        """エンドポイントの HTTPException を「DBエラー」として記録しない
+
+        【この回帰テストの理由】: 例外が db_session_scope に届くようになった結果、
+        通常の 401/404/500 まで ERROR ＋ スタックトレースで
+        "Database session error" として記録されるようになった。
+        /health は Docker の HEALTHCHECK が30秒ごとに叩くため、DB障害時は
+        ハンドラ自身のエラーに加えて偽のERRORが延々と出る。
+        ログベースのアラートがDB障害として鳴ってしまう。
+        """
+        import logging
+
+        from starlette.exceptions import HTTPException
+
+        from app.api.deps import get_db_session
+
+        calls: list[str] = []
+        monkeypatch.setattr(
+            "app.db.session.get_session_maker", lambda: (lambda: _FakeSession(calls))
+        )
+
+        gen = get_db_session()
+        await gen.__anext__()
+
+        with caplog.at_level(logging.DEBUG, logger="app.db.session"):
+            with pytest.raises(HTTPException):
+                await gen.athrow(HTTPException(status_code=404, detail="nope"))
+
+        assert "Database session error" not in caplog.text
+        # ロールバックは行う（書き込み途中で中断された可能性があるため）
+        assert "rollback" in calls
+
+    @pytest.mark.asyncio
+    async def test_rollback_failure_does_not_replace_the_original_error(self, monkeypatch, caplog):
+        """rollback 自体が失敗しても、元の例外がそのまま伝播する
+
+        【この回帰テストの理由】: DB障害時は rollback も失敗する。その例外が
+        元の例外を置き換えると、/health が返すはずの
+        {status:"error", database:"disconnected"} が汎用エラーに差し替わり、
+        さらに global_exception_handler が落ちたDBへエラー行を書きに行く。
+        """
+        import logging
+
+        class _BrokenRollbackSession(_FakeSession):
+            async def rollback(self) -> None:
+                raise RuntimeError("connection is invalidated")
+
+        from app.api.deps import get_db_session
+
+        calls: list[str] = []
+        monkeypatch.setattr(
+            "app.db.session.get_session_maker",
+            lambda: (lambda: _BrokenRollbackSession(calls)),
+        )
+
+        gen = get_db_session()
+        await gen.__anext__()
+
+        with caplog.at_level(logging.DEBUG, logger="app.db.session"):
+            with pytest.raises(RuntimeError, match="endpoint failed"):
+                await gen.athrow(RuntimeError("endpoint failed"))
+
+
+class TestSessionFactoryResolution:
+    """セッションファクトリの解決点が1つであることのテスト。
+
+    【この回帰テストの理由】: get_session_maker() は「DIを使えない箇所はここを
+    経由する」ための迂回点として追加したが、同じモジュールの主要な消費者である
+    db_session_scope が async_session_maker を直接参照したままだった。
+    差し替えが3経路中1つにしか効かない状態は、迂回点が無いのと変わらない。
+    """
+
+    @pytest.mark.asyncio
+    async def test_db_session_scope_resolves_through_get_session_maker(self, monkeypatch):
+        """db_session_scope が get_session_maker() 経由でファクトリを取る"""
+        from app.db.session import db_session_scope
+
+        calls: list[str] = []
+        monkeypatch.setattr(
+            "app.db.session.get_session_maker", lambda: (lambda: _FakeSession(calls))
+        )
+
+        async with db_session_scope() as session:
+            assert isinstance(session, _FakeSession)
+
+        assert calls == ["commit", "close"]
+
+    def test_get_session_factory_resolves_through_get_session_maker(self, monkeypatch):
+        """deps.get_session_factory も get_session_maker() 経由で解決する"""
+        from app.api.deps import get_session_factory
+
+        sentinel = object()
+        monkeypatch.setattr("app.db.session.get_session_maker", lambda: sentinel)
+
+        assert get_session_factory() is sentinel
+
+    def test_get_db_is_removed(self):
+        """死んだ公開関数 get_db は存在しない
+
+        「使うな」と書かれた DI 形状の公開関数を残すと、将来の
+        Depends(get_db) が conftest のオーバーライドを迂回して実DBへ書き込む。
+        """
+        import app.db.session as session_module
+
+        assert not hasattr(session_module, "get_db")

@@ -189,7 +189,57 @@ class TestProductionSettingsValidation:
 
         assert "TRUSTED_PROXY_COUNT" not in caplog.text
 
-    @pytest.mark.parametrize("environment", ["development", "test", "staging"])
+    @pytest.mark.parametrize("environment", ["staging", "production"])
+    def test_gate_applies_to_every_environment_outside_the_allowlist(self, environment: str):
+        """development / test 以外はすべて本番同等の検査を受ける
+
+        【この回帰テストの理由】: ゲートが `!= "production"` の単一比較だったため
+        staging が素通りしていた。一方 require_api_key は
+        _AUTH_OPTIONAL_ENVIRONMENTS（development / test）以外で fail-close するので、
+        staging は「起動はするが AI変換が全滅する」状態になれた。
+        これはゲートが防ぐために書かれた失敗そのものである。
+        アプリ内の他の判定（deps.py / main.py）と同じ allowlist 方式に揃える。
+        """
+        settings = Settings(
+            **_production_settings(ENVIRONMENT=environment, RATE_LIMIT_STORAGE_URI="")
+        )
+
+        with pytest.raises(ProductionSettingsError, match="RATE_LIMIT_STORAGE_URI"):
+            validate_production_settings(settings)
+
+    def test_reports_every_violation_at_once(self):
+        """複数の設定漏れは1回でまとめて報告する
+
+        1件ずつ落とすと、漏れの数だけデプロイをやり直すことになる。
+        """
+        settings = Settings(
+            _env_file=None,
+            ENVIRONMENT="production",
+            POSTGRES_PASSWORD=DEV_POSTGRES_PASSWORD,
+            RATE_LIMIT_STORAGE_URI="",
+            API_KEYS="",
+        )
+
+        with pytest.raises(ProductionSettingsError) as exc_info:
+            validate_production_settings(settings)
+
+        message = str(exc_info.value)
+        assert "POSTGRES_PASSWORD" in message
+        assert "RATE_LIMIT_STORAGE_URI" in message
+        assert "API_KEYS" in message
+
+    def test_rejects_negative_trusted_proxy_count(self):
+        """TRUSTED_PROXY_COUNT に負値は指定できない
+
+        【この回帰テストの理由】: 警告が `== 0` 判定だったため -1 が素通りし、
+        get_client_ip の `proxy_count > 0` も false になるので挙動は 0 と同じ。
+        つまり警告を出さずに「全ユーザーが単一のレート制限カウンタを共有する」
+        状態になれた。意味を持たない値なので、そもそも受け付けない。
+        """
+        with pytest.raises(ValidationError, match="TRUSTED_PROXY_COUNT"):
+            Settings(_env_file=None, TRUSTED_PROXY_COUNT=-1)
+
+    @pytest.mark.parametrize("environment", ["development", "test"])
     def test_does_not_require_rate_limit_storage_uri_outside_production(self, environment: str):
         """production 以外では RATE_LIMIT_STORAGE_URI 未設定でも起動できる（開発体験を損なわない）"""
         settings = Settings(_env_file=None, ENVIRONMENT=environment, RATE_LIMIT_STORAGE_URI="")
@@ -355,6 +405,24 @@ class TestRemovedSettingsMigration:
 
         assert "SECRET_KEY" in caplog.text
         assert "backend/.env" in caplog.text
+
+    def test_env_file_location_is_named_when_key_is_in_both_sources(
+        self, tmp_path, caplog, monkeypatch
+    ):
+        """.env と環境変数の両方にある場合、両方の場所が案内される
+
+        【この回帰テストの理由】: 環境変数側だけを案内していたため、実際に
+        消すべき backend/.env の行が名指しされず、警告に従っても消えなかった。
+        """
+        monkeypatch.setenv("SECRET_KEY", "in-os-env")
+        env_file = tmp_path / ".env"
+        env_file.write_text("SECRET_KEY=in-env-file\n", encoding="utf-8")
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            Settings(_env_file=env_file)
+
+        assert "backend/.env" in caplog.text
+        assert "環境変数" in caplog.text
 
     def test_removed_key_from_os_environment_does_not_become_a_field(self, monkeypatch):
         """OS環境変数経由でも設定値としては採用されない"""

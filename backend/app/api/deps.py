@@ -25,7 +25,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import settings
 from app.core.security import is_valid_api_key
-from app.db.session import async_session_maker, db_session_scope
+from app.db import session as db_session_module
+from app.db.session import db_session_scope
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
                 finally:
                     await session.close()
     """
-    return async_session_maker
+    return db_session_module.get_session_maker()
 
 
 async def require_api_key(

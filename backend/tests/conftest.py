@@ -227,6 +227,8 @@ async def test_client_with_db(test_engine, test_session_maker):
     # エラーログ書き込みは例外ハンドラから呼ばれるためDependsを通らず、
     # dependency_overrides が効かない。差し替えないと、500を発生させるテストが
     # 開発用DBの error_logs に行を書き込んでしまう（CIでは失敗が握り潰される）。
+    # なお db_session_scope / get_session_factory も同じ解決点を通るため、
+    # この差し替え1つでDIを経由しない書き込み経路がすべてテストDBへ向く。
     original_get_session_maker = db_session_module.get_session_maker
     db_session_module.get_session_maker = lambda: test_session_maker
 
