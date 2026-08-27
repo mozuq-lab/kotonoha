@@ -96,6 +96,22 @@ class RateLimitStorageError(RuntimeError):
     """
 
 
+# limits/slowapi が解釈できるストレージスキームの許可リスト（`+` 前の基底部分）。
+#
+# 【許可リストにする理由】: `//` を欠いた値では urlsplit がコロンより前を scheme と
+# して返す。生の秘密（例: "MyP4ssw0rd:extra"）を貼り付けた場合、その秘密が
+# scheme の位置に入る。「スキームは診断に有用だから残す」とだけ考えると、
+# 秘密をそのままログへ出すフェイルオープンになる。既知のスキームだけを信頼する。
+_KNOWN_STORAGE_SCHEMES = frozenset(
+    {"memory", "redis", "rediss", "memcached", "mongodb", "etcd", "async"}
+)
+
+
+def _is_known_storage_scheme(scheme: str) -> bool:
+    """スキームが既知のストレージスキームか判定する（`redis+sentinel` 等も許容）。"""
+    return all(part in _KNOWN_STORAGE_SCHEMES for part in scheme.split("+") if part)
+
+
 def redact_storage_uri(storage_uri: str | None) -> str:
     """ストレージURIから資格情報を取り除いた、ログに出して安全な表現を返す。
 
@@ -133,8 +149,13 @@ def redact_storage_uri(storage_uri: str | None) -> str:
     if not parts.netloc:
         # 【`//` を欠いた形】: urlsplit は `redis:pw@host:6379` のような入力の
         # userinfo を netloc ではなく path に入れる。ホストと資格情報を安全に
-        # 切り分ける手段が無いため、スキーム以外は伏せる
-        # （必須設定のタイポとして現実的に起こりうる形である）。
+        # 切り分ける手段が無いため、以降は伏せる。
+        #
+        # スキームを出してよいのは、それが既知のストレージスキームだと確認できた
+        # ときだけ。確認できない場合、その位置に入っているのは「未知のスキーム」
+        # ではなく「生の秘密の先頭部分」かもしれない。
+        if not _is_known_storage_scheme(scheme):
+            return "<URIとして解釈できない値（内容は秘匿）>"
         if parts.path or parts.query:
             return f"{scheme}:<以降は秘匿（資格情報を含む可能性）>"
         return f"{scheme}://"

@@ -585,3 +585,87 @@ async def test_v1_health_endpoint_returns_500_on_database_error():
             assert detail["database"] == "disconnected"  # 【確認内容】: databaseが"disconnected" 🔵
     finally:
         test_app.dependency_overrides.clear()
+
+
+class TestDatabaseOutageIsObservable:
+    """DB障害がログから検知できることのテスト。
+
+    【この回帰テストの理由】: db_session_scope から HTTPException を除外して
+    偽のERRORを止めたが、/health は DB例外を捕まえて HTTPException に変換するため、
+    「本物のDB障害でもログが1行も出ない」状態になっていた（実測: ERROR/WARNING ゼロ）。
+    偽アラートを消すのと引き換えに本物のアラートを消していた。
+    障害を検知するのは、DB例外を握った本人（health_check）の責務である。
+    """
+
+    @pytest.mark.asyncio
+    async def test_database_failure_is_logged_by_the_handler(self, caplog):
+        import logging
+
+        from fastapi import HTTPException
+
+        from app.api.v1.endpoints.health import health_check
+
+        class _BrokenSession:
+            async def execute(self, *args, **kwargs):
+                raise RuntimeError("connection refused")
+
+        with caplog.at_level(logging.ERROR, logger="app.api.v1.endpoints.health"):
+            with pytest.raises(HTTPException):
+                await health_check(db=_BrokenSession())
+
+        assert caplog.records, "DB障害なのにログが1件も出ていない"
+        assert "connection refused" in caplog.text, "原因がログに残っていない"
+
+    @pytest.mark.asyncio
+    async def test_logged_even_when_error_detail_is_masked(self, caplog, monkeypatch):
+        """本番では応答から原因を伏せるが、ログには残す"""
+        import logging
+
+        from fastapi import HTTPException
+
+        from app.api.v1.endpoints.health import health_check
+        from app.core.config import settings
+
+        monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+
+        class _BrokenSession:
+            async def execute(self, *args, **kwargs):
+                raise RuntimeError("connection refused")
+
+        with caplog.at_level(logging.ERROR, logger="app.api.v1.endpoints.health"):
+            with pytest.raises(HTTPException) as exc_info:
+                await health_check(db=_BrokenSession())
+
+        # 応答本文には原因を出さない
+        assert "connection refused" not in str(exc_info.value.detail)
+        # ログには残す（運用者が原因を追えるように）
+        assert "connection refused" in caplog.text
+
+
+class TestApplicationLoggersStayEnabled:
+    """マイグレーション実行後もアプリのロガーが有効なままであることのテスト。
+
+    【この回帰テストの理由】: alembic/env.py の `fileConfig()` は既定で
+    `disable_existing_loggers=True` のため、**それまでに import 済みのアプリの
+    ロガーをすべて無効化**する。テストは DB セットアップで alembic を走らせるので、
+    以降のテストではアプリのログが1行も出なくなる。
+    ログを検証するテストが「出力ゼロ」を静かに見逃すだけでなく、
+    テスト実行中の障害調査もできなくなる。
+    """
+
+    @pytest.mark.asyncio
+    async def test_app_loggers_are_not_disabled_by_migrations(self, test_client_with_db):
+        import logging
+
+        disabled = [
+            name
+            for name in (
+                "app.core.config",
+                "app.core.rate_limit",
+                "app.db.session",
+                "app.api.v1.endpoints.health",
+            )
+            if logging.getLogger(name).disabled
+        ]
+
+        assert not disabled, f"マイグレーション後に無効化されたロガー: {disabled}"

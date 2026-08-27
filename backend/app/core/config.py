@@ -6,9 +6,10 @@
 
 import logging
 import os
+from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,34 @@ _REMOVED_SETTINGS: dict[str, str] = {
     # 署名用途が再び必要になったら、その用途と一緒に定義し直すこと。
     "SECRET_KEY": "JWT実装の削除により消費者が無くなったため廃止（この設定は無視されます）",
 }
+
+
+def _resolved_env_file(settings_cls: type) -> Path:
+    """実際に読み込まれる env ファイルの絶対パスを返す。
+
+    【絶対パスにする理由】: `env_file=".env"` はプロセスのカレントディレクトリ
+    基準で解決される。backend/ 以外から起動した場合、「backend/.env を直せ」と
+    案内しても読まれているのは別のファイルで、直しても警告が消えない。
+    """
+    env_file = settings_cls.model_config.get("env_file") or ".env"
+    return Path(env_file).resolve()
+
+
+def _is_in_env_file(settings_cls: type, key: str) -> bool:
+    """env ファイルに当該キーの行が存在するか判定する。
+
+    【マージ後の辞書で判定しない理由】: `key in data` は「.env 由来」ではなく
+    「何らかの経路で渡された」を意味する。init引数で渡した場合まで
+    env ファイルを直せと案内してしまい、存在しない行を探させることになる。
+    """
+    path = _resolved_env_file(settings_cls)
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return any(
+        line.strip().removeprefix("export ").startswith(f"{key}=") for line in content.splitlines()
+    )
 
 
 class Settings(BaseSettings):
@@ -211,7 +240,7 @@ class Settings(BaseSettings):
             return data
 
         for key, reason in _REMOVED_SETTINGS.items():
-            supplied_from_env_file = key in data
+            supplied_from_env_file = _is_in_env_file(cls, key)
             # 【os.environ も直接見る理由】: pydantic-settings の EnvSettingsSource は
             # 宣言済みフィールドしか os.environ から拾わないため、OS環境変数で渡された
             # 削除済みキーは `data` に載らず、この移行措置に到達しない。
@@ -220,9 +249,10 @@ class Settings(BaseSettings):
             # CI も env: で渡していた。つまり実際の利用者はこちらの経路にいる。
             supplied_from_os_env = key in os.environ
 
-            if supplied_from_env_file:
+            supplied_at_all = key in data or supplied_from_os_env
+            if key in data:
                 del data[key]
-            if not (supplied_from_env_file or supplied_from_os_env):
+            if not supplied_at_all:
                 continue
 
             # 供給元に応じて直す場所を案内する（env ファイル方式でないデプロイに
@@ -230,9 +260,12 @@ class Settings(BaseSettings):
             # 両方に残っていることもあるので、該当するものをすべて挙げる。
             locations = []
             if supplied_from_env_file:
-                locations.append("backend/.env")
+                locations.append(str(_resolved_env_file(cls)))
             if supplied_from_os_env:
                 locations.append("環境変数（docker-compose.yml / タスク定義 / CI設定など）")
+            if not locations:
+                # .env にも環境変数にも無いのに data にある＝アプリへ直接渡された。
+                locations.append("アプリに渡している設定")
 
             # 【無関係なツール由来の環境変数への配慮】: SECRET_KEY のような一般的な
             # 名前は Django / Flask / CIランナー等が使うため、本アプリと無関係に
@@ -314,12 +347,6 @@ def validate_production_settings(target: "Settings") -> None:
             "require_api_key, so the outage would only surface from real traffic)"
         )
 
-    if problems:
-        raise ProductionSettingsError(
-            f"ENVIRONMENT={target.ENVIRONMENT} requires the following settings: "
-            + " / ".join(problems)
-        )
-
     # TRUSTED_PROXY_COUNT は 0 が正当な構成（ALB等を挟まない直接公開）でもあるため
     # 起動失敗にはしない。ただし ALB / CDN 配下で 0 のままだと X-Forwarded-For を
     # 一切信用せず全リクエストがプロキシの接続元IPに収束し、レート制限が
@@ -335,6 +362,56 @@ def validate_production_settings(target: "Settings") -> None:
             target.ENVIRONMENT,
         )
 
+    # 【警告を raise より前に出す理由】: 後ろに置くと、他に設定漏れがあるときに
+    # 到達しない。「複数の漏れを1回でまとめて報告する」という目的は、
+    # 例外だけでなく警告にも同じく当てはまる。
+    if problems:
+        raise ProductionSettingsError(
+            f"ENVIRONMENT={target.ENVIRONMENT} requires the following settings: "
+            + " / ".join(problems)
+        )
+
+
+class SettingsValidationError(RuntimeError):
+    """設定の読み込みに失敗した場合に送出される（値を一切含まない）。
+
+    【pydantic の ValidationError をそのまま伝播させない理由】:
+    extra="forbid" の ValidationError は `input_value='sk-ant-...'` のように
+    **違反した値そのもの**をメッセージに含む。シークレットの環境変数名を
+    タイポすると（例: ANTHROPIC_API_KEYS）、起動を試みるたびにシークレットが
+    stderr とコンテナログへ出力される。
+    [ProductionSettingsError] と同じ理由で、値を含まない例外に置き換える。
+    """
+
+
+def _describe_validation_error(exc: ValidationError) -> str:
+    """ValidationError を、値を含まない形で要約する。
+
+    診断に必要なのは「どのキーが」「なぜ」であって、値そのものではない。
+
+    Args:
+        exc: pydantic の検証エラー。
+
+    Returns:
+        str: 値を含まない要約。
+    """
+    lines = []
+    for error in exc.errors():
+        location = ".".join(str(part) for part in error["loc"]) or "(unknown)"
+        lines.append(f"{location}: {error['msg']}")
+    return " / ".join(lines)
+
+
+def _load_settings() -> Settings:
+    """設定を読み込む。失敗時は値を含まない例外へ置き換える。"""
+    try:
+        return Settings()
+    except ValidationError as exc:
+        raise SettingsValidationError(
+            "設定の読み込みに失敗しました。"
+            "backend/.env.example と綴りを照合してください: " + _describe_validation_error(exc)
+        ) from None
+
 
 # グローバル設定インスタンス
-settings = Settings()
+settings = _load_settings()

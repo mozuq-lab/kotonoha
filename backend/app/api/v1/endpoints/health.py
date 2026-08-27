@@ -17,6 +17,7 @@ TASK-0029: ヘルスチェックエンドポイント実装（GET /api/v1/health
 🔵 NFR-304, NFR-504に基づく
 """
 
+import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -27,6 +28,8 @@ from app.api.deps import get_db_session
 from app.core.config import settings
 from app.schemas.health import HealthErrorResponse, HealthResponse
 from app.utils import ai_client as ai_client_module
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -106,6 +109,18 @@ async def health_check(
             timestamp=timestamp,
         )
     except Exception as e:
+        # 【ここで記録する理由】: 本例外は HTTPException に変換されて上位へ渡る。
+        # db_session_scope は「アプリが意図した応答」である HTTPException を
+        # ERROR にしない（通常の 401/404/422 まで DBエラーとして鳴るのを防ぐため）ので、
+        # DB障害を検知できるのは例外を握った本人だけである。ここで記録しないと
+        # 本物のDB障害がログに一切残らない。
+        # 応答本文は本番では原因を伏せるが、ログには残す（運用者が原因を追えるように）。
+        logger.error(
+            "ヘルスチェックに失敗した（データベース接続失敗）: %s: %s",
+            type(e).__name__,
+            str(e),
+            exc_info=True,
+        )
         error_message = (
             str(e) if settings.ENVIRONMENT == "development" else "Database connection failed"
         )

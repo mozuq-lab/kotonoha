@@ -8,6 +8,8 @@ app/core/config.py の Settings クラステスト
 """
 
 import logging
+import os
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -180,6 +182,25 @@ class TestProductionSettingsValidation:
 
         assert "TRUSTED_PROXY_COUNT" in caplog.text
 
+    def test_proxy_warning_is_emitted_even_when_other_settings_are_missing(self, caplog):
+        """他に設定漏れがあっても TRUSTED_PROXY_COUNT の警告は出る
+
+        【この回帰テストの理由】: 警告を raise の後ろに置いていたため、他の違反が
+        あると到達しなかった。「複数の設定漏れは1回でまとめて報告する」と
+        CHANGELOG に書いた目的（漏れの数だけデプロイをやり直さない）を、
+        警告だけが満たしていなかった。ALB配下の初回デプロイでは、設定を1つ
+        直して再デプロイして初めて警告が見える状態だった。
+        """
+        settings = Settings(
+            **_production_settings(RATE_LIMIT_STORAGE_URI="", TRUSTED_PROXY_COUNT=0)
+        )
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            with pytest.raises(ProductionSettingsError):
+                validate_production_settings(settings)
+
+        assert "TRUSTED_PROXY_COUNT" in caplog.text
+
     def test_does_not_warn_when_trusted_proxy_count_is_configured(self, caplog):
         """TRUSTED_PROXY_COUNT が明示されていれば警告は出ない"""
         settings = Settings(**_production_settings(TRUSTED_PROXY_COUNT=1))
@@ -328,6 +349,10 @@ class TestRemovedSettingsMigration:
         「.envが実際に読まれたこと」を確認できないままCIでのみ失敗する。
         """
         monkeypatch.delenv("POSTGRES_USER", raising=False)
+        # 【chdir する理由】: `_env_file=` はインスタンス生成時の指定であり
+        # model_config には反映されない。本番は model_config の env_file=".env" を
+        # CWD 基準で解決するので、テストも同じ経路を通す。
+        monkeypatch.chdir(tmp_path)
         env_file = tmp_path / ".env"
         # 【値が "kotonoha_user" ではない理由】: それは POSTGRES_USER の既定値でもあるため、
         # dotenv の読み込みが完全に壊れてもアサーションが通ってしまう。
@@ -338,12 +363,12 @@ class TestRemovedSettingsMigration:
         )
 
         with caplog.at_level(logging.WARNING, logger="app.core.config"):
-            settings = Settings(_env_file=env_file)
+            settings = Settings()
 
         assert settings.POSTGRES_USER == "dotenv_only_user"
         assert not hasattr(settings, "ACCESS_TOKEN_EXPIRE_MINUTES")
         assert "ACCESS_TOKEN_EXPIRE_MINUTES" in caplog.text
-        assert "backend/.env" in caplog.text
+        assert str(env_file.resolve()) in caplog.text
 
     def test_removed_key_is_ignored_not_applied(self):
         """削除済みキーを渡しても、他の設定値は渡した値のまま影響を受けない
@@ -397,14 +422,17 @@ class TestRemovedSettingsMigration:
     def test_removed_key_from_env_file_points_at_env_file(self, tmp_path, caplog, monkeypatch):
         """.env 経由の場合は .env を直すよう案内する"""
         monkeypatch.delenv("SECRET_KEY", raising=False)
+        monkeypatch.chdir(tmp_path)
         env_file = tmp_path / ".env"
         env_file.write_text("SECRET_KEY=left-over\n", encoding="utf-8")
 
         with caplog.at_level(logging.WARNING, logger="app.core.config"):
-            Settings(_env_file=env_file)
+            Settings()
 
         assert "SECRET_KEY" in caplog.text
-        assert "backend/.env" in caplog.text
+        # 実際に読まれているファイルの絶対パスを案内すること
+        # （backend/ 以外から起動した場合に別のファイルを指してしまわないように）
+        assert str(env_file.resolve()) in caplog.text
 
     def test_env_file_location_is_named_when_key_is_in_both_sources(
         self, tmp_path, caplog, monkeypatch
@@ -415,14 +443,30 @@ class TestRemovedSettingsMigration:
         消すべき backend/.env の行が名指しされず、警告に従っても消えなかった。
         """
         monkeypatch.setenv("SECRET_KEY", "in-os-env")
+        monkeypatch.chdir(tmp_path)
         env_file = tmp_path / ".env"
         env_file.write_text("SECRET_KEY=in-env-file\n", encoding="utf-8")
 
         with caplog.at_level(logging.WARNING, logger="app.core.config"):
-            Settings(_env_file=env_file)
+            Settings()
 
-        assert "backend/.env" in caplog.text
+        assert str(env_file.resolve()) in caplog.text
         assert "環境変数" in caplog.text
+
+    def test_init_kwarg_is_not_reported_as_env_file(self, monkeypatch, caplog):
+        """アプリに直接渡された設定を「backend/.env」と誤って案内しない
+
+        【この回帰テストの理由】: `key in data`（マージ後の辞書）を「.env 由来」と
+        みなしていたため、init引数で渡した場合も backend/.env を直せと案内していた。
+        存在しない行を探させることになる。
+        """
+        monkeypatch.delenv("SECRET_KEY", raising=False)
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            Settings(_env_file=None, SECRET_KEY="passed-as-kwarg")  # noqa: S106
+
+        assert "SECRET_KEY" in caplog.text
+        assert "backend/.env" not in caplog.text
 
     def test_removed_key_from_os_environment_does_not_become_a_field(self, monkeypatch):
         """OS環境変数経由でも設定値としては採用されない"""
@@ -431,6 +475,39 @@ class TestRemovedSettingsMigration:
         settings = Settings(_env_file=None)
 
         assert not hasattr(settings, "ACCESS_TOKEN_EXPIRE_MINUTES")
+
+    def test_startup_failure_on_unknown_key_does_not_leak_the_value(self, tmp_path, monkeypatch):
+        """未知キーで起動に失敗しても、その値を出力しない
+
+        【この回帰テストの理由】: extra="forbid" の ValidationError は
+        `input_value='sk-ant-...'` のように違反した値そのものを含む。
+        シークレットの環境変数名をタイポすると（例: ANTHROPIC_API_KEYS）、
+        起動を試みるたびにシークレットが stderr とコンテナログへ出る。
+        ProductionSettingsError で塞いだのと同じ漏えいクラスが隣に残っていた。
+        """
+        import subprocess
+        import sys
+
+        secret = "sk-ant-must-not-appear-in-logs"
+        (tmp_path / ".env").write_text(f"ANTHROPIC_API_KEYS={secret}\n", encoding="utf-8")
+
+        env = dict(os.environ)
+        env["PYTHONPATH"] = str(Path(__file__).resolve().parents[2])
+        env["ENVIRONMENT"] = "development"
+        result = subprocess.run(  # noqa: S603
+            [sys.executable, "-c", "import app.core.config"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+
+        assert result.returncode != 0, "未知キーなのに起動が成功した"
+        combined = result.stdout + result.stderr
+        assert secret not in combined, "違反した値が出力に含まれている"
+        # 診断に必要なキー名は残っていること
+        assert "ANTHROPIC_API_KEYS" in combined
 
     def test_unknown_key_is_still_rejected(self):
         """未知キー（タイポ）は従来どおり起動時エラー

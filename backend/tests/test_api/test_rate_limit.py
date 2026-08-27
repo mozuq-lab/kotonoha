@@ -987,6 +987,49 @@ class TestRedactStorageUri:
 
         assert redact_storage_uri("memory://") == "memory://"
 
+    @pytest.mark.parametrize(
+        "raw_secret",
+        [
+            "supersecretpassword:with@colon",
+            "sk-ant-abc:def",
+            "MyP4ssw0rd:extra",
+        ],
+        ids=["password_with_colon", "api_key_like", "mixed"],
+    )
+    def test_bare_secret_containing_a_colon_is_fully_masked(self, raw_secret):
+        """コロンを含む生の秘密を貼り付けても平文が出ない
+
+        【この回帰テストの理由】: `//` を欠いた値では urlsplit がコロンより前を
+        scheme として返すため、そこをそのまま出力していた。
+        「スキームは診断に有用だから残す」という前提が、
+        **スキームの位置に秘密そのものが入りうる**ことを見落としていた。
+        完全にマスクされるのはコロンを1つも含まない値だけ、という
+        フェイルオープンになっていた。
+        """
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri(raw_secret)
+
+        leading = raw_secret.split(":", 1)[0]
+        assert leading not in redacted, f"'{leading}' が平文で出力されている"
+
+    @pytest.mark.parametrize(
+        "uri",
+        ["redis:pw@host:6379", "rediss:pw@host", "memcached:pw@host"],
+        ids=["redis", "rediss", "memcached"],
+    )
+    def test_known_scheme_without_double_slash_keeps_the_scheme(self, uri):
+        """既知のストレージスキームなら、`//` が無くてもスキームは診断のため残す
+
+        許可リストに載っているスキームだけを信頼する（フェイルクローズ）。
+        """
+        from app.core.rate_limit import redact_storage_uri
+
+        redacted = redact_storage_uri(uri)
+
+        assert "pw@host" not in redacted
+        assert redacted.startswith(uri.split(":", 1)[0])
+
     def test_unparsable_value_is_fully_masked(self):
         """URIとして解釈できない値は、誤設定の中身ごと伏せる"""
         from app.core.rate_limit import redact_storage_uri

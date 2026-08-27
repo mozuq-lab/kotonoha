@@ -7,16 +7,22 @@ SQLAlchemy対応のマイグレーション設定。
 
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
-
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # Alembic設定オブジェクト
 config = context.config
 
 # ロガーの設定
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # 【disable_existing_loggers=False にする理由】: 既定の True は、この時点までに
+    # 生成済みのロガーをすべて無効化する。alembic.ini のロガー設定には app.* が
+    # 含まれないため、アプリのロガーが軒並み黙る。
+    # 影響が大きいのはテストで、DBセットアップで alembic を実行した以降は
+    # アプリのログが1行も出なくなり、ログを検証するテストが「出力ゼロ」を
+    # 静かに見逃す（実際に app.core.config のロガーが無効化されていた）。
+    # 本番のマイグレーション実行でも、同一プロセスで何かを続ける場合に同じ問題が出る。
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # 環境変数から設定を読み込み
 import sys
