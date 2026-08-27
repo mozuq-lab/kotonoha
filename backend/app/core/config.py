@@ -9,8 +9,8 @@ import os
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import Field, ValidationError, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, ValidationError
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -63,34 +63,85 @@ _REMOVED_SETTINGS: dict[str, str] = {
     # 何も署名しない値を本番で用意・ローテーションし続ける運用コストだけが残っていた。
     # 署名用途が再び必要になったら、その用途と一緒に定義し直すこと。
     "SECRET_KEY": "JWT実装の削除により消費者が無くなったため廃止（この設定は無視されます）",
+    # 同じくJWT実装の削除で読むコードが無くなった。SECRET_KEY と同じ規則を適用する。
+    "SESSION_EXPIRE_MINUTES": (
+        "JWT実装の削除により消費者が無くなったため廃止（この設定は無視されます）"
+    ),
 }
 
 
-def _resolved_env_file(settings_cls: type) -> Path:
-    """実際に読み込まれる env ファイルの絶対パスを返す。
+class _RemovedKeyFilter:
+    """設定ソースをラップし、削除済みキーを取り除いて警告する。
 
-    【絶対パスにする理由】: `env_file=".env"` はプロセスのカレントディレクトリ
-    基準で解決される。backend/ 以外から起動した場合、「backend/.env を直せ」と
-    案内しても読まれているのは別のファイルで、直しても警告が消えない。
+    【ソース単位でラップする理由】: どのソースから来たかを、マージ後の辞書からは
+    判別できない。以前は `key in data` を「.env 由来」とみなし、`model_config` の
+    env_file を CWD 基準で解決して案内していたが、
+      - init引数で渡した場合も .env を直せと案内する
+      - `_env_file=` の上書きを無視して常に CWD の .env を見る
+      - 自前の行パースが `KEY = "value"` 等を取りこぼす
+    という誤案内を生んだ。各ソースが自分の素性を知っているので、そこで判定する。
+
+    Attributes:
+        source: ラップ対象の設定ソース。
+        label: 警告に出す供給元の表示名。
     """
-    env_file = settings_cls.model_config.get("env_file") or ".env"
-    return Path(env_file).resolve()
+
+    def __init__(self, source: PydanticBaseSettingsSource, label: str) -> None:
+        self._source = source
+        self._label = label
+
+    def __call__(self) -> dict[str, Any]:
+        values = self._source()
+        for key, reason in _REMOVED_SETTINGS.items():
+            if key in values:
+                del values[key]
+                _warn_removed_setting(key, reason, self._label)
+        return values
 
 
-def _is_in_env_file(settings_cls: type, key: str) -> bool:
-    """env ファイルに当該キーの行が存在するか判定する。
+class _RemovedKeyEnvFilter(_RemovedKeyFilter):
+    """OS環境変数ソース用のラッパー。
 
-    【マージ後の辞書で判定しない理由】: `key in data` は「.env 由来」ではなく
-    「何らかの経路で渡された」を意味する。init引数で渡した場合まで
-    env ファイルを直せと案内してしまい、存在しない行を探させることになる。
+    【os.environ を直接見る理由】: EnvSettingsSource は宣言済みフィールドしか
+    os.environ から拾わないため、削除済みキーはこのソースの戻り値に現れない。
+    削除前の SECRET_KEY は docker-compose と CI が環境変数として渡していたので、
+    ここを見ないと実際の利用者に通知が届かない。
     """
-    path = _resolved_env_file(settings_cls)
-    try:
-        content = path.read_text(encoding="utf-8")
-    except OSError:
-        return False
-    return any(
-        line.strip().removeprefix("export ").startswith(f"{key}=") for line in content.splitlines()
+
+    def __call__(self) -> dict[str, Any]:
+        values = self._source()
+        for key, reason in _REMOVED_SETTINGS.items():
+            if key in values:
+                del values[key]
+            if key in os.environ:
+                _warn_removed_setting(key, reason, self._label)
+        return values
+
+
+def _warn_removed_setting(key: str, reason: str, location: str) -> None:
+    """削除済み設定キーが指定されていることを警告する。
+
+    setup_logging() 前に評価されることがあるが、ハンドラ未設定でも WARNING は
+    Python の last resort ハンドラにより stderr へ出力される。
+
+    Args:
+        key: 削除済みの設定キー名。
+        reason: 廃止理由。
+        location: 指定が見つかった場所の表示名。
+    """
+    note = ""
+    if "環境変数" in location:
+        # SECRET_KEY のような一般的な名前は Django / Flask / CIランナー等でも
+        # 使われる。本アプリと無関係に export されている場合に「消せ」とだけ
+        # 言うと、存在しない設定を探させることになる。
+        note = "（本アプリと無関係に同名の環境変数を設定している場合は無視して構いません）"
+    logger.warning(
+        "設定 %s は削除済みです（%s）。この値は読み込まれません。"
+        "指定が残っている場合は %s から削除してください。%s",
+        key,
+        reason,
+        location,
+        note,
     )
 
 
@@ -124,13 +175,6 @@ class Settings(BaseSettings):
 
     # CORS設定
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
-
-    # セッション設定
-    # 【現状アプリ内に消費者はいない】サーバー側セッション管理は未実装のため、
-    # この値を読むコードは存在しない。将来のセッション管理導入時の受け皿として
-    # 残している。棚卸しする場合は _REMOVED_SETTINGS への追加を忘れないこと
-    # （.env.example に載っており、各開発者の .env に残っているため）。
-    SESSION_EXPIRE_MINUTES: int = 60
 
     # レート制限設定
     # AI変換APIのレート制限（RATE_LIMIT_TIMES 回 / RATE_LIMIT_SECONDS 秒 / IP）。
@@ -221,72 +265,45 @@ class Settings(BaseSettings):
         """有効な端末APIキーのリスト（空要素は除外）"""
         return [key.strip() for key in self.API_KEYS.split(",") if key.strip()]
 
-    @model_validator(mode="before")
     @classmethod
-    def drop_removed_settings(cls, data: Any) -> Any:  # noqa: ANN401
-        """削除済みの設定キーを読み捨て、警告ログを出す。
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """各設定ソースを、削除済みキーの読み捨て付きでラップする。
 
-        .env に古いキーが残っているだけで起動不能になるのを防ぐための移行措置。
-        対象は `_REMOVED_SETTINGS` に明示したキーのみで、それ以外の未知キーは
-        extra="forbid" により従来どおり起動時エラーになる（タイポ検出を維持するため）。
+        本クラスは extra="forbid"（pydantic-settings既定）で動作するため、
+        削除済みキーが各開発者の backend/.env や env ファイル方式のデプロイに
+        残っていると "Extra inputs are not permitted" で起動できなくなる。
+        .env.example を直しても既存の設定は自動では直らないため、既知の
+        削除済みキーだけは読み捨てて、どこに残っているかを警告する。
 
-        Args:
-            data: バリデーション前の入力（BaseSettingsからは各ソースを統合した辞書が渡る）。
-
-        Returns:
-            Any: 削除済みキーを取り除いた入力。
+        extra="ignore" に緩めない理由: 未知キーを一律無視すると RATE_LIMIT_SECOND の
+        ようなタイポが黙って既定値で動いてしまい、レート制限の設定漏れを検出できなく
+        なる。ここに列挙した「削除済みと分かっているキー」だけを対象にする。
         """
-        if not isinstance(data, dict):
-            return data
+        dotenv_label = "設定ファイル（.env）"
+        env_file = getattr(dotenv_settings, "env_file", None)
+        if env_file:
+            # `_env_file=` の上書きも含めて、実際に読まれるファイルを名指しする。
+            # 【絶対パスにする理由】: `env_file=".env"` はプロセスのカレント
+            # ディレクトリ基準で解決される。相対名のまま案内すると、backend/ 以外から
+            # 起動した場合に読まれているファイルと違うものを直させてしまう。
+            paths = env_file if isinstance(env_file, (list, tuple)) else [env_file]
+            dotenv_label = " / ".join(str(Path(path).resolve()) for path in paths)
 
-        for key, reason in _REMOVED_SETTINGS.items():
-            supplied_from_env_file = _is_in_env_file(cls, key)
-            # 【os.environ も直接見る理由】: pydantic-settings の EnvSettingsSource は
-            # 宣言済みフィールドしか os.environ から拾わないため、OS環境変数で渡された
-            # 削除済みキーは `data` に載らず、この移行措置に到達しない。
-            # 削除前の SECRET_KEY は docker-compose が
-            # `SECRET_KEY: ${SECRET_KEY:?...}` として OS環境変数で渡しており、
-            # CI も env: で渡していた。つまり実際の利用者はこちらの経路にいる。
-            supplied_from_os_env = key in os.environ
-
-            supplied_at_all = key in data or supplied_from_os_env
-            if key in data:
-                del data[key]
-            if not supplied_at_all:
-                continue
-
-            # 供給元に応じて直す場所を案内する（env ファイル方式でないデプロイに
-            # 「backend/.env を直せ」と言っても該当ファイルが無い）。
-            # 両方に残っていることもあるので、該当するものをすべて挙げる。
-            locations = []
-            if supplied_from_env_file:
-                locations.append(str(_resolved_env_file(cls)))
-            if supplied_from_os_env:
-                locations.append("環境変数（docker-compose.yml / タスク定義 / CI設定など）")
-            if not locations:
-                # .env にも環境変数にも無いのに data にある＝アプリへ直接渡された。
-                locations.append("アプリに渡している設定")
-
-            # 【無関係なツール由来の環境変数への配慮】: SECRET_KEY のような一般的な
-            # 名前は Django / Flask / CIランナー等が使うため、本アプリと無関係に
-            # export されていることがある。その場合に「消せ」とだけ言うと、
-            # 存在しない設定を探させることになる。値が読み込まれないことを明示し、
-            # 無視してよい場合があることも添える。
-            note = ""
-            if supplied_from_os_env:
-                note = "（本アプリと無関係に同名の環境変数を設定している場合は無視して構いません）"
-
-            # setup_logging() 前に評価されるが、ハンドラ未設定でも WARNING は
-            # Python の last resort ハンドラにより stderr へ出力される。
-            logger.warning(
-                "設定 %s は削除済みです（%s）。この値は読み込まれません。"
-                "指定が残っている場合は %s から削除してください。%s",
-                key,
-                reason,
-                " / ".join(locations),
-                note,
-            )
-        return data
+        return (
+            _RemovedKeyFilter(init_settings, "アプリに渡している設定"),
+            _RemovedKeyEnvFilter(
+                env_settings, "環境変数（docker-compose.yml / タスク定義 / CI設定など）"
+            ),
+            _RemovedKeyFilter(dotenv_settings, dotenv_label),
+            file_secret_settings,
+        )
 
 
 def validate_production_settings(target: "Settings") -> None:
@@ -320,8 +337,14 @@ def validate_production_settings(target: "Settings") -> None:
     # 「1件ずつ知らせること」ではないので、まとめて報告する。
     problems: list[str] = []
 
-    if target.POSTGRES_PASSWORD == DEV_POSTGRES_PASSWORD:
-        problems.append("POSTGRES_PASSWORD must be set explicitly (still the development default)")
+    # 【空文字も弾く理由】: 開発既定値との完全一致しか見ていないと、
+    # シークレットマネージャの取得が空を返したときにパスワード無しのDSN
+    # （postgresql+asyncpg://user:@host/db）で起動できてしまう。
+    # API_KEYS / RATE_LIMIT_STORAGE_URI は空を弾いており、扱いが割れていた。
+    if not target.POSTGRES_PASSWORD.strip() or target.POSTGRES_PASSWORD == DEV_POSTGRES_PASSWORD:
+        problems.append(
+            "POSTGRES_PASSWORD must be set explicitly (empty or still the development default)"
+        )
     # レート制限カウンタが未設定だとプロセス内メモリになる。マルチワーカー
     # （uvicorn --workers）／マルチインスタンス構成ではカウンタがプロセスごとに
     # 分裂して実効レート制限が「設定値 × プロセス数」まで緩む（NFR-101違反）。
@@ -365,6 +388,16 @@ def validate_production_settings(target: "Settings") -> None:
     # 【警告を raise より前に出す理由】: 後ろに置くと、他に設定漏れがあるときに
     # 到達しない。「複数の漏れを1回でまとめて報告する」という目的は、
     # 例外だけでなく警告にも同じく当てはまる。
+    # 【AIプロバイダのキーを含める理由】: API_KEYS と同じ失敗の形になる。
+    # 未設定だと AIClient がクライアントを生成せず、変換要求がすべて
+    # AIProviderException で失敗する一方、起動自体は成功してしまう。
+    if not (target.ANTHROPIC_API_KEY or target.OPENAI_API_KEY):
+        problems.append(
+            "ANTHROPIC_API_KEY or OPENAI_API_KEY must be set explicitly "
+            "(without a provider key every AI-conversion request fails, "
+            "while the app still starts)"
+        )
+
     if problems:
         raise ProductionSettingsError(
             f"ENVIRONMENT={target.ENVIRONMENT} requires the following settings: "

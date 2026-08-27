@@ -10,9 +10,10 @@ TASK-0025: レート制限ミドルウェア実装
 """
 
 import logging
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from fastapi import Request, Response
+from limits.storage import SCHEMES
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from starlette.responses import JSONResponse
@@ -96,20 +97,19 @@ class RateLimitStorageError(RuntimeError):
     """
 
 
-# limits/slowapi が解釈できるストレージスキームの許可リスト（`+` 前の基底部分）。
+# limits が解釈できるストレージスキームの集合。
 #
-# 【許可リストにする理由】: `//` を欠いた値では urlsplit がコロンより前を scheme と
-# して返す。生の秘密（例: "MyP4ssw0rd:extra"）を貼り付けた場合、その秘密が
-# scheme の位置に入る。「スキームは診断に有用だから残す」とだけ考えると、
-# 秘密をそのままログへ出すフェイルオープンになる。既知のスキームだけを信頼する。
-_KNOWN_STORAGE_SCHEMES = frozenset(
-    {"memory", "redis", "rediss", "memcached", "mongodb", "etcd", "async"}
-)
+# 【手書きせず limits から取る理由】: `//` を欠いた値では urlsplit がコロンより前を
+# scheme として返す。生の秘密（例: "MyP4ssw0rd:extra"）を貼り付けた場合、その秘密が
+# scheme の位置に入るため、既知のスキームだけを信頼する必要がある。
+# ただし一覧を手書きすると漏れる（実際に redis+sentinel / redis+cluster / unix が
+# 抜け、正当な構成を診断不能にしていた）。登録済みの一覧をそのまま使う。
+_KNOWN_STORAGE_SCHEMES = frozenset(SCHEMES) | {"unix"}
 
 
 def _is_known_storage_scheme(scheme: str) -> bool:
-    """スキームが既知のストレージスキームか判定する（`redis+sentinel` 等も許容）。"""
-    return all(part in _KNOWN_STORAGE_SCHEMES for part in scheme.split("+") if part)
+    """スキームが limits の対応するストレージスキームか判定する。"""
+    return scheme in _KNOWN_STORAGE_SCHEMES
 
 
 def redact_storage_uri(storage_uri: str | None) -> str:
@@ -156,9 +156,12 @@ def redact_storage_uri(storage_uri: str | None) -> str:
         # ではなく「生の秘密の先頭部分」かもしれない。
         if not _is_known_storage_scheme(scheme):
             return "<URIとして解釈できない値（内容は秘匿）>"
-        if parts.path or parts.query:
-            return f"{scheme}:<以降は秘匿（資格情報を含む可能性）>"
-        return f"{scheme}://"
+        # 【`@` が無ければそのまま出す理由】: userinfo は必ず `@` の前に来るので、
+        # `@` を含まない値に資格情報は入っていない。`unix:///var/run/redis.sock` の
+        # ように authority が空でパスだけを持つ正当なURIを潰さないため。
+        if "@" not in storage_uri:
+            return storage_uri
+        return f"{scheme}:<以降は秘匿（資格情報を含む可能性）>"
 
     # 【hostname/port へ分解しない理由】: 分解して組み直すと
     #   - IPv6 のブラケットが落ちる（`[::1]:6379` → `::1:6379` という無効なURI）
@@ -178,23 +181,19 @@ def redact_storage_uri(storage_uri: str | None) -> str:
     return redacted
 
 
-# パスワードを部分文字列として置換する際の最小長。
+# 「生成されたシークレット」とみなす最小長。
 #
-# 【長さの下限を置く理由】: 短い値を無条件に全置換すると、原因メッセージ側の
-# 無関係な文字まで潰れて読めなくなる（実際、1文字のユーザー名で
-# `unknown storage scheme` が `unknown storag*** sch***m***` になっていた）。
-# 実在しうる本番パスワードはこの長さを下回らない。これを下回る値については
-# URI全体の一致による置換とフェイルクローズ判定が引き続き効く。
-_MIN_SCRUBBABLE_SECRET_LENGTH = 4
+# これ以上の長さのパスワードが原因メッセージに単独で現れたら、資格情報が
+# 埋め込まれたとみなして伏せる。短い語（host / pass / core 等）は
+# 原因メッセージに普通に現れるため対象にしない。
+_GENERATED_SECRET_MIN_LENGTH = 12
 
 
 def _password_fragment(storage_uri: str | None) -> str | None:
     """URIの userinfo に含まれるパスワード部分を返す。
 
     【ユーザー名を対象にしない理由】: 秘密はパスワードであってユーザー名ではない。
-    Redis ACL の既定ユーザー名は `default` であり、`redis` や1文字の名前も
-    普通に使われる。これらを秘密として全置換すると、残すべき原因メッセージを
-    壊してしまう。
+    Redis ACL の既定ユーザー名は `default` であり、`redis` や1文字の名前も普通に使う。
 
     Args:
         storage_uri: 対象URI。
@@ -209,33 +208,57 @@ def _password_fragment(storage_uri: str | None) -> str | None:
     except ValueError:
         return None
 
-    # `//` 有りなら netloc、無ければ path 側に userinfo が入る
     source = parts.netloc or parts.path
     if "@" not in source:
         return None
 
     userinfo = source.rsplit("@", 1)[0]
     if ":" not in userinfo:
-        # `user@host` 形式。パスワードは含まれない。
         return None
-    password = userinfo.split(":", 1)[1]
-    return password or None
+    return userinfo.split(":", 1)[1] or None
 
 
 def _scrub_credentials(text: str, storage_uri: str | None) -> str:
     """テキストから storage_uri 由来の資格情報を取り除く。
 
-    第一の防御はURI全体の置換（limits は `unknown storage scheme : <URI全文>` の
-    ように丸ごと埋め込む）。パスワードが単独で現れる実装に備えて、
-    十分な長さのパスワードは追加で置換する。
+    【パスワードを単独で全置換しない理由】: パスワードが `host` `pass` `core` の
+    ような実在する語だと、原因メッセージ中の無関係な語まで潰れて読めなくなる
+    （情報を残すために原因を埋め込んだのに、そのメッセージを壊してしまう）。
+    limits は URI を丸ごと埋め込むので、URI全体の置換が実効的な防御になる。
+    パスワード単独での混入は [_contains_credential_shape] のフェイルクローズで受ける。
+
+    パーセントエンコードされた形で埋め込む実装に備え、デコード後の形も置換する。
     """
     if not storage_uri:
         return text
-    scrubbed = text.replace(storage_uri, redact_storage_uri(storage_uri))
-    password = _password_fragment(storage_uri)
-    if password and len(password) >= _MIN_SCRUBBABLE_SECRET_LENGTH:
-        scrubbed = scrubbed.replace(password, "***")
+    redacted = redact_storage_uri(storage_uri)
+    scrubbed = text.replace(storage_uri, redacted)
+    decoded = unquote(storage_uri)
+    if decoded != storage_uri:
+        scrubbed = scrubbed.replace(decoded, redacted)
     return scrubbed
+
+
+def _contains_credential_shape(text: str, storage_uri: str | None) -> bool:
+    """テキストに「資格情報の形」が残っているか判定する。
+
+    【単純な部分一致にしない理由】: パスワードが実在する語だと、無関係な出現で
+    常に真になり、原因メッセージが毎回まるごと伏せられてしまう。
+    URIに埋め込まれた資格情報は必ず `password@` の形を取るので、そこを見る。
+    """
+    password = _password_fragment(storage_uri)
+    if not password:
+        return False
+    decoded = unquote(text)
+    if f"{password}@" in text or f"{password}@" in decoded:
+        return True
+    # 【長さで足切りする理由】: 実運用のパスワードは生成された長い文字列であり、
+    # それが単独で現れたら資格情報の混入とみなしてよい。一方 `host` `pass` の
+    # ような短い語は原因メッセージに普通に現れるため、単独出現で伏せると
+    # 診断が毎回まるごと失われる。
+    if len(password) >= _GENERATED_SECRET_MIN_LENGTH:
+        return password in text or password in decoded
+    return False
 
 
 def _describe_cause(exc: BaseException, storage_uri: str | None) -> str:
@@ -254,8 +277,7 @@ def _describe_cause(exc: BaseException, storage_uri: str | None) -> str:
     """
     label = type(exc).__name__
     detail = _scrub_credentials(str(exc), storage_uri)
-    password = _password_fragment(storage_uri)
-    if password and password in detail:
+    if _contains_credential_shape(detail, storage_uri):
         # 想定外の埋め込み方をされている。読みやすさより安全側に倒す。
         return f"{label}: <原因メッセージに資格情報が含まれるため秘匿>"
     return f"{label}: {detail}"

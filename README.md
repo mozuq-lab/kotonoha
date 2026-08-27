@@ -240,7 +240,7 @@ flutter test --coverage          # カバレッジ測定
 | 変数名 | 説明 | デフォルト値 |
 |--------|------|-------------|
 | `ENVIRONMENT` | 環境設定 | development |
-| `API_KEYS` | AI変換APIで許可する端末APIキー（カンマ区切り）。`ENVIRONMENT=production` では必須（未設定だと起動を拒否） | 空 |
+| `API_KEYS` | AI変換APIで許可する端末APIキー（カンマ区切り）。`development` / `test` 以外の環境（`staging` を含む）では必須（未設定だと起動を拒否） | 空 |
 | `ANTHROPIC_API_KEY` | Anthropic APIキー（オプション） | - |
 | `OPENAI_API_KEY` | OpenAI APIキー（オプション） | - |
 | `TRUSTED_PROXY_COUNT` | レート制限で信頼するプロキシ段数 | 0 |

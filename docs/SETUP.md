@@ -446,9 +446,7 @@ source /path/to/kotonoha/backend/venv/bin/activate
 エラーメッセージに出ているキー名を `backend/.env.example` と綴りを照合してください。
 
 ```
-ValidationError: 1 validation error for Settings
-RATE_LIMIT_SECOND
-  Extra inputs are not permitted
+SettingsValidationError: 設定の読み込みに失敗しました。backend/.env.example と綴りを照合してください: RATE_LIMIT_SECOND: Extra inputs are not permitted
 ```
 
 （この例では末尾の `S` が抜けており、正しくは `RATE_LIMIT_SECONDS`）

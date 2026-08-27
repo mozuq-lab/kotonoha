@@ -33,9 +33,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi.exceptions import RequestValidationError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from starlette.exceptions import HTTPException
 
 from app.core.config import settings
 
@@ -82,11 +80,6 @@ async_session_maker = async_sessionmaker(
     autocommit=False,
     autoflush=False,
 )
-
-
-# アプリが意図して返す応答を表す例外。DBの障害ではないので ERROR にしない。
-# （記録の責務は、DB例外をこれらに変換した側にある）
-_APPLICATION_RESPONSE_EXCEPTIONS = (HTTPException, RequestValidationError)
 
 
 def get_session_maker() -> async_sessionmaker[AsyncSession]:
@@ -139,27 +132,21 @@ async def db_session_scope() -> AsyncIterator[AsyncSession]:
             except Exception:
                 logger.warning("セッションのロールバックに失敗した", exc_info=True)
 
-            # 【アプリが意図した応答を DBエラーとして記録しない理由】: 例外が本スコープへ
-            # 届くようになった結果、エンドポイントが投げる通常の 401/404/422/500 まで
-            # "Database session error" として ERROR＋トレースバックで記録されてしまう。
-            # /health は Docker の HEALTHCHECK が定期的に叩くため、DB障害時は
-            # 偽のERRORが延々と出てログベースのアラートを誤らせる。
-            #
-            # 【除外しても検知が死なない根拠】: DB例外を HTTPException に変換する側
-            # （app/api/v1/endpoints/health.py）が、変換前に自分で ERROR ログを出す。
-            # 除外を広げるときは「では誰が記録するのか」を必ず確認すること。
-            #
-            # RequestValidationError も含めるのは、FastAPI が yield依存を保持する
-            # AsyncExitStack の内側で送出するため本スコープに届くにもかかわらず、
-            # HTTPException のサブクラスではないため。これは単なる入力エラーであり
-            # DB障害ではない。
-            if not isinstance(e, _APPLICATION_RESPONSE_EXCEPTIONS):
-                logger.error(
-                    "Database session error: %s: %s",
-                    type(e).__name__,
-                    str(e),
-                    exc_info=True,
-                )
+            # 【ここで ERROR を出さない理由】: 本スコープに届く例外は
+            # 「DBの障害」とは限らない。エンドポイントが投げる 401/404/422 も、
+            # AIプロバイダの失敗も、ただのバグも同じ経路を通る。
+            # ここで一律 "Database session error" として記録すると、
+            #   - DB障害でないものをDB障害として報告する（誤ったアラート）
+            #   - global_exception_handler と二重に記録する
+            # という二つの害が出る。記録は、その例外の意味を知っている側の責務とする:
+            #   - DB例外を HTTPException に変換する側（例: health_check）は自分で記録する
+            #   - どこにも捕まらなかった例外は global/database_exception_handler が記録する
+            # 本スコープはセッションの後始末だけを担い、その事実を DEBUG で残す。
+            logger.debug(
+                "セッションをロールバックした: %s: %s",
+                type(e).__name__,
+                str(e),
+            )
             raise
         # close は async_session_maker のコンテキストマネージャが行う
         # （ここで明示的に close すると二重になり、寿命の所有者が曖昧になる）

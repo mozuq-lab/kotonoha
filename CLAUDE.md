@@ -155,7 +155,7 @@ alembic upgrade head
 - AI変換API: 1リクエスト/10秒/IP（デフォルト。NFR-101準拠）
   - `RATE_LIMIT_TIMES`（回数）・`RATE_LIMIT_SECONDS`（秒数）環境変数で変更可能
   - マルチワーカー/マルチインスタンス構成では `RATE_LIMIT_STORAGE_URI` にRedis等の共有ストレージURIを指定すること（未指定時はプロセス内メモリのため各プロセスで独立したカウンタになる）
-    - **`ENVIRONMENT=production` では設定必須**: 未設定のまま起動すると `validate_production_settings` が起動時エラーにする（設定漏れに気付かないまま「設定値 × プロセス数」の緩い制限で稼働するのを防ぐ）。単一プロセスで意図的にインメモリを使う場合は `memory://` を明示する
+    - **`development` / `test` 以外の環境（`staging` を含む）では設定必須**: 未設定のまま起動すると `validate_production_settings` が起動時エラーにする（設定漏れに気付かないまま「設定値 × プロセス数」の緩い制限で稼働するのを防ぐ）。単一プロセスで意図的にインメモリを使う場合は `memory://` を明示する
   - **`TRUSTED_PROXY_COUNT`（デフォルト0）**: レート制限のクライアント識別に信頼する自前プロキシ（ALB/CDN等）の段数。ALB配下など本番でリバースプロキシを経由する構成では**必須設定**
     - `0` の場合は `X-Forwarded-For` を一切信頼せず接続元IPを使用する
     - `1` 以上の場合は XFF の右からN番目（＝信頼プロキシが観測したクライアントIP）を採用する

@@ -1013,6 +1013,28 @@ class TestRedactStorageUri:
         leading = raw_secret.split(":", 1)[0]
         assert leading not in redacted, f"'{leading}' が平文で出力されている"
 
+    def test_known_schemes_come_from_limits(self):
+        """許可リストは limits が対応するスキームと一致する
+
+        【この回帰テストの理由】: 許可リストを手書きしたため
+        redis+sentinel / redis+cluster / unix が漏れ、正当な構成
+        （`unix:///var/run/redis.sock` 等）を診断不能にしていた。
+        しかも docstring では「redis+sentinel 等も許容」と書いていた。
+        手書きせず limits の登録済みスキームを参照する。
+        """
+        from limits.storage import SCHEMES
+
+        from app.core.rate_limit import _is_known_storage_scheme
+
+        unsupported = [scheme for scheme in SCHEMES if not _is_known_storage_scheme(scheme)]
+        assert not unsupported, f"limits が対応するのに未知扱いのスキーム: {unsupported}"
+
+    def test_socket_uri_keeps_its_path(self):
+        """資格情報を含まない unix ソケットURIは読める形で返す"""
+        from app.core.rate_limit import redact_storage_uri
+
+        assert redact_storage_uri("unix:///var/run/redis.sock") == "unix:///var/run/redis.sock"
+
     @pytest.mark.parametrize(
         "uri",
         ["redis:pw@host:6379", "rediss:pw@host", "memcached:pw@host"],
@@ -1107,15 +1129,56 @@ class TestRedactStorageUri:
 
         assert scrubbed == text, f"ユーザー名 '{username}' でメッセージが壊れている"
 
-    def test_password_is_still_scrubbed_when_it_appears_alone(self):
-        """パスワードが単独で現れた場合は置換される（全URI一致でなくても）"""
+    @pytest.mark.parametrize(
+        "password",
+        ["host", "pass", "core", "name"],
+        ids=["host", "pass", "core", "name"],
+    )
+    def test_dictionary_word_password_does_not_shred_the_message(self, password):
+        """パスワードが実在する語でも原因メッセージが壊れない
+
+        【この回帰テストの理由】: ユーザー名の shredding は直したが、
+        パスワード側は長さ4以上を無条件に全置換していたため、
+        `host` `pass` `core` のような実在する語だと
+        `check the *** name` のように無関係な語まで潰れていた。
+        回帰テストもユーザー名しか覆っていなかった。
+        """
         from app.core.rate_limit import _scrub_credentials
 
+        uri = f"redis://user:{password}@prod-redis:6379"
+        text = "unknown storage scheme : check the host name and pass the core config"
+
+        assert _scrub_credentials(text, uri) == text
+
+    def test_embedded_uri_credentials_are_still_caught(self):
+        """URIの形で埋め込まれた資格情報は引き続き検出する
+
+        置換をやめても、URI全体の一致と「資格情報の形」の検出は残す。
+        """
+        from app.core.rate_limit import _describe_cause
+
+        uri = "redis://user:s3cr3t-pw@prod-redis:6379"
+        exc = ValueError(f"failed for {uri}")
+
+        described = _describe_cause(exc, uri)
+
+        assert "s3cr3t-pw" not in described
+
+    def test_generated_secret_appearing_alone_is_caught(self):
+        """生成された長さの秘密が単独で現れたら、原因メッセージごと伏せる
+
+        全URI一致による置換が効かない埋め込み方をされた場合の受け皿。
+        短い語は [test_dictionary_word_password_does_not_shred_the_message] の
+        とおり対象にしない（診断を壊さないため）。
+        """
+        from app.core.rate_limit import _describe_cause
+
         uri = "redis://user:s3cr3t-password@prod-redis:6379"
+        exc = ValueError("auth failed for s3cr3t-password")
 
-        scrubbed = _scrub_credentials("auth failed for s3cr3t-password", uri)
+        described = _describe_cause(exc, uri)
 
-        assert "s3cr3t-password" not in scrubbed
+        assert "s3cr3t-password" not in described
 
     def test_username_is_not_treated_as_a_secret(self):
         """ユーザー名は秘密として扱わない（Redis ACL の default 等）"""

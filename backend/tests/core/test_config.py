@@ -42,6 +42,7 @@ def _production_settings(**overrides) -> dict:
         "POSTGRES_PASSWORD": "a-sufficiently-random-production-password",
         "RATE_LIMIT_STORAGE_URI": "redis://localhost:6379",
         "API_KEYS": "a-production-device-key",
+        "ANTHROPIC_API_KEY": "sk-ant-production",
     }
     base.update(overrides)
     return base
@@ -249,6 +250,34 @@ class TestProductionSettingsValidation:
         assert "RATE_LIMIT_STORAGE_URI" in message
         assert "API_KEYS" in message
 
+    @pytest.mark.parametrize(
+        "password", ["", "   ", DEV_POSTGRES_PASSWORD], ids=["empty", "blank", "dev_default"]
+    )
+    def test_rejects_unusable_postgres_password(self, password: str):
+        """空・空白・開発既定値のいずれも本番では拒否する
+
+        【この回帰テストの理由】: 開発既定値との完全一致しか見ていなかったため、
+        シークレットマネージャの取得が空文字を返すと
+        `postgresql+asyncpg://kotonoha_user:@host/db` という
+        パスワード無しのDSNで起動できてしまった。
+        API_KEYS と RATE_LIMIT_STORAGE_URI は空文字を弾いており、扱いが割れていた。
+        """
+        settings = Settings(**_production_settings(POSTGRES_PASSWORD=password))
+
+        with pytest.raises(ProductionSettingsError, match="POSTGRES_PASSWORD"):
+            validate_production_settings(settings)
+
+    def test_rejects_production_without_ai_provider_key(self):
+        """AIプロバイダのキーが無ければ本番では拒否する
+
+        API_KEYS を追加した理由（起動はするが AI変換が全滅する）がそのまま当てはまる。
+        未設定だと AIClient がクライアントを生成せず、変換要求がすべて失敗する。
+        """
+        settings = Settings(**_production_settings(ANTHROPIC_API_KEY=None, OPENAI_API_KEY=None))
+
+        with pytest.raises(ProductionSettingsError, match="API_KEY"):
+            validate_production_settings(settings)
+
     def test_rejects_negative_trusted_proxy_count(self):
         """TRUSTED_PROXY_COUNT に負値は指定できない
 
@@ -399,28 +428,26 @@ class TestRemovedSettingsMigration:
 
         assert not hasattr(settings, "SECRET_KEY")
 
-    def test_removed_key_from_os_environment_is_warned(self, monkeypatch, caplog):
+    def test_removed_key_from_os_environment_is_warned(self, monkeypatch, caplog, tmp_path):
         """OS環境変数で渡された削除済みキーにも警告が出る
 
         【この経路が本命である理由】: 削除前の SECRET_KEY は docker-compose が
         `SECRET_KEY: ${SECRET_KEY:?...}` として **OS環境変数**で渡しており、CI も
-        env: で渡していた。つまり実際の利用者はこの経路にいる。
-        pydantic-settings の EnvSettingsSource は宣言済みフィールドしか os.environ から
-        拾わないため、削除済みキーはバリデータに到達せず、警告も出ないままだった。
-        CHANGELOG と SETUP.md は「読み捨てて警告ログを出します」と約束している。
+        env: で渡していた。pydantic-settings の EnvSettingsSource は宣言済み
+        フィールドしか os.environ から拾わないため、放置すると通知されない。
         """
+        monkeypatch.chdir(tmp_path)
         monkeypatch.setenv("SECRET_KEY", "left-over-from-compose")
 
         with caplog.at_level(logging.WARNING, logger="app.core.config"):
-            settings = Settings(_env_file=None)
+            settings = Settings()
 
         assert not hasattr(settings, "SECRET_KEY")
         assert "SECRET_KEY" in caplog.text
-        # env ファイルではなく環境変数側を直すよう案内すること
         assert "環境変数" in caplog.text
 
-    def test_removed_key_from_env_file_points_at_env_file(self, tmp_path, caplog, monkeypatch):
-        """.env 経由の場合は .env を直すよう案内する"""
+    def test_removed_key_from_env_file_names_the_actual_file(self, tmp_path, caplog, monkeypatch):
+        """.env 経由なら、実際に読まれたファイルを名指しする"""
         monkeypatch.delenv("SECRET_KEY", raising=False)
         monkeypatch.chdir(tmp_path)
         env_file = tmp_path / ".env"
@@ -430,43 +457,72 @@ class TestRemovedSettingsMigration:
             Settings()
 
         assert "SECRET_KEY" in caplog.text
-        # 実際に読まれているファイルの絶対パスを案内すること
-        # （backend/ 以外から起動した場合に別のファイルを指してしまわないように）
-        assert str(env_file.resolve()) in caplog.text
+        assert str(env_file) in caplog.text
 
     def test_env_file_location_is_named_when_key_is_in_both_sources(
         self, tmp_path, caplog, monkeypatch
     ):
-        """.env と環境変数の両方にある場合、両方の場所が案内される
-
-        【この回帰テストの理由】: 環境変数側だけを案内していたため、実際に
-        消すべき backend/.env の行が名指しされず、警告に従っても消えなかった。
-        """
-        monkeypatch.setenv("SECRET_KEY", "in-os-env")
+        """.env と環境変数の両方にある場合、両方の場所が案内される"""
         monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("SECRET_KEY", "in-os-env")
         env_file = tmp_path / ".env"
         env_file.write_text("SECRET_KEY=in-env-file\n", encoding="utf-8")
 
         with caplog.at_level(logging.WARNING, logger="app.core.config"):
             Settings()
 
-        assert str(env_file.resolve()) in caplog.text
+        assert str(env_file) in caplog.text
         assert "環境変数" in caplog.text
 
-    def test_init_kwarg_is_not_reported_as_env_file(self, monkeypatch, caplog):
-        """アプリに直接渡された設定を「backend/.env」と誤って案内しない
+    def test_init_kwarg_is_not_attributed_to_the_env_file(self, tmp_path, caplog, monkeypatch):
+        """アプリに直接渡された設定を、.env 由来と誤って案内しない
 
-        【この回帰テストの理由】: `key in data`（マージ後の辞書）を「.env 由来」と
-        みなしていたため、init引数で渡した場合も backend/.env を直せと案内していた。
-        存在しない行を探させることになる。
+        【`.env` を実在させて検証する理由】: 前回この検証を `.env` が無い作業ツリーで
+        行ったため、「CWD の .env を読みに行ってしまう」欠陥を見逃した。
+        誤案内が起こりうる状況（.env に同じキーの行が実在する）を作って確かめる。
         """
         monkeypatch.delenv("SECRET_KEY", raising=False)
+        monkeypatch.chdir(tmp_path)
+        env_file = tmp_path / ".env"
+        env_file.write_text("SECRET_KEY=in-env-file\n", encoding="utf-8")
 
         with caplog.at_level(logging.WARNING, logger="app.core.config"):
             Settings(_env_file=None, SECRET_KEY="passed-as-kwarg")  # noqa: S106
 
         assert "SECRET_KEY" in caplog.text
-        assert "backend/.env" not in caplog.text
+        assert str(env_file) not in caplog.text, "読んでいないファイルを案内している"
+
+    def test_env_file_override_is_respected(self, tmp_path, caplog, monkeypatch):
+        """`_env_file=` で指定した先を名指しする（CWD の .env ではなく）"""
+        monkeypatch.delenv("SECRET_KEY", raising=False)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".env").write_text("SECRET_KEY=cwd-one\n", encoding="utf-8")
+        other = tmp_path / "other.env"
+        other.write_text("SECRET_KEY=the-one-actually-read\n", encoding="utf-8")
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            Settings(_env_file=other)
+
+        assert str(other) in caplog.text
+        assert str(tmp_path / ".env") not in caplog.text
+
+    def test_quoted_and_spaced_env_lines_are_attributed_to_the_file(
+        self, tmp_path, caplog, monkeypatch
+    ):
+        """`KEY = "value"` のような書き方でも .env 由来と分かる
+
+        python-dotenv はこれらの形式を解釈する。自前パースで取りこぼすと、
+        実在する行があるのに「アプリに渡している設定」と誤案内してしまう。
+        """
+        monkeypatch.delenv("SECRET_KEY", raising=False)
+        monkeypatch.chdir(tmp_path)
+        env_file = tmp_path / ".env"
+        env_file.write_text('SECRET_KEY = "left-over-with-spaces"\n', encoding="utf-8")
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            Settings()
+
+        assert str(env_file) in caplog.text
 
     def test_removed_key_from_os_environment_does_not_become_a_field(self, monkeypatch):
         """OS環境変数経由でも設定値としては採用されない"""
