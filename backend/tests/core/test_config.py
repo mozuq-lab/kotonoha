@@ -324,6 +324,46 @@ class TestRemovedSettingsMigration:
 
         assert not hasattr(settings, "SECRET_KEY")
 
+    def test_removed_key_from_os_environment_is_warned(self, monkeypatch, caplog):
+        """OS環境変数で渡された削除済みキーにも警告が出る
+
+        【この経路が本命である理由】: 削除前の SECRET_KEY は docker-compose が
+        `SECRET_KEY: ${SECRET_KEY:?...}` として **OS環境変数**で渡しており、CI も
+        env: で渡していた。つまり実際の利用者はこの経路にいる。
+        pydantic-settings の EnvSettingsSource は宣言済みフィールドしか os.environ から
+        拾わないため、削除済みキーはバリデータに到達せず、警告も出ないままだった。
+        CHANGELOG と SETUP.md は「読み捨てて警告ログを出します」と約束している。
+        """
+        monkeypatch.setenv("SECRET_KEY", "left-over-from-compose")
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            settings = Settings(_env_file=None)
+
+        assert not hasattr(settings, "SECRET_KEY")
+        assert "SECRET_KEY" in caplog.text
+        # env ファイルではなく環境変数側を直すよう案内すること
+        assert "環境変数" in caplog.text
+
+    def test_removed_key_from_env_file_points_at_env_file(self, tmp_path, caplog, monkeypatch):
+        """.env 経由の場合は .env を直すよう案内する"""
+        monkeypatch.delenv("SECRET_KEY", raising=False)
+        env_file = tmp_path / ".env"
+        env_file.write_text("SECRET_KEY=left-over\n", encoding="utf-8")
+
+        with caplog.at_level(logging.WARNING, logger="app.core.config"):
+            Settings(_env_file=env_file)
+
+        assert "SECRET_KEY" in caplog.text
+        assert "backend/.env" in caplog.text
+
+    def test_removed_key_from_os_environment_does_not_become_a_field(self, monkeypatch):
+        """OS環境変数経由でも設定値としては採用されない"""
+        monkeypatch.setenv("ACCESS_TOKEN_EXPIRE_MINUTES", "11520")
+
+        settings = Settings(_env_file=None)
+
+        assert not hasattr(settings, "ACCESS_TOKEN_EXPIRE_MINUTES")
+
     def test_unknown_key_is_still_rejected(self):
         """未知キー（タイポ）は従来どおり起動時エラー
 

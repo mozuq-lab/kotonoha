@@ -119,3 +119,41 @@ class TestMainInvokesProductionValidation:
 
         assert secret_value not in result.stderr
         assert secret_value not in result.stdout
+
+
+class TestStartupOutputDoesNotLeakStorageCredentials:
+    """レート制限ストレージの初期化失敗が、実プロセスの出力に資格情報を出さないこと。
+
+    【プロセス全体を見る理由】: 単体では例外オブジェクトの各属性を検証しているが、
+    運用者が実際に目にするのは「起動に失敗したコンテナの stdout/stderr 全体」である。
+    連鎖トレースバックは未捕捉例外としてそこへ出るため、戻り値ではなく
+    最も外側の観測面で確認する。
+    （app.main は app.core.rate_limit を import した時点で失敗するので、
+    本番相当の起動失敗そのものを再現できる。）
+    """
+
+    _SECRET = "s3cr3t-pw-must-not-appear"
+
+    @pytest.mark.parametrize(
+        "uri_template",
+        [
+            "foobar://:{secret}@prod-redis:6379",
+            "redis-sentinel://:{secret}@prod-redis:6379/0",
+        ],
+        ids=["password_only", "with_path"],
+    )
+    def test_startup_failure_output_has_no_storage_credentials(self, uri_template, tmp_path):
+        result = _run_import(
+            "app.main",
+            {
+                **_PRODUCTION_ENV,
+                "RATE_LIMIT_STORAGE_URI": uri_template.format(secret=self._SECRET),
+            },
+            tmp_path,
+        )
+
+        assert result.returncode != 0, "不正なストレージURIなのに起動が成功した"
+        combined = result.stdout + result.stderr
+        assert self._SECRET not in combined, "起動失敗時のプロセス出力に資格情報が含まれている"
+        # 診断に必要な手掛かりは残っていること
+        assert "RATE_LIMIT_STORAGE_URI" in combined

@@ -155,6 +155,67 @@ def redact_storage_uri(storage_uri: str | None) -> str:
     return redacted
 
 
+def _credential_fragments(storage_uri: str | None) -> list[str]:
+    """URIに含まれる資格情報の断片（userinfo とその構成要素）を返す。
+
+    ライブラリがURIを丸ごとではなく一部だけメッセージに埋める場合に備えるため、
+    全体一致だけでなく断片でも検出できるようにする。
+
+    Args:
+        storage_uri: 対象URI。
+
+    Returns:
+        list[str]: 資格情報とみなす文字列。無ければ空リスト。
+    """
+    if not storage_uri:
+        return []
+    try:
+        parts = urlsplit(storage_uri)
+    except ValueError:
+        return []
+
+    # `//` 有りなら netloc、無ければ path 側に userinfo が入る
+    source = parts.netloc or parts.path
+    if "@" not in source:
+        return []
+
+    userinfo = source.rsplit("@", 1)[0]
+    fragments = {userinfo, *userinfo.split(":")}
+    return [f for f in fragments if f]
+
+
+def _scrub_credentials(text: str, storage_uri: str | None) -> str:
+    """テキストから storage_uri 由来の資格情報を取り除く。"""
+    if not storage_uri:
+        return text
+    scrubbed = text.replace(storage_uri, redact_storage_uri(storage_uri))
+    for fragment in _credential_fragments(storage_uri):
+        scrubbed = scrubbed.replace(fragment, "***")
+    return scrubbed
+
+
+def _describe_cause(exc: BaseException, storage_uri: str | None) -> str:
+    """原因例外を、資格情報を含まない形で1行に要約する。
+
+    残らず伏せてしまうと運用者が原因を特定できないため、例外型と
+    スクラブ済みメッセージは残す。スクラブ後にも資格情報が残っていた場合は
+    （想定外の埋め込み方をされたということなので）メッセージ全体を伏せる。
+
+    Args:
+        exc: 原因となった例外。
+        storage_uri: 資格情報を含みうるURI。
+
+    Returns:
+        str: ログ・例外メッセージに埋め込んで安全な要約。
+    """
+    label = type(exc).__name__
+    detail = _scrub_credentials(str(exc), storage_uri)
+    fragments = _credential_fragments(storage_uri)
+    if any(fragment in detail for fragment in fragments):
+        return f"{label}: <原因メッセージに資格情報が含まれるため秘匿>"
+    return f"{label}: {detail}"
+
+
 def _build_limiter(storage_uri: str | None) -> Limiter:
     """Limiterインスタンスを構築する。
 
@@ -186,7 +247,13 @@ def _build_limiter(storage_uri: str | None) -> Limiter:
             storage_uri=storage_uri,
         )
     except Exception as exc:
-        # 資格情報を含みうるため、生のURIではなく秘匿済みの表現を使う。
+        # 【原因例外を連鎖させない理由】: limits は
+        # `unknown storage scheme : <URI全文>` のように**生のURIをメッセージへ
+        # 埋め込む**。`raise ... from exc` と `logger.error(..., exc_info=exc)` は
+        # その原因例外を運ぶため、メッセージ側だけを秘匿しても
+        # __cause__ / 連鎖トレースバック / ログの3経路から資格情報が出てしまう。
+        # 本番の RATE_LIMIT_STORAGE_URI は通常パスワードを含むので、
+        # 連鎖を断ち、原因はスクラブ済みの1行要約として本文に埋める。
         message = (
             "レート制限ストレージの初期化に失敗しました "
             f"(RATE_LIMIT_STORAGE_URI={redact_storage_uri(storage_uri)})。"
@@ -194,9 +261,12 @@ def _build_limiter(storage_uri: str | None) -> Limiter:
             "そのスキームが要求する依存パッケージ（例: redis://系スキームには"
             "'redis'パッケージ）がインストールされていない可能性があります。"
             "requirements.txtの内容とインストール状況を確認してください。"
+            f" 原因: {_describe_cause(exc, storage_uri)}"
         )
-        logger.error(message, exc_info=exc)
-        raise RateLimitStorageError(message) from exc
+        # exc_info を渡さない（渡すと原因例外のメッセージがログに出る）
+        logger.error(message)
+        # from None で連鎖を断つ（診断情報は上の「原因:」に含めている）
+        raise RateLimitStorageError(message) from None
 
 
 # Limiterインスタンス作成

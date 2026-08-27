@@ -25,19 +25,36 @@
   依存パッケージ `python-jose` / `bcrypt` を削除（アプリから未参照のデッドコード）。
   MVPの認証は端末APIキー（`X-API-Key`）のみ
 - 上記に伴い設定 `ACCESS_TOKEN_EXPIRE_MINUTES` を削除
+- 設定 `SECRET_KEY` を削除。JWT実装の削除により署名用途が無くなり、アプリ内に
+  読むコードが存在しなくなったため。**`docker-compose.yml` の
+  `SECRET_KEY: ${SECRET_KEY:?...}` による必須化も解除**しているので、
+  未設定でも `docker-compose up` が失敗しなくなる（利用者に見える挙動変更）。
+  あわせて CI の `env:`、`.env.example`（ルート／backend）、README、SETUP.md からも除去
 
 #### ⚠️ 移行手順（既存の開発環境・デプロイ向け）
 
-`backend/.env` に `ACCESS_TOKEN_EXPIRE_MINUTES` の行が残っている場合は削除してください。
+削除済みキー `ACCESS_TOKEN_EXPIRE_MINUTES` と `SECRET_KEY` の指定が残っている場合は
+削除してください。**設定ファイルだけでなく、環境変数で渡している箇所も対象**です
+（`SECRET_KEY` は従来 `docker-compose.yml` と CI が環境変数として渡していました）。
 
 ```bash
-# backend/.env から該当行を削除
-sed -i '' '/^ACCESS_TOKEN_EXPIRE_MINUTES=/d' backend/.env   # macOS
-sed -i    '/^ACCESS_TOKEN_EXPIRE_MINUTES=/d' backend/.env   # Linux
+# 1. backend/.env / ルート .env から該当行を削除
+for f in backend/.env .env; do
+  [ -f "$f" ] || continue
+  sed -i '' -E '/^(ACCESS_TOKEN_EXPIRE_MINUTES|SECRET_KEY)=/d' "$f"   # macOS
+  # sed -i -E '/^(ACCESS_TOKEN_EXPIRE_MINUTES|SECRET_KEY)=/d' "$f"    # Linux
+done
 ```
 
-削除しなくても起動はできますが（削除済みキーとして読み捨て、警告ログを出します）、
-設定ファイルを実態に合わせるため削除を推奨します。なお、これ以外の未知のキーは
+```
+# 2. 環境変数で渡している箇所を確認して削除
+#    docker-compose.yml の environment / ECSタスク定義 / k8s マニフェスト /
+#    CIワークフローの env / シークレットマネージャのエントリ
+```
+
+削除しなくても起動はできます。削除済みキーとして読み捨て、**設定ファイル経由・
+環境変数経由のどちらでも警告ログを出します**（案内先も供給元に応じて変わります）。
+設定を実態に合わせるため削除を推奨します。なお、これ以外の未知のキーは
 従来どおり起動時エラーになります（タイポ検出のため `extra="forbid"` を維持）。
 
 本番でレート制限の共有ストレージを使う場合は、あわせて

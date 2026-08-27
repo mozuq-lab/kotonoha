@@ -5,6 +5,7 @@
 """
 
 import logging
+import os
 from typing import Any, Literal
 
 from pydantic import model_validator
@@ -195,15 +196,35 @@ class Settings(BaseSettings):
             return data
 
         for key, reason in _REMOVED_SETTINGS.items():
-            if key in data:
+            supplied_from_env_file = key in data
+            # 【os.environ も直接見る理由】: pydantic-settings の EnvSettingsSource は
+            # 宣言済みフィールドしか os.environ から拾わないため、OS環境変数で渡された
+            # 削除済みキーは `data` に載らず、この移行措置に到達しない。
+            # 削除前の SECRET_KEY は docker-compose が
+            # `SECRET_KEY: ${SECRET_KEY:?...}` として OS環境変数で渡しており、
+            # CI も env: で渡していた。つまり実際の利用者はこちらの経路にいる。
+            supplied_from_os_env = key in os.environ
+
+            if supplied_from_env_file:
                 del data[key]
-                # setup_logging() 前に評価されるが、ハンドラ未設定でも WARNING は
-                # Python の last resort ハンドラにより stderr へ出力される。
-                logger.warning(
-                    "設定 %s は削除済みです（%s）。backend/.env から該当行を削除してください。",
-                    key,
-                    reason,
-                )
+            if not (supplied_from_env_file or supplied_from_os_env):
+                continue
+
+            # 供給元に応じて直す場所を案内する（env ファイル方式でないデプロイに
+            # 「backend/.env を直せ」と言っても該当ファイルが無い）。
+            if supplied_from_os_env:
+                location = "環境変数（docker-compose.yml / タスク定義 / CI設定など）"
+            else:
+                location = "backend/.env"
+
+            # setup_logging() 前に評価されるが、ハンドラ未設定でも WARNING は
+            # Python の last resort ハンドラにより stderr へ出力される。
+            logger.warning(
+                "設定 %s は削除済みです（%s）。%s から該当の指定を削除してください。",
+                key,
+                reason,
+                location,
+            )
         return data
 
 

@@ -833,15 +833,17 @@ class TestResolveStorageUri:
         原因（未対応スキーム/依存パッケージ不足）と対処方法が分かるメッセージで
         送出することを検証する。
         """
-        from limits.errors import ConfigurationError
-
         from app.core.rate_limit import RateLimitStorageError, _build_limiter
 
         with pytest.raises(RateLimitStorageError) as exc_info:
             _build_limiter("foobar://localhost:6379")
 
-        # 元の例外（ConfigurationError）がcauseとして保持されていることを確認
-        assert isinstance(exc_info.value.__cause__, ConfigurationError)
+        # 【__cause__ ではなくメッセージを見る理由】: limits は生のURIを
+        # 例外メッセージに埋め込むため、原因例外を連鎖させると
+        # __cause__ / トレースバック / ログから資格情報が漏れる。
+        # 連鎖は断ち、原因の例外型はスクラブ済みの要約として本文に含めている。
+        assert exc_info.value.__cause__ is None
+        assert "ConfigurationError" in str(exc_info.value)
         # メッセージにRATE_LIMIT_STORAGE_URIと対処のヒントが含まれることを確認
         assert "RATE_LIMIT_STORAGE_URI" in str(exc_info.value)
 
@@ -958,16 +960,65 @@ class TestRedactStorageUri:
 
         assert "not-a-uri-just-a-password" not in redacted
 
-    def test_build_limiter_failure_message_does_not_leak_password(self):
-        """初期化失敗の例外・ログの双方にパスワードが出ないこと（実経路での確認）"""
+    @pytest.mark.parametrize(
+        "uri_template",
+        [
+            "foobar://:{secret}@prod-redis:6379",
+            "redis-sentinel://:{secret}@prod-redis:6379/0",
+            "foobar://admin:{secret}@prod-redis:6379/0",
+        ],
+        ids=["unknown_scheme_password_only", "unknown_scheme_with_path", "user_and_password"],
+    )
+    def test_build_limiter_failure_leaks_nothing_on_any_channel(self, uri_template, caplog):
+        """初期化失敗時、資格情報がどの観測経路にも出ないこと
+
+        【全経路を見る理由】: 以前はこのテストが `str(exc_info.value)` だけを
+        検証していた。それは直したばかりの唯一安全なチャネルであり、実際には
+        原因例外の連鎖（__cause__ / トレースバック / exc_info付きログ）から
+        パスワードがそのまま出ていた。「対処済み」と証明する緑のテストが、
+        生きている漏えいを覆い隠していた。観測できる経路をすべて列挙して見る。
+        """
+        import logging
+        import traceback
+
         from app.core.rate_limit import RateLimitStorageError, _build_limiter
 
         secret = "s3cr3t-pw-must-not-appear"
+        uri = uri_template.format(secret=secret)
+
+        with caplog.at_level(logging.DEBUG):
+            with pytest.raises(RateLimitStorageError) as exc_info:
+                _build_limiter(uri)
+
+        exc = exc_info.value
+        channels = {
+            "str(例外)": str(exc),
+            "例外のargs": repr(exc.args),
+            "__cause__": "" if exc.__cause__ is None else str(exc.__cause__),
+            "repr(__cause__)": "" if exc.__cause__ is None else repr(exc.__cause__),
+            "__cause__.args": ("" if exc.__cause__ is None else repr(exc.__cause__.args)),
+            "連鎖トレースバック": "".join(
+                traceback.format_exception(type(exc), exc, exc.__traceback__)
+            ),
+            "ログ出力": caplog.text,
+        }
+
+        leaking = [name for name, text in channels.items() if secret in text]
+        assert not leaking, f"資格情報が次の経路に漏えいしている: {leaking}"
+
+    def test_failure_message_keeps_diagnostic_information(self):
+        """秘匿しても診断に必要な情報は残ること
+
+        【この対の確認が必要な理由】: 何も出さなければ漏れないが、それでは
+        運用者が原因を特定できない。スキーム・設定キー名・原因の例外型は残す。
+        """
+        from app.core.rate_limit import RateLimitStorageError, _build_limiter
 
         with pytest.raises(RateLimitStorageError) as exc_info:
-            _build_limiter(f"foobar://:{secret}@prod-redis:6379")
+            _build_limiter("foobar://:pw@prod-redis:6379")
 
-        assert secret not in str(exc_info.value)
-        # 診断に必要な情報は残っていること
-        assert "RATE_LIMIT_STORAGE_URI" in str(exc_info.value)
-        assert "foobar" in str(exc_info.value)
+        message = str(exc_info.value)
+        assert "RATE_LIMIT_STORAGE_URI" in message
+        assert "foobar" in message
+        # 原因の例外型が分かること（limits 側の ConfigurationError 等）
+        assert "ConfigurationError" in message
