@@ -163,7 +163,7 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 
 ## 受け入れ基準
 
-詳細は `/docs/implements/kotonoha/TASK-0095/kotonoha-testcases.md` を参照してください。
+詳細は `/docs/archive/implements/kotonoha/TASK-0095/kotonoha-testcases.md` を参照してください。
 
 ### 必須項目
 
@@ -177,6 +177,6 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 
 ## 関連ドキュメント
 
-- [テストケース定義書](../../../../docs/implements/kotonoha/TASK-0095/kotonoha-testcases.md)
-- [要件定義書](../../../../docs/implements/kotonoha/TASK-0095/kotonoha-requirements.md)
+- [テストケース定義書](../../../../docs/archive/implements/kotonoha/TASK-0095/kotonoha-testcases.md)
+- [要件定義書](../../../../docs/archive/implements/kotonoha/TASK-0095/kotonoha-requirements.md)
 - [Phase 5 タスク](../../../../docs/tasks/kotonoha-phase5.md)

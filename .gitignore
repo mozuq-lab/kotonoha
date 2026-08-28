@@ -75,3 +75,6 @@ htmlcov/
 coverage.xml
 *.cover
 .pytest_cache/
+
+# エージェント用の一時 worktree（埋め込みリポジトリとして誤って追加されるのを防ぐ）
+.claude/worktrees/
