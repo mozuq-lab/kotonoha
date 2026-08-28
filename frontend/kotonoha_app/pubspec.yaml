@@ -16,7 +16,7 @@ dependencies:
   riverpod_annotation: ^4.0.0
 
   # ルーティング
-  go_router: ^17.0.1
+  go_router: ^17.1.0
 
   # ローカルストレージ
   shared_preferences: ^2.5.4
