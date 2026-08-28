@@ -1,9 +1,14 @@
 # 秘密情報の漏えい対策と、レビュー往復が収束しない問題への対応計画
 
-作成: 2026-08-28
+作成: 2026-08-28 ／ 最終更新: 2026-08-28
 状態: **未着手**（別セッションで実施予定）
 
 この文書は単独で読めるように書いてある。前提となる会話の文脈は不要。
+
+> **この文書の記述は 2026-08-28 時点の実測値である。着手時に §1 を再確認すること。**
+> 作成の翌日には既に `main` のコミット数がずれていた。自分（または前のセッション）が
+> 書いた文書は、次に読むときには「検証されていない主張」であって事実ではない。
+> 数字・パス・行番号は、使う前に必ず現物で確かめること。
 
 ---
 
@@ -27,17 +32,35 @@
 
 ### ブランチ
 
-`main` は `origin/main` より 2 コミット先行（`fix/precommit-worktree-hook` のマージ）。**push 未実施。**
+`main` は `origin/main` より **3 コミット先行**。**push 未実施**（`origin/main` の最終更新は 2026-08-23）。
 
 | ブランチ | main比 | 状態 |
 |---|---|---|
 | `fix/backend-production-hardening` | 15 | この計画の主対象。P0 3件は解消済み |
-| `fix/contrast-accessibility-sweep` | 17 | frontend。Wave B |
+| `fix/contrast-accessibility-sweep` | 17 | frontend。**他ブランチとの重複ゼロ・競合なしを実測確認済み** |
 | `chore/flutter-cleanup` | 4 | frontend。codegen 撤去済み |
-| `fix/emergency-button-overlap` | 2 | frontend |
-| `docs/consistency-fixes` | 13 | 最後にマージ（README / tech-stack.md で競合） |
+| `fix/emergency-button-overlap` | 2 | frontend。**同上、競合なし** |
+| `docs/consistency-fixes` | 13 | 最後にマージ（README / tech-stack.md で他2本と重複） |
 
-`fix/precommit-worktree-hook` は**マージ済み**。未マージは **5本**（メモリの「6本」は古い）。
+`fix/precommit-worktree-hook` は**マージ済み**。未マージは **5本**。
+
+### ブランチ間の重複（実測）
+
+```
+docs/consistency-fixes × chore/flutter-cleanup            : 8 ファイル
+docs/consistency-fixes × fix/backend-production-hardening : 6 ファイル
+frontend 3本の相互重複                                     : すべて 0 ファイル
+```
+
+`fix/contrast-accessibility-sweep` と `fix/emergency-button-overlap` は**今すぐマージしても競合しない**。
+本計画の作業対象（`config.py` / `rate_limit.py` / `conftest.py` / `alembic/env.py` / `alembic.ini`）を
+触るブランチも**ゼロ**である。
+
+### main に入っている直近の変更
+
+Tsumiki のプロセス成果物を `docs/archive/` へ隔離済み（`docs/implements/` 299ファイル、
+`development-history.md`）。`docs/tasks/` は `docs/consistency-fixes` が全6ファイルを編集中のため
+**未移動**（判断を後回しにした。`docs/archive/README.md` に未了として記録）。
 
 ### ローカル環境
 
@@ -166,8 +189,15 @@ SecretStr('x').strip()  → AttributeError（気づける）
 3. **既存 CI ゲートが緑**（`ruff check app tests` / `black --check app tests` / カバレッジ閾値）
 4. **未対応の指摘が全件 ID 付きで台帳に載っている。** 0件である必要はない。「棚卸し済み」が条件
 5. **2周連続で新規 P0 が0件**
+6. **アプリを実際に起動し、変更した機能が動くことを確認した**（`scripts/smoke.sh` の通過）
 
 到達目標は「指摘ゼロ」ではなく **「未分類の指摘ゼロ」**。
+
+**6 を入れる理由**: 8周のレビューと418件のテストを通じて、**誰一人アプリを起動しなかった**。
+2-1 の接続バグ（`%` を含むパスワードで DB に繋がらない）は全テスト緑のまま生き残り、
+サブエージェントが実際に記号入りパスワードのロールを作って接続を試したときに初めて出た。
+単体テストは「設定の組み立てから接続まで」を通らないので、この層を構造的に見逃す。
+`pytest` は10秒で終わるので何十回も回してしまうが、**安い検証が高い検証を締め出す**。
 
 トリアージ基準（重要度ではなく「受け入れ条件が書けるか」で切る）:
 
@@ -184,11 +214,38 @@ SecretStr('x').strip()  → AttributeError（気づける）
 
 ---
 
-### ステップ1: `fix/backend-production-hardening` をマージ（30分）
+### ステップ1: 作業ブランチの確認とスモークスクリプトの用意（半日）
 
-以降の作業対象ファイル（`config.py` +342行、`rate_limit.py` +212行、`conftest.py` +23行）そのものを含む。未マージのまま作業すると同じ場所を二重に触る。
+**作業は `fix/backend-production-hardening` 上で行う。マージは最後（ステップ6の後）。**
 
-**あわせてメモリを更新する。** `~/.claude/projects/-Volumes-external-dev-kotonoha/memory/branches-awaiting-merge-2026-08.md` が「6本」「P0 3件でマージ不可」のまま。どちらも古い。
+> **訂正**: 本計画の初版は「先にマージしてから main で作業する」としていた。理由は
+> 「作業対象ファイルを二重に触らないため」だったが、**実測すると作業対象5ファイルを
+> 触るブランチはゼロ**だった。前提が誤っていた。加えて、コミット済みコードには
+> 2-2 の漏えいが3件生きているので、**先にマージすると既知の漏えいを本流に入れる**ことになる。
+
+このステップでやること。
+
+1. **`scripts/smoke.sh` を作る。** ステップ2以降の検証手段になる。最小構成に留めること
+2. **メモリを更新する。** `~/.claude/projects/-Volumes-external-dev-kotonoha/memory/branches-awaiting-merge-2026-08.md`
+
+#### `scripts/smoke.sh` の最小仕様
+
+単体テストが通らない層——**設定の組み立てから実接続まで**——だけを対象にする。
+
+```
+1. docker compose up -d
+2. /api/v1/health が 200 かつ database: connected を返すまで待つ（タイムアウト付き）
+3. 記号（% と @）を含むパスワードのロールを一時作成し、
+   alembic upgrade head / downgrade base と非同期接続が通ることを確認
+4. 後片付け（作成したロール・DBを削除）
+```
+
+**広げないこと。** AI変換の疎通や認証まで入れるとスモークテスト自体が肥大化し、
+別の8周を生む。必要になってから足せばよい。
+
+なお `backend` サービスには healthcheck が無い（`postgres` にはある）。
+`docker compose up` が「起動した」と言うのに実際は死んでいる状態を検出できないが、
+これは本計画の範囲外とし、別途対応する。
 
 ---
 
@@ -210,7 +267,9 @@ SecretStr('x').strip()  → AttributeError（気づける）
 
 `tests/conftest.py` は無影響。alembic を `command.upgrade/downgrade` で呼ぶだけで `get_main_option` にも `sqlalchemy.url` にも触れていない。
 
-**検証**: `%` と `$` を含むパスワードのロールを一時作成し、`alembic upgrade head` / `downgrade base` / 非同期接続が通ることを確認する。
+**検証**: ステップ1で作った `scripts/smoke.sh` を通す。これが**本計画で初めて
+「アプリを実際に動かす」検証**になる。単体テストは 2-1 の接続バグを構造的に見逃すので、
+ここを飛ばすと同じ穴が残る。
 
 ---
 
@@ -384,9 +443,19 @@ sink(uri.get_secret_value())       → 漏れない  （無名の一時値）
 
 ---
 
-### ここで止めて main にマージし、観察する
+### ステップ7: main へマージし、push して観察する
 
-Wave A はここまで。frontend は別案件。
+Wave A はここまで。ここで初めて `fix/backend-production-hardening` を main へマージする
+（ステップ1の訂正を参照。既知の漏えいを直してからマージする）。
+
+**マージの引き金**: 完了条件6項目を満たしたらマージする。**設計・保守性の指摘が
+残っていても待たない。** 残りは台帳（Issue）へ送る。「指摘ゼロまで待つ」を続けた結果が
+5本4日の滞留であり、その滞留自体が「現在の状態が曖昧」という別の問題を生んでいた。
+
+**push する。** `origin/main` は 2026-08-23 で止まっている。push しない限りどこにも
+「正」が無く、レビューも判断も古い基底の上で行われる。
+
+frontend は別案件（§4）。
 
 ---
 
@@ -427,7 +496,14 @@ backend の秘匿と frontend のテーマには**共通の失敗原因も共通
 1. **コミット規約**: 規約側を実態に合わせるか、履歴を整えるか
 2. **AWS CDK が生成するパスワードに `%` が含まれうるか。** ステップ2を入れるまでは `%` を除外する設定が入っているか確認する価値がある（`infra/` は未精査）
 3. **`SESSION_EXPIRE_MINUTES`**: 「消費者ゼロ」と明記されたまま残存。`SECRET_KEY` と同じ規則を適用するか
-4. **push のタイミング**: `main` は `origin/main` より 2 コミット先行、未 push
+4. **push のタイミング**: `main` は `origin/main` より 3 コミット先行、未 push。
+   `origin/main` の最終更新は 2026-08-23
+5. **本計画の着手前に済ませてよい作業**: main の push と、競合ゼロが確認済みの frontend 2本
+   （`fix/contrast-accessibility-sweep` / `fix/emergency-button-overlap`）のマージ。
+   backend を一切触らないので本計画と並行できる。先に済ませると滞留が5本→3本に減り、
+   着手時の「今どのブランチが正か」という曖昧さが消える
+6. **ブランチ運用ルール**（同時に開ける本数の上限、マージの引き金の明文化）は本計画に
+   含めない。別途決めること
 
 ---
 
@@ -443,3 +519,6 @@ backend の秘匿と frontend のテーマには**共通の失敗原因も共通
 - **正しい境界で検証しない。** `urlsplit` はパスワードを percent-decode しないので、DSN の往復一致の確認には使えない。`sqlalchemy.engine.make_url` を使うこと
 - **制約が過剰決定に見えたら前提を疑う。** 「エラー色と緊急色を 3:1 離すのは数学的に不可能」は、1トークンが2役を兼ねる前提でのみ真だった
 - **スコープ外で先送りする。** staging ゲートの漏れは4周連続で指摘され、毎回別の話に寄せて対処しなかった。判断が要る項目を先送りすると、それが次周の入力になる
+- **アプリを一度も動かさない。** 8周・418テスト・7体のサブエージェント分析を通じて、誰もアプリを起動しなかった。2-1 の接続バグは全テスト緑のまま生き残った。`pytest` が10秒で終わるので回数だけは稼げてしまい、**安い検証が高い検証を締め出す**。完了条件の6項目目はこのために置いてある
+- **自分が書いた文書・コメント・メモリを「事実」として扱う。** 本計画は作成の翌日に `main` のコミット数がずれ、ステップ1の前提も誤りだった。メモリは「未マージ6本」「マージ不可」のまま数日生き延びた。どれも自分が書き、自分が古くしたもの。**外部から指摘されるまで誰も疑わない**
+- **レビュアーもAIなので盲点が相関する。** 8周のレビューは `core → db → core` のパッケージ循環を一度も見つけなかった（差分の外にあるため）。誰もアプリを起動しなかった。脅威モデルを誤った（「SDK例外に `x-api-key` が載る」は再現できず）。複数エージェントは有効だが、**全員が同じ種類の検証しかしない**点では相関している
