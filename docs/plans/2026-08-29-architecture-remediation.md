@@ -165,19 +165,55 @@ C が本命である。今回で言えば、`ai_conversion_logs` テーブルを
 
 ### 使う道具
 
-**原則: スキルは「工程」に効く。この計画の中核（A 消す／C ゲート）は構造なので、
-スキルの形をしていない。** 道具は補助であり、代替ではない。
+**原則は2つ。**
 
-| 用途 | 道具 | 形 | Phase |
+1. **スキルは「工程」に効く。この計画の中核（A 消す／C ゲート）は構造なので、
+   スキルの形をしていない。** 道具は補助であり、代替ではない
+2. **目的は固定、道具は差し替え可能。** 下の表の「目的」列が守るべきもので、
+   「道具」列はいま最も適したものを割り当てているだけ。より良いものが出たら
+   道具列だけを書き換える。**道具の名前を目的だと思わないこと**
+
+恒久版（目的 → 道具の対応）は `CLAUDE.md` / `AGENTS.md` に置く。
+この表はフェーズへの割り当てを示す一時的なものである。
+
+| 目的 | いま使う道具 | 形 | Phase |
 |---|---|---|---|
-| 決定を叩く・問いを疑う | `mattpocock-skills:grilling`、`openspec-explore` | 既存スキル | 0 |
-| ADR を書く | `mattpocock-skills:domain-modeling`（ADR の記述が用途に明記されている） | 既存スキル | 0 |
-| 完了を主張する前に実物で確認 | `superpowers:verification-before-completion`、`run` | 既存スキル | **全 Phase 常用** |
-| 境界（seam）の設計・モックの位置 | `mattpocock-skills:codebase-design` | 既存スキル | 2, 3 |
-| 負債ゲート | `PostToolUse` フック + CI（設定は `update-config`） | **設定** | 1 |
-| 誤った仕様を固定したテストの検出 | **既存の道具が無い。プロジェクト固有スキルを作る** | 新規 | 2 |
-| 全体の棚卸し | **既存の道具が無い。プロジェクト固有スキルを作る** | 新規 | 4 |
-| 仕様の恒久管理 | OpenSpec | 既存（**条件付き**、下記） | 3 以降 |
+| 決定を引き出し、却下案と理由ごと記録する | `tsumiki:adr-rubber-duck` | 既存 | 0 |
+| 決定を叩いて弱いものを落とす | `mattpocock-skills:grilling`、`openspec-explore` | 既存 | 0 |
+| 完了を主張する前に実物で確認する | `superpowers:verification-before-completion`、`run` | 既存 | **全 Phase 常用** |
+| 改修の前に影響範囲を出す | `tsumiki:dcs:impact-analysis` | 既存 | **全 Phase 常用** |
+| 負債を作る行為をその場で止める | `PostToolUse` フック + CI（設定は `update-config`） | **設定** | 1 |
+| 境界（seam）の位置とモックの置き場を決める | `mattpocock-skills:codebase-design` | 既存 | 2, 3 |
+| セキュリティを**反証可能な形で**検査する | `tsumiki:ipa-security-check` | 既存 | 2 |
+| データの状態遷移を洗い出す | `tsumiki:dcs:state-transition-analysis` | 既存 | 3 |
+| 仕様と実装の乖離を出す | `tsumiki:rev-requirements` / `rev-specs` | 既存 | 5 |
+| 誤った仕様を固定したテストを検出する | **既存の道具が無い。作る** | 新規 | 2 |
+| 全体を見て概念の重複を検出する | **既存の道具が無い。作る** | 新規 | 4 |
+| 仕様を恒久管理する | OpenSpec | 既存（**条件付き**、下記） | 3 以降 |
+
+#### Tsumiki の扱い — 境界を引き直した
+
+初版は Tsumiki を一括で遠ざけていたが、**ワークフローと個別スキルは別物**である。
+
+> **単発の分析・壁打ち道具は採る。成果物を積み上げるワークフローは採らない。**
+
+| 採る | 理由 |
+|---|---|
+| `adr-rubber-duck` | 出力先が `docs/adr/`、ヒアリング構造が `{背景と課題, 制約条件, 検討した選択肢, 決定, 決定理由, 影響}` で**本計画の完了条件と一致**。既存 ADR をスキャンして置き換え候補も出す |
+| `dcs:impact-analysis` | **負債ゲートの pull 版。** ゲートは「書いた後に止める」が、これは書く前に触る範囲を出す。「そもそも必要か」を問う契機になる |
+| `dcs:state-transition-analysis` | Phase 3 の `PersistenceState`（Ready / RecoverableFailure / Unavailable）とお気に入りの状態モデル設計に直結 |
+| `ipa-security-check` | IPA 原典の**出典（文書名・章・ページ・URL）を必ず付ける**。8周の失敗は「反証不能な指摘が8割」だった。**出典付きの指摘は原典で決着する** |
+| `dcs:edgecase-analysis` | 条件付き。**「洗い出した事例を1つずつ潰す」ではなく「洗い出しから不変条件を1本引く」ために使う**（事例の列挙は終わらない、が8周の教訓） |
+| `rev-requirements` / `rev-specs` | Phase 5 で現行 `docs/spec/` と突き合わせ、乖離を出す。privacy-policy と実装の食い違いはこれで拾えた可能性がある |
+
+| 採らない | 理由 |
+|---|---|
+| `kairo-*` フロー | 299 ファイルの工程記録を生んだ本体 |
+| `dev-plan` → `dev-impl` → `dev-run` → `dev-verify` | `docs/dev/plans/<name>/reports/` に成果物を積む設計。**恒久成果物が工程記録になる**点が Phase 5 の判断基準に反する |
+| `task-breakdown` | 同上 |
+
+**注意**: `dcs:*` は `.dcs/` に出力する。`.gitignore` に追加すること
+（未設定だと分析結果がコミット対象になり、「また工程記録が溜まる」形になる）。
 
 #### OpenSpec を使う条件
 
@@ -222,10 +258,15 @@ ADR-006  レイヤ依存は import-linter で強制する
 
 置き場所は `docs/adr/`。
 
-**道具**: ADR の起草は `mattpocock-skills:domain-modeling`（用途に ADR の記述が
-明記されている）。書いた決定は `mattpocock-skills:grilling` か `openspec-explore` で
-叩いてから確定する。**決定を1本ずつ「却下した案は本当に劣るか」で潰すこと**——
-8周は問いを疑わなかったことが2番目に重い原因だった。
+**道具**: ADR の起草は `tsumiki:adr-rubber-duck`。出力先が `docs/adr/` で、
+ヒアリング構造（背景と課題／制約条件／検討した選択肢／決定／決定理由／影響）が
+本計画の完了条件と一致する。既存 ADR をスキャンして置き換え候補も出すので、
+決定の更新が追える。
+
+書いた決定は `mattpocock-skills:grilling` か `openspec-explore` で叩いてから確定する。
+**1本ずつ「却下した案は本当に劣るか」で潰すこと**——8周は問いを疑わなかったことが
+2番目に重い原因だった。ドメイン語彙の整理が要るときは
+`mattpocock-skills:domain-modeling` を併用する。
 
 **あわせて B（押し出し）を行う。** `docs/adr/` は読みに行かないと届かないので、
 `CLAUDE.md` と `AGENTS.md`（各249行、自動で読み込まれる）に決定の1行要約6行を置き、
@@ -370,9 +411,23 @@ redis==8.0.1
 補助として `mutmut` を config・エラー処理に限定して回し、**mutation kill rate** で
 テストの実効性を測る（本数では測らない）。
 
+#### この Phase の締めに `tsumiki:ipa-security-check` を回す
+
+IPA 原典（「安全なウェブサイトの作り方 改訂第7版」ほか）に基づく静的検査で、
+**検出項目に出典（文書名・章・ページ・URL）を必ず付ける**。
+
+これが効く理由は、8周の失敗が「反証不能な指摘が8割」だったことにある。
+**出典が付いた指摘は反証可能で、「これは本当に問題か」の議論が原典で決着する。**
+AI レビューの水掛け論とは性質が違う。`ipa-security-guide` で検出結果を
+優先順位付きの対応リストに変換できる。
+
 ### Phase 3 — frontend の正しさを直す（5〜8日）
 
 利用者に直接届く順に並べてある。
+
+**道具**: 1 と 2 は状態モデルの設計なので、着手前に
+`tsumiki:dcs:state-transition-analysis` で対象データ（永続化状態・お気に入り）の
+遷移フローと依存関係を洗い出す。境界の位置は `mattpocock-skills:codebase-design`。
 
 1. **永続化の状態を明示する。** いま Hive が開けないと `repository_providers.dart` が
    黙って `null` を返し、インメモリで動き続ける（`hive_init.dart` が意図した設計として明記）。
@@ -465,6 +520,12 @@ Phase 4 を待たずに作ってよい。作った時点から回せる。
 
 **正本を1つずつ決める**: API は OpenAPI、環境変数は `RuntimeConfig`、UI 仕様は Widget テスト、
 データ保持は ADR + privacy-policy。
+
+**道具**: `tsumiki:rev-requirements` / `rev-specs` で実装から要件・仕様を逆生成し、
+現行の `docs/spec/` と突き合わせて乖離を出す。privacy-policy と実装の食い違い
+（「保存されません」と書いて保存していた）は、この方法なら拾えた可能性がある。
+**逆生成した文書をそのまま正本にしないこと**——差分を出すための道具であって、
+出力を積むと工程記録が増えるだけになる。
 
 ---
 

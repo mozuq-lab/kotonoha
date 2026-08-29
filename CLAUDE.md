@@ -10,36 +10,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 対象ユーザー: 脳梗塞・ALS・筋疾患などで発話が困難だが、タブレットのタップ操作がある程度可能な方々
 
-## 開発フレームワーク: Tsumiki
+## 作業の進め方 — 目的と道具
 
-このプロジェクトは **Tsumiki** (https://github.com/classmethod/tsumiki) を使用して開発されています。
+**原則: 目的は固定、道具は差し替え可能。** 下の表の「目的」列が守るべきもので、
+「道具」列はいま最も適したものを割り当てているだけ。より良いものが出たら**道具列だけ**を
+書き換える。**道具の名前を目的だと思わないこと。**
 
-### Tsumikiとは
+このプロジェクトは 2025-10 に Tsumiki のワークフロー（kairo-* / dev-*）で開始したが、
+**工程記録が恒久成果物になる**問題があったため、ワークフローとしては使っていない。
+単発の分析・壁打ち道具としては採用している（下表）。経緯は
+`docs/plans/2026-08-29-architecture-remediation.md`、判断の原則は
+`docs/verification-principles.md`。
 
-Tsumikiは、要件定義から設計、タスク管理、テスト駆動実装まで一貫したワークフローを提供するClaude Codeプラグインです。EARS記法による構造化要件定義、自動ドキュメント生成、依存関係を考慮したタスク管理を特徴とします。
+### いつでも守ること
 
-### 主要なTsumikiコマンド
+| 目的 | いま使う道具 |
+|---|---|
+| **完了と言う前に、実物を動かして確認する** | `superpowers:verification-before-completion` / `run` |
+| **改修に着手する前に、影響範囲を出す** | `tsumiki:dcs:impact-analysis` |
+| 負債を作る行為をその場で検出する | `PostToolUse` フック（設定は `update-config`） |
 
-**Kairo（包括フロー）** - メイン開発フロー:
-- `/tsumiki:init-tech-stack` - 技術スタック選定
-- `/tsumiki:kairo-requirements` - EARS記法による要件定義書作成
-- `/tsumiki:kairo-design` - 技術設計文書生成
-- `/tsumiki:kairo-tasks` - 実装タスク分割（1日単位、1ヶ月フェーズ）
-- `/tsumiki:kairo-implement` - タスク実装
+上2つは、8周のレビュー往復が収束しなかった直接の原因に対応する
+（誰もアプリを起動しなかった／触る範囲を数えなかった）。
 
-**TDD開発サイクル**:
-- `/tsumiki:tdd-requirements` - 機能要件整理
-- `/tsumiki:tdd-testcases` - テストケース洗い出し
-- `/tsumiki:tdd-red` - 失敗するテスト作成
-- `/tsumiki:tdd-green` - テストを通す実装
-- `/tsumiki:tdd-refactor` - リファクタリング
-- `/tsumiki:tdd-verify-complete` - 完了検証
+### 段階ごと
 
-**リバースエンジニアリング**（既存コード分析用）:
-- `/tsumiki:rev-tasks` - 実装済み機能からタスク抽出
-- `/tsumiki:rev-design` - アーキテクチャ設計書逆生成
-- `/tsumiki:rev-specs` - テストケース・仕様書逆生成
-- `/tsumiki:rev-requirements` - 要件定義書逆生成
+| 段階 | 目的 | いま使う道具 |
+|---|---|---|
+| 決める | 決定を引き出し、**却下案と理由ごと**記録する | `tsumiki:adr-rubber-duck`（出力先 `docs/adr/`） |
+| 決める | 決定を叩いて弱いものを落とす | `mattpocock-skills:grilling` / `openspec-explore` |
+| 設計 | 境界（seam）の位置とモックの置き場を決める | `mattpocock-skills:codebase-design` |
+| 設計 | データの状態遷移を洗い出す | `tsumiki:dcs:state-transition-analysis` |
+| 設計 | ドメイン語彙を整理する | `mattpocock-skills:domain-modeling` |
+| 実装 | 仕様を delta で積む | OpenSpec（`openspec/specs/` のみ恒久） |
+| 検証 | セキュリティを**反証可能な形で**検査する | `tsumiki:ipa-security-check`（IPA 原典の出典が付く） |
+| 検証 | 仕様と実装の乖離を出す | `tsumiki:rev-requirements` / `rev-specs`（**逆生成物を正本にしない**） |
+| 棚卸し | 全体を見て概念の重複を検出する | **未整備。プロジェクト固有スキルとして作る** |
+
+**採らないもの**: `kairo-*` フロー、`dev-plan` → `dev-impl` → `dev-run` → `dev-verify`、
+`task-breakdown`。いずれも成果物を積み上げる設計で、恒久成果物が工程記録になる。
+
+**現在のフェーズと、フェーズごとの割り当ては
+`docs/plans/2026-08-29-architecture-remediation.md` の §5 を見ること。**
 
 ## 技術スタック
 
@@ -72,25 +84,24 @@ Tsumikiは、要件定義から設計、タスク管理、テスト駆動実装�
 
 ## ディレクトリ構造
 
-### Tsumiki生成ドキュメント（docs/）
+### ドキュメント（docs/）
 
 ```
 docs/
 ├── tech-stack.md              # 技術スタック定義・セットアップ手順
+├── verification-principles.md # 検証と完了判定の原則（8周の失敗から抽出）
+├── plans/                     # これから何をするか（完了したら破棄する）
+├── adr/                       # アーキテクチャ決定（Phase 0 で作成）
 ├── spec/                      # 要件定義（EARS記法）
-│   ├── kotonoha-requirements.md
-│   ├── kotonoha-user-stories.md
-│   └── kotonoha-acceptance-criteria.md
 ├── design/kotonoha/           # 技術設計
-│   ├── architecture.md
-│   ├── dataflow.md
-│   ├── api-endpoints.md
-│   ├── database-schema.sql
-│   └── interfaces.dart
-└── tasks/                     # タスク管理（フェーズ分割）
-    ├── kotonoha-overview.md
-    ├── kotonoha-phase1.md ... phase5.md
+├── articles/                  # 経緯の記事
+└── archive/                   # 歴史記録。更新しない。現在の仕様として読まないこと
+    ├── implements/            # Tsumiki の TDD 実行記録 299ファイル
+    └── tasks/                 # フェーズ計画 6ファイル
 ```
+
+**コードと文書が食い違っていたら、コードが正である。** 文書側を直すか、
+直せないなら `docs/archive/` へ移すこと。
 
 backend/、frontend/、docker/などのコード構造については `docs/tech-stack.md` を参照してください。
 
@@ -138,13 +149,18 @@ alembic upgrade head
 - ビジネスロジック・APIエンドポイント: **90%以上**
 - コード品質: flutter_lints、Ruff + Black準拠
 
-### TDD開発フロー（Tsumiki推奨）
-1. `/tsumiki:tdd-requirements` - 機能要件を整理
-2. `/tsumiki:tdd-testcases` - テストケースを洗い出し
-3. `/tsumiki:tdd-red` - 失敗するテストを作成
-4. `/tsumiki:tdd-green` - テストを通す最小限の実装
-5. `/tsumiki:tdd-refactor` - リファクタリング
-6. `/tsumiki:tdd-verify-complete` - 全テスト成功を検証
+### テストを書くときの規律
+
+- **修正の前にテストを書き、赤を確認してから直す。** 後に書くと、修正が効く観測点を
+  無意識に選んでしまう
+- **モックは外部 SDK / ネットワーク境界にのみ置く。自分の関数を patch しない。**
+  漏えいシンクを36箇所でモックしていた前例がある
+- **完全一致アサーションを書かない。** 「このアサーションは、実装を安全側に変えたときに
+  落ちるか」を自問する。落ちるならそれは仕様ではなく実装のスナップショット
+- **検証は最も外側の境界で行う。** 戻り値ではなく、プロセスの stdout/stderr、
+  実際の DB 行、HTTP レスポンス、描画されたウィジェット
+
+理由と実例は `docs/verification-principles.md`。
 
 ## API仕様
 
@@ -197,14 +213,24 @@ alembic upgrade head
 
 詳細は `docs/design/kotonoha/architecture.md` を参照してください。
 
-## 開発ワークフロー（Tsumiki推奨）
+## 開発ワークフロー
 
-### 新機能開発の流れ
-1. `/tsumiki:kairo-requirements` - 要件定義（EARS記法）
-2. `/tsumiki:kairo-design` - 設計書生成
-3. `/tsumiki:kairo-tasks` - タスク分割（1日単位）
-4. `/tsumiki:kairo-implement` - TDDサイクルで実装
-5. CI/CD自動テスト・デプロイ
+### 改修に着手する前に
+
+1. **触る領域の ADR を読む**（`docs/adr/`）。該当する ADR が無ければ、
+   **その領域の決定が存在しない**ということなので、実装前に確認すること
+2. **影響範囲を出す**（`tsumiki:dcs:impact-analysis`）。「そもそも必要か」を
+   ここで問う。8周のレビュー往復は、この工程が無かったために起きた
+3. 大きな決定を伴うなら、実装の前に ADR を1本作る（`tsumiki:adr-rubber-duck`）
+
+### 負債を作る行為には理由が要る
+
+次に触れる変更は、該当する ADR を引用すること（無ければ決定から始める）。
+
+- 依存の追加（`requirements.txt` / `pubspec.yaml`）
+- 永続化面の追加（Hive の TypeAdapter・フィールド、DB テーブル、ファイル出力先）
+- 秘密を持つ設定キーの追加
+- モジュールレベルの可変グローバルの追加
 
 ### コミット戦略
 - **1タスク完了ごとにコミット**: タスク（TASK-XXXX）が完了したら、必ずその時点でGitコミットを作成すること
@@ -224,14 +250,16 @@ Git ブランチ戦略等の詳細は `docs/tech-stack.md` を参照してくだ
 - **API仕様**: `docs/design/kotonoha/api-endpoints.md`
 - **今後の対応計画**: `docs/plans/2026-08-29-architecture-remediation.md`
 - **検証と完了判定の原則**: `docs/verification-principles.md`
-- **Tsumiki Manual**: https://github.com/classmethod/tsumiki/blob/main/MANUAL.md
+- **Tsumiki Manual**（個別スキルの仕様）: https://github.com/classmethod/tsumiki/blob/main/MANUAL.md
 
 ## 注意事項
 
-### Tsumiki生成コンテンツについて
-- Tsumikiが生成したドキュメント（docs/配下）は**人間のレビューが必須**
-- 特に非機能要件やエッジケースは推定を含むため、実装時に検証が必要
-- 🔵（青信号）は要件定義書ベース、🟡（黄信号）は妥当な推測、🔴（赤信号）は完全な推測
+### 過去に生成されたコンテンツについて
+- `docs/archive/` は歴史記録である。**更新しない。現在の仕様として読まないこと**
+- コード中に残る `【】` 記法のコメントと `🔵🟡🔴` の信頼性レベル記号は、
+  **生成時点の確信度であってコードの性質ではない**。整理対象（Phase 5）
+- **自分（や前のセッション）が書いた文書を「事実」として扱わない。**
+  数字・パス・行番号は、使う前に必ず現物で確かめること
 
 ### コーディング規約
 - **Flutter**:

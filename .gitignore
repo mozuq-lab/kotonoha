@@ -78,3 +78,6 @@ coverage.xml
 
 # エージェント用の一時 worktree（埋め込みリポジトリとして誤って追加されるのを防ぐ）
 .claude/worktrees/
+
+# tsumiki dcs 系コマンドの分析出力（一時的な成果物。コミットしない）
+.dcs/
