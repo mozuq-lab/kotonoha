@@ -217,6 +217,7 @@ C が本命である。今回で言えば、`ai_conversion_logs` テーブルを
 | 誤った仕様を固定したテストを検出する | **既存の道具が無い。作る** | 新規 | 2 |
 | 全体を見て概念の重複を検出する | **既存の道具が無い。作る** | 新規 | 4 |
 | 仕様を恒久管理する | OpenSpec | 既存（**条件付き**、下記） | 3 以降 |
+| タスク分解済み計画を実行する | `superpowers:subagent-driven-development` | 既存（**条件付き**、下記） | 2, 3 |
 
 #### Tsumiki の扱い — 境界を引き直した
 
@@ -301,6 +302,36 @@ OpenSpec をやめても `openspec/specs/` は素の Markdown として残る。
 **1つの change を大きくしないこと。** `tasks.md` が長大になると
 「1周10〜15件をまとめて直す」が再演される。**change の粒度は完了条件7
 （400行 / 12ファイル）に合わせる。**
+
+#### subagent-driven-development を使う条件
+
+Phase 2・3 の実行には `superpowers:subagent-driven-development`（タスクごとに新しい
+implementer subagent を出し、タスクレビュー＋最終全体レビューを行うスキル）を使ってよい。
+スキル本文を確認済み: **8周対策と同型の停止条件を内蔵している**——fix loop は5ラウンド上限
+（breaker）で、上限では裁定して parked（却下の記録）、再レビューはスコープ固定
+（触っていないコードの新指摘は台帳行き）、Minor はループに入れず台帳直行。
+工程記録（ledger・レビューパッケージ）は git-ignored の workspace に置かれ完了時に
+削除されるため、恒久成果物ルールとも整合する（採用初回に ignore が効いているか確認する）。
+
+条件は4つ。
+
+1. **入力はタスク分解済みの実装計画**。各フェーズ着手時に `superpowers:writing-plans` で
+   work package を task 化する（本計画の「着手時に分解」と同じ工程）。
+   タスク粒度は完了条件の 400行 / 12ファイルに合わせる
+2. **task reviewer の constraints block に本プロジェクトの拘束を書き写す**:
+   該当 ADR の要約・テスト規律（モックは SDK 境界のみ・完全一致アサーション禁止）・
+   そのフェーズの完了条件。Critical / Important / Minor は P0 / P1 / P2 に写像する
+3. **2系統レビューはタスク粒度でなくマージ境界で課す**。タスクごとのレビューは
+   SDD の単系統でよく、マージ前の最終 whole-branch レビューを2系統
+   （SDD の final reviewer ＋ Codex）にする——層3「PR ごと・2系統」との整合
+4. **消える記録を昇格する**。フェーズ末に ledger の ruling・parked・deferred を
+   台帳 #85 へ転記し、決定に触れる ruling は ADR へ昇格する（ledger は完了時に消える。
+   「判断を状態を持たない場所に置かない」の原則）
+
+**Phase 1 では使わない**——工程が密結合（ゲート → フック → CI → 発火確認）で、
+`update-config` によるフック設定は権限確認を伴う対話作業のため。AST ゲート＋fixture のみ
+独立タスクとして単発の subagent 切り出しが可能。なお負債ゲートの `PostToolUse` フックは
+subagent の Edit / Write にも発火するので、Phase 1 のゲートが implementer を守る関係になる。
 
 ### レビューの層
 
@@ -458,6 +489,8 @@ Phase 4 の棚卸しで見直す。「これは存在すべきか」を問う工
 `getLogger` の誤検知と `client = X()` の見逃しが避けられない——再レビューの指摘）。
 CI には `openspec/changes/` 配下の tracked ファイル禁止も含める（§5「OpenSpec を使う条件」
 条件1。ゲート7項目とは別の1検査）。フックと CI で1日を見込む。
+この Phase では `subagent-driven-development` は使わない（§5 の同名の条件を参照。
+AST ゲート＋fixture のみ単発の subagent 切り出し可）。
 
 #### `fix/backend-production-hardening` の処理
 
@@ -497,6 +530,8 @@ app/
 ```
 
 順序: 決定1（DB削除）→ 決定2（`memory://`）→ Application Factory → エラー型 → 設定の不変化。
+実行は `superpowers:subagent-driven-development` を使ってよい（§5 の4条件を守り、
+着手時に `superpowers:writing-plans` で task 分解する。逐次 dispatch でこの順序どおりに進める）。
 
 #### A（消す）— 依存を削除して、選択肢そのものを無くす
 
@@ -620,6 +655,8 @@ AI レビューの水掛け論とは性質が違う。`ipa-security-guide` で�
 **道具**: 1 と 2 は状態モデルの設計なので、着手前に
 `tsumiki:dcs:state-transition-analysis` で対象データ（永続化状態・お気に入り）の
 遷移フローと依存関係を洗い出す。境界の位置は `mattpocock-skills:codebase-design`。
+タスクの実行は `superpowers:subagent-driven-development` を使ってよい（§5 の4条件を守り、
+着手時に `superpowers:writing-plans` で work package を task 分解する）。
 
 **テストは Phase 2 と同じ2系統で書く。** frontend の B は、
 利用者が発話で訂正できず端末内にしかデータが無いため、**B-2（プロダクト固有）が最も重い**。
