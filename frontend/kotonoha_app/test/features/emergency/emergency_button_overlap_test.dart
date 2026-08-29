@@ -26,6 +26,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state_provider.dart';
 import 'package:kotonoha_app/core/router/app_router.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
 import 'package:kotonoha_app/features/emergency/presentation/providers/emergency_state_provider.dart';
@@ -63,6 +65,17 @@ void main() {
           emergencyAudioServiceProvider.overrideWithValue(mockAudioService),
           // 設定のローディング状態（無限アニメーション）を回避
           settingsNotifierProvider.overrideWith(() => _MockSettingsNotifier()),
+          // 【このテストの主題を保つため】: このテストが見ているのは
+          // 「緊急ボタンバーが文字盤を圧迫しないか」であって、警告バナーの
+          // レイアウト影響ではない。テスト環境ではHiveを開いていないため
+          // 既定ではUnavailable（＝バナー表示）になってしまうので、
+          // 通常状態のReadyに固定する。
+          //
+          // 【別途判明した問題】: 警告バナー（永続化・オフラインとも）を
+          // 表示すると、タブレット横持ちで文字盤にスクロールが発生する。
+          // オフラインバナーは本変更以前から同じ問題を持つ（実測35px）。
+          // 台帳 Issue #85 へ送った。
+          persistenceStateProvider.overrideWithValue(const PersistenceReady()),
         ],
       );
       router = container.read(routerProvider);

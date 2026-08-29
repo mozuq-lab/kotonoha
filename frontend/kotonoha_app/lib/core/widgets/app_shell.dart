@@ -25,7 +25,11 @@
 ///    - 全画面共通で、オフライン時は常時バナーを表示し、オンライン復帰時は
 ///      一時的な復帰通知を表示する（fix/improvement-p0-p2で配線）。
 ///
-/// 5. 初回チュートリアル表示（TASK-0075 / REQ-3001）
+/// 5. 永続化バナー（ADR-005）
+///    - Hive が開けず保存できない状態のとき、全画面共通で常時バナーを表示する。
+///      「保存できたように見えて消える」を防ぐ。オフラインバナーより上に置く。
+///
+/// 6. 初回チュートリアル表示（TASK-0075 / REQ-3001）
 ///    - 初回起動時（チュートリアル未完了時）にTutorialOverlayを画面本体
 ///      （オフラインバナー＋現在のルート画面）にのみ重ねる
 ///      （fix/improvement-p0-p2で配線）。緊急ボタン・緊急アラート画面は
@@ -41,6 +45,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/widgets/persistence_banner.dart';
 import 'package:kotonoha_app/features/emergency/domain/models/emergency_state.dart';
 import 'package:kotonoha_app/features/emergency/presentation/providers/emergency_state_provider.dart';
 import 'package:kotonoha_app/features/emergency/presentation/screens/emergency_alert_screen.dart';
@@ -180,11 +185,17 @@ class _AppShellState extends ConsumerState<AppShell> {
       }
     });
 
-    // 現在のルート画面。オフライン時は常時バナーを表示し（REQ-1002）、
+    // 現在のルート画面。保存できない状態は常時バナーで伝え（ADR-005）、
+    // オフライン時も常時バナーを表示し（REQ-1002）、
     // オンライン復帰時は一時的な復帰通知を重ねる（EDGE-001）。
+    //
+    // 【並び】: 永続化バナーをオフラインバナーより上に置く。オフラインは
+    // AI変換が使えないだけで基本機能は動くが、保存できない状態は
+    // 入力内容そのものが失われるため、先に目に入るべきである。
     final screenContent = OnlineRecoveryNotification(
       child: Column(
         children: [
+          const PersistenceBanner(),
           const OfflineBanner(),
           Expanded(child: widget.child),
         ],
