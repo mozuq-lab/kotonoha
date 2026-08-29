@@ -73,7 +73,34 @@
 
 ---
 
-## WP1 — 永続化の状態を明示する
+## WP1 — 永続化の状態を明示する — **完了（2026-08-30）**
+
+**実績**: 12ファイル / +755 −28 行（うち lib は約321行、test 約434行）。
+テストは 1,943 → 1,974 passed（+31）。`flutter analyze lib` 警告0。
+
+**着手時の計画から変えた点**:
+
+1. **状態の出所**。当初は `initHive()` の戻り値をスナップショットして
+   `ProviderScope` に注入する設計にしていたが、`repository_providers` が使う
+   `Hive.isBoxOpen` と出所が2つになり ADR-005 が禁じる並行真実そのものになる。
+   同じ述語から導く形に変え、`initHive()` と `main.dart` は変更していない
+2. `resolvePersistenceState` の `hiveInitialized` 引数を削除。初期化失敗は
+   「開いている box が無い」として表れるため冗長だった
+3. box 名の文字列定義を `PersistedArea.boxName` に集約
+4. `RecoverableFailure` の配色は `colorScheme.errorContainer` を諦め、既存の
+   `AppColors.warningContainer` を使用。本アプリの3テーマは `ColorScheme` に
+   `error` だけを渡しており `errorContainer` が `error` にフォールバックするため、
+   2状態が同色になる（コントラストテストが検出した）
+
+**この WP で見つけた既存不具合**:
+
+| 内容 | 対応 |
+|---|---|
+| AppShell 上のバナー文字にデバッグ用の下線が出る（オフラインバナーも同じ。実測 `TextDecoration.underline`） | **直した**。両バナーを `Material` で包み、AppShell 経由の回帰テストを恒久化 |
+| 警告バナー表示時、タブレット横持ち 1024x768 で文字盤にスクロールが発生（オフラインバナーは実測35px、永続化バナーは6px） | **直していない**。台帳 Issue #85 へ送った |
+
+**残った懸念**: 変更ファイル数が 12 でちょうど上限。行数は test を含めると 400 を超える。
+
 
 **なぜ最初か:** 「保存できたように見えて消える」は、この製品の利用者にとって
 最悪の事象（B-2）。かつ WP2 のお気に入り移行が「保存されている前提」で動くため、
@@ -109,7 +136,7 @@ ADR-005 は3状態の名前だけを決め、境界は Phase 3 に委ねてい�
   - `enum PersistedArea { history, presetPhrases, favorites }`
   - `PersistenceState resolvePersistenceState({required Set<PersistedArea> openedAreas, required bool hiveInitialized})`
 
-- [ ] **Step 1: 失敗するテストを書く**
+- [x] **Step 1: 失敗するテストを書く**
 
 ```dart
 // test/core/persistence/persistence_state_test.dart
@@ -160,12 +187,12 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: 赤を確認する**
+- [x] **Step 2: 赤を確認する**
 
 Run: `flutter test test/core/persistence/persistence_state_test.dart`
 Expected: FAIL（`persistence_state.dart` が存在しないというコンパイルエラー）
 
-- [ ] **Step 3: 最小実装を書く**
+- [x] **Step 3: 最小実装を書く**
 
 ```dart
 // lib/core/persistence/persistence_state.dart
@@ -229,12 +256,12 @@ PersistenceState resolvePersistenceState({
 }
 ```
 
-- [ ] **Step 4: 緑を確認する**
+- [x] **Step 4: 緑を確認する**
 
 Run: `flutter test test/core/persistence/persistence_state_test.dart`
 Expected: PASS（4件）
 
-- [ ] **Step 5: コミット**
+- [x] **Step 5: コミット**
 
 ```bash
 git add frontend/kotonoha_app/lib/core/persistence/persistence_state.dart \
@@ -257,7 +284,7 @@ git commit -m "feat: 永続化の状態を型で表す (Phase 3 / WP-1)"
   - `final persistenceStateProvider = Provider<PersistenceState>((ref) => throw UnimplementedError())`
     — `main.dart` が `overrideWithValue` で注入する。**テストは override して状態を注入する**
 
-- [ ] **Step 1: 失敗するテストを書く**
+- [x] **Step 1: 失敗するテストを書く**
 
 `initHive()` は Hive の実初期化を伴うため、検証は「戻り値の型と内容」ではなく
 **実際に box を開けた状態での戻り値**で行う。`hive_test` は使わず、`Hive.init` に
@@ -273,7 +300,7 @@ git commit -m "feat: 永続化の状態を型で表す (Phase 3 / WP-1)"
 （実際のテスト本文は着手時に既存 `hive_init_corruption_test.dart` の初期化手順へ合わせる。
 **このタスクの実装前に、その手順を読んでから書くこと。**）
 
-- [ ] **Step 2: 赤を確認する** — Run: `flutter test test/core/utils/hive_init_result_test.dart`
+- [x] **Step 2: 赤を確認する** — Run: `flutter test test/core/utils/hive_init_result_test.dart`
 - [ ] **Step 3: `initHive()` を `Future<Set<PersistedArea>>` に変える**
 - [ ] **Step 4: `main.dart` で結果を `persistenceStateProvider` に注入する**
 
@@ -330,7 +357,7 @@ git commit -m "feat: 永続化の状態を型で表す (Phase 3 / WP-1)"
 `OfflineBanner` に合わせて `Semantics(label:)` を付ける。
 コントラストは高コントラストテーマでも 4.5:1 以上（WCAG 2.1 AA）を満たす色にする。
 
-- [ ] **Step 1: 失敗するテストを書く**（描画されたウィジェットで検証する）
+- [x] **Step 1: 失敗するテストを書く**（描画されたウィジェットで検証する）
 
 ```dart
 // test/core/widgets/persistence_banner_test.dart
@@ -340,9 +367,9 @@ git commit -m "feat: 永続化の状態を型で表す (Phase 3 / WP-1)"
 // アサーションは textContaining で行い、完全一致にしない
 ```
 
-- [ ] **Step 2: 赤を確認する** — Run: `flutter test test/core/widgets/persistence_banner_test.dart`
+- [x] **Step 2: 赤を確認する** — Run: `flutter test test/core/widgets/persistence_banner_test.dart`
 - [ ] **Step 3: `PersistenceBanner` を実装する**
-- [ ] **Step 4: 緑を確認する**
+- [x] **Step 4: 緑を確認する**
 - [ ] **Step 5: `AppShell` の `screenContent` に配線する**
 
 ```dart
@@ -375,14 +402,16 @@ git commit -m "feat: 永続化の状態を型で表す (Phase 3 / WP-1)"
 
 - [ ] **Step 1〜5**: 赤 → 実装（配線のみ）→ 緑 → 全テスト → コミット
 
-### WP1 の完了条件
+### WP1 の完了条件 — 判定結果
 
-- [ ] `flutter test` が緑（新規テストを含む）
-- [ ] `flutter analyze` が警告0
-- [ ] **実物で確認する**（`superpowers:verification-before-completion`）:
-      `flutter run -d chrome` で起動し、Ready のときバナーが出ないことを目視。
-      Hive を壊した状態（またはテスト用 override）でバナーが出ることを目視
-- [ ] 差分が 400行 / 12ファイル以内
+- [x] `flutter test` が緑（1,974 passed / 1 skipped、exit 0）
+- [x] `flutter analyze lib` が警告0
+- [x] **実物で確認した**: `flutter run -d web-server` を Playwright の Chromium で開き、
+      正常起動でバナーが出ないこと・`initHive` が失敗する状態でバナーが出て
+      文字盤は使えること（NFR-301）を目視した。**バナー文字の下線はこの目視でしか
+      見つからなかった**——ウィジェットテストは Scaffold の中に置いて描いていたため
+      Material 祖先ができ、不具合を再現していなかった
+- [~] 差分は 12ファイル（上限ちょうど）／755行（test 434行を含む。lib のみなら321行）
 
 ---
 
