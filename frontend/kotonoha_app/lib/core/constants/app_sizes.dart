@@ -14,6 +14,31 @@ class AppSizes {
   // For better accessibility, especially for large buttons and emergency button
   static const double recommendedTapTarget = 60.0;
 
+  // 緊急ボタン (Emergency button / REQ-301, REQ-302, TASK-0045)
+  // AppShellが全画面共通で画面下部に配置する緊急ボタンのサイズと余白。
+  // 【重要】: ここの値はAppShellのボタン配置と、緊急ボタンバーが確保する
+  // 高さの両方から参照される単一の定義。片方だけを変更すると
+  // 「緊急ボタンが他のUI（文字盤のキー等）を覆う」不具合が再発するため、
+  // 必ずこの定数経由で扱うこと。
+  static const double emergencyButtonSize = recommendedTapTarget;
+
+  // 緊急ボタンと画面端・他の操作ボタンとの間隔
+  // TASK-0045 FR-006: 誤タップ防止のため16px以上を確保する
+  static const double emergencyButtonMargin = paddingMedium;
+
+  // 緊急ボタンバーの太さ（ボタン60px + 両側マージン16px = 92px）
+  // このバーは画面本体（各画面のScaffold）とは別のレイアウト領域として
+  // 確保されるため、画面側のUIが緊急ボタンの下に潜り込むことがない
+  // （TASK-0045 FR-005: 他のUI要素と重ならない位置に配置する）。
+  //
+  // 画面の向きによって使われ方が変わるため「高さ」ではなく「太さ」と呼ぶ:
+  // - 縦向き: 画面下部の横帯の「高さ」
+  // - 横向き: 画面右端の縦帯（サイドレール）の「幅」
+  // 横向きで縦方向92pxを消費すると文字盤の可視行数が大きく減るため、
+  // 相対的に余裕のある横方向から確保する（AppShell参照）。
+  static const double emergencyButtonBarThickness =
+      emergencyButtonSize + emergencyButtonMargin * 2;
+
   // フォントサイズ (REQ-801: Font size options - small/medium/large)
   static const double fontSizeSmall = 16.0;
   static const double fontSizeMedium = 20.0;

@@ -11,6 +11,10 @@
 /// 2. 緊急機能の全画面配線（F3 / REQ-301, REQ-302, REQ-304）
 ///    - 右下に緊急ボタンを常時表示（REQ-301）。
 ///    - 緊急状態（alertActive）の時に緊急アラート画面を最前面に重ねる（REQ-304）。
+///    - 【重なり対策】: 緊急ボタンは画面本体に「重ねる」のではなく、画面端に
+///      専用の帯（緊急ボタンバー）としてレイアウト領域を確保して配置する。
+///      縦向きは画面下部の横帯、横向きは画面右端の縦帯（サイドレール）。
+///      詳細は [_AppShellState._buildEmergencyButtonBar] を参照。
 ///
 /// 3. 緊急時の音量警告配線（EDGE-203）
 ///    - 緊急状態に遷移したタイミングでOS音量（VolumeService）を確認し、
@@ -31,9 +35,12 @@
 /// 信頼性レベル: 🔵 青信号（要件定義書ベース）
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/emergency/domain/models/emergency_state.dart';
 import 'package:kotonoha_app/features/emergency/presentation/providers/emergency_state_provider.dart';
 import 'package:kotonoha_app/features/emergency/presentation/screens/emergency_alert_screen.dart';
@@ -204,24 +211,40 @@ class _AppShellState extends ConsumerState<AppShell> {
           )
         : screenContent;
 
+    // 【向きによる配置切替】: 緊急ボタンバーは縦向きなら画面下部の横帯、
+    // 横向きなら画面右端の縦帯（サイドレール）としてレイアウト領域を確保する。
+    // 横向きで縦方向に92pxを使うと文字盤の可視行数が大きく減り、推奨端末の
+    // タブレット横持ち（1024x768）ではスクロール不要だった文字盤にスクロールが
+    // 発生してしまう。「タップ主体・スワイプ非依存」の方針（CLAUDE.md）に
+    // 反するため、横向きでは相対的に余裕のある横方向から確保する。
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+
+    // 画面本体。緊急ボタンバーの太さぶんだけ小さくなるため、
+    // 画面側のUIが緊急ボタンの下に潜り込むことがない。
+    final screenBody = Expanded(
+      child: MediaQuery(
+        data: _screenMediaQueryData(mediaQuery, isLandscape: isLandscape),
+        child: bodyContent,
+      ),
+    );
+
     return Stack(
       children: [
-        bodyContent,
-
-        // 緊急ボタン（全画面常時表示 / REQ-301, REQ-302）。
-        // チュートリアル表示中でも常に最前面にあり、操作をブロックされない。
-        SafeArea(
-          child: Align(
-            alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: EmergencyButtonWithConfirmation(
-                onEmergencyConfirmed: () =>
-                    ref.read(emergencyStateProvider.notifier).startEmergency(),
-              ),
-            ),
+        if (isLandscape)
+          Row(
+            children: [
+              screenBody,
+              _buildEmergencyButtonBar(context, isLandscape: true),
+            ],
+          )
+        else
+          Column(
+            children: [
+              screenBody,
+              _buildEmergencyButtonBar(context, isLandscape: false),
+            ],
           ),
-        ),
 
         // 緊急アラート画面（alertActive時のみ最前面に表示 / REQ-304）
         if (isAlertActive)
@@ -234,6 +257,117 @@ class _AppShellState extends ConsumerState<AppShell> {
             ),
           ),
       ],
+    );
+  }
+
+  /// 画面本体（各ルート画面）へ渡すMediaQueryDataを構築する
+  ///
+  /// 緊急ボタンバーが画面端のレイアウト領域を占有するぶん、
+  /// 画面本体側のインセットを補正する。
+  MediaQueryData _screenMediaQueryData(
+    MediaQueryData mediaQuery, {
+    required bool isLandscape,
+  }) {
+    if (isLandscape) {
+      // 右端のシステムインセット（横持ち時のノッチ等）はサイドレール側の
+      // SafeAreaが消費するため、画面本体側では取り除く。
+      // 縦方向は何も奪っていないので、下端インセット・キーボード
+      // （viewInsets）はそのまま画面本体へ渡す。
+      return mediaQuery.removePadding(removeRight: true);
+    }
+
+    // 下端のシステムインセット（ホームインジケータ等）はバー側のSafeAreaが
+    // 消費する。取り除かないと画面本体のSafeAreaとバーのSafeAreaで二重に
+    // 余白が入り、無駄に縦幅を失う。
+    //
+    // 【キーボード表示時の補正】: removePaddingはpaddingしか消さないため、
+    // 補正しないと画面本体は「バーの分だけ短い箱」からさらにキーボード全高を
+    // 引くことになり、キーボード上端との間にバー1本分（92px）の空白帯が
+    // できる。バーはキーボードの裏に完全に隠れるので、その分を差し引いた
+    // viewInsetsを渡すのが正しい。
+    final barTotal =
+        AppSizes.emergencyButtonBarThickness + mediaQuery.padding.bottom;
+    return mediaQuery.removePadding(removeBottom: true).copyWith(
+          viewInsets: mediaQuery.viewInsets.copyWith(
+            bottom: math.max(0.0, mediaQuery.viewInsets.bottom - barTotal),
+          ),
+        );
+  }
+
+  /// 緊急ボタンバーを構築する（REQ-301, REQ-302 / TASK-0045 FR-005, FR-006）
+  ///
+  /// 【この構成にした理由（重なり不具合の修正）】:
+  /// 以前は緊急ボタンをStackで画面本体の上に「重ねて」いたため、画面右下
+  /// （右16〜76px / 下16〜76px）のタップが常に緊急ボタンへ吸収されていた。
+  /// 文字盤（CharacterBoardWidget）のグリッドは画面端まで伸びてスクロール
+  /// するため、スマホ縦持ち・横持ちでは最右列のキーが緊急ボタンの下に入り、
+  /// タップ有効面積が44px（REQ-5001）を下回るうえ、誤タップで緊急確認
+  /// ダイアログが開いてしまっていた。定型文画面では追加FAB（右下）が
+  /// 緊急ボタンに完全に覆われ、追加操作そのものが不能だった。
+  ///
+  /// そこで緊急ボタンを「重ねる」のをやめ、画面端に専用のレイアウト領域
+  /// （太さ [AppSizes.emergencyButtonBarThickness] = 92px）を確保して配置する。
+  /// 画面本体はこの帯のぶんだけ小さくなるため、どの画面・どの画面サイズ・
+  /// どのスクロール位置であっても緊急ボタンと画面側UIが重ならない
+  /// （偶然の空きセルに依存しない構造的な解決）。
+  ///
+  /// - [isLandscape] がtrue（横向き）なら画面右端の縦帯（幅92pxの
+  ///   サイドレール）、falseなら画面下部の横帯（高さ92px）として確保する。
+  ///   横向きは縦方向が貴重なため、奪う方向を切り替えて文字盤の可視行数を
+  ///   維持する。
+  /// - ボタン自体のサイズ・位置（右下・外周16px）はどちらの向きでも従来と
+  ///   同じで、見た目の位置は変わらない。
+  /// - 帯の周囲に16pxの余白が入るため、他の操作ボタンとの間隔16px以上
+  ///   （FR-006）も同時に満たす。
+  /// - チュートリアル表示中もTutorialOverlayは画面本体側だけを覆うため、
+  ///   緊急ボタンは常に操作可能（REQ-301, REQ-302）。
+  /// - 帯は各画面のScaffoldの外側に位置するため、背景が透明にならないよう
+  ///   ScaffoldBackgroundColorで塗りつぶし、画面本体と地続きに見せる。
+  Widget _buildEmergencyButtonBar(
+    BuildContext context, {
+    required bool isLandscape,
+  }) {
+    final button = EmergencyButtonWithConfirmation(
+      size: AppSizes.emergencyButtonSize,
+      onEmergencyConfirmed: () =>
+          ref.read(emergencyStateProvider.notifier).startEmergency(),
+    );
+
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: isLandscape
+          // 横向き: 画面右端の縦帯。右端・下端のセーフエリアを消費する。
+          ? SafeArea(
+              left: false,
+              child: SizedBox(
+                width: AppSizes.emergencyButtonBarThickness,
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSizes.emergencyButtonMargin,
+                    ),
+                    child: button,
+                  ),
+                ),
+              ),
+            )
+          // 縦向き: 画面下部の横帯。下端のセーフエリアを消費する。
+          : SafeArea(
+              top: false,
+              child: SizedBox(
+                height: AppSizes.emergencyButtonBarThickness,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.emergencyButtonMargin,
+                    ),
+                    child: button,
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }
