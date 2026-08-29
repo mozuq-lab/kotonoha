@@ -43,12 +43,12 @@ Tsumikiは、要件定義から設計、タスク管理、テスト駆動実装�
 
 ## 技術スタック
 
-- **フロントエンド**: Flutter 3.38.1 + Riverpod 2.x
-- **バックエンド**: FastAPI 0.121 + SQLAlchemy 2.x + PostgreSQL 15+
+- **フロントエンド**: Flutter 3.38.1 + Riverpod 3.x（`flutter_riverpod: ^3.1.0`）
+- **バックエンド**: FastAPI 0.124 + SQLAlchemy 2.x + PostgreSQL 15+
 - **IaC**: AWS CDK 2.x (TypeScript)
 - **開発環境**: Docker + Docker Compose
 
-詳細な技術スタック、セットアップ手順、推奨ディレクトリ構造については `docs/tech-stack.md` を参照してください。
+詳細な技術スタック、セットアップ手順、ディレクトリ構造については `docs/tech-stack.md` を参照してください。
 
 ## アーキテクチャの重要な設計判断
 
@@ -102,13 +102,24 @@ backend/、frontend/、docker/などのコード構造については `docs/tech
 # Docker環境起動
 docker-compose up -d
 
-# バックエンドサーバー起動
-cd backend
-uvicorn app.main:app --reload
+# バックエンドサーバー起動（リポジトリルートから）
+(cd backend && uvicorn app.main:app --reload)
 
-# Flutterアプリ起動
+# Flutterアプリ起動（ローカルのdocker-compose構成ならデフォルトのままでよい）
+# 以降はリポジトリルートから frontend/kotonoha_app に移動した状態で実行する
 cd frontend/kotonoha_app
 flutter run -d chrome
+
+# 接続先・端末APIキーを差し替える場合はルート .env から --dart-define で渡す。
+# 空文字を渡すと String.fromEnvironment の defaultValue が打ち消されるため、
+# 未設定キーは必ずフォールバックで補うこと。
+# ルート .env が未作成だと source が失敗する（set -e 環境では中断する）
+set -a; source ../../.env; set +a
+DEFINES=(--dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:8000}")
+if [ -n "${AI_API_KEY:-}" ]; then
+  DEFINES+=(--dart-define=AI_API_KEY="$AI_API_KEY")
+fi
+flutter run -d chrome "${DEFINES[@]}"
 
 # テスト実行
 pytest                    # Backend
@@ -149,14 +160,21 @@ alembic upgrade head
 - `GET /api/v1/health` - ヘルスチェック
 
 ### レート制限
-- AI変換API: 1分間に10リクエスト
+- AI変換API: 1リクエスト/10秒/IP（デフォルト。NFR-101準拠）
+  - `RATE_LIMIT_TIMES`（回数）・`RATE_LIMIT_SECONDS`（秒数）環境変数で変更可能
+  - マルチワーカー/マルチインスタンス構成では `RATE_LIMIT_STORAGE_URI` にRedis等の共有ストレージURIを指定すること（未指定時はプロセス内メモリのため各プロセスで独立したカウンタになる）
+  - **`TRUSTED_PROXY_COUNT`（デフォルト0）**: レート制限のクライアント識別に信頼する自前プロキシ（ALB/CDN等）の段数。ALB配下など本番でリバースプロキシを経由する構成では**必須設定**
+    - `0` の場合は `X-Forwarded-For` を一切信頼せず接続元IPを使用する
+    - `1` 以上の場合は XFF の右からN番目（＝信頼プロキシが観測したクライアントIP）を採用する
+    - XFFのチェーンが設定段数に満たない場合は、偽装を避けるためヘッダーを採用せず接続元IPへフォールバックする（フェイルクローズ）
+    - **過大設定に注意**: 実構成より大きい値（例: ALB1段なのに2）を設定すると、XFFが常に不採用となり全リクエストがプロキシの接続元IPに収束する。結果としてレート制限が全ユーザーで共有され、実質的なサービス停止になる。本番投入時は実際のプロキシ段数を確認し、投入直後に429の発生率を監視すること
 
 ## セキュリティ・プライバシー
 
 ### データ保存ポリシー
 - **ローカルストレージ優先**: 定型文、履歴、お気に入り、設定はすべて端末内（Hive）
 - **AI変換時のプライバシー**: 初回利用時に明示的な同意取得、プライバシーポリシー表示
-- **通信セキュリティ**: HTTPS/TLS 1.2+、JWT認証
+- **通信セキュリティ**: HTTPS/TLS 1.2+。AI変換エンドポイントは端末APIキー認証（`X-API-Key`ヘッダー、複数キー対応。開発/テスト環境では認証スキップ、本番では必須）
 - **データ削除**: ユーザーが任意に削除可能、アンインストール時全削除
 
 ### 環境変数管理

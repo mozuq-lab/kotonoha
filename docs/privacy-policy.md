@@ -67,7 +67,7 @@ AI変換機能（オプション）を使用する場合のみ、以下のデー
 
 プライバシーに関するご質問は、以下までお問い合わせください。
 
-- サポートURL: https://github.com/kotonoha-app/kotonoha/issues
+- サポートURL: https://github.com/mozuq-lab/kotonoha/issues
 - メール: support@kotonoha-app.example.com
 
 ---
@@ -134,5 +134,5 @@ If we make changes to this policy, we will notify you on this page. For signific
 
 For privacy-related questions, please contact us:
 
-- Support URL: https://github.com/kotonoha-app/kotonoha/issues
+- Support URL: https://github.com/mozuq-lab/kotonoha/issues
 - Email: support@kotonoha-app.example.com

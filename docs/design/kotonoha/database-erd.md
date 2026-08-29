@@ -3,6 +3,9 @@
 ## 🔵 信頼性レベル
 
 このER図は `database-schema.sql` に基づいて作成されています。
+`database-schema.sql` は Alembic マイグレーション（`backend/alembic/versions/`）と
+SQLAlchemy モデル（`backend/app/models/`）の実装に合わせて記述されており、
+本ER図もそれに追従しています（2026-08-24 更新）。
 
 - 🟡 **黄信号**: EARS要件定義書・設計文書から妥当な推測によるスキーマ
   - AI変換ログとエラーログは将来的な拡張と統計用であり、MVP範囲で必須ではない
@@ -12,28 +15,28 @@
 ```mermaid
 erDiagram
     ai_conversion_logs {
-        uuid id PK "Primary Key (UUID)"
+        serial id PK "Primary Key (整数・自動採番)"
         varchar input_text_hash "変換元テキストのSHA-256ハッシュ"
         integer input_length "変換元テキストの文字数"
-        varchar converted_text_hash "変換後テキストのSHA-256ハッシュ"
-        integer converted_length "変換後テキストの文字数"
+        integer output_length "変換後テキストの文字数"
         varchar politeness_level "丁寧さレベル (casual/normal/polite)"
+        integer conversion_time_ms "変換処理時間（ミリ秒）"
+        varchar ai_provider "AIプロバイダー名 (anthropic/openai)"
         boolean is_success "変換成功フラグ"
-        varchar error_code "エラーコード（失敗時）"
-        integer processing_time_ms "処理時間（ミリ秒）"
-        integer api_status_code "外部APIレスポンスコード"
-        timestamp created_at "作成日時"
+        text error_message "エラーメッセージ（失敗時）"
+        uuid session_id "セッションID"
+        timestamptz created_at "作成日時"
     }
 
     error_logs {
-        uuid id PK "Primary Key (UUID)"
-        varchar error_code "エラーコード"
+        serial id PK "Primary Key (整数・自動採番)"
+        varchar error_type "エラータイプ（例外クラス名等）"
         text error_message "エラーメッセージ"
-        varchar error_location "エラー発生場所"
-        integer http_status_code "HTTPステータスコード"
+        varchar error_code "エラーコード（例: AI_001）"
+        varchar endpoint "エラー発生エンドポイント"
+        varchar http_method "HTTPメソッド"
         text stack_trace "スタックトレース"
-        jsonb context "追加コンテキスト情報"
-        timestamp created_at "作成日時"
+        timestamptz created_at "作成日時"
     }
 ```
 
@@ -44,20 +47,23 @@ erDiagram
 **目的**: AI変換機能の使用状況・学習データ収集用（将来的な機能改善用）
 
 **プライバシー保護**:
-- 入力テキストと変換テキストはSHA-256ハッシュ化して保存
+- 入力テキストはSHA-256ハッシュ化して保存（本文は保存しない）
+- 変換後テキストは本文もハッシュも保存せず、文字数（`output_length`）のみ記録
 - 個人を特定できる情報は保存しない
-- 統計用に文字数のみ記録
 
 **主なカラム**:
 - `input_text_hash`: 変換元テキストのハッシュ値（プライバシー保護）
-- `converted_text_hash`: 変換後テキストのハッシュ値（プライバシー保護）
-- `politeness_level`: 丁寧さレベル（casual/normal/polite）
-- `processing_time_ms`: NFR-002（平均3秒以内）の監視用
-- `is_success`: 変換成功/失敗フラグ
-- `error_code`: エラー発生時のコード
+- `output_length`: 変換後テキストの文字数（統計用）
+- `politeness_level`: 丁寧さレベル（casual/normal/polite。CHECK制約 `check_politeness_level`）
+- `conversion_time_ms`: NFR-002（平均3秒以内）の監視用
+- `ai_provider`: 使用したAIプロバイダー（アプリ層のデフォルトは `anthropic`）
+- `is_success` / `error_message`: 変換成功/失敗フラグと失敗時のメッセージ
+- `session_id`: 端末セッションID（UUID。アプリ層で生成）
 
 **インデックス**:
 - `idx_ai_conversion_logs_created_at`: 作成日時での検索用（降順）
+- `idx_ai_conversion_logs_hash`: `input_text_hash` の検索用
+- `idx_ai_conversion_logs_session`: `session_id` の検索用
 
 **関連要件**:
 - REQ-901: AI変換機能
@@ -71,15 +77,15 @@ erDiagram
 **目的**: システムエラー・APIエラーの記録用（デバッグ・監視用）
 
 **主なカラム**:
-- `error_code`: エラーコード（システム全体で統一）
+- `error_type`: エラータイプ（例外クラス名等の種別）
 - `error_message`: エラーメッセージ
-- `error_location`: エラー発生場所（モジュール名・関数名等）
-- `http_status_code`: API関連エラーの場合のHTTPステータス
+- `error_code`: エラーコード（例: `AI_001`）
+- `endpoint`: エラーが発生したAPIエンドポイントのパス
+- `http_method`: HTTPメソッド
 - `stack_trace`: スタックトレース（開発環境のみ保存推奨）
-- `context`: 追加のコンテキスト情報（JSON形式、柔軟な情報保存）
 
 **インデックス**:
-- `idx_error_logs_code_created`: エラーコードと作成日時での検索用
+- `idx_error_logs_type`: エラータイプ別の検索用
 - `idx_error_logs_created_at`: 作成日時での検索用（降順）
 
 **関連要件**:
@@ -125,12 +131,13 @@ erDiagram
 ## セキュリティとパフォーマンス
 
 ### プライバシー保護
-- AI変換の入力/出力テキストはSHA-256ハッシュ化
+- AI変換の入力テキストはSHA-256ハッシュ化（本文は保存しない）
+- 変換後テキストは保存せず、文字数のみ記録
 - 個人を特定できる情報は保存しない
 - 統計用途のみで使用
 
 ### パフォーマンス最適化
-- 適切なインデックス設定（created_at降順、error_code）
+- 適切なインデックス設定（created_at降順、input_text_hash、session_id、error_type）
 - autovacuum機能の有効化
 - 定期的なVACUUM ANALYZE（自動実行）
 
@@ -165,3 +172,10 @@ erDiagram
   - MVP範囲のER図作成
   - テーブル詳細説明追加
   - 将来拡張テーブルの記載
+- **2026-08-24**: 実装との乖離を解消（`backend/alembic/versions/` と `backend/app/models/` に合わせて更新）
+  - 主キーを UUID → SERIAL に修正
+  - `ai_conversion_logs`: `converted_text_hash` / `converted_length` / `api_status_code` を削除し、
+    実装どおり `output_length` / `conversion_time_ms` / `ai_provider` / `session_id` / `error_message` を記載
+  - `error_logs`: `error_location` / `http_status_code` / `context(JSONB)` を削除し、
+    実装どおり `error_type` / `endpoint` / `http_method` を記載
+  - インデックス一覧を実装に合わせて修正

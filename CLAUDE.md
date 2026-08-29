@@ -44,11 +44,11 @@ Tsumikiは、要件定義から設計、タスク管理、テスト駆動実装�
 ## 技術スタック
 
 - **フロントエンド**: Flutter 3.38.1 + Riverpod 3.x（`flutter_riverpod: ^3.1.0`）
-- **バックエンド**: FastAPI 0.121 + SQLAlchemy 2.x + PostgreSQL 15+
+- **バックエンド**: FastAPI 0.124 + SQLAlchemy 2.x + PostgreSQL 15+
 - **IaC**: AWS CDK 2.x (TypeScript)
 - **開発環境**: Docker + Docker Compose
 
-詳細な技術スタック、セットアップ手順、推奨ディレクトリ構造については `docs/tech-stack.md` を参照してください。
+詳細な技術スタック、セットアップ手順、ディレクトリ構造については `docs/tech-stack.md` を参照してください。
 
 ## アーキテクチャの重要な設計判断
 
@@ -102,13 +102,24 @@ backend/、frontend/、docker/などのコード構造については `docs/tech
 # Docker環境起動
 docker-compose up -d
 
-# バックエンドサーバー起動
-cd backend
-uvicorn app.main:app --reload
+# バックエンドサーバー起動（リポジトリルートから）
+(cd backend && uvicorn app.main:app --reload)
 
-# Flutterアプリ起動
+# Flutterアプリ起動（ローカルのdocker-compose構成ならデフォルトのままでよい）
+# 以降はリポジトリルートから frontend/kotonoha_app に移動した状態で実行する
 cd frontend/kotonoha_app
 flutter run -d chrome
+
+# 接続先・端末APIキーを差し替える場合はルート .env から --dart-define で渡す。
+# 空文字を渡すと String.fromEnvironment の defaultValue が打ち消されるため、
+# 未設定キーは必ずフォールバックで補うこと。
+# ルート .env が未作成だと source が失敗する（set -e 環境では中断する）
+set -a; source ../../.env; set +a
+DEFINES=(--dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:8000}")
+if [ -n "${AI_API_KEY:-}" ]; then
+  DEFINES+=(--dart-define=AI_API_KEY="$AI_API_KEY")
+fi
+flutter run -d chrome "${DEFINES[@]}"
 
 # テスト実行
 pytest                    # Backend

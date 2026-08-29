@@ -1,5 +1,16 @@
 # Phase 1: 開発環境構築・基盤実装
 
+> **この文書は作成当時（2025-11〜）の実装計画の記録です。**
+> 記載のバージョン・スキーマ・ディレクトリ構成・コード例には、その後の実装で変更された
+> ものが含まれます（例: FastAPI 0.121 / Riverpod 2.x、`ai_conversion_history` テーブル、
+> `mobile/` ディレクトリ）。**現行の正は以下を参照してください。**
+>
+> - 技術スタック・セットアップ: [`README.md`](../../README.md) / [`docs/SETUP.md`](../SETUP.md) / [`docs/tech-stack.md`](../tech-stack.md)
+> - 設計・DBスキーマ: [`docs/design/kotonoha/`](../design/kotonoha/)
+> - DBスキーマの正: `backend/alembic/versions/` と `backend/app/models/`
+>
+> 経緯を追う目的以外での参照は避け、この文書自体は歴史記録として更新しません。
+
 ## フェーズ概要
 
 - **期間**: Week 1-4 (20営業日)
@@ -2431,7 +2442,7 @@
 
    ### 1. リポジトリクローン
    ```bash
-   git clone https://github.com/yourusername/kotonoha.git
+   git clone https://github.com/mozuq-lab/kotonoha.git
    cd kotonoha
    ```
 

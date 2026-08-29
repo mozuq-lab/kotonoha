@@ -10,15 +10,39 @@
 -- 1. ユーザーデータ（定型文・履歴・お気に入り・設定）は端末内ローカルストレージ（Hive）に保存 (NFR-101)
 -- 2. このPostgreSQLスキーマは主にバックエンドAPIの内部処理用（AI変換ログ、将来的な拡張用）
 -- 3. MVP範囲では最小限のテーブル構成とする
+--
+-- ================================================================================
+-- 本ファイルの位置づけ（2026-08-24 更新）
+-- ================================================================================
+-- スキーマの正（Single Source of Truth）は Alembic マイグレーションと SQLAlchemy モデル:
+--   - backend/alembic/versions/b5d6e2f8c9a0_add_ai_conversion_logs_and_error_logs.py
+--   - backend/alembic/versions/e1f2a3b4c5d6_drop_ai_conversion_history.py（history 廃止）
+--   - backend/app/models/ai_conversion_logs.py / backend/app/models/error_logs.py
+-- 以下の有効なDDLは、上記の実装に一致するよう記述している（実装が変わったら本ファイルも更新すること）。
+-- 実際のDB構築は `alembic upgrade head` で行い、このファイルを直接流し込む運用はしない。
+--
+-- 設計当初案から実装で変更された点（記録として残す）:
+--   - 主キー: UUID(uuid_generate_v4()) → SERIAL（整数）
+--   - ai_conversion_logs: converted_text_hash / converted_length / api_status_code は未実装。
+--     代わりに output_length / conversion_time_ms / ai_provider / session_id / error_message を保持。
+--     変換後テキストはハッシュも含め一切保存しない方針に変更（プライバシー強化）。
+--   - error_logs: error_location / http_status_code / context(JSONB) は未実装。
+--     代わりに error_type / endpoint / http_method を保持。
+--   - コメントアウト済みの「将来的な拡張用テーブル」は設計上の構想であり、実装予定は未定。
+--
+-- なお `schema_info` テーブルと `uuid-ossp` / `pg_trgm` 拡張は
+-- docker/postgres/init.sql がコンテナ初期化時に作成する（Alembic 管理外）。
 
 -- ================================================================================
 -- 拡張機能の有効化
 -- ================================================================================
 
--- UUID生成用拡張（id生成に使用）
+-- UUID生成用拡張。実装では主キーは SERIAL のため必須ではないが、
+-- docker/postgres/init.sql が初期化時に有効化している（将来の拡張テーブル用）。
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- タイムスタンプ自動更新用関数
+-- ※ 現行の2テーブルは updated_at を持たないため未使用。後述の将来拡張テーブル用。
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -34,46 +58,56 @@ $$ LANGUAGE plpgsql;
 -- ================================================================================
 
 CREATE TABLE ai_conversion_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    -- SQLAlchemy の Integer + autoincrement 主キーは PostgreSQL では SERIAL になる
+    id SERIAL PRIMARY KEY,
 
-    -- 変換元テキスト（ハッシュ化して保存、元のテキストは保存しない）
+    -- 変換元テキスト（SHA-256でハッシュ化して保存、元のテキストは保存しない）
     input_text_hash VARCHAR(64) NOT NULL,
 
     -- 変換元テキストの文字数（統計用）
     input_length INTEGER NOT NULL,
 
-    -- 変換後テキスト（ハッシュ化して保存、元のテキストは保存しない）
-    converted_text_hash VARCHAR(64) NOT NULL,
-
-    -- 変換後テキストの文字数（統計用）
-    converted_length INTEGER NOT NULL,
+    -- 変換後テキストの文字数（統計用。変換後テキスト自体はハッシュも含め保存しない）
+    output_length INTEGER NOT NULL,
 
     -- 丁寧さレベル
-    politeness_level VARCHAR(20) NOT NULL CHECK (politeness_level IN ('casual', 'normal', 'polite')),
+    politeness_level VARCHAR(20) NOT NULL,
+
+    -- 変換処理時間（ミリ秒）
+    conversion_time_ms INTEGER,
+
+    -- AIプロバイダー名（'anthropic' / 'openai'。アプリ層のデフォルトは 'anthropic'）
+    ai_provider VARCHAR(50),
 
     -- 変換成功フラグ
     is_success BOOLEAN NOT NULL DEFAULT TRUE,
 
-    -- エラーコード（失敗時）
-    error_code VARCHAR(50),
+    -- エラーメッセージ（失敗時のみ）
+    error_message TEXT,
 
-    -- 変換処理時間（ミリ秒）
-    processing_time_ms INTEGER,
-
-    -- 外部AI APIのレスポンスステータスコード
-    api_status_code INTEGER,
+    -- セッションID（端末セッションの識別用。アプリ層で uuid4 を生成）
+    session_id UUID NOT NULL,
 
     -- 作成日時
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- 丁寧さレベルの許容値（小文字。マイグレーション c1a2b3d4e5f6 で小文字に統一済み）
+    CONSTRAINT check_politeness_level
+        CHECK (politeness_level IN ('casual', 'normal', 'polite'))
 );
 
 -- インデックス: 作成日時での検索用
 CREATE INDEX idx_ai_conversion_logs_created_at ON ai_conversion_logs(created_at DESC);
+-- インデックス: ハッシュ検索用
+CREATE INDEX idx_ai_conversion_logs_hash ON ai_conversion_logs(input_text_hash);
+-- インデックス: セッションごとのログ取得用
+CREATE INDEX idx_ai_conversion_logs_session ON ai_conversion_logs(session_id);
 
-COMMENT ON TABLE ai_conversion_logs IS 'AI変換の使用ログ（プライバシー保護のためハッシュ化）';
+COMMENT ON TABLE ai_conversion_logs IS 'AI変換の使用ログ（入力はハッシュ化、出力は文字数のみ）';
 COMMENT ON COLUMN ai_conversion_logs.input_text_hash IS '変換元テキストのSHA-256ハッシュ値';
-COMMENT ON COLUMN ai_conversion_logs.converted_text_hash IS '変換後テキストのSHA-256ハッシュ値';
-COMMENT ON COLUMN ai_conversion_logs.processing_time_ms IS '変換処理時間（NFR-002: 平均3秒以内の監視用）';
+COMMENT ON COLUMN ai_conversion_logs.output_length IS '変換後テキストの文字数（本文・ハッシュは保存しない）';
+COMMENT ON COLUMN ai_conversion_logs.conversion_time_ms IS '変換処理時間（NFR-002: 平均3秒以内の監視用）';
+COMMENT ON COLUMN ai_conversion_logs.session_id IS '端末セッションID（個人を特定する情報ではない）';
 
 -- ================================================================================
 -- エラーログテーブル 🟡
@@ -81,36 +115,38 @@ COMMENT ON COLUMN ai_conversion_logs.processing_time_ms IS '変換処理時間�
 -- ================================================================================
 
 CREATE TABLE error_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id SERIAL PRIMARY KEY,
 
-    -- エラーコード
-    error_code VARCHAR(50) NOT NULL,
+    -- エラータイプ（例: 'NetworkException', 'ValidationError'）
+    error_type VARCHAR(100) NOT NULL,
 
     -- エラーメッセージ
     error_message TEXT NOT NULL,
 
-    -- エラー発生場所（モジュール名・関数名等）
-    error_location VARCHAR(255),
+    -- エラーコード（例: 'AI_001'）
+    error_code VARCHAR(50),
 
-    -- HTTPステータスコード（API関連エラーの場合）
-    http_status_code INTEGER,
+    -- エラー発生エンドポイント（例: '/api/v1/ai/convert'）
+    endpoint VARCHAR(255),
+
+    -- HTTPメソッド（例: 'POST'）
+    http_method VARCHAR(10),
 
     -- スタックトレース（開発環境のみ保存）
     stack_trace TEXT,
 
-    -- 追加のコンテキスト情報（JSON形式）
-    context JSONB,
-
     -- 作成日時
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- インデックス: エラーコードと作成日時での検索用
-CREATE INDEX idx_error_logs_code_created ON error_logs(error_code, created_at DESC);
+-- インデックス: エラータイプ別検索用
+CREATE INDEX idx_error_logs_type ON error_logs(error_type);
+-- インデックス: 作成日時での検索用
 CREATE INDEX idx_error_logs_created_at ON error_logs(created_at DESC);
 
 COMMENT ON TABLE error_logs IS 'システムエラーログ（デバッグ・監視用）';
-COMMENT ON COLUMN error_logs.context IS 'エラー発生時の追加情報（JSON形式、柔軟な情報保存用）';
+COMMENT ON COLUMN error_logs.error_type IS '例外クラス名等のエラー種別';
+COMMENT ON COLUMN error_logs.endpoint IS 'エラーが発生したAPIエンドポイントのパス';
 
 -- ================================================================================
 -- 将来的な拡張用テーブル（MVP範囲外、コメントアウト） 🔴
@@ -229,21 +265,21 @@ WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '30 days';
 INSERT INTO ai_conversion_logs (
     input_text_hash,
     input_length,
-    converted_text_hash,
-    converted_length,
+    output_length,
     politeness_level,
+    conversion_time_ms,
+    ai_provider,
     is_success,
-    processing_time_ms,
-    api_status_code
+    session_id
 ) VALUES (
     encode(digest('水 ぬるく', 'sha256'), 'hex'),
     5,
-    encode(digest('お水をぬるめでお願いします', 'sha256'), 'hex'),
     13,
     'normal',
-    TRUE,
     2500,
-    200
+    'anthropic',
+    TRUE,
+    gen_random_uuid()
 );
 */
 

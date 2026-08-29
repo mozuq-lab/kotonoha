@@ -35,7 +35,7 @@
 ### 1. リポジトリのクローン
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/mozuq-lab/kotonoha.git
 cd kotonoha
 ```
 
@@ -90,7 +90,7 @@ TRUSTED_PROXY_COUNT=0
 > **既存環境からの移行**: 以前はルート `.env` に `API_KEYS` 等のアプリ設定を
 > 書く構成でした。これらは compose 経由で渡らなくなったため、
 > `backend/.env` へ移してください。移していない場合、
-> APIキー認証は無効（development では認証スキップ）のまま動作します。
+> APIキー認証は無効（`ENVIRONMENT` が `development` / `test` のときのみ認証スキップ）のまま動作します。
 
 > **注意**: `SECRET_KEY` はセキュリティ上重要です。本番環境では十分にランダムな文字列を使用してください。
 >
@@ -235,6 +235,10 @@ flutter pub outdated
 
 ### 3. アプリの起動
 
+ローカルの docker-compose 構成をそのまま使う場合、`--dart-define` は不要です
+（アプリ側のデフォルトが `API_BASE_URL=http://localhost:8000`、`AI_API_KEY` は空文字。
+実装: `frontend/kotonoha_app/lib/features/ai_conversion/providers/ai_conversion_provider.dart`）。
+
 ```bash
 # Web版で起動
 flutter run -d chrome
@@ -251,15 +255,47 @@ flutter run
 flutter devices
 ```
 
+接続先を変える場合や、`backend/.env` の `API_KEYS` を設定してAPIキー認証を有効にした場合は、
+ルート `.env` の値を `--dart-define` で埋め込みます（Flutterは `.env` を直接読みません）。
+
+```bash
+# ルート .env を環境変数に展開（frontend/kotonoha_app から見た相対パス）
+# ルート .env が未作成だと source が失敗する（set -e 環境では中断する）
+set -a; source ../../.env; set +a
+
+# 未設定のキーはフォールバックで補う（空文字を渡すとデフォルトが打ち消されるため）
+DEFINES=(--dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:8000}")
+if [ -n "${AI_API_KEY:-}" ]; then
+  DEFINES+=(--dart-define=AI_API_KEY="$AI_API_KEY")
+fi
+
+flutter run -d chrome "${DEFINES[@]}"
+```
+
+> **空の `--dart-define` を渡さないこと。** `String.fromEnvironment` は「値が定義されたか」で
+> 判定するため、`--dart-define=API_BASE_URL=` のように空文字を渡すと `defaultValue` が無効になり、
+> `baseUrl` が空文字の Dio が作られてAI変換が失敗します（Dart 3.10.0 で実測確認）。
+> ルート `.env` に `API_BASE_URL` / `AI_API_KEY` が無い環境（`.env.example` への追加より前に
+> 作られた `.env`）でも壊れないよう、上記のようにフォールバック付きで組み立ててください。
+
+> `backend/.env` の `API_KEYS` が未設定の場合、`ENVIRONMENT` が `development` または `test` の
+> ときだけバックエンドが認証をスキップします（`backend/app/api/deps.py` の
+> `_AUTH_OPTIONAL_ENVIRONMENTS`）。`staging` / `production` では 503 で拒否されます。
+
 ### コマンド一覧
 
 ```bash
-# アプリ起動
+# アプリ起動（接続先・APIキーは --dart-define で渡す。上記「4. アプリの起動」参照）
 flutter run
 flutter run -d chrome          # Web
 flutter run -d <device_id>     # 特定のデバイス
 
-# ビルド
+# ビルド: --dart-define を自動付与するビルドスクリプトの利用を推奨
+#   set -a; source .env; set +a        # リポジトリルートで実行
+#   ./scripts/build-web.sh release
+#   ./scripts/build-android.sh release
+#   ./scripts/build-ios.sh release
+# 素の flutter コマンドを使う場合は --dart-define を自分で付けること
 flutter build apk              # Android APK
 flutter build ios              # iOS
 flutter build web              # Web
@@ -374,12 +410,21 @@ docker exec -it kotonoha_postgres psql -U kotonoha_user -d kotonoha_db
 # テーブル一覧を確認
 \dt
 
-# ai_conversion_historyテーブルの構造を確認
-\d ai_conversion_history
+# AI変換ログ・エラーログテーブルの構造を確認
+\d ai_conversion_logs
+\d error_logs
+
+# 適用済みマイグレーションのリビジョンを確認
+SELECT * FROM alembic_version;
 
 # 終了
 \q
 ```
+
+> `ai_conversion_history` テーブルは廃止済みです（マイグレーション
+> `e1f2a3b4c5d6_drop_ai_conversion_history`。平文保存をやめ、ハッシュ化された
+> `ai_conversion_logs` に一本化）。現行のアプリケーションテーブルは
+> `ai_conversion_logs` と `error_logs` の2つです。
 
 ## トラブルシューティング
 

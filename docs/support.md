@@ -26,7 +26,7 @@
 
 技術的な問題やバグ報告、機能リクエストは、GitHubのIssuesをご利用ください。
 
-- URL: https://github.com/kotonoha-app/kotonoha/issues
+- URL: https://github.com/mozuq-lab/kotonoha/issues
 
 #### 2. メール
 
@@ -75,7 +75,7 @@ Please refer to the following documents for detailed FAQ:
 
 For technical issues, bug reports, or feature requests, please use GitHub Issues.
 
-- URL: https://github.com/kotonoha-app/kotonoha/issues
+- URL: https://github.com/mozuq-lab/kotonoha/issues
 
 #### 2. Email
 

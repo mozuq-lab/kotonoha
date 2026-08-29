@@ -19,8 +19,8 @@
 ## 🚀 フロントエンド（モバイル・Web）
 
 ### フレームワーク・言語
-- **Flutter**: 3.38.1 (2025年11月時点の最新安定版)
-- **Dart**: 3.10+
+- **Flutter**: 3.38.1 (CI/CDのピン留めバージョン。`.github/workflows/*.yml` の `FLUTTER_VERSION`)
+- **Dart**: 3.10（Flutter 3.38.1 同梱。`pubspec.lock` の解決下限は 3.9.0、`pubspec.yaml` の宣言は `>=3.5.0 <4.0.0`）
 - **対応プラットフォーム**: iOS / Android / Web
 
 ### 状態管理
@@ -35,7 +35,7 @@
 - **Cupertino**: iOS風UIコンポーネント
 
 ### ルーティング
-- **go_router**: 宣言的ルーティング、ディープリンク対応
+- **go_router**: 17.x（`go_router: ^17.0.1`）宣言的ルーティング、ディープリンク対応
 
 ### HTTP通信
 - **dio**: 強力なHTTPクライアント、インターセプター対応
@@ -55,13 +55,13 @@
 ## ⚙️ バックエンド
 
 ### フレームワーク・言語
-- **FastAPI**: 0.121+ (2025年11月時点の最新版)
+- **FastAPI**: 0.124+ (`backend/requirements.txt` は `fastapi==0.124.0` を固定)
 - **Python**: 3.10+ (Pythonの安定版、Alembic要件を満たす)
 - **Uvicorn**: ASGIサーバー（FastAPI標準）
 
 ### ORM・データベース接続
 - **SQLAlchemy**: 2.x (最新版、async対応)
-- **Alembic**: 1.17+ (データベースマイグレーションツール)
+- **Alembic**: 1.18+ (データベースマイグレーションツール。`alembic==1.18.3` を固定)
 - **asyncpg**: 非同期PostgreSQLドライバ
 
 ### 認証・セキュリティ
@@ -280,92 +280,106 @@
 - **Flutter**: Semanticsウィジェット使用
 - **WCAG 2.1 AA**: 基本的な準拠を目指す
 
-## 📁 推奨ディレクトリ構造
+## 📁 ディレクトリ構造
+
+以下は**実際のリポジトリ構成**（2026-08-24 時点）。
+初期生成時は `mobile/` + `infra/`（AWS CDK）を想定していたが、実装では Flutter アプリを
+`frontend/kotonoha_app/` に置き、`infra/` は未作成（IaCはMVP範囲外のため未着手）。
 
 ```
 kotonoha/
-├── mobile/                      # Flutter アプリケーション
-│   ├── lib/
-│   │   ├── main.dart           # エントリーポイント
-│   │   ├── app.dart            # アプリルート
-│   │   ├── features/           # 機能ごとのモジュール
-│   │   │   ├── auth/           # 認証機能
-│   │   │   │   ├── data/       # リポジトリ、データソース
-│   │   │   │   ├── domain/     # エンティティ、ユースケース
-│   │   │   │   └── presentation/  # UI、状態管理
-│   │   │   └── home/           # ホーム機能
-│   │   ├── core/               # 共通機能
-│   │   │   ├── network/        # API クライアント
-│   │   │   ├── storage/        # ローカルストレージ
-│   │   │   ├── router/         # ルーティング
-│   │   │   └── constants/      # 定数
-│   │   ├── shared/             # 共有ウィジェット・ユーティリティ
-│   │   │   ├── widgets/        # 再利用可能ウィジェット
-│   │   │   └── utils/          # ヘルパー関数
-│   │   └── gen/                # 自動生成ファイル
-│   ├── test/                   # テストファイル
-│   ├── integration_test/       # 統合テスト
-│   ├── assets/                 # 画像、フォント等
-│   ├── pubspec.yaml
-│   ├── analysis_options.yaml
-│   └── README.md
-│
-├── infra/                       # AWS CDK インフラ定義
-│   ├── bin/
-│   │   └── kotonoha-infra.ts   # CDKアプリエントリーポイント
-│   ├── lib/
-│   │   ├── network-stack.ts    # VPC、サブネット
-│   │   ├── database-stack.ts   # RDS PostgreSQL
-│   │   ├── backend-stack.ts    # ECS/Fargate
-│   │   ├── monitoring-stack.ts # CloudWatch
-│   │   └── storage-stack.ts    # S3、Secrets Manager
-│   ├── test/                    # CDKスタックテスト
-│   ├── cdk.json
-│   ├── tsconfig.json
-│   ├── package.json
-│   └── README.md
+├── frontend/
+│   └── kotonoha_app/            # Flutter アプリケーション
+│       ├── lib/
+│       │   ├── main.dart        # エントリーポイント
+│       │   ├── app.dart         # アプリルート
+│       │   ├── features/        # 機能ごとのモジュール
+│       │   │   ├── character_board/   # 文字盤入力
+│       │   │   ├── preset_phrase/     # 定型文
+│       │   │   ├── tts/               # 音声読み上げ
+│       │   │   ├── history/           # 入力履歴
+│       │   │   ├── favorite/          # お気に入り
+│       │   │   ├── emergency/         # 緊急ボタン
+│       │   │   ├── ai_conversion/     # AI変換
+│       │   │   ├── settings/          # 設定
+│       │   │   └── ...                # 他、face_to_face / simple_mode 等
+│       │   │       ├── data/          # 各featureの構成: リポジトリ、APIクライアント
+│       │   │       ├── domain/        #                 エンティティ、例外
+│       │   │       ├── presentation/  #                 UI（画面・ウィジェット）
+│       │   │       └── providers/     #                 Riverpod プロバイダ
+│       │   ├── core/            # 共通機能
+│       │   │   ├── router/      # go_router 定義
+│       │   │   ├── themes/      # テーマ（ライト/ダーク/高コントラスト）
+│       │   │   ├── constants/   # 定数
+│       │   │   ├── widgets/     # 共通ウィジェット
+│       │   │   └── utils/       # ヘルパー関数
+│       │   ├── shared/          # 共有モデル・プロバイダ・ウィジェット
+│       │   └── l10n/            # 多言語化リソース（app_ja.arb）
+│       ├── test/                # 単体・ウィジェットテスト
+│       ├── integration_test/    # E2E/統合テスト
+│       ├── test_driver/         # flutter drive 用ドライバ
+│       ├── assets/              # 音声等のアセット
+│       ├── pubspec.yaml
+│       ├── analysis_options.yaml
+│       └── README.md
 │
 ├── backend/                     # FastAPI バックエンド
 │   ├── app/
 │   │   ├── main.py             # FastAPIアプリエントリーポイント
 │   │   ├── api/                # APIエンドポイント
-│   │   │   ├── v1/             # APIバージョニング
-│   │   │   │   ├── endpoints/  # 各エンドポイント
-│   │   │   │   │   ├── auth.py
-│   │   │   │   │   └── users.py
+│   │   │   ├── v1/
+│   │   │   │   ├── endpoints/  # ai.py（AI変換）、health.py
 │   │   │   │   └── api.py      # ルーター統合
-│   │   │   └── deps.py         # 依存性注入
+│   │   │   └── deps.py         # 依存性注入・APIキー認証
 │   │   ├── core/               # コア機能
-│   │   │   ├── config.py       # 設定管理
-│   │   │   ├── security.py     # 認証・セキュリティ
-│   │   │   └── database.py     # DB接続設定
+│   │   │   ├── config.py       # 設定管理（pydantic-settings）
+│   │   │   ├── security.py     # APIキー検証
+│   │   │   ├── rate_limit.py   # レート制限（slowapi）
+│   │   │   ├── exceptions.py   # 例外定義
+│   │   │   └── logging_config.py
+│   │   ├── db/                 # DB接続設定・ベースクラス
 │   │   ├── models/             # SQLAlchemy モデル
 │   │   ├── schemas/            # Pydantic スキーマ
 │   │   ├── crud/               # CRUD操作
-│   │   ├── services/           # ビジネスロジック
-│   │   └── utils/              # ユーティリティ
+│   │   └── utils/              # AIクライアント、ハッシュ等
 │   ├── alembic/                # データベースマイグレーション
 │   │   ├── versions/           # マイグレーションファイル
 │   │   └── env.py
 │   ├── tests/                  # テストファイル
 │   │   ├── conftest.py         # pytest設定
 │   │   ├── test_api/           # APIテスト
-│   │   └── test_services/      # サービステスト
+│   │   └── test_security/      # 認証テスト
 │   ├── requirements.txt        # Python依存関係
-│   ├── requirements-dev.txt    # 開発用依存関係
-│   ├── .env.example            # 環境変数サンプル
-│   ├── pyproject.toml          # Ruff/Black設定
-│   └── README.md
+│   ├── .env.example            # 環境変数サンプル（アプリ設定）
+│   ├── pyproject.toml          # Ruff/Black/pytest設定
+│   ├── Makefile
+│   └── Dockerfile              # 本番用（マルチステージ・非root）
+│
+├── docker/                      # 開発環境用Docker設定
+│   ├── backend/Dockerfile      # 開発用（--reload 有効）
+│   └── postgres/               # Dockerfile + init.sql
+│
+├── scripts/                     # ビルドスクリプト
+│   ├── build-web.sh
+│   ├── build-android.sh
+│   └── build-ios.sh
 │
 ├── docs/                        # プロジェクトドキュメント
 │   ├── tech-stack.md           # このファイル
-│   ├── api-design.md           # API設計書（将来作成）
-│   └── architecture.md         # アーキテクチャ設計（将来作成）
+│   ├── SETUP.md                # セットアップガイド
+│   ├── spec/                   # 要件定義（EARS記法）
+│   ├── design/                 # 技術設計
+│   ├── tasks/                  # タスク管理
+│   └── implements/             # TDD実施記録
 │
+├── .github/workflows/           # CI/CD（flutter.yml / python.yml / release.yml）
 ├── docker-compose.yml           # 開発環境Docker設定
-├── .gitignore
+├── .env.example                 # ルート環境変数サンプル（compose変数展開＋Flutterビルド）
+├── .pre-commit-config.yaml
+├── CONTRIBUTING.md
+├── CHANGELOG.md
+├── CLAUDE.md / AGENTS.md        # エージェント向けガイド
 └── README.md                    # プロジェクト概要
-
 ```
 
 ## 🚀 セットアップ手順
@@ -379,7 +393,7 @@ kotonoha/
 ### 1. リポジトリクローン・初期設定
 ```bash
 # リポジトリクローン（既にある場合はスキップ）
-git clone <repository-url>
+git clone https://github.com/mozuq-lab/kotonoha.git
 cd kotonoha
 
 # 環境変数設定
@@ -425,27 +439,47 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ### 4. フロントエンド（Flutter）セットアップ
 ```bash
-cd mobile
+cd frontend/kotonoha_app
 
 # Flutter バージョン確認（FVM使用の場合）
-fvm use 3.38.1  # またはインストール済みの最新安定版
+fvm use 3.38.1  # CI（.github/workflows/*.yml の FLUTTER_VERSION）と同じバージョン
 
 # 依存関係インストール
 flutter pub get
 
+# ルート .env の API_BASE_URL / AI_API_KEY を --dart-define で渡す
+# （Flutterは .env を直接読まないため、環境変数に展開して渡す）
+# 未設定のキーはフォールバックで補う。空文字を渡すと defaultValue が打ち消されるため必須。
+# ルート .env が未作成だと source が失敗する（set -e 環境では中断する）
+set -a; source ../../.env; set +a
+DEFINES=(--dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:8000}")
+if [ -n "${AI_API_KEY:-}" ]; then
+  DEFINES+=(--dart-define=AI_API_KEY="$AI_API_KEY")
+fi
+
 # iOS シミュレーター起動（macOS）
 open -a Simulator
-flutter run
+flutter run "${DEFINES[@]}"
 
 # Android エミュレーター起動
 flutter emulators --launch <emulator_id>
-flutter run
+flutter run "${DEFINES[@]}"
 
 # Web で起動
-flutter run -d chrome
+flutter run -d chrome "${DEFINES[@]}"
 ```
 
+`--dart-define` を完全に省略した場合はアプリ側のデフォルト
+（`API_BASE_URL=http://localhost:8000`、`AI_API_KEY` は空文字）が使われる。
+ただし `--dart-define=API_BASE_URL=`（空文字）を渡すと `String.fromEnvironment` の
+`defaultValue` が無効になり、`baseUrl` が空文字になってAI変換が失敗する（Dart 3.10.0 で実測確認）。
+ルート `.env` に両キーが無い環境でも壊れないよう、必ず上記のフォールバック付きで組み立てること。
+
 ### 5. AWS CDKセットアップ（本番環境用）
+
+> **未着手**: `infra/` ディレクトリはまだ存在しない（IaCはMVP範囲外）。
+> 以下は将来の構成案であり、現時点では実行できない。
+
 ```bash
 cd infra
 
@@ -480,7 +514,7 @@ pytest tests/test_api/   # 特定のテストのみ
 
 #### フロントエンドテスト
 ```bash
-cd mobile
+cd frontend/kotonoha_app
 flutter test                      # 単体テスト
 flutter test --coverage          # カバレッジ測定
 # web は flutter drive 経由（integration_test/README.md 参照）
@@ -507,6 +541,20 @@ flutter test                      # テスト実行
 flutter analyze                   # 静的解析
 flutter pub outdated              # 依存関係の更新確認
 flutter clean                     # ビルドキャッシュクリア
+```
+
+`flutter run` / `flutter build` に接続先・APIキーを渡すときは
+`--dart-define=API_BASE_URL=... --dart-define=AI_API_KEY=...` を付ける
+（空文字を渡さないこと。前述のフォールバックを参照）。
+
+### ビルドスクリプト（--dart-define を自動付与・推奨）
+```bash
+# 環境変数 API_BASE_URL / AI_API_KEY を読み、未設定時のフォールバック込みで
+# --dart-define を組み立てる（空文字は渡さない）
+set -a; source .env; set +a         # リポジトリルートで実行
+./scripts/build-web.sh release      # Web（debug/release/profile/serve/clean）
+./scripts/build-android.sh release  # Android APK（bundle でAAB）
+./scripts/build-ios.sh release      # iOS アプリのビルドのみ（IPAは --archive / --testflight で生成）
 ```
 
 ### FastAPI
@@ -578,6 +626,12 @@ npm test                          # CDKスタックテスト実行
   - GitHub Actions CI/CD
 - **2026-07-19**: 記述と実装の乖離を修正
   - 状態管理をRiverpod 2.x → 3.x（`flutter_riverpod: ^3.1.0`）に修正（pubspec.yaml確認）
+- **2026-08-24**: 依存バージョン表記を実装と突き合わせて修正
+  - FastAPI 0.121+ → 0.124+（`backend/requirements.txt`: `fastapi==0.124.0`）
+  - Alembic 1.17+ → 1.18+（`backend/requirements.txt`: `alembic==1.18.3`）
+  - go_router のバージョン（17.x）を明記（`pubspec.yaml`: `go_router: ^17.0.1`）
+  - Dart の表記を「3.10（Flutter 3.38.1 同梱）」に統一（`bin/cache/dart-sdk/version` = 3.10.0 を確認。
+    `pubspec.lock` の `sdks.dart: ">=3.9.0"` はロックを解決できる下限であって使用中の版ではない）
 
 ---
 

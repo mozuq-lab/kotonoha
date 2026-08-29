@@ -22,9 +22,9 @@
 ## 技術スタック
 
 - **Flutter**: 3.38.1
-- **Dart**: 3.10+
-- **状態管理**: Riverpod 2.x
-- **ルーティング**: go_router
+- **Dart**: 3.10（Flutter 3.38.1 同梱。`pubspec.lock` の解決下限は 3.9.0、`pubspec.yaml` の宣言は `>=3.5.0 <4.0.0`）
+- **状態管理**: Riverpod 3.x（`flutter_riverpod: ^3.1.0`）
+- **ルーティング**: go_router 17.x
 - **ローカルストレージ**: Hive + shared_preferences
 - **HTTP通信**: dio
 - **TTS**: flutter_tts
@@ -87,7 +87,7 @@ lib/
 
 ### 前提条件
 - Flutter SDK 3.38.1以上
-- Dart 3.10以上
+- Dart 3.10（Flutter 3.38.1 に同梱。個別インストールは不要）
 - iOS: Xcode 15+
 - Android: Android Studio + SDK 33+
 
@@ -98,16 +98,38 @@ flutter pub get
 ```
 
 ### 実行
+
+ローカルの docker-compose 構成をそのまま使うなら `--dart-define` は不要です
+（デフォルトは `API_BASE_URL=http://localhost:8000` / `AI_API_KEY` は空文字。
+`lib/features/ai_conversion/providers/ai_conversion_provider.dart`）。
+
+接続先URLと端末APIキーを差し替える場合は、リポジトリルートの `.env` の値を
+`--dart-define` で埋め込みます（Flutterは `.env` を直接読みません）。
+
 ```bash
+# ルート .env を環境変数に展開し、未設定のキーはフォールバックで補う
+# ルート .env が未作成だと source が失敗する（set -e 環境では中断する）
+set -a; source ../../.env; set +a
+DEFINES=(--dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:8000}")
+if [ -n "${AI_API_KEY:-}" ]; then
+  DEFINES+=(--dart-define=AI_API_KEY="$AI_API_KEY")
+fi
+
 # Web
-flutter run -d chrome
+flutter run -d chrome "${DEFINES[@]}"
 
 # iOS（macOS環境）
-flutter run -d "iPhone 15 Pro"
+flutter run -d "iPhone 15 Pro" "${DEFINES[@]}"
 
 # Android
-flutter run -d <device_id>
+flutter run -d <device_id> "${DEFINES[@]}"
 ```
+
+> **空の `--dart-define` を渡さないこと。** `String.fromEnvironment` は「値が定義されたか」で
+> 判定するため、`--dart-define=API_BASE_URL=` のように空文字を渡すと `defaultValue` が無効になり、
+> `baseUrl` が空文字の Dio が作られてAI変換が失敗します（Dart 3.10.0 で実測確認）。
+> ルート `.env` に `API_BASE_URL` / `AI_API_KEY` が無い環境（`.env.example` への追加より前に
+> 作られた `.env`）でも壊れないよう、上記のようにフォールバック付きで組み立ててください。
 
 ## テスト
 
@@ -136,21 +158,37 @@ flutter test integration_test/
 
 ## ビルド
 
+リポジトリルートの `scripts/` 配下のビルドスクリプトは、環境変数
+`API_BASE_URL` / `AI_API_KEY` を読み取って `--dart-define` を自動付与します。
+通常はこちらを使ってください。
+
+```bash
+# リポジトリルートで実行
+set -a; source .env; set +a
+./scripts/build-web.sh release      # Web
+./scripts/build-ios.sh release      # iOS ビルドのみ（IPAは --archive / --testflight で生成）
+./scripts/build-android.sh release  # Android APK
+./scripts/build-android.sh bundle   # Android App Bundle（Google Play用）
+```
+
+素の `flutter build` を使う場合は `--dart-define` を自分で付けます
+（`"${DEFINES[@]}"` は「実行」セクションと同じ内容）。
+
 ### Webビルド
 ```bash
-flutter build web --release
+flutter build web --release "${DEFINES[@]}"
 ```
 
 ### iOSビルド
 ```bash
-flutter build ios --release
+flutter build ios --release "${DEFINES[@]}"
 ```
 
 ### Androidビルド
 ```bash
-flutter build apk --release
+flutter build apk --release "${DEFINES[@]}"
 # または
-flutter build appbundle --release
+flutter build appbundle --release "${DEFINES[@]}"
 ```
 
 ## 品質基準

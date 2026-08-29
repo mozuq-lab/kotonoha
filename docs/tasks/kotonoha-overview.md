@@ -1,5 +1,12 @@
 # 文字盤コミュニケーション支援アプリ（kotonoha） タスク実装計画 - 全体概要
 
+> **この文書はタスク実装計画の全体像です。** 各フェーズの詳細
+> （`kotonoha-phase1.md` 〜 `phase5.md`）は作成当時の計画の記録であり、
+> バージョン・スキーマ・ディレクトリ構成には実装で変更されたものが含まれます。
+> 現行の正は [`README.md`](../../README.md) / [`docs/SETUP.md`](../SETUP.md) /
+> [`docs/design/kotonoha/`](../design/kotonoha/)、DBスキーマは
+> `backend/alembic/versions/` と `backend/app/models/` を参照してください。
+
 ## 要件名
 
 **kotonoha** - 文字盤コミュニケーション支援アプリ
@@ -11,7 +18,7 @@
 - **開発期間**: 約100営業日（5ヶ月）
 - **総工数**: 約800時間
 - **総タスク数**: 95タスク
-- **技術スタック**: Flutter 3.38.1 + FastAPI 0.121 + PostgreSQL 15 + AWS CDK 2.x
+- **技術スタック**: Flutter 3.38.1 + FastAPI 0.124 + PostgreSQL 15 + AWS CDK 2.x
 
 ## 🔵 信頼性レベルについて
 

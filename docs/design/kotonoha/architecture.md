@@ -31,12 +31,12 @@ kotonohaは、発話困難な方が「できるだけ少ない操作で、自分
 
 ### フロントエンド（Flutter） 🔵
 
-- **フレームワーク**: Flutter 3.38.1 + Dart 3.10+
+- **フレームワーク**: Flutter 3.38.1 + Dart 3.10（Flutter SDK 同梱版）
 - **対応プラットフォーム**: iOS / Android / Web
-- **状態管理**: Riverpod 2.x
+- **状態管理**: Riverpod 3.x（`flutter_riverpod: ^3.1.0`）
   - コンパイル時の安全性と非同期処理との親和性が高い
   - テスタビリティが高く、保守性に優れる
-- **ルーティング**: go_router（宣言的ルーティング、ディープリンク対応）
+- **ルーティング**: go_router 17.x（宣言的ルーティング、ディープリンク対応）
 - **ローカルストレージ**: shared_preferences（設定）、Hive（定型文・履歴・お気に入り）
 - **HTTP通信**: dio（AI変換API呼び出し）
 
@@ -48,10 +48,10 @@ kotonohaは、発話困難な方が「できるだけ少ない操作で、自分
 
 ### バックエンド（FastAPI） 🟡
 
-- **フレームワーク**: FastAPI 0.121+ (Python 3.10+)
+- **フレームワーク**: FastAPI 0.124+ (Python 3.10+)
 - **ASGIサーバー**: Uvicorn
 - **ORM**: SQLAlchemy 2.x (async対応)
-- **マイグレーション**: Alembic 1.17+
+- **マイグレーション**: Alembic 1.18+
 - **認証・セキュリティ**: 端末APIキー認証（`X-API-Key`ヘッダー、MVP実装済み）。JWT (JSON Web Token)・OAuth2 + Bearer Tokenは将来的なユーザー管理機能向けの想定でMVP未実装
 - **バリデーション**: Pydantic 2.x
 
@@ -191,9 +191,9 @@ kotonohaは、発話困難な方が「できるだけ少ない操作で、自分
 ### 開発環境 🔵
 
 - **Flutter**: 3.38.1
-- **Dart**: 3.10+
+- **Dart**: 3.10（Flutter 3.38.1 同梱。`pubspec.lock` の解決下限は 3.9.0、`pubspec.yaml` の宣言は `>=3.5.0 <4.0.0`）
 - **Python**: 3.10+
-- **FastAPI**: 0.121+
+- **FastAPI**: 0.124+
 - **PostgreSQL**: 15+
 - **Docker**: 最新安定版（開発環境）
 

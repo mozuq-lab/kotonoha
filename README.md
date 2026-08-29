@@ -1,7 +1,7 @@
 # kotonoha - 文字盤コミュニケーション支援アプリ
 
-[![Flutter CI](https://github.com/yourusername/kotonoha/actions/workflows/flutter.yml/badge.svg)](https://github.com/yourusername/kotonoha/actions/workflows/flutter.yml)
-[![Python CI](https://github.com/yourusername/kotonoha/actions/workflows/python.yml/badge.svg)](https://github.com/yourusername/kotonoha/actions/workflows/python.yml)
+[![Flutter CI](https://github.com/mozuq-lab/kotonoha/actions/workflows/flutter.yml/badge.svg)](https://github.com/mozuq-lab/kotonoha/actions/workflows/flutter.yml)
+[![Python CI](https://github.com/mozuq-lab/kotonoha/actions/workflows/python.yml/badge.svg)](https://github.com/mozuq-lab/kotonoha/actions/workflows/python.yml)
 
 ## 概要
 
@@ -28,13 +28,13 @@
 | カテゴリ | 技術 | バージョン |
 |---------|------|-----------|
 | フロントエンド | Flutter | 3.38.1 |
-| 状態管理 | Riverpod | 2.x |
-| ローカルストレージ | Hive | 2.x |
-| ルーティング | go_router | 14.x |
-| バックエンド | FastAPI | 0.121+ |
-| ORM | SQLAlchemy | 2.x |
-| データベース | PostgreSQL | 15+ |
-| マイグレーション | Alembic | 1.17+ |
+| 状態管理 | Riverpod | 3.1.0 (`flutter_riverpod`) |
+| ローカルストレージ | Hive | 2.2.3 |
+| ルーティング | go_router | 17.0.1 |
+| バックエンド | FastAPI | 0.124.0 |
+| ORM | SQLAlchemy | 2.0.44 |
+| データベース | PostgreSQL | 15 |
+| マイグレーション | Alembic | 1.18.3 |
 | コンテナ | Docker + Docker Compose | 最新版 |
 
 ## アーキテクチャの特徴
@@ -73,7 +73,7 @@
 ### 1. リポジトリクローン
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/mozuq-lab/kotonoha.git
 cd kotonoha
 ```
 
@@ -120,8 +120,36 @@ uvicorn app.main:app --reload
 ```bash
 cd frontend/kotonoha_app
 flutter pub get
+
+# ローカルのdocker-compose構成をそのまま使うなら、これだけで動く
+# （アプリ側のデフォルトが API_BASE_URL=http://localhost:8000 / AI_API_KEY は空文字）
 flutter run -d chrome
 ```
+
+接続先を変える場合やAPIキー認証を有効にしている場合は、ルート `.env` の値を
+`--dart-define` で埋め込みます（Flutterは `.env` を直接読みません）。
+
+```bash
+# ルート .env が未作成だと source が失敗する（set -e 環境では中断する）
+set -a; source ../../.env; set +a
+
+# 未設定のキーはフォールバックで補う（空文字を渡すとデフォルトが打ち消されるため）
+DEFINES=(--dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:8000}")
+if [ -n "${AI_API_KEY:-}" ]; then
+  DEFINES+=(--dart-define=AI_API_KEY="$AI_API_KEY")
+fi
+
+flutter run -d chrome "${DEFINES[@]}"
+```
+
+> **空の `--dart-define` を渡さないこと。** `String.fromEnvironment` は「値が定義されたか」で
+> 判定するため、`--dart-define=API_BASE_URL=` のように空文字を渡すと `defaultValue` が無効になり、
+> `baseUrl` が空文字の Dio が作られてAI変換が失敗します（Dart 3.10.0 で実測確認）。
+> ルート `.env` に `API_BASE_URL` / `AI_API_KEY` が無い環境（`.env.example` への追加より前に
+> 作られた `.env`）でも壊れないよう、上記のようにフォールバック付きで組み立ててください。
+
+`backend/.env` の `API_KEYS` が未設定なら、開発・テスト環境（`ENVIRONMENT=development` / `test`）では
+バックエンドが認証をスキップするため `AI_API_KEY` なしでも動作します。
 
 詳細なセットアップ手順は [docs/SETUP.md](docs/SETUP.md) を参照してください。
 
@@ -199,6 +227,24 @@ flutter test --coverage           # カバレッジ測定
 flutter analyze                   # 静的解析
 ```
 
+`flutter run` / `flutter build` で接続先やAPIキーを差し替えるときは
+`--dart-define=API_BASE_URL=... --dart-define=AI_API_KEY=...` を付けます
+（空文字を渡さないこと。「フロントエンドセットアップ」の注意書きを参照）。
+
+### ビルド（--dart-define を自動付与）
+
+**ビルドは `scripts/` 配下のスクリプトを使うのが安全です。** 環境変数
+`API_BASE_URL` / `AI_API_KEY` を読み取り、未設定時のフォールバック
+（`${API_BASE_URL:-http://localhost:8000}`、`AI_API_KEY` は空なら付与しない）込みで
+`--dart-define` を組み立てます。
+
+```bash
+set -a; source .env; set +a         # ルート .env を環境変数に展開
+./scripts/build-web.sh release      # Web
+./scripts/build-android.sh release  # Android APK（bundle でAAB）
+./scripts/build-ios.sh release      # iOS アプリのビルドのみ（IPAは --archive / --testflight で生成）
+```
+
 ## テスト
 
 ### バックエンド
@@ -247,7 +293,7 @@ flutter test --coverage          # カバレッジ測定
 
 > **既存環境からの移行**: 以前はルート `.env` にアプリ設定を書く構成でした。
 > これらは docker-compose 経由で渡らなくなったため `backend/.env` へ移してください。
-> 移していない場合、APIキー認証は無効（development では認証スキップ）のまま動作します。
+> 移していない場合、APIキー認証は無効（`ENVIRONMENT` が `development` / `test` のときのみ認証スキップ）のまま動作します。
 
 `AI_API_KEY` はクライアントアプリに埋め込まれるため、強い秘密情報としては扱えません。
 匿名利用による過剰リクエストを抑える端末キーとして、リリースごとにローテーションできる値を指定してください。

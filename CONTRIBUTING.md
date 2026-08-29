@@ -59,7 +59,7 @@ kotonohaプロジェクトへのコントリビューションを歓迎します
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/yourusername/kotonoha.git
+git clone https://github.com/mozuq-lab/kotonoha.git
 cd kotonoha
 
 # 環境変数を設定（2ファイル。役割は docs/SETUP.md 参照）
