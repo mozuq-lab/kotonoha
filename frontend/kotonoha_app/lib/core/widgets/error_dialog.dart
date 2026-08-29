@@ -12,10 +12,10 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../constants/app_colors.dart';
+import '../themes/theme_colors.dart';
 
 // =============================================================================
-// 警告アイコンの配色
+// エラースナックバーの配色
 // =============================================================================
 
 /// 【設定定数】: エラースナックバーの背景色（Colors.red[700] 相当）
@@ -25,15 +25,6 @@ const Color _snackBarBackground = Color(0xFFD32F2F);
 /// 背景 #D32F2F に対し 4.98:1 で WCAG 2.1 AA (4.5:1) を満たす。
 /// 🔵 信頼性レベル: 青信号 - 高コントラスト要件
 const Color _snackBarForeground = Color(0xFFFFFFFF);
-
-/// 【機能概要】: テーマの明暗に応じた警告アイコン色を返す
-///
-/// これらのダイアログは背景色を自前で持たずテーマの surface に載るため、
-/// 固定色ではライト・ダークの一方で必ずコントラスト不足になる。
-Color warningIconColor(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-        ? AppColors.warningIconDark
-        : AppColors.warningIcon;
 
 // =============================================================================
 // 元テキスト表示ボックスの配色

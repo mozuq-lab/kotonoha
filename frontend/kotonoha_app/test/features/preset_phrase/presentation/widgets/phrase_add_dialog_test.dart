@@ -344,18 +344,24 @@ void main() {
     });
 
     // =========================================================================
-    // TC-041-018: 500文字到達時にカウンターが赤くなる
+    // TC-041-018: 500文字到達時にカウンターが警告色になる
     // =========================================================================
-    /// TC-041-018: 500文字到達時に文字数カウンターが赤く表示される
+    /// TC-041-018: 500文字到達時に文字数カウンターが警告色で表示される
     ///
     /// 【テスト目的】: 警告表示の確認
     /// 【テスト内容】: 警告表示
-    /// 【期待される動作】: "500/500" が赤色で表示される
+    /// 【期待される動作】: "500/500" がテーマのエラー色で表示される
+    ///
+    /// 【AA対応で変更】: 以前は Colors.red 固定を期待していたが、
+    /// テーマの surface に対し 3.38:1（ライト）とWCAG AA未達だったため
+    /// colorScheme.error を使う実装に変更した。色の検証もテーマ由来にする。
+    /// コントラスト比そのものは
+    /// test/accessibility/preset_phrase_contrast_test.dart で3テーマ検証する。
     ///
     /// 信頼性レベル: 🟡 黄信号
     /// 関連要件: CRUD-104
     /// 優先度: P1 重要
-    testWidgets('TC-041-018: 500文字到達時に文字数カウンターが赤く表示される', (tester) async {
+    testWidgets('TC-041-018: 500文字到達時に文字数カウンターが警告色で表示される', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -383,12 +389,14 @@ void main() {
       await tester.enterText(find.byType(TextField), maxText);
       await tester.pumpAndSettle();
 
-      // 【結果検証】: カウンターが赤色で表示されていることを確認
+      // 【結果検証】: カウンターがテーマのエラー色で表示されていることを確認
       final counterFinder = find.text('500/500');
       expect(counterFinder, findsOneWidget);
       final counterWidget = tester.widget<Text>(counterFinder);
+      final errorColor =
+          Theme.of(tester.element(counterFinder)).colorScheme.error;
       expect(
-          counterWidget.style?.color, equals(Colors.red)); // 【確認内容】: テキストの色 🟡
+          counterWidget.style?.color, equals(errorColor)); // 【確認内容】: テキストの色 🟡
     });
   });
 

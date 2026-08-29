@@ -11,6 +11,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/core/themes/theme_colors.dart';
 
 import 'offline_banner.dart';
 import 'online_recovery_notification.dart';
@@ -105,13 +106,19 @@ class NetworkAwareScaffold extends ConsumerWidget {
 ///
 /// REQ-1003: オフライン時のフォールバック動作
 /// 🔵 信頼性レベル: 青信号
+///
+/// 【AA対応】: アイコン色を Colors.grey[700](#616161) に固定していたため、
+/// 背景を自前で持たずテーマの surface に載るこのダイアログでは
+/// ダークテーマ (#1E1E1E) に対し 2.69:1 と非テキスト基準(3:1)未達だった。
+/// 他の警告アイコンと同じ warningIconColor() を再利用する
+/// （ライト 5.44:1 / ダーク 9.63:1 / 高コントラスト 5.93:1）。
 Future<void> showOfflineAIConversionDialog(BuildContext context) async {
   return showDialog(
     context: context,
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.wifi_off, color: Colors.grey[700]),
+          Icon(Icons.wifi_off, color: warningIconColor(context)),
           const SizedBox(width: 8),
           const Text('オフライン'),
         ],

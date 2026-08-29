@@ -32,10 +32,15 @@ final ThemeData highContrastTheme = ThemeData(
     onPrimary: Colors.white,
     surface: AppColors.surfaceHighContrast,
     onSurface: AppColors.onSurfaceHighContrast,
-    // 高コントラストモードのエラー色は純粋な赤(#FF0000)を使用。
-    // 白背景上でのコントラスト比 約5.25:1（WCAG AA適合）。
-    // 旧 emergency(#D32F2F) は約4.6:1だが、高コントラスト用の指定色を採用。
-    error: AppColors.emergencyHighContrast,
+    // 【訂正】: 以前は「純赤(#FF0000)は白背景上で約5.25:1」と記載していたが
+    // 実測は 4.00:1 で WCAG AA(4.5:1) 未達。白文字を載せた場合も同じく 4.00:1 で、
+    // 前景・背景のどちらの使い方でも基準を満たしていなかった。
+    // （5.25:1 は「純赤の上に黒文字を載せた場合」の値で、白背景との比ではない）
+    // 色相を保ったまま暗くした #CC0000 に変更し、白に対し 5.89:1 を確保する。
+    // 全面赤の緊急画面には引き続き純赤 emergencyHighContrast を使う
+    // （背景専用。前景は輝度から黒を選ぶため 5.25:1 で AA を満たす）。
+    error: AppColors.errorHighContrast,
+    onError: Colors.white,
     outline: Colors.black,
   ),
   scaffoldBackgroundColor: AppColors.backgroundHighContrast,
@@ -86,19 +91,36 @@ final ThemeData highContrastTheme = ThemeData(
         AppSizes.minTapTarget,
         AppSizes.minTapTarget,
       ),
-      foregroundColor: Colors.black,
+      foregroundColor: AppColors.primaryTextHighContrast,
     ),
   ),
 
   // Text button theme
   // 【AA対応】: ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため44pxを保証。
+  // 【AA対応】: 前景色を明示する。未指定だと Material 3 が colorScheme.primary を
+  // 使うが、primary は「塗り」用途の色で面に載る文字としては AA 未達のため、
+  // 文字専用の AppColors.primaryTextHighContrast を指定する
+  // （このテーマでは値としては黒で同一だが、3テーマで参照の構造を揃える）。
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(
       minimumSize: const Size(
         AppSizes.minTapTarget,
         AppSizes.minTapTarget,
       ),
-      foregroundColor: Colors.black,
+      foregroundColor: AppColors.primaryTextHighContrast,
+    ),
+  ),
+
+  // Outlined button theme
+  // 【AA対応】: TextButton と同じ理由で前景色を明示する。枠線の色は
+  // 各利用側が用途に応じて指定するため、ここでは前景色とタップターゲットのみ揃える。
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      minimumSize: const Size(
+        AppSizes.minTapTarget,
+        AppSizes.minTapTarget,
+      ),
+      foregroundColor: AppColors.primaryTextHighContrast,
     ),
   ),
 

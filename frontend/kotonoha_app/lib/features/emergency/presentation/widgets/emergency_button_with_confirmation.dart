@@ -11,6 +11,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 
 /// 確認ダイアログ付き緊急ボタンウィジェット
@@ -22,7 +23,7 @@ import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_c
 /// - 背景色: 赤（テーマに応じて調整）
 /// - 形状: 円形（CircleBorder）
 /// - サイズ: デフォルト60px、最小44px保証
-/// - アイコン: notifications_active（白色）
+/// - アイコン: notifications_active（背景の赤に対し最良のコントラストとなる色）
 /// - エレベーション: 4（影あり）
 ///
 /// REQ-301: 全画面で常時表示
@@ -105,6 +106,14 @@ class EmergencyButtonWithConfirmation extends StatelessWidget {
     final backgroundColor = EmergencyConfirmationDialog.getEmergencyColor(
       context,
     );
+    // 【AA対応】: 背景は緊急色（テーマごとに変わる）なのにアイコン色を
+    // Colors.white 固定にしていたため、ダーク(#EF5350) 3.49:1 /
+    // 高コントラスト(#FF0000) 4.00:1 だった。非テキスト基準(3:1)は
+    // 満たすものの、このボタンは全画面に常時表示される最重要操作であり
+    // アイコンが唯一のラベルでもある。緊急画面の警告アイコンを
+    // 5.25〜6.02:1 に引き上げたのと同じ考え方で、背景輝度から
+    // 最良の色を選ぶ（ライト 4.98:1 / ダーク 6.02:1 / 高コントラスト 5.25:1）。
+    final iconColor = bestContrastingTextColor(backgroundColor);
     final effectiveSize = _effectiveSize;
 
     return Semantics(
@@ -130,11 +139,11 @@ class EmergencyButtonWithConfirmation extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Center(
+              child: Center(
                 child: Icon(
                   Icons.notifications_active,
                   size: AppSizes.iconSizeLarge,
-                  color: Colors.white,
+                  color: iconColor,
                 ),
               ),
             ),

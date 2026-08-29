@@ -10,6 +10,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_constants.dart';
 import 'package:kotonoha_app/features/quick_response/presentation/mixins/debounce_mixin.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
@@ -112,7 +113,14 @@ class _StatusButtonState extends State<StatusButton> with DebounceMixin {
       widget.backgroundColor ?? StatusButtonColors.getColor(widget.statusType);
 
   /// テキスト色を取得
-  Color get _textColor => widget.textColor ?? Colors.white;
+  ///
+  /// 【AA対応】: 背景はカテゴリ別の色（オレンジ／青／緑）なのに文字色を
+  /// Colors.white 固定にしていたため、身体状態 2.16:1 / 要求 3.12:1 /
+  /// 感情 2.78:1 といずれも WCAG AA(4.5:1) 未達だった。
+  /// カテゴリ色は識別の手がかり（NFR-U003）なので変えず、実際の背景色の
+  /// 輝度から黒・白のうちコントラスト比が高い方を選ぶ。
+  Color get _textColor =>
+      widget.textColor ?? bestContrastingTextColor(_backgroundColor);
 
   /// タップハンドラ（デバウンス付き）
   void _handleTap() {

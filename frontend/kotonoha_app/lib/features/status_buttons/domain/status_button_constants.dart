@@ -37,16 +37,27 @@ class StatusButtonConstants {
 /// - 身体状態（痛い、暑い、寒い、眠い）: オレンジ系
 /// - 要求（トイレ、水、助けて、待って）: 青系
 /// - 感情（ありがとう、ごめんなさい、大丈夫、もう一度）: 緑系
+///
+/// 【文字色について】: ここで定義するのは**背景色のみ**。
+/// 文字色は固定せず、StatusButton 側で背景輝度から
+/// `bestContrastingTextColor()` により選ぶ。いずれの色も白文字では
+/// WCAG AA(4.5:1) を満たせない（2.16〜3.12:1）ため。
 class StatusButtonColors {
   StatusButtonColors._();
 
   /// 身体状態（痛い、暑い、寒い、眠い）: オレンジ系
+  ///
+  /// 黒文字で 9.74:1（白文字では 2.16:1 でAA未達）。
   static const Color physical = Color(0xFFFF9800);
 
   /// 要求（トイレ、水、助けて、待って）: 青系
+  ///
+  /// 黒文字で 6.72:1（白文字では 3.12:1 でAA未達）。
   static const Color request = Color(0xFF2196F3);
 
   /// 感情・コミュニケーション（もう一度、ありがとう、ごめんなさい、大丈夫）: 緑系
+  ///
+  /// 黒文字で 7.56:1（白文字では 2.78:1 でAA未達）。
   static const Color emotion = Color(0xFF4CAF50);
 
   /// タイプに応じた背景色を取得

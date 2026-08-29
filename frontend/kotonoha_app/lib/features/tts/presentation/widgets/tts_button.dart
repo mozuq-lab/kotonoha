@@ -11,6 +11,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 
@@ -105,7 +106,7 @@ class TTSButton extends ConsumerWidget {
     final backgroundColor = isSpeaking
         ? (stopButtonColor ?? colorScheme.error)
         : (speakButtonColor ?? colorScheme.primary);
-    final foregroundColor = _bestContrastingTextColor(backgroundColor);
+    final foregroundColor = bestContrastingTextColor(backgroundColor);
     final icon = isSpeaking ? Icons.stop : Icons.volume_up;
 
     return Semantics(
@@ -162,28 +163,4 @@ class TTSButton extends ConsumerWidget {
       notifier.speak(text);
     }
   }
-}
-
-/// 背景色に対してより高いコントラスト比を確保できる文字色（黒 or 白）を選ぶ
-///
-/// 【設計方針】: テーマが提供する`onError`/`onPrimary`に頼らず、実際の
-/// 背景色の相対輝度（[Color.computeLuminance]）からWCAG 2.1のコントラスト比
-/// （`(明るい方の輝度 + 0.05) / (暗い方の輝度 + 0.05)`）を算出し、黒・白の
-/// うちコントラスト比が高い方を採用する。これにより、テーマ側の色定義に
-/// 依存せず、どのテーマ・どの背景色でも常に最良のコントラストを確保できる。
-Color _bestContrastingTextColor(Color background) {
-  final whiteContrast = _contrastRatio(Colors.white, background);
-  final blackContrast = _contrastRatio(Colors.black, background);
-  return whiteContrast >= blackContrast ? Colors.white : Colors.black;
-}
-
-/// WCAG 2.1のコントラスト比を計算する
-///
-/// 計算式: `(L1 + 0.05) / (L2 + 0.05)`（L1は明るい方の相対輝度）
-double _contrastRatio(Color a, Color b) {
-  final luminanceA = a.computeLuminance();
-  final luminanceB = b.computeLuminance();
-  final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;
-  final darker = luminanceA > luminanceB ? luminanceB : luminanceA;
-  return (lighter + 0.05) / (darker + 0.05);
 }

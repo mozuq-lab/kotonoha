@@ -21,6 +21,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 
 // =============================================================================
@@ -63,8 +64,8 @@ abstract class _EmergencyAlertConstants {
 ///
 /// デザイン仕様:
 /// - 背景: 赤色（全画面）
-/// - アイコン: 白色の警告アイコン（80px以上）
-/// - メッセージ: 「緊急呼び出し中」（白文字）
+/// - アイコン: 背景の赤に対し最良のコントラストとなる色（80px以上）
+/// - メッセージ: 「緊急呼び出し中」（同上）
 /// - リセットボタン: 白背景・黒文字
 /// - オプション: 警告メッセージ（マナーモード時など）
 ///
@@ -122,8 +123,13 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   // ---------------------------------------------------------------------------
 
   /// 緊急メッセージのテキストスタイル
+  ///
+  /// 【AA対応】: 以前は color: Colors.white を固定していたが、背景は
+  /// [EmergencyConfirmationDialog.getEmergencyColor] でテーマごとに変わるため、
+  /// ダーク(#EF5350) 3.49:1 / 高コントラスト(#FF0000) 4.00:1 と
+  /// WCAG AA(4.5:1)未達だった。色は build 時に背景から決めるため、
+  /// ここでは指定しない。
   static const TextStyle _messageTextStyle = TextStyle(
-    color: Colors.white,
     fontSize: _EmergencyAlertConstants.messageFontSize,
     fontWeight: FontWeight.bold,
   );
@@ -164,6 +170,11 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
     // テーマに応じた緊急色を取得
     final emergencyColor =
         EmergencyConfirmationDialog.getEmergencyColor(context);
+    // 【設計判断】: 緊急色は「目立たせる」ための色なので暗くしない。
+    // 代わりに前景（文字・アイコン）を背景輝度から選び、赤を保ったまま
+    // 3テーマすべてで基準を満たす（ライト 4.98:1 / ダーク 6.02:1 /
+    // 高コントラスト 5.25:1）。
+    final foregroundColor = bestContrastingTextColor(emergencyColor);
 
     return Semantics(
       label: _EmergencyAlertConstants.semanticsLabelScreen,
@@ -175,11 +186,11 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // 警告アイコン
-                _buildWarningIcon(),
+                _buildWarningIcon(foregroundColor),
                 const SizedBox(height: AppSizes.paddingLarge),
 
                 // 緊急メッセージ
-                _buildEmergencyMessage(),
+                _buildEmergencyMessage(foregroundColor),
                 const SizedBox(height: AppSizes.paddingMedium),
 
                 // 警告メッセージ（オプション）
@@ -205,31 +216,28 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
 
   /// 警告アイコンを構築
   ///
-  /// 赤い背景に映える白色の警告アイコン。
+  /// 赤い背景に映える色（[foregroundColor]）の警告アイコン。
   /// サイズは80px以上（アクセシビリティ要件）。
-  Widget _buildWarningIcon() {
-    return const Icon(
+  Widget _buildWarningIcon(Color foregroundColor) {
+    return Icon(
       Icons.warning,
-      color: Colors.white,
+      color: foregroundColor,
       size: _EmergencyAlertConstants.iconSize,
     );
   }
 
   /// 緊急メッセージを構築
   ///
-  /// 「緊急呼び出し中」のメインメッセージを白文字で表示。
+  /// 「緊急呼び出し中」のメインメッセージを [foregroundColor] で表示。
   ///
   /// Semantics(liveRegion: true)を設定し、スクリーンリーダーが
   /// 緊急状態への遷移を即座にアナウンスできるようにする。
-  Widget _buildEmergencyMessage() {
-    // NOTE: Semantics()のデフォルトコンストラクタはconstにできないため
-    // （constが必要な場合はSemantics.fromPropertiesを使う設計）、
-    // 子のTextのみconst化する。
+  Widget _buildEmergencyMessage(Color foregroundColor) {
     return Semantics(
       liveRegion: true,
-      child: const Text(
+      child: Text(
         _EmergencyAlertConstants.semanticsLabelScreen,
-        style: _messageTextStyle,
+        style: _messageTextStyle.copyWith(color: foregroundColor),
       ),
     );
   }

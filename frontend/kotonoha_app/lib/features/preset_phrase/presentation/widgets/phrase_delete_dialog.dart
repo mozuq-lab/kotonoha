@@ -13,6 +13,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
 /// 【機能概要】: 削除確認ダイアログ
@@ -45,6 +46,13 @@ class PhraseDeleteDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 【AA対応】: 以前は Colors.red(#F44336) + Colors.white を固定しており
+    // 全テーマで 3.68:1 と WCAG AA(4.5:1) 未達だった。テーマの error 色は
+    // 各テーマの背景に対しAAを満たすよう定義済みなのでそれを使い、
+    // 文字色は背景輝度から選ぶ（ライト 4.98:1 / ダーク 6.02:1 /
+    // 高コントラスト 5.89:1）。
+    final errorColor = Theme.of(context).colorScheme.error;
+
     return AlertDialog(
       title: const Text('定型文の削除'),
       content: const Text('この定型文を削除しますか？'),
@@ -70,8 +78,8 @@ class PhraseDeleteDialog extends StatelessWidget {
           },
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(0, AppSizes.minTapTarget),
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
+            backgroundColor: errorColor,
+            foregroundColor: bestContrastingTextColor(errorColor),
           ),
           child: const Text('削除'),
         ),

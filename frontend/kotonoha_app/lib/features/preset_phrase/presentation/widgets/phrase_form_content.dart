@@ -88,12 +88,19 @@ class PhraseFormContent extends StatelessWidget {
 
         // 【文字数カウンター】: 入力文字数表示
         // 🔵 信頼性レベル: 青信号 - CRUD-104に基づく
+        // 【AA対応】: 上限到達時の色に Colors.red(#F44336) を固定していたため、
+        // テーマの surface 上でライト 3.38:1 / 高コントラスト 3.68:1 と
+        // WCAG AA(4.5:1) 未達だった。テーマの error 色は surface に対し
+        // AAを満たすよう定義済み（ライト 4.57:1 / ダーク 4.78:1 /
+        // 高コントラスト 5.89:1）なのでそれを使う。
         Align(
           alignment: Alignment.centerRight,
           child: Text(
             '$currentLength/${PresetPhraseValidator.maxLength}',
             style: TextStyle(
-              color: isAtLimit ? Colors.red : theme.textTheme.bodySmall?.color,
+              color: isAtLimit
+                  ? theme.colorScheme.error
+                  : theme.textTheme.bodySmall?.color,
               fontSize: 12,
             ),
           ),

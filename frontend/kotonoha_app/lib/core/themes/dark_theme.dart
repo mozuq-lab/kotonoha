@@ -29,7 +29,14 @@ final ThemeData darkTheme = ThemeData(
     onPrimary: Colors.white,
     surface: AppColors.surfaceDark,
     onSurface: AppColors.onSurfaceDark,
-    error: AppColors.emergency,
+    // ライト用の濃い赤(#D32F2F)を流用しており surface(#1E1E1E) 上で 3.35:1、
+    // 既定の onError(黒)との組み合わせでも 4.22:1 でAA未達だった。
+    // 一度は緊急色 emergencyDark(#EF5350) を充てたが、それでは緊急ボタンと
+    // 全消去ボタン（error 背景）が同一色になってしまうため専用色に分ける。
+    // errorDark(#F2B8B5) は surface 上の文字として 9.76:1、
+    // 黒文字を載せて 12.30:1、緊急色との分離 2.04:1。
+    error: AppColors.errorDark,
+    onError: Colors.black,
   ),
   scaffoldBackgroundColor: AppColors.backgroundDark,
 
@@ -51,8 +58,13 @@ final ThemeData darkTheme = ThemeData(
   ),
 
   // Elevated button theme
+  // 【AA対応】: 前景色を明示する。Material 3 の ElevatedButton は primary で
+  // 塗りつぶすのではなく、surfaceContainerLow の面に primary のラベルを載せる設計で、
+  // TextButton と同じく「面に載る文字」になる。未指定だと AA 未達のため
+  // 文字専用の AppColors.primaryTextDark を指定する。
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
+      foregroundColor: AppColors.primaryTextDark,
       minimumSize: const Size(
         AppSizes.recommendedTapTarget,
         AppSizes.recommendedTapTarget,
@@ -76,8 +88,25 @@ final ThemeData darkTheme = ThemeData(
 
   // Text button theme
   // 【AA対応】: ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため44pxを保証。
+  // 【AA対応】: 前景色を明示する。未指定だと Material 3 が colorScheme.primary を
+  // 使うが、primary は「塗り」用途の色で面に載る文字としては AA 未達のため、
+  // 文字専用の AppColors.primaryTextDark を指定する。
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(
+      foregroundColor: AppColors.primaryTextDark,
+      minimumSize: const Size(
+        AppSizes.minTapTarget,
+        AppSizes.minTapTarget,
+      ),
+    ),
+  ),
+
+  // Outlined button theme
+  // 【AA対応】: TextButton と同じ理由で前景色を明示する。枠線の色は
+  // 各利用側が用途に応じて指定するため、ここでは前景色とタップターゲットのみ揃える。
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      foregroundColor: AppColors.primaryTextDark,
       minimumSize: const Size(
         AppSizes.minTapTarget,
         AppSizes.minTapTarget,

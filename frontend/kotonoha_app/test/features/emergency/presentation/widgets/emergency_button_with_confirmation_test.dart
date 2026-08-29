@@ -15,8 +15,11 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/themes/dark_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_button_with_confirmation.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
+
+import '../../../../support/contrast_helpers.dart';
 
 void main() {
   group('EmergencyButtonWithConfirmation', () {
@@ -115,11 +118,20 @@ void main() {
         expect(find.byIcon(Icons.notifications_active), findsOneWidget);
       });
 
-      /// TC-045-005: アイコンの色が白である
+      /// TC-045-005: アイコンの色が背景に対して最良のコントラストになる
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-004
-      testWidgets('TC-045-005: アイコンの色が白である', (tester) async {
+      ///
+      /// 【AA対応で変更】: 以前は Colors.white 固定を期待していたが、背景は
+      /// テーマごとに変わる緊急色であり、ダーク(#EF5350) 3.49:1 /
+      /// 高コントラスト(#FF0000) 4.00:1 と実測で見劣りしていた。
+      /// 実装を「背景輝度から黒・白のうち良い方を選ぶ」に変更したため、
+      /// 期待値も背景から導出する。デフォルトテーマ（ライト・緊急色
+      /// #D32F2F）では従来どおり白が選ばれる。
+      /// コントラスト比そのものは
+      /// test/accessibility/emergency_contrast_test.dart で3テーマ検証する。
+      testWidgets('TC-045-005: アイコンの色が背景に対して最良のコントラストになる', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
           MaterialApp(
@@ -132,8 +144,15 @@ void main() {
         );
 
         // Assert
+        final decoration =
+            tester.widget<Ink>(find.byType(Ink)).decoration! as BoxDecoration;
         final icon =
             tester.widget<Icon>(find.byIcon(Icons.notifications_active));
+        expect(
+          icon.color,
+          equals(bestContrastingTextColor(decoration.color!)),
+        );
+        // デフォルトテーマ（ライト）では白が選ばれることも明示的に固定する
         expect(icon.color, equals(Colors.white));
       });
 
@@ -587,6 +606,12 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: FR-202, REQ-5006
+      ///
+      /// 【AA対応で変更】: テスト名は「4.5:1以上を確保」だが、実際には
+      /// 「アイコンが白であること」しか見ておらず、比率の検証は
+      /// 「実装時: ...を検証」というコメントのまま未実装だった。
+      /// 高コントラストの緊急色 #FF0000 に白アイコンは実測 4.00:1 で、
+      /// テスト名が主張する基準を満たしていない。名前どおり比率を検証する。
       testWidgets('TC-045-023: 高コントラストモードでコントラスト比4.5:1以上を確保', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -600,11 +625,18 @@ void main() {
           ),
         );
 
-        // Assert - 白アイコン on 赤背景でコントラスト比を確認
+        // Assert - 実際の背景色とアイコン色からコントラスト比を算出する
+        final decoration =
+            tester.widget<Ink>(find.byType(Ink)).decoration! as BoxDecoration;
         final icon =
             tester.widget<Icon>(find.byIcon(Icons.notifications_active));
-        expect(icon.color, equals(Colors.white));
-        // 実装時: 背景色と前景色のコントラスト比が4.5:1以上であることを検証
+        final ratio = contrastRatio(icon.color!, decoration.color!);
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason: '高コントラストモードの緊急ボタンのコントラスト比が '
+              '${ratio.toStringAsFixed(2)}:1',
+        );
       });
     });
 

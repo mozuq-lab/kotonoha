@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/constants/app_text_styles.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 
 /// 緊急呼び出し確認ダイアログ
 ///
@@ -105,13 +106,6 @@ class _EmergencyConfirmationDialogState
     return AppColors.cancelButtonLight;
   }
 
-  /// テーマに応じたキャンセルボタンのテキスト色を取得
-  Color _getCancelButtonTextColor(ThemeData theme) {
-    // ダークモードのみ黒文字（明るいグレー背景に対して）
-    if (_isDarkMode(theme) && !_isHighContrastMode(theme)) return Colors.black;
-    return Colors.white;
-  }
-
   /// ボタンタップ処理（連続タップ防止付き）
   void _handleTap(VoidCallback callback) {
     if (_isProcessing) return;
@@ -125,7 +119,9 @@ class _EmergencyConfirmationDialogState
     final confirmButtonColor =
         EmergencyConfirmationDialog.getEmergencyColor(context);
     final cancelButtonColor = _getCancelButtonColor(theme);
-    final cancelButtonTextColor = _getCancelButtonTextColor(theme);
+    // 【AA対応】: ボタン背景はテーマごとに変わるため、文字色を固定せず
+    // 実際の背景色の輝度から黒・白のうちコントラスト比が高い方を選ぶ。
+    final cancelButtonTextColor = bestContrastingTextColor(cancelButtonColor);
 
     return Semantics(
       label: '緊急呼び出し確認ダイアログ',
@@ -143,10 +139,14 @@ class _EmergencyConfirmationDialogState
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: AppSizes.paddingSmall),
+            // 【AA対応】: 補足文の色に Colors.grey(#9E9E9E) を固定していたため、
+            // ダイアログ背景との組み合わせでライト 2.46:1 / 高コントラスト 2.68:1 と
+            // WCAG AA(4.5:1)未達だった。テーマの onSurfaceVariant は各テーマの
+            // サーフェス色に対しAAを満たすよう定義済みのため、これを使う。
             Text(
               '周囲に緊急音が鳴り、画面が赤くなります。',
               style: AppTextStyles.bodySmall.copyWith(
-                color: Colors.grey,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -200,10 +200,16 @@ class _EmergencyConfirmationDialogState
       );
 
   /// 「はい」ボタンを構築
+  ///
+  /// 【AA対応】: 背景は緊急色（テーマごとに変わる）なのに文字色を
+  /// Colors.white 固定にしていたため、ダーク(#EF5350) 3.49:1 /
+  /// 高コントラスト(#FF0000) 4.00:1 で WCAG AA(4.5:1) 未達だった。
+  /// 緊急色は「目立たせる」ための色なので暗くはせず、
+  /// 背景輝度から最良の文字色を選ぶことで赤を保ったまま基準を満たす。
   Widget _buildConfirmButton(Color backgroundColor) => _buildDialogButton(
         label: 'はい',
         backgroundColor: backgroundColor,
-        textColor: Colors.white,
+        textColor: bestContrastingTextColor(backgroundColor),
         onTap: widget.onConfirm,
       );
 }

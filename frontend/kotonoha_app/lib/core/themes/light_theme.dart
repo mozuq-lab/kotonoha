@@ -28,7 +28,12 @@ final ThemeData lightTheme = ThemeData(
     onPrimary: AppColors.onPrimaryLight,
     surface: AppColors.surfaceLight,
     onSurface: AppColors.onSurfaceLight,
-    error: AppColors.emergency,
+    // 緊急色 emergency(#D32F2F) をそのまま流用しており、緊急ボタンと
+    // 全消去ボタン（error 背景）が同一色で区別できなかった。
+    // errorLight(#8C1D18) は surface 上の文字として 8.36:1、
+    // 白文字を載せて 9.11:1、緊急色との分離 1.83:1。
+    error: AppColors.errorLight,
+    onError: Colors.white,
   ),
   scaffoldBackgroundColor: AppColors.backgroundLight,
 
@@ -50,8 +55,13 @@ final ThemeData lightTheme = ThemeData(
   ),
 
   // Elevated button theme
+  // 【AA対応】: 前景色を明示する。Material 3 の ElevatedButton は primary で
+  // 塗りつぶすのではなく、surfaceContainerLow の面に primary のラベルを載せる設計で、
+  // TextButton と同じく「面に載る文字」になる。未指定だと AA 未達のため
+  // 文字専用の AppColors.primaryTextLight を指定する。
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
+      foregroundColor: AppColors.primaryTextLight,
       minimumSize: const Size(
         AppSizes.recommendedTapTarget,
         AppSizes.recommendedTapTarget,
@@ -75,8 +85,25 @@ final ThemeData lightTheme = ThemeData(
 
   // Text button theme
   // 【AA対応】: ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため44pxを保証。
+  // 【AA対応】: 前景色を明示する。未指定だと Material 3 が colorScheme.primary を
+  // 使うが、primary は「塗り」用途の色で面に載る文字としては AA 未達のため、
+  // 文字専用の AppColors.primaryTextLight を指定する。
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(
+      foregroundColor: AppColors.primaryTextLight,
+      minimumSize: const Size(
+        AppSizes.minTapTarget,
+        AppSizes.minTapTarget,
+      ),
+    ),
+  ),
+
+  // Outlined button theme
+  // 【AA対応】: TextButton と同じ理由で前景色を明示する。枠線の色は
+  // 各利用側が用途に応じて指定するため、ここでは前景色とタップターゲットのみ揃える。
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      foregroundColor: AppColors.primaryTextLight,
       minimumSize: const Size(
         AppSizes.minTapTarget,
         AppSizes.minTapTarget,

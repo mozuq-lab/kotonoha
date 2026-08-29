@@ -11,6 +11,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/core/constants/app_text_styles.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
 
@@ -171,17 +172,32 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
     return AppColors.cancelButtonLight;
   }
 
-  /// テーマに応じたセカンダリボタンのテキスト色を取得
-  Color _getSecondaryButtonTextColor(ThemeData theme) {
-    if (_isDarkMode(theme) && !_isHighContrastMode(theme)) return Colors.black;
-    return Colors.white;
+  /// テーマに応じた変換結果の背景色を取得
+  ///
+  /// 【AA対応】: 以前は `primary.withValues(alpha: 0.1〜0.3)` の半透明色を
+  /// 使っていたため、実際の色はダイアログ背景との合成結果に依存し、
+  /// コントラスト比を計算・検証できなかった。合成後と同じ色を不透明な
+  /// 定数として持つことで、見た目を変えずに検証可能にする。
+  Color _getResultBackgroundColor(ThemeData theme) {
+    if (_isHighContrastMode(theme)) {
+      return AppColors.aiResultContainerHighContrast;
+    }
+    if (_isDarkMode(theme)) return AppColors.aiResultContainerDark;
+    return AppColors.aiResultContainerLight;
   }
 
-  /// テーマに応じた変換結果の背景色を取得
-  Color _getResultBackgroundColor(ThemeData theme) {
-    if (_isHighContrastMode(theme)) return Colors.yellow.withValues(alpha: 0.3);
-    if (_isDarkMode(theme)) return AppColors.primaryDark.withValues(alpha: 0.2);
-    return AppColors.primaryLight.withValues(alpha: 0.1);
+  /// テーマに応じた変換結果の枠線色を取得
+  ///
+  /// 【AA対応】: 以前はテーマのプライマリ色をそのまま枠線に使っていたため、
+  /// ライトで 2.60:1（ボックス背景）／2.87:1（ダイアログ背景）と
+  /// 非テキスト基準(3:1)未達だった。枠線は「隣接する色」の双方から
+  /// 3:1 以上離す必要があるため、専用色を用意する。
+  Color _getResultOutlineColor(ThemeData theme) {
+    if (_isHighContrastMode(theme)) {
+      return AppColors.aiResultOutlineHighContrast;
+    }
+    if (_isDarkMode(theme)) return AppColors.aiResultOutlineDark;
+    return AppColors.aiResultOutlineLight;
   }
 
   /// ボタンタップ処理（連続タップ防止付き）
@@ -195,7 +211,9 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final secondaryButtonColor = _getSecondaryButtonColor(theme);
-    final secondaryTextColor = _getSecondaryButtonTextColor(theme);
+    // 【AA対応】: ボタン背景はテーマごとに変わるため文字色を固定せず、
+    // 実際の背景色の輝度から黒・白のうちコントラスト比が高い方を選ぶ。
+    final secondaryTextColor = bestContrastingTextColor(secondaryButtonColor);
 
     return Semantics(
       label: 'AI変換結果ダイアログ',
@@ -287,6 +305,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   /// 変換結果セクションを構築
   Widget _buildConvertedTextSection(ThemeData theme) {
     final resultBackgroundColor = _getResultBackgroundColor(theme);
+    final resultOutlineColor = _getResultOutlineColor(theme);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,7 +325,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
                 vertical: AppSizes.paddingXSmall,
               ),
               decoration: BoxDecoration(
-                color: _getPrimaryButtonColor(theme).withValues(alpha: 0.2),
+                color: resultBackgroundColor,
                 borderRadius: BorderRadius.circular(AppSizes.borderRadiusSmall),
               ),
               child: Text(
@@ -329,7 +348,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
             color: resultBackgroundColor,
             borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
             border: Border.all(
-              color: _getPrimaryButtonColor(theme),
+              color: resultOutlineColor,
               width: 2,
             ),
           ),
@@ -397,6 +416,10 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   }
 
   /// 「元の文を使う」ボタンを構築
+  ///
+  /// 【AA対応】: 枠線にテーマのプライマリ色をそのまま使っていたため、
+  /// ライトテーマでダイアログ背景に対し 2.87:1 と非テキスト基準(3:1)未達
+  /// だった。結果ボックスと同じ枠線色を使う。
   Widget _buildUseOriginalButton(ThemeData theme) {
     return SizedBox(
       height: AppSizes.minTapTarget,
@@ -410,7 +433,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
             AppSizes.minTapTarget,
           ),
           side: BorderSide(
-            color: _getPrimaryButtonColor(theme),
+            color: _getResultOutlineColor(theme),
           ),
         ),
         child: Text('元の文を使う', style: AppTextStyles.button),
