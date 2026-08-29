@@ -239,7 +239,7 @@ C が本命である。今回で言えば、`ai_conversion_logs` テーブルを
 | `dev-plan` → `dev-impl` → `dev-run` → `dev-verify` | `docs/dev/plans/<name>/reports/` に成果物を積む設計。**恒久成果物が工程記録になる**点が Phase 5 の判断基準に反する |
 | `task-breakdown` | 同上 |
 
-**注意**: `dcs:*` は `.dcs/` に出力する。`.gitignore` に追加すること
+**注意**: `dcs:*` は `.dcs/` に出力する。`.gitignore` に追加済み
 （未設定だと分析結果がコミット対象になり、「また工程記録が溜まる」形になる）。
 
 #### OpenSpec を使う条件
@@ -456,7 +456,8 @@ Phase 4 の棚卸しで見直す。「これは存在すべきか」を問う工
 足りる。**「可変グローバル・副作用の追加」だけは AST ベース**で対象ノードと allowlist を
 定め、陽性・陰性の fixture で検査自体をテストする（grep では `@router.post` や
 `getLogger` の誤検知と `client = X()` の見逃しが避けられない——再レビューの指摘）。
-フックと CI で1日を見込む。
+CI には `openspec/changes/` 配下の tracked ファイル禁止も含める（§5「OpenSpec を使う条件」
+条件1。ゲート7項目とは別の1検査）。フックと CI で1日を見込む。
 
 #### `fix/backend-production-hardening` の処理
 
@@ -470,8 +471,10 @@ Phase 4 の棚卸しで見直す。「これは存在すべきか」を問う工
 | 本番ゲートの考え方 | 対象フィールドは変わるが、起動時フェイルファストの設計は生きる |
 | 発見されたバグ | 散文ではなく**テストとして**新 backend へ移す。独立レビューが最終版に発見した「netloc の無い URI（`redis:?password=…` / `redis:///path?password=…`）のクエリ資格情報が素通しになる」形を含める |
 
-ブランチ自体は削除せず、証拠として残す。`docs/verification-principles.md` に
-知見は抽出済み。
+拾った一覧（テスト化するバグ形状・引き継ぐファイル）は **GitHub Issue に記録**し、
+台帳 #85 から辿れるようにする（工程記録の docs を積まないため）。
+ブランチ自体は削除せず、証拠として残す——完了条件の「以後コミットしない」は
+削除の意味ではない。`docs/verification-principles.md` に知見は抽出済み。
 
 ### Phase 2 — backend を書き直す（5〜8日）
 
@@ -820,7 +823,7 @@ Phase 4 を待たずに作ってよい。作った時点から回せる。
 | Phase | 完了条件 |
 |---|---|
 | 0 | `docs/adr/` に7本存在し、それぞれ「決定・却下案・理由」を含む。**`AGENTS.md` に決定の1行要約7本と「実装前に ADR を読む」指示が入っている。入力バッファの件が実ブラウザで切り分け済み** |
-| 1 | **負債ゲートが `PostToolUse` フックと CI の両方に入り、7種類の行為を検出して ADR 引用を要求する。** 意図的に依存を1行足したとき、**フックがその場で止め**、CI でも落ちることを確認済み。`fix/backend-production-hardening` から拾う対象が特定され、ブランチが閉じている |
+| 1 | **負債ゲートが `PostToolUse` フックと CI の両方に入り、7種類の行為を検出して ADR 引用を要求する。** 意図的に依存を1行足したとき、**フックがその場で止め**、CI でも落ちることを確認済み。**AST ゲート（可変グローバル・副作用）の陽性・陰性 fixture が CI で緑。`openspec/changes/` 配下の tracked ファイル禁止が CI に入っている（§5 条件1）。** `fix/backend-production-hardening` から拾う対象（テスト化するバグ形状を含む）が **GitHub Issue に一覧化**され、ブランチには以後コミットしない（**削除はしない**——証拠として残す） |
 | 2 | `app/models` `app/crud` `app/db` `alembic` が存在しない。**`requirements.txt` に `sqlalchemy` `alembic` `asyncpg` `psycopg2-binary` `redis` が存在しない。** `grep -rn "str(exc)\|str(e)\|format_exc\|print(\|print_exc\|sys.stderr" app/` が `app/logging.py` の出力実装を除き0件。**例外境界（プロバイダ SDK・入力検証・想定外例外）ごとに canary 例外を注入し、stdout / stderr / HTTP ボディに canary が現れないことを観測するテストが緑。**`import-linter` `mypy --strict` `pytest-randomly` が CI で緑。**モックが外部 SDK 境界のみにあり、自分の関数を patch している箇所が0件。** 記号を含む API キー・プロバイダキーを設定した状態で起動し、`/health` が 200 を返し AI 変換が1往復する smoke が通る。**明示的に廃止した項目を除き、旧・新実装の正規化 OpenAPI diff が空（prefix・status code・エラー schema・429 ヘッダー・認証・CORS を含む）。同じ characterization テスト一式が旧・新の両実装で同結果。構造化ログに latency・成否・プロバイダが載ることをテストで観測済み。`AGENTS.md` の API仕様・開発コマンド節が新 backend の実態と一致している（Redis 前提の記述が残っていない）** |
 | 3 | Hive が開けないとき利用者に通知される。`isFavorite` が存在しない。往復テストが4 feature に存在。**Hive スキーマの許可リスト検査が CI にある。** **入力バッファの件（Phase 0 で切り分け済み）が、アプリ不具合だった場合は修正済み**。**E2E は残す4経路が CI で緑、外す2本は nightly か削除に振り分け済み。** **`openspec/specs/` に capability が2つ以上あり、`config.yaml` の `context:` に ADR 要約が入っている** |
 | 4 | **棚卸しがプロジェクト固有スキルとして存在し**、1回実施して結果が記録されている。その1回で **`AGENTS.md` の道具リストが全件実在することを確認済み**。`mutmut` が対象領域で回り、kill rate が記録されている |
