@@ -17,6 +17,16 @@ import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_confirmation_dialog.dart';
 
+/// 全消去ボタンのアクセシブルラベル。
+///
+/// 【定数にしている理由】: 破壊的操作の全消去ボタンと、同じ画面に常時並ぶ
+/// 緊急ボタンは、どちらも赤系の塗りボタンになる。両者を輝度比で十分に離すことは
+/// WCAG AA の要件と数学的に両立しないため（test/accessibility/
+/// theme_error_color_contrast_test.dart の考察を参照）、実際の識別は
+/// 色ではなくラベル・形状が担う。ラベルが識別手段であることを明示し、
+/// テストから参照できるようにするために定数化している。
+const String clearAllButtonSemanticsLabel = '全消去';
+
 /// 全消去ボタンウィジェット
 ///
 /// 入力バッファのすべての文字を削除するためのボタン。
@@ -41,7 +51,7 @@ class ClearAllButton extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Semantics(
-      label: '全消去',
+      label: clearAllButtonSemanticsLabel,
       button: true,
       enabled: enabled,
       child: ElevatedButton(

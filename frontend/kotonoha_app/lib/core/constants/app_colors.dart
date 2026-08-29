@@ -127,8 +127,16 @@ class AppColors {
   // 各テーマの `colorScheme.error` に使う。エラー色は
   // 「surface 上の文字色（errorText・エラーアイコン）」と
   // 「ボタン背景（+ onError）」の双方で使われるため、どちらでも
-  // 4.5:1 を満たす必要がある。あわせて、同一画面に並ぶ緊急色
-  // （[emergency] 系）と見分けが付くだけの明度差も確保する。
+  // 4.5:1 を満たす必要がある。
+  //
+  // 【緊急色との「分離」について】: 同一画面に並ぶ緊急色（[emergency] 系）と
+  // 別の色であることは必要だが、**輝度比で十分に離すことはAA要件と両立しない**。
+  // 全色空間を探索した結果、「面の文字として4.5:1」「onErrorを載せて4.5:1」
+  // 「緊急色と輝度比3:1」を同時に満たす色は、黒や白と見分けが付かない色しか
+  // 存在しない（ダークに至っては下側の枝が最初から成立しない）。
+  // 各定数に記した分離比は現状の実測値であって、守るべき閾値ではない。
+  // 実際の識別は色以外の手段（ラベル・形状・枠線）が担う。
+  // 詳細は test/accessibility/theme_error_color_contrast_test.dart を参照。
 
   /// ライトモードのエラー色（前景・背景の両用）
   ///
@@ -239,19 +247,19 @@ class AppColors {
   // ここでは**合成後と同じ色**を不透明な定数として持つ。見た目は
   // 変わらないまま、実際に描画される色でコントラストを検証できる。
 
-  /// AI変換結果ボックス・丁寧さタグの背景（ライト）
+  /// AI変換結果ボックスの背景（ライト）
   ///
   /// primaryLight を alpha 0.1 で surfaceLight に重ねた合成色と同一。
   /// 黒文字に対し 17.5:1。
   static const Color aiResultContainerLight = Color(0xFFE0ECF5);
 
-  /// AI変換結果ボックス・丁寧さタグの背景（ダーク）
+  /// AI変換結果ボックスの背景（ダーク）
   ///
   /// primaryDark を alpha 0.2 で surfaceDark に重ねた合成色と同一。
   /// 白文字に対し 13.5:1。
   static const Color aiResultContainerDark = Color(0xFF1D3042);
 
-  /// AI変換結果ボックス・丁寧さタグの背景（高コントラスト）
+  /// AI変換結果ボックスの背景（高コントラスト）
   ///
   /// 黄色を alpha 0.3 で白に重ねた合成色と同一。黒文字に対し 19.6:1。
   static const Color aiResultContainerHighContrast = Color(0xFFFFF9C4);

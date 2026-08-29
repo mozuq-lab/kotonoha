@@ -66,3 +66,18 @@ Color resolvedIconColor(WidgetTester tester, Finder finder) {
   expect(color, isNotNull, reason: '解決済みのアイコン色を取得できなかった');
   return color!;
 }
+
+/// 2つの色が、実際に描画される8bit値として同一であることを検証する。
+///
+/// 【8bitに丸めて比べる理由】: Flutter の [Color] は各チャンネルを double で
+/// 保持し、[Color.alphaBlend] も浮動小数で合成する。そのため「同じ色」を
+/// 別経路で求めると 1/255 未満の差が残り、`equals()` では落ちてしまう。
+/// 画面に出るのは8bitに量子化された値なので、そこで比較する。
+void expectSameRenderedColor(Color actual, Color expected, String label) {
+  int ch(double v) => (v * 255).round();
+  expect(
+    [ch(actual.r), ch(actual.g), ch(actual.b), ch(actual.a)],
+    equals([ch(expected.r), ch(expected.g), ch(expected.b), ch(expected.a)]),
+    reason: '$label が期待した色と異なる（実際: $actual / 期待: $expected）',
+  );
+}

@@ -21,7 +21,9 @@
 /// 意味が違うため、同一画面に並んでも見分けられる必要がある。
 /// home_screen の ClearAllButton（error 背景の塗りボタン）と app_shell の
 /// EmergencyButtonWithConfirmation（緊急色の塗りボタン）は同時に描画される。
-/// 以前はライト・ダークとも両者が同一色で、区別が付かなかった。
+/// 以前はライト・ダークとも両者が完全に同一色だった。
+/// ただし「輝度比でどれだけ離すか」は数値で固定できない（下記の長いコメント参照）。
+/// 実際の識別は色以外の手段（ラベル・形状・枠線）が担う。
 ///
 /// 🔵 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA・4.5:1以上）
 library;
@@ -32,6 +34,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/themes/dark_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
+import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_button_with_confirmation.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 
 import '../support/contrast_helpers.dart';
@@ -42,15 +46,33 @@ final Map<String, ThemeData> _themes = {
   '高コントラスト': highContrastTheme,
 };
 
-/// エラー色と緊急色の最小分離比。
-///
-/// WCAG の基準ではなく、アプリ内の設計ガードレール。
-/// 「同じ赤に見えないこと」を機械的に固定するために置く。
-/// 現状の実測は ライト 1.83:1 / ダーク 2.04:1 / 高コントラスト 1.47:1 で、
-/// 最も差の小さい高コントラストが通る値として 1.4 を採る。
-/// （高コントラストでは ClearAllButton にテーマ由来の2px黒枠が付き、
-/// 緊急ボタンは枠なしの円形なので、形状でも区別できる）
-const double _minRoleSeparation = 1.4;
+// 【輝度比による「分離」の閾値を置いていない理由】
+//
+// 以前ここには `_minRoleSeparation = 1.4` という定数があった。しかしこの値は
+// 「現状の実測（ライト1.83 / ダーク2.04 / 高コントラスト1.47）のうち最小のものが
+// 通る値」として逆算したもので、狙っていた不具合（高コントラストで2つの赤が
+// 見分けられない）を原理的に検出できなかった。閾値が現状値に追従する限り、
+// テストは常に緑になる。
+//
+// では原理的な閾値（WCAG 1.4.11 非テキストの 3:1）へ引き上げればよいかというと、
+// **数学的に成立しない**。エラー色には次の3つが同時に課される:
+//   (a) 面の上の文字として 4.5:1 以上
+//   (b) onError を載せた背景として 4.5:1 以上
+//   (c) 緊急色との輝度比 3:1 以上
+// 全色空間を探索した結果、(a)(b)(c) を同時に満たす色は
+//   ライト・高コントラスト: #140000 付近（黒と区別が付かない暗い赤）
+//   ダーク:                 #FCEAE8 付近（白と区別が付かない淡いピンク）
+// しか存在しない。とくにダークは、緊急色 emergencyDark(#EF5350, 輝度0.2512) に対し
+// 3:1 を満たす輝度が 0.0504 以下か 0.8535 以上である一方、暗い面(#1E1E1E)の上で
+// 4.5:1 を満たすには 0.2334 以上が必要で、下側の枝は最初から両立しない。
+// つまり「どちらも赤に見えて、どちらもAAを満たし、輝度でも十分離れている」は
+// 同時に成立しない要求である。
+//
+// したがってこのテストは輝度比で分離を主張しない。代わりに
+//   1. 2色が同一値でないこと
+//   2. それぞれが自分のAA義務を満たすこと（後続のグループ）
+//   3. **色以外の識別手段が存在すること**（WCAG 1.4.1「色だけに依存しない」）
+// を固定する。3 が実際の安全弁であり、輝度比の数字ではない。
 
 void main() {
   group('エラー色と緊急色の分離', () {
@@ -78,17 +100,58 @@ void main() {
           reason: '${entry.key}テーマでエラー色と緊急色が完全に同一（$errorColor）。'
               '破壊的操作のボタンと緊急ボタンが同じ画面に並ぶため区別できない',
         );
-
-        final separation = contrastRatio(errorColor, emergencyColor);
-        expect(
-          separation,
-          greaterThanOrEqualTo(_minRoleSeparation),
-          reason: '${entry.key}テーマのエラー色と緊急色の分離が '
-              '${separation.toStringAsFixed(2)}:1 で、'
-              '設計ガードレール ($_minRoleSeparation:1) 未達',
-        );
       });
     }
+  });
+
+  group('色以外の識別手段', () {
+    // 【このテストが実際の安全弁である理由】: 上記のとおり、エラー色と緊急色を
+    // 輝度で十分に離すことはAA要件と両立しない。WCAG 1.4.1 が求めるとおり、
+    // 色だけに依存しない識別手段が要る。ClearAllButton と
+    // EmergencyButtonWithConfirmation はどちらも同じ画面に常時並ぶため、
+    // 両者が異なるアクセシブルラベルを持つことを固定する。
+    // 【定数比較ではなく実描画を見る理由】: 一度は
+    // `clearAllButtonSemanticsLabel != emergencyButtonSemanticsLabel` という
+    // 定数同士の比較で済ませていたが、それはウィジェットがその定数を実際に
+    // 使っていることを何も保証しない。実際、全消去ボタンの label を
+    // 緊急ボタンと同一の文字列リテラルに書き換えても全テストが緑のまま通った。
+    // 輝度比の逆算閾値を「原理的に検出できない」と批判して置き換えたものが、
+    // 同じく検出できないテストになっていた。実際に描画してセマンティクスを読む。
+    testWidgets('全消去ボタンと緊急ボタンが異なるラベルで描画される', (tester) async {
+      final handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: lightTheme,
+          home: Scaffold(
+            body: Column(
+              children: [
+                const ClearAllButton(),
+                EmergencyButtonWithConfirmation(onEmergencyConfirmed: () {}),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final clearLabel = tester.getSemantics(find.byType(ClearAllButton)).label;
+      final emergencyLabel = tester
+          .getSemantics(find.byType(EmergencyButtonWithConfirmation))
+          .label;
+
+      expect(clearLabel, isNotEmpty, reason: '全消去ボタンにラベルが無い');
+      expect(emergencyLabel, isNotEmpty, reason: '緊急ボタンにラベルが無い');
+      expect(
+        clearLabel,
+        isNot(equals(emergencyLabel)),
+        reason: '全消去ボタンと緊急ボタンのアクセシブルラベルが同一（$clearLabel）。'
+            '2つの赤を輝度で見分けられない利用者にとって、ラベルが唯一の識別手段になる',
+      );
+
+      // addTearDown は終了時検証より後に走るため、明示的に破棄する
+      handle.dispose();
+    });
   });
 
   group('colorScheme.error を背景にした SnackBar', () {

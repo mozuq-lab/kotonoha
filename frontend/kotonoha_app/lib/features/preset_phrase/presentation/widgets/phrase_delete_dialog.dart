@@ -49,7 +49,7 @@ class PhraseDeleteDialog extends StatelessWidget {
     // 【AA対応】: 以前は Colors.red(#F44336) + Colors.white を固定しており
     // 全テーマで 3.68:1 と WCAG AA(4.5:1) 未達だった。テーマの error 色は
     // 各テーマの背景に対しAAを満たすよう定義済みなのでそれを使い、
-    // 文字色は背景輝度から選ぶ（ライト 4.98:1 / ダーク 6.02:1 /
+    // 文字色は背景輝度から選ぶ（ライト 9.11:1 / ダーク 12.30:1 /
     // 高コントラスト 5.89:1）。
     final errorColor = Theme.of(context).colorScheme.error;
 

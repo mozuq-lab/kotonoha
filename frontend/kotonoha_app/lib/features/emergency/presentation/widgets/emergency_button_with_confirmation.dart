@@ -14,6 +14,13 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 
+/// 緊急ボタンのアクセシブルラベル。
+///
+/// 【定数にしている理由】: 全消去ボタンの clearAllButtonSemanticsLabel と対。破壊的操作の
+/// 全消去ボタンと緊急ボタンはどちらも赤系の塗りボタンとして同じ画面に並ぶため、
+/// 色以外の識別手段（ラベル・形状）が実際の安全弁になる。
+const String emergencyButtonSemanticsLabel = '緊急呼び出しボタン';
+
 /// 確認ダイアログ付き緊急ボタンウィジェット
 ///
 /// 緊急時に介護者を呼び出すための目立つ赤い円形ボタン。
@@ -117,7 +124,7 @@ class EmergencyButtonWithConfirmation extends StatelessWidget {
     final effectiveSize = _effectiveSize;
 
     return Semantics(
-      label: '緊急呼び出しボタン',
+      label: emergencyButtonSemanticsLabel,
       button: true,
       child: SizedBox(
         width: effectiveSize,

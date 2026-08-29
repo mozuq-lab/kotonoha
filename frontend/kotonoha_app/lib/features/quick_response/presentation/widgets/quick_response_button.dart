@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_constants.dart';
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
@@ -157,7 +158,16 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
       QuickResponseButtonColors.getColor(widget.responseType);
 
   /// テキスト色を取得
-  Color get _textColor => widget.textColor ?? Colors.white;
+  ///
+  /// 【AA対応】: 以前は `Colors.white` 固定だった。既定パレットは暗色なので
+  /// 既定の見た目では問題にならないが、[QuickResponseButton.backgroundColor] は
+  /// public なパラメータであり、明るい色を渡されると白文字が載って AA 未達になる。
+  /// 双子ウィジェットの StatusButton から取り除いたのと同じ危険なので、
+  /// 前景の決め方も同じ `bestContrastingTextColor()` に統一する。
+  /// （既定パレット #2E7D32 / #C62828 / #616161 ではいずれも白が選ばれるため、
+  /// 既定の見た目は変わらない）
+  Color get _textColor =>
+      widget.textColor ?? bestContrastingTextColor(_backgroundColor);
 
   /// タップハンドラ（デバウンス付き）
   void _handleTap() {

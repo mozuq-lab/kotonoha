@@ -172,18 +172,43 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
     return AppColors.cancelButtonLight;
   }
 
-  /// テーマに応じた変換結果の背景色を取得
+  /// テーマに応じた変換結果ボックスの背景色を取得
   ///
   /// 【AA対応】: 以前は `primary.withValues(alpha: 0.1〜0.3)` の半透明色を
   /// 使っていたため、実際の色はダイアログ背景との合成結果に依存し、
   /// コントラスト比を計算・検証できなかった。合成後と同じ色を不透明な
   /// 定数として持つことで、見た目を変えずに検証可能にする。
+  ///
+  /// 丁寧さタグは元から別の色（alpha 0.2）なので
+  /// [_getPolitenessTagBackgroundColor] を使うこと。
   Color _getResultBackgroundColor(ThemeData theme) {
     if (_isHighContrastMode(theme)) {
       return AppColors.aiResultContainerHighContrast;
     }
     if (_isDarkMode(theme)) return AppColors.aiResultContainerDark;
     return AppColors.aiResultContainerLight;
+  }
+
+  /// テーマに応じた丁寧さタグの背景色を取得
+  ///
+  /// 【変換結果ボックスと分けている理由】: 一時、タグの背景に
+  /// [_getResultBackgroundColor] を流用していたが、タグは元々
+  /// 「primary を alpha 0.2 で重ねた色」であり、結果ボックス（ライトは alpha 0.1、
+  /// 高コントラストは黄色）とは別の色だった。流用によってライトでは
+  /// #CBE2F5 → #E0ECF5 と淡くなり、高コントラストでは #CCCCCC（灰）→ #FFF9C4
+  /// （淡黄）と**色相まで変わって**、黒白で構成された高コントラストテーマに
+  /// 黄色が持ち込まれていた。元の見た目に戻す。
+  ///
+  /// 【定数ではなく実行時合成にしている理由】: 合成後の色を定数で持つと、
+  /// 元になる surface や primary を変えたときに黙って食い違う（テストも同じ
+  /// 定数を読み返すので気付けない）。[Color.alphaBlend] で実テーマから導出する。
+  /// ダイアログの背景が `colorScheme.surface` と一致することは
+  /// test/accessibility/ai_conversion_result_dialog_contrast_test.dart で固定している。
+  Color _getPolitenessTagBackgroundColor(ThemeData theme) {
+    return Color.alphaBlend(
+      _getPrimaryButtonColor(theme).withValues(alpha: 0.2),
+      theme.colorScheme.surface,
+    );
   }
 
   /// テーマに応じた変換結果の枠線色を取得
@@ -325,7 +350,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
                 vertical: AppSizes.paddingXSmall,
               ),
               decoration: BoxDecoration(
-                color: resultBackgroundColor,
+                color: _getPolitenessTagBackgroundColor(theme),
                 borderRadius: BorderRadius.circular(AppSizes.borderRadiusSmall),
               ),
               child: Text(
