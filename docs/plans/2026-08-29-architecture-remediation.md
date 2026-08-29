@@ -57,7 +57,8 @@ frontend 4本（アクセシビリティ・緊急ボタン・codegen撤去・doc
 
 ### 決定1 — backend からデータベースを外す
 
-**実測**: `app/db/` の外に SELECT 文が **0件**。`crud/` の関数は
+**実測**: `app/db/` の外に**テーブルを読む** SELECT が **0件**（接続確認の `SELECT 1` が
+health check 2箇所のみ）。`crud/` の関数は
 `create_conversion_log` ただ1つ。`ai_conversion_logs` と `error_logs` は
 **書き込み専用**で、何も読まない。
 
@@ -396,7 +397,7 @@ Phase 2・3 の大きな改修より前に置く。設定だけなので Phase 2
 | **依存の追加** | `backend/requirements*.txt` / `pubspec.yaml` の追加行 | 新しい外部の面が増える。今回の DB も Redis もここから入った |
 | **永続化面の追加** | Hive の `TypeAdapter`・フィールド・box、新しいファイル出力先、DB テーブル | 一度書いたら消えないものが増える。プライバシー契約に直結する |
 | **秘密を持つ設定キーの追加** | `RuntimeConfig` の `SecretStr` フィールド | 秘密が到達しうる面が増える |
-| **モジュールレベルの可変グローバルの追加** | `app/` 直下の代入文、Dart のトップレベル可変変数 | split-brain の入口 |
+| **モジュールレベルの可変グローバル・副作用の追加** | `app/` 直下の代入文**および関数呼び出し**、Dart のトップレベル可変変数 | split-brain と「import しただけで資源を作る」の入口。代入を伴わない `register_x()` 形も対象（独立レビューの反例） |
 | **公開ルート（HTTP 面）の追加** | ルート定義の差分（`@router.` / `@app.`）、OpenAPI のパス数 | 漏えいシンクの4つ目「HTTP レスポンス」がここから増える。`GET /debug/config` は上の4項目に一切触れずに書ける |
 | **外部送信先の追加** | 新しい URL リテラル・HTTP クライアント呼び出し（現在 httpx は `ai_client.py` のみ） | ユーザーテキストが外へ出る面。既存依存で書けるため依存ゲートでは捕まらない |
 | **モバイル権限の追加** | `AndroidManifest.xml` / `Info.plist` の権限キーの差分 | 端末データへの到達面が増える。プライバシー優先のこの製品では依存追加と同格の負債 |
@@ -495,6 +496,10 @@ redis==8.0.1
   in-memory なら起動失敗（ADR-002）。**検出できるのは同一コンテナ内の worker まで**——
   single-worker × 複数 replica は素通しするので、replica 上限は ADR-002 のデプロイ側契約
   （IaC 固定 or 上流レート制限）で縛る
+- stdlib `logging` の直接 import が `app/logging.py` 以外に0件（ADR-003。`str(exc)` の grep は
+  `logger.error(f"{exc}")` 形を捕まえられないため、受け口の型と canary 注入検査を主体にする）
+- subprocess import smoke — 外部境界を封じた環境で `python -c "import app.main"` が
+  外部アクセスゼロで完了する（ADR-004。代入を伴わない副作用呼び出しも捕まえる）
 
 **テストは捨てて書き直す。** 現在 9,221行のうち assert は7%で、誤った仕様を固定し
 （存在しない `unix` スキームを正解として要求）、漏えいシンクを36箇所でモックしている。
@@ -610,9 +615,11 @@ AI レビューの水掛け論とは性質が違う。`ipa-security-guide` で�
    `sealed class PersistenceState { Ready / RecoverableFailure / Unavailable }` にして、
    保存されないことを利用者に伝える。
 2. **「お気に入り」を1つの真実にする。** いま `HistoryItem.isFavorite`（書かれるが常に
-   `false`、UI は読まない）、`features/favorite/`（ロジック）、`features/favorites/`（UI）の
-   3箇所に散っている。UI が実際に使っているのは `favoriteProvider` なので、
-   `HistoryItem.isFavorite` を Hive migration で削除する。キーは内容テキストではなく id にする。
+   `false`、UI は読まない）、`features/favorite/`（ロジック）、`features/favorites/`（UI）、
+   さらに `PresetPhrase.isFavorite`（Hive field 3 で永続・UI が読む・favoriteNotifier と
+   双方向同期——独立レビューが検出）の**4箇所**に散っている。正は `favoriteProvider` なので、
+   `HistoryItem.isFavorite` と `PresetPhrase.isFavorite` を Hive migration で削除し、
+   参照を寄せる。キーは内容テキストではなく id にする（詳細は ADR-005）。
 3. **往復テストを feature ごとに1本。** UI → provider → repository → storage → 戻り。
    層を飛ばして下だけを叩くテストは、単体では合格にしない。
    （`isFavorite` のバグは Hive アダプタのテストが緑のまま生き残った。バグは
@@ -802,7 +809,7 @@ Phase 0 で GitHub Issue に起票する。ラベルは `deferred` / `rejected`�
 | P1 | E2E 5本が CI 対象外 | Issue #84 — Phase 3 で対応 |
 | P1 | 高コントラスト利用者が起動のたびに白画面を1フレーム見る | `lib/core/themes/theme_provider.dart`。テスト TC-001 がこれを正しい挙動として固定している |
 | P1 | `api-endpoints.md:381` が NFR-101（端末内保存の要件）をレート制限の根拠として誤引用 | ADR-002 で正しい要件を定義し、Phase 5 の正本整理（API は OpenAPI が正本）で解消 |
-| P2 | 環境判定 `frozenset({"development","test"})` が3ファイルに独立して存在 | `config.py` / `api/deps.py` / `main.py` — Phase 2 で1箇所に寄せる |
+| P2 | 環境判定が3ファイルに独立して存在（`frozenset` 2箇所＋`!= "production"` 1箇所。形が違うこと自体が split-brain） | `main.py:58` / `api/deps.py:41` / `config.py:142` — backend 書き直しで1箇所へ |
 | P2 | `AppException.status_code` が代入されるだけで読まれない | `app/utils/exceptions.py` |
 | P2 | `ApiResponse` / `ErrorDetail` が定義のみで利用ゼロ | `app/schemas/common.py` |
 | P2 | `lib/features/README.md` が例示するディレクトリがひとつも実在しない | |

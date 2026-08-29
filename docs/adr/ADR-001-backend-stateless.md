@@ -5,7 +5,8 @@
 ## 背景と課題
 
 backend の DB（PostgreSQL + SQLAlchemy + alembic）は**書き込み専用**である。実測:
-`app/db/` の外に SELECT 0件、`crud/` の関数は `create_conversion_log` 1つ、
+`app/db/` の外に**テーブルを読む** SELECT は0件（接続確認の `SELECT 1` が
+health check 2箇所にあるのみ）、`crud/` の関数は `create_conversion_log` 1つ、
 `ai_conversion_logs` / `error_logs` を読む処理はどこにも無い。ER 図自身が
 「AI変換ログとエラーログは将来的な拡張と統計用であり、MVP範囲で必須ではない」と
 明記している（`docs/design/kotonoha/database-erd.md`）。

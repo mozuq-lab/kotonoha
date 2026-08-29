@@ -8,10 +8,11 @@
 **import しただけで Limiter を構築**する（起動の欠陥形状 B-3「import しただけで
 外部資源を作る」の実例）。この構造がもたらしたもの:
 
-- テストが自分のモジュールを patch する強制（`patch("app.utils.ai_client.settings")` 等、
-  自己 patch が計51箇所）
-- 環境判定 `frozenset({"development","test"})` が3ファイルに独立して存在（split-brain。
-  環境ガードが片方の環境だけ通る欠陥の温床——台帳 P2）
+- テストが自分のモジュールを patch する強制（`patch("app.…")` が計100箇所。
+  うち `ai_client.ai_client` 51 / `create_conversion_log` 36）
+- 環境判定が3ファイルに独立して存在（`frozenset({"development","test"})` が
+  `main.py:58` / `api/deps.py:41` の2箇所、`config.py:142` は `!= "production"` 判定——
+  **集合の形が違うこと自体が split-brain** で、staging の扱いが場所によって変わる。台帳 P2）
 - 設定の組み立てから実接続までの層が、単体テストで構造的に検証不能
 
 ## 検討した選択肢
@@ -27,7 +28,11 @@
 `RuntimeConfig` の1箇所に寄せる。
 
 検査: `pytest-randomly`（グローバル状態への依存をテスト順序のシャッフルで露出）＋
-`mypy --strict`＋負債ゲート「モジュールレベルの可変グローバルの追加」。
+`mypy --strict`＋負債ゲート「モジュールレベルの可変グローバル**・副作用**の追加」
+（代入文だけでなく**モジュール直下の関数呼び出し**も対象——独立レビューの反例:
+`register_provider()` のような呼び出しは、代入なしで import 時に資源を作れる）＋
+**subprocess import smoke**: 外部境界を封じた環境で `python -c "import app.main"` が
+外部アクセスゼロで完了することを完了条件にする。
 
 ## 決定理由（却下した案と理由）
 

@@ -26,7 +26,13 @@
 案3。新 backend の `errors.py` は `ErrorCode` と `SafeError` しか受け取らない——
 `str(exc)` を渡せる引数が存在しなくなる。補助として:
 
-- grep ゲート: `str(exc)` / `str(e)` / `format_exc` が `app/` に0件（CI）
+- grep ゲート: `str(exc)` / `str(e)` / `format_exc` が `app/` に0件（CI）。
+  **ただしこの grep は `logger.error(f"{exc}")` の形を捕まえられない**（独立レビューの
+  反例——背景に挙げた16箇所がまさにこの形）。grep は補助とし、主体は次の2つ:
+- **ログの受け口も型付きにする**: 出力は構造化ログ関数（`app/logging.py`）経由のみ。
+  stdlib `logging` の直接 import は `app/logging.py` 以外で0件（grep / import-linter）
+- **canary 注入検査**: canary を仕込んだ例外を注入し、全シンク
+  （stdout / stderr / HTTP ボディ）に現れないことを実測する（B-3「全シンク観測」）
 - `mypy --strict`: `ErrorCode` / `SecretStr` の取り違えを型で検出
 - 原因例外は型名のみを except の外で拾う（`__context__` を残さないパターンは
   `docs/verification-principles.md` §3 参照）
@@ -38,8 +44,8 @@
   防御は出力側の**有限な語彙**（ErrorCode の列挙）で構成する——有限な側を列挙し、
   無限な側を生成するのが正しい向き
 - **案2を却下**: `SecretStr` は `==` が黙って False を返す・関数呼び出しでフレーム
-  ローカルに乗る・下流で平文 `list[str]` に戻る経路に無力。過去13欠陥のうち単独で
-  防げたものは0件（実測、verification-principles §3）
+  ローカルに乗る・下流で平文 `list[str]` に戻る経路に無力（いずれも実測、
+  verification-principles §3）。単独では防御にならない
 
 ## 影響
 
