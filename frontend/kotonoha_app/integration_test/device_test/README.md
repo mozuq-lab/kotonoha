@@ -179,4 +179,4 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 
 - [テストケース定義書](../../../../docs/archive/implements/kotonoha/TASK-0095/kotonoha-testcases.md)
 - [要件定義書](../../../../docs/archive/implements/kotonoha/TASK-0095/kotonoha-requirements.md)
-- [Phase 5 タスク](../../../../docs/tasks/kotonoha-phase5.md)
+- [Phase 5 タスク（歴史記録）](../../../../docs/archive/tasks/kotonoha-phase5.md)

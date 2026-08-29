@@ -18,6 +18,7 @@
 |---|---|
 | `implements/` | タスク単位の TDD 実行記録（要件・テストケース・実装レポート・検証レポート）。299 ファイル |
 | `development-history.md` | 開発経緯の記録 |
+| `tasks/` | フェーズ計画 6 ファイル（2026-08-29 に移動） |
 
 いずれも「そのとき何を考えて何をしたか」の記録としては価値がある。**現在の仕様として読まないこと。**
 
@@ -29,10 +30,7 @@
 | どう作られているか（設計） | `docs/design/` |
 | 環境構築・実行手順 | `docs/SETUP.md`、`docs/tech-stack.md` |
 | これから何をするか | `docs/plans/` |
+| 検証と完了判定の原則 | `docs/verification-principles.md` |
 | 利用者向け | `docs/user-guide/`、`docs/privacy-policy.md`、`docs/support.md` |
 
 コードの実態と文書が食い違っていたら、**コードが正**である。文書側を直すか、直せないならここへ移すこと。
-
-## 未了
-
-`docs/tasks/`（フェーズ計画 6 ファイル）も同じ性質だが、未マージブランチが編集中のため移動していない。`docs/consistency-fixes` のマージ後にここへ移すこと。

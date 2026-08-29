@@ -447,7 +447,8 @@ flutter test --coverage          # カバレッジ測定
 - [アーキテクチャ設計](docs/design/kotonoha/architecture.md)
 - [データフロー図](docs/design/kotonoha/dataflow.md)
 - [API仕様](docs/design/kotonoha/api-endpoints.md)
-- [タスク管理](docs/tasks/kotonoha-overview.md)
+- [今後の対応計画](docs/plans/2026-08-29-architecture-remediation.md)
+- [検証と完了判定の原則](docs/verification-principles.md)
 
 ### 外部リンク
 
