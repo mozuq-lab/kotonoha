@@ -1,1 +1,17 @@
-{}
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && python3 -m scripts.debt_gate.cli hook",
+            "timeout": 30,
+            "statusMessage": "負債ゲートを実行中"
+          }
+        ]
+      }
+    ]
+  }
+}
