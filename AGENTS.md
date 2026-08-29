@@ -1,6 +1,8 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+このリポジトリで作業するコーディングエージェント（Claude Code / Codex など）向けの
+**共通ガイダンス**。`CLAUDE.md` はこのファイルを取り込んでいるだけなので、
+**内容を更新するときは必ずこのファイルを編集すること。**
 
 ## プロジェクト概要
 

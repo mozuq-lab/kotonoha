@@ -190,7 +190,8 @@ kotonoha/
 ├── docker-compose.yml           # 開発環境Docker設定
 ├── CONTRIBUTING.md              # コントリビューションガイド
 ├── CHANGELOG.md                 # 変更履歴
-└── CLAUDE.md                    # Claude Code用ガイド
+├── AGENTS.md                    # エージェント向け共通ガイド（正本）
+└── CLAUDE.md                    # AGENTS.md を参照するだけ
 ```
 
 ## 開発コマンド

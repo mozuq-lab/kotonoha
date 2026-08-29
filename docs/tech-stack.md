@@ -378,7 +378,8 @@ kotonoha/
 ├── .pre-commit-config.yaml
 ├── CONTRIBUTING.md
 ├── CHANGELOG.md
-├── CLAUDE.md / AGENTS.md        # エージェント向けガイド
+├── AGENTS.md                    # エージェント向け共通ガイド（正本）
+├── CLAUDE.md                    # AGENTS.md を参照するだけ
 └── README.md                    # プロジェクト概要
 ```
 
