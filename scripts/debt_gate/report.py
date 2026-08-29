@@ -62,9 +62,12 @@ def render(result: Result) -> str:
         lines.append("")
 
     if result.stale:
-        lines.append("ℹ️  許可リストに残っているが実体が無い（掃除できる。落とさない）")
+        lines.append("■ 許可リストに残っているが実体が無い（同じ行を消すこと）")
         for kind, item in result.stale:
-            lines.append("  {0} / {1}".format(LABELS.get(kind, kind), item))
+            lines.append("  [{0}] {1}".format(LABELS.get(kind, kind), item))
+        lines.append("")
+        lines.append("  許可を残したまま面だけ消すと、あとで ADR 無しで戻せてしまう。")
+        lines.append("  面を消した変更では、.debt-gate/allowlist.json の対応する行も同じ PR で消すこと。")
         lines.append("")
 
     lines.append(
@@ -83,6 +86,12 @@ def render_annotations(result: Result) -> str:
         out.append(
             "::error file={0}::[{1}] {2}: {3}".format(
                 ".debt-gate/allowlist.json", LABELS.get(kind, kind), item, problem
+            )
+        )
+    for kind, item in result.stale:
+        out.append(
+            "::error file={0}::[{1}] {2} は実体が無い。許可リストから消すこと".format(
+                ".debt-gate/allowlist.json", LABELS.get(kind, kind), item
             )
         )
     for kind, item, _detail in result.unlisted:

@@ -47,13 +47,20 @@ class Repo:
     def allow(self, entries: dict) -> None:
         allowlist.save(self.root, entries)
 
+    #: 識別子は「出どころ込み」。名前だけを鍵にすると、dev→runtime の昇格や
+    #: 供給元の差し替えを見逃す（独立レビューの指摘）。
+    DIO = "frontend/kotonoha_app/pubspec.yaml:dependencies/dio@hosted"
+    FASTAPI = "backend/requirements.txt/fastapi@index"
+    LOG_LEVEL = ".env.example:LOG_LEVEL"
+
     def allow_everything(self, **overrides) -> None:
+        grand = {"adr": None, "grandfathered": True, "why": "既存"}
         entries = {
-            "dart_dependencies": {"dio": {"adr": None, "grandfathered": True, "why": "既存"}},
-            "python_dependencies": {"fastapi": {"adr": None, "grandfathered": True, "why": "既存"}},
+            "dart_dependencies": {self.DIO: dict(grand)},
+            "python_dependencies": {self.FASTAPI: dict(grand)},
             "android_permissions": {},
             "ios_privacy_keys": {},
-            "env_example_keys": {"LOG_LEVEL": {"adr": None, "grandfathered": True, "why": "既存"}},
+            "env_example_keys": {self.LOG_LEVEL: dict(grand)},
         }
         entries.update(overrides)
         self.allow(entries)
@@ -106,7 +113,7 @@ class Citation(Base):
     def test_nonexistent_adr_is_rejected(self) -> None:
         """`ADR-999` で通らない。初回実装は通した。"""
         self.repo.allow_everything(
-            dart_dependencies={"dio": {"adr": "ADR-999", "why": "存在しない決定"}}
+            dart_dependencies={Repo.DIO: {"adr": "ADR-999", "why": "存在しない決定"}}
         )
         result = gate.run(self.repo.root)
         self.assertTrue(result.blocking)
@@ -114,7 +121,7 @@ class Citation(Base):
 
     def test_existing_adr_is_accepted(self) -> None:
         self.repo.allow_everything(
-            dart_dependencies={"dio": {"adr": "ADR-001", "why": "AI 変換の HTTP 呼び出しに要る"}}
+            dart_dependencies={Repo.DIO: {"adr": "ADR-001", "why": "AI 変換の HTTP 呼び出しに要る"}}
         )
         result = gate.run(self.repo.root)
         self.assertFalse(result.blocking)
@@ -122,14 +129,14 @@ class Citation(Base):
 
     def test_empty_reason_is_rejected(self) -> None:
         self.repo.allow_everything(
-            dart_dependencies={"dio": {"adr": "ADR-001", "why": "   "}}
+            dart_dependencies={Repo.DIO: {"adr": "ADR-001", "why": "   "}}
         )
         result = gate.run(self.repo.root)
         self.assertTrue(result.blocking)
 
     def test_grandfathered_must_not_carry_an_adr(self) -> None:
         self.repo.allow_everything(
-            dart_dependencies={"dio": {"adr": "ADR-001", "grandfathered": True, "why": "既存"}}
+            dart_dependencies={Repo.DIO: {"adr": "ADR-001", "grandfathered": True, "why": "既存"}}
         )
         self.assertTrue(gate.run(self.repo.root).blocking)
 
@@ -142,7 +149,8 @@ class NewSurface(Base):
         )
         result = gate.run(self.repo.root)
         self.assertTrue(result.blocking)
-        self.assertEqual([(k, i) for k, i, _ in result.unlisted], [("dart_dependencies", "firebase")])
+        self.assertEqual([k for k, _, _ in result.unlisted], ["dart_dependencies"])
+        self.assertIn("firebase", result.unlisted[0][1])
 
     def test_new_android_permission_blocks(self) -> None:
         self.repo.allow_everything()
@@ -153,8 +161,8 @@ class NewSurface(Base):
         )
         result = gate.run(self.repo.root)
         self.assertTrue(result.blocking)
-        self.assertIn(("android_permissions", "android.permission.CAMERA"),
-                      [(k, i) for k, i, _ in result.unlisted])
+        self.assertTrue(any(k == "android_permissions" and i.endswith("android.permission.CAMERA")
+                            for k, i, _ in result.unlisted), result.unlisted)
 
     def test_new_env_key_blocks_regardless_of_name(self) -> None:
         """名前が「秘密らしい」かは見ない。`URI` 系を落とさないため。"""
@@ -162,16 +170,25 @@ class NewSurface(Base):
         self.repo.write(".env.example", "LOG_LEVEL=INFO\nRATE_LIMIT_STORAGE_URI=\n")
         result = gate.run(self.repo.root)
         self.assertTrue(result.blocking)
-        self.assertIn(("env_example_keys", "RATE_LIMIT_STORAGE_URI"),
-                      [(k, i) for k, i, _ in result.unlisted])
+        self.assertTrue(any(k == "env_example_keys" and i.endswith(":RATE_LIMIT_STORAGE_URI")
+                            for k, i, _ in result.unlisted), result.unlisted)
 
-    def test_removing_a_surface_does_not_block(self) -> None:
-        """削除では落とさない。Phase 2 の依存削除・Phase 3 の Hive 削除を塞がないため。"""
+    def test_removing_a_surface_requires_cleaning_the_allowlist(self) -> None:
+        """削除は「許可リストの同じ行も消す」ことを要求する。
+
+        許可だけ残すと、あとで ADR 無しで再導入できてしまう（独立レビューの指摘）。
+        直し方は1行消すだけなので、Phase 2 の依存削除を止める負担にはならない。
+        """
         self.repo.allow_everything()
         self.repo.write("backend/requirements.txt", "")
         result = gate.run(self.repo.root)
-        self.assertFalse(result.blocking)
-        self.assertIn(("python_dependencies", "fastapi"), result.stale)
+        self.assertTrue(result.blocking)
+        self.assertEqual(result.stale, [("python_dependencies", Repo.FASTAPI)])
+
+    def test_removing_both_the_surface_and_the_permission_is_green(self) -> None:
+        self.repo.allow_everything(python_dependencies={})
+        self.repo.write("backend/requirements.txt", "")
+        self.assertFalse(gate.run(self.repo.root).blocking)
 
 
 class Reporting(Base):
@@ -189,7 +206,7 @@ class Reporting(Base):
 
 class AllowlistRoundTrip(Base):
     def test_save_then_load(self) -> None:
-        entries = {"dart_dependencies": {"dio": {"adr": "ADR-001", "why": "理由"}}}
+        entries = {"dart_dependencies": {Repo.DIO: {"adr": "ADR-001", "why": "理由"}}}
         allowlist.save(self.repo.root, entries)
         self.assertEqual(allowlist.load(self.repo.root), entries)
 

@@ -34,7 +34,7 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install parsers
-        run: pip install "pyyaml==6.0.3"
+        run: pip install "pyyaml==6.0.3" "packaging>=24,<27"
 
       # 「ゲートが存在すること」と「ゲートが機能すること」は別である。
       # ここが緑であることが後者の証拠になる。書き方を変えても同じ集合が出ること
@@ -76,7 +76,7 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install parsers
-        run: pip install "pyyaml==6.0.3"
+        run: pip install "pyyaml==6.0.3" "packaging>=24,<27"
 
       - name: Run debt gate
         run: python3 -m scripts.debt_gate.cli check

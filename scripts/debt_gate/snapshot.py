@@ -1,11 +1,22 @@
 """いまのリポジトリの「状態」を、正規のパーサで読んで集合にする。
 
-**ここが健全さの根拠である。** 各関数はフォーマットの正規パーサ（PyYAML / plistlib /
-ElementTree）で読むので、書き方——indent 幅・タグの改行・行順・コメント・引用符——を
-変えても返る集合は変わらない。差分の行は一切見ない。
+**ここが健全さの根拠である。** 各関数はフォーマットの正規パーサ
+（PyYAML / packaging / plistlib / ElementTree）で読むので、書き方——indent 幅・
+タグの改行・行順・コメント・引用符・`export` 前置き——を変えても返る集合は変わらない。
+差分の行は見ないし、git も使わない。
 
-読めなかったときは `SnapshotError` を送出する。**空集合を返してはならない**——
-取得失敗を「何も無い」と区別できなくなり、初回実装の fail-open が再発する。
+設計上の3つの規律（いずれも2系統レビューの指摘で入った）:
+
+1. **読めなかったら `SnapshotError`。空集合を返してはならない。** 取得失敗を
+   「何も無い」と区別できなくなり、fail-open が再発する。**解釈できない行が1行でも
+   あればエラーにする**——初回の再実装は未解釈行を黙って捨て、
+   `git+https://...` や `redis-om (>=0.2)` を素通しさせた
+2. **監視対象はパスを列挙せず、探索する。** ハードコードの列挙は「ファイルパスの
+   列挙ゲーム」になる。実際、追跡済みの `frontend/kotonoha_app/web/.env.example` が
+   完全に不可視だった
+3. **識別子は名前だけにしない。** `dev_dependencies` の依存を `dependencies` へ
+   昇格させる、`debug` の権限を `main` へ移す、といった「既存名のまま面が広がる」
+   変更を捕まえるため、**出どころを識別子に含める**
 """
 
 from __future__ import annotations
@@ -14,7 +25,7 @@ import os
 import plistlib
 import re
 import xml.etree.ElementTree as ET
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 from .errors import SnapshotError
 
@@ -23,13 +34,35 @@ Item = Tuple[str, str]
 
 ANDROID_NAME = "{http://schemas.android.com/apk/res/android}name"
 
-#: iOS で「端末データへの到達面」を表すキー。
+#: iOS で「端末データへの到達面」を表す、UsageDescription 以外のキー。
 IOS_PRIVACY_EXTRA = frozenset({"UIBackgroundModes", "NSAppTransportSecurity"})
+
+#: 探索から除くディレクトリ。生成物・依存キャッシュ・VCS。
+SKIP_DIRS = frozenset({
+    "build", ".dart_tool", ".git", "node_modules", ".venv", "venv",
+    "__pycache__", ".pub-cache", "Pods", ".idea", ".vscode", "htmlcov",
+})
+
+
+def discover(repo_root: str, matcher: Callable[[str], bool]) -> List[str]:
+    """条件に合うファイルをリポジトリ全体から探す。
+
+    パスをハードコードしない。列挙は必ず漏れる（`web/.env.example` の前例）。
+    """
+    found: List[str] = []
+    for root, dirs, files in os.walk(repo_root):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS and not d.startswith(".claude")]
+        for name in files:
+            if matcher(name):
+                found.append(os.path.join(root, name))
+    return sorted(found)
+
+
+def _rel(repo_root: str, path: str) -> str:
+    return os.path.relpath(path, repo_root).replace(os.sep, "/")
 
 
 def _read(path: str, kind: str) -> bytes:
-    if not os.path.isfile(path):
-        raise SnapshotError(kind, path, "ファイルが存在しない")
     try:
         with open(path, "rb") as handle:
             return handle.read()
@@ -37,82 +70,178 @@ def _read(path: str, kind: str) -> bytes:
         raise SnapshotError(kind, path, "読み込みに失敗: {0}".format(type(exc).__name__))
 
 
+def _require(paths: List[str], kind: str, what: str) -> None:
+    if not paths:
+        raise SnapshotError(kind, what, "対象ファイルが1つも見つからない")
+
+
 # --------------------------------------------------------------------------
-# 依存
+# 依存（Dart）
 # --------------------------------------------------------------------------
 
 PUBSPEC_SECTIONS = ("dependencies", "dev_dependencies", "dependency_overrides")
 
 
+def _dart_source_kind(spec: object) -> str:
+    """依存の供給元の形。`hosted` / `git` / `path` / `sdk`。
+
+    供給元を差し替える変更（`dio: ^5.0.0` → `dio: {git: <任意のURL>}`）は
+    パッケージ名が変わらないので、名前だけを見ていると素通しする。
+    """
+    if spec is None or isinstance(spec, str):
+        return "hosted"
+    if isinstance(spec, dict):
+        for key in ("git", "path", "sdk", "hosted"):
+            if key in spec:
+                return key
+    return "unknown"
+
+
 def dart_dependencies(repo_root: str) -> List[Item]:
-    """`pubspec.yaml` の宣言依存。**YAML パーサで読む**ので indent 幅に依存しない。"""
+    """`pubspec.yaml` / `pubspec_overrides.yaml` の宣言依存。
+
+    **YAML パーサで読む**ので indent 幅・行順・コメント・フロー形式に依存しない。
+    識別子は ``<ファイル>:<セクション>/<名前>@<供給元>``。
+    """
     kind = "dart_dependencies"
-    path = os.path.join(repo_root, "frontend", "kotonoha_app", "pubspec.yaml")
-    raw = _read(path, kind)
+    paths = discover(repo_root, lambda n: n in ("pubspec.yaml", "pubspec_overrides.yaml"))
+    _require(paths, kind, "pubspec*.yaml")
     try:
         import yaml
     except ImportError:
-        raise SnapshotError(kind, path, "PyYAML が無い。ゲートを緑にせず落とす")
-    try:
-        doc = yaml.safe_load(raw.decode("utf-8"))
-    except Exception as exc:
-        raise SnapshotError(kind, path, "YAML として解釈できない: {0}".format(type(exc).__name__))
-    if not isinstance(doc, dict):
-        raise SnapshotError(kind, path, "最上位がマッピングでない")
+        raise SnapshotError(kind, "PyYAML", "PyYAML が無い。ゲートを緑にせず落とす")
 
     items: List[Item] = []
-    for section in PUBSPEC_SECTIONS:
-        block = doc.get(section)
-        if block is None:
+    for path in paths:
+        raw = _read(path, kind)
+        label = _rel(repo_root, path)
+        try:
+            # **BaseLoader を使う。** safe_load は引用符の無い yes/no/on/off を
+            # 真偽値へ解決してしまい、`"yes":` と `yes:` で集合が変わる
+            # （＝意味を変えない整形で CI が止まる。独立レビューの指摘）。
+            # BaseLoader は全スカラーを文字列のまま返すので、綴りが保たれる。
+            doc = yaml.load(raw.decode("utf-8"), Loader=yaml.BaseLoader)
+        except Exception as exc:
+            raise SnapshotError(kind, label, "YAML として解釈できない: {0}".format(type(exc).__name__))
+        if doc is None:
             continue
-        if not isinstance(block, dict):
-            raise SnapshotError(kind, path, "{0} がマッピングでない".format(section))
-        for name in block:
-            items.append((str(name), section))
+        if not isinstance(doc, dict):
+            raise SnapshotError(kind, label, "最上位がマッピングでない")
+        for section in PUBSPEC_SECTIONS:
+            block = doc.get(section)
+            if block is None:
+                continue
+            if not isinstance(block, dict):
+                raise SnapshotError(kind, label, "{0} がマッピングでない".format(section))
+            for name, spec in block.items():
+                text = str(name)
+                items.append((
+                    "{0}:{1}/{2}@{3}".format(label, section, text, _dart_source_kind(spec)),
+                    "{0} の {1}".format(label, section),
+                ))
     return items
 
 
-REQ_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:\[[^\]]*\])?\s*(?:[=<>~!;@]|$)")
-REQ_INCLUDE = re.compile(r"^\s*-r\s+(\S+)")
+# --------------------------------------------------------------------------
+# 依存（Python）
+# --------------------------------------------------------------------------
+
+#: pip の requirements 行のうち、依存を表さないオプション。
+_REQ_NON_DEP_OPTIONS = (
+    "--index-url", "-i", "--extra-index-url", "--find-links", "-f",
+    "--no-index", "--trusted-host", "--pre", "--constraint", "-c",
+    "--only-binary", "--no-binary", "--require-hashes", "--hash",
+)
+_REQ_INCLUDE = re.compile(r"^\s*(?:-r|--requirement)[\s=]+(\S+)")
+_REQ_EDITABLE = re.compile(r"^\s*(?:-e|--editable)[\s=]+(\S+)")
+_EGG_FRAGMENT = re.compile(r"[#&]egg=([A-Za-z0-9._-]+)")
 
 
-def _parse_requirements(path: str, kind: str, seen: Dict[str, str]) -> None:
+def _name_from_url(spec: str) -> str:
+    """直 URL / VCS 指定からパッケージ名を取る。取れなければ URL そのものを名前にする。
+
+    名前が確定できなくても**面としては存在する**ので、集合に入れる。
+    捨てると素通しになる（初回の再実装は `git+https://…` を捨てていた）。
+    """
+    egg = _EGG_FRAGMENT.search(spec)
+    if egg:
+        return egg.group(1).lower()
+    tail = spec.split("#", 1)[0].rstrip("/").rsplit("/", 1)[-1]
+    for suffix in (".git", ".whl", ".tar.gz", ".zip"):
+        if tail.endswith(suffix):
+            tail = tail[: -len(suffix)]
+            break
+    return (tail or spec).lower()
+
+
+def _parse_requirements(path: str, label: str, kind: str, out: Dict[str, str],
+                        seen_files: set, repo_root: str) -> None:
+    from packaging.requirements import InvalidRequirement, Requirement
+
+    real = os.path.realpath(path)
+    if real in seen_files:
+        return
+    seen_files.add(real)
     raw = _read(path, kind)
     directory = os.path.dirname(path)
-    for line in raw.decode("utf-8", errors="replace").splitlines():
-        stripped = line.strip()
+
+    # 行継続（バックスラッシュ）を畳んでから解釈する
+    text = raw.decode("utf-8", errors="replace").replace("\\\n", " ")
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        stripped = line.split(" #", 1)[0].strip()
         if not stripped or stripped.startswith("#"):
             continue
-        include = REQ_INCLUDE.match(stripped)
+
+        include = _REQ_INCLUDE.match(stripped)
         if include:
-            _parse_requirements(os.path.join(directory, include.group(1)), kind, seen)
+            nested = os.path.join(directory, include.group(1))
+            if not os.path.isfile(nested):
+                raise SnapshotError(kind, label, "{0} 行目の include 先が無い".format(lineno))
+            _parse_requirements(nested, _rel(repo_root, nested), kind, out, seen_files, repo_root)
+            continue
+
+        editable = _REQ_EDITABLE.match(stripped)
+        if editable:
+            out.setdefault("{0}/{1}@editable".format(label, _name_from_url(editable.group(1))), label)
+            continue
+
+        if stripped.startswith(_REQ_NON_DEP_OPTIONS):
             continue
         if stripped.startswith("-"):
-            continue  # -e / --index-url 等
-        match = REQ_NAME.match(stripped)
-        if match:
-            seen.setdefault(match.group(1).lower(), os.path.basename(path))
+            raise SnapshotError(kind, label, "{0} 行目の未知のオプション: {1}".format(lineno, stripped[:40]))
+
+        if "://" in stripped and not stripped[0].isalnum():
+            raise SnapshotError(kind, label, "{0} 行目を解釈できない".format(lineno))
+        if "://" in stripped.split(";")[0] and "@" not in stripped.split("://")[0]:
+            out.setdefault("{0}/{1}@url".format(label, _name_from_url(stripped)), label)
+            continue
+
+        try:
+            requirement = Requirement(stripped)
+        except InvalidRequirement:
+            # **捨てない。** 解釈できない行があること自体が取得失敗である。
+            raise SnapshotError(kind, label, "{0} 行目を解釈できない: {1}".format(lineno, stripped[:40]))
+        source = "url" if requirement.url else "index"
+        out.setdefault("{0}/{1}@{2}".format(label, requirement.name.lower(), source), label)
 
 
 def python_dependencies(repo_root: str) -> List[Item]:
-    """`backend/requirements*.txt` のパッケージ名。バージョンは見ない。
+    """`requirements*.txt` のパッケージ名。**PEP 508 パーサ（packaging）で読む。**
 
-    バージョンを状態に含めると dependabot の更新で毎回発火し、ゲートを外す圧力になる。
-    見張っているのは「**新しい外部の面**が増えたか」であって版数ではない。
+    バージョンは見ない。バージョンを状態に含めると dependabot の更新で毎回発火し、
+    ゲートを外す圧力になる。見張っているのは「新しい外部の面」であって版数ではない。
     """
     kind = "python_dependencies"
-    backend = os.path.join(repo_root, "backend")
-    if not os.path.isdir(backend):
-        raise SnapshotError(kind, backend, "backend/ が存在しない")
-    seen: Dict[str, str] = {}
-    found_any = False
-    for name in sorted(os.listdir(backend)):
-        if name.startswith("requirements") and name.endswith(".txt"):
-            found_any = True
-            _parse_requirements(os.path.join(backend, name), kind, seen)
-    if not found_any:
-        raise SnapshotError(kind, backend, "requirements*.txt が1つも無い")
-    return sorted(seen.items())
+    paths = discover(
+        repo_root,
+        lambda n: n.startswith("requirements") and n.endswith(".txt"),
+    )
+    _require(paths, kind, "requirements*.txt")
+    out: Dict[str, str] = {}
+    seen: set = set()
+    for path in paths:
+        _parse_requirements(path, _rel(repo_root, path), kind, out, seen, repo_root)
+    return sorted(out.items())
 
 
 # --------------------------------------------------------------------------
@@ -121,49 +250,46 @@ def python_dependencies(repo_root: str) -> List[Item]:
 
 
 def android_permissions(repo_root: str) -> List[Item]:
-    """`AndroidManifest.xml` の権限。**XML パーサで読む**ので属性の書き方に依存しない。"""
-    kind = "android_permissions"
-    base = os.path.join(repo_root, "frontend", "kotonoha_app", "android")
-    if not os.path.isdir(base):
-        raise SnapshotError(kind, base, "android/ が存在しない")
-    manifests = []
-    for root, _dirs, files in os.walk(base):
-        if "build" in root.split(os.sep):
-            continue
-        if "AndroidManifest.xml" in files:
-            manifests.append(os.path.join(root, "AndroidManifest.xml"))
-    if not manifests:
-        raise SnapshotError(kind, base, "AndroidManifest.xml が1つも無い")
+    """`AndroidManifest.xml` の権限。**XML パーサで読む。**
 
+    識別子に flavor（main / debug / profile）を含める。`debug` にしか無かった権限が
+    `main` へ移る変更は、名前だけを見ていると素通しする。
+    """
+    kind = "android_permissions"
+    paths = discover(repo_root, lambda n: n == "AndroidManifest.xml")
+    _require(paths, kind, "AndroidManifest.xml")
     items: List[Item] = []
-    for path in sorted(manifests):
-        raw = _read(path, kind)
+    for path in paths:
+        label = _rel(repo_root, path)
         try:
-            root_el = ET.fromstring(raw)
+            root_el = ET.fromstring(_read(path, kind))
         except ET.ParseError as exc:
-            raise SnapshotError(kind, path, "XML として解釈できない: {0}".format(exc))
-        flavor = os.path.basename(os.path.dirname(path))
+            raise SnapshotError(kind, label, "XML として解釈できない: {0}".format(exc))
         for tag in ("uses-permission", "uses-permission-sdk-23", "uses-feature"):
             for element in root_el.iter(tag):
                 name = element.get(ANDROID_NAME)
                 if name:
-                    items.append((name, "{0} / {1}".format(tag, flavor)))
+                    items.append(("{0}:{1}/{2}".format(label, tag, name), label))
     return items
 
 
 def ios_privacy_keys(repo_root: str) -> List[Item]:
     """`Info.plist` の権限系キー。**plist パーサで読む**のでタグの改行に依存しない。"""
     kind = "ios_privacy_keys"
-    path = os.path.join(repo_root, "frontend", "kotonoha_app", "ios", "Runner", "Info.plist")
-    raw = _read(path, kind)
-    try:
-        doc = plistlib.loads(raw)
-    except Exception as exc:
-        raise SnapshotError(kind, path, "plist として解釈できない: {0}".format(type(exc).__name__))
+    paths = discover(repo_root, lambda n: n == "Info.plist")
+    _require(paths, kind, "Info.plist")
     items: List[Item] = []
-    for key in doc:
-        if key.endswith("UsageDescription") or key in IOS_PRIVACY_EXTRA:
-            items.append((key, "Info.plist"))
+    for path in paths:
+        label = _rel(repo_root, path)
+        try:
+            doc = plistlib.loads(_read(path, kind))
+        except Exception as exc:
+            raise SnapshotError(kind, label, "plist として解釈できない: {0}".format(type(exc).__name__))
+        if not isinstance(doc, dict):
+            raise SnapshotError(kind, label, "最上位が辞書でない")
+        for key in doc:
+            if key.endswith("UsageDescription") or key in IOS_PRIVACY_EXTRA:
+                items.append(("{0}:{1}".format(label, key), label))
     return items
 
 
@@ -171,37 +297,38 @@ def ios_privacy_keys(repo_root: str) -> List[Item]:
 # 設定キー
 # --------------------------------------------------------------------------
 
-ENV_KEY = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*=")
+#: dotenv の代入行。`export` 前置き・小文字・先頭アンダースコアを受ける。
+ENV_ASSIGNMENT = re.compile(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=")
 
 
 def env_example_keys(repo_root: str) -> List[Item]:
-    """`.env.example` の**全キー**。「秘密かどうか」の名前判定はしない。
+    """`*.env.example` の**全キー**。「秘密かどうか」の名前判定はしない。
 
     判定を挟むと `URI` / `URL` / `DSN` を落とす（初回実装は
     `RATE_LIMIT_STORAGE_URI=redis://u:pass@h/0` を素通しした）。
-    **全キーを許可リストで持つ方が、狭くて漏れる判定より良い**（ADR-008）。
+    構文による除外もしない——`export KEY=` も小文字キーも dotenv の有効表記である。
+    **代入行として解釈できない行があればエラーにする**（黙って捨てない）。
     """
     kind = "env_example_keys"
-    candidates = [
-        os.path.join(repo_root, ".env.example"),
-        os.path.join(repo_root, "backend", ".env.example"),
-    ]
-    present = [p for p in candidates if os.path.isfile(p)]
-    if not present:
-        raise SnapshotError(kind, ".env.example", "1つも存在しない")
+    paths = discover(repo_root, lambda n: n == ".env.example" or n.endswith(".env.example"))
+    _require(paths, kind, "*.env.example")
     items: List[Item] = []
-    for path in present:
+    for path in paths:
+        label = _rel(repo_root, path)
         raw = _read(path, kind)
-        label = os.path.relpath(path, repo_root)
-        for line in raw.decode("utf-8", errors="replace").splitlines():
-            match = ENV_KEY.match(line)
-            if match:
-                items.append((match.group(1), label))
+        for lineno, line in enumerate(raw.decode("utf-8", errors="replace").splitlines(), start=1):
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            match = ENV_ASSIGNMENT.match(line)
+            if not match:
+                raise SnapshotError(kind, label, "{0} 行目を代入として解釈できない".format(lineno))
+            items.append(("{0}:{1}".format(label, match.group(1)), label))
     return items
 
 
-#: ブロックする検査の一覧。Phase 2・3 で openapi_paths / import_side_effects /
-#: hive_schema を足す（ADR-008 の表）。
+#: ブロックする検査。Phase 2 で openapi_operations / import_side_effects、
+#: Phase 3 で hive_schema を足す（ADR-008 の表）。
 SNAPSHOTS = [
     ("dart_dependencies", "Dart の依存", dart_dependencies),
     ("python_dependencies", "Python の依存", python_dependencies),

@@ -16,12 +16,16 @@ import argparse
 import os
 import sys
 
-from .allowlist import load as load_allowlist
+from .allowlist import ALLOWLIST_PATH
 from .allowlist import save as save_allowlist
 from .errors import SnapshotError
 from .gate import run
 from .report import render, render_annotations
 from .snapshot import SNAPSHOTS
+
+
+#: selftest が集めるべきテストの下限。増やしたら上げること。
+MINIMUM_TESTS = 30
 
 
 def repo_root() -> str:
@@ -42,12 +46,27 @@ def cmd_check(_args: argparse.Namespace) -> int:
 
 
 def cmd_seed(args: argparse.Namespace) -> int:
-    """いまの状態を経過措置として許可リストに書き出す（初回のみ）。"""
+    """いまの状態を経過措置として許可リストに書き出す。**初回のみ。**
+
+    既に許可リストがあるときは拒否する。再実行を許すと、赤を1コマンドで
+    緑にする手段になる——新しく足した面が「Phase 1 以前から存在」という
+    **事実に反する理由**つきで経過措置に化ける（独立レビューの指摘）。
+    敵対的な回避者でなく、CLI のヘルプに従った実装担当がゲートを無効化できてしまう。
+
+    また、許可リストが「無い」ことと「壊れている」ことを区別する。
+    壊れた許可リストを seed で上書きすると、破損の検出そのものが消える。
+    """
     root = repo_root()
-    try:
-        entries = load_allowlist(root)
-    except SnapshotError:
-        entries = {}
+    path = os.path.join(root, ALLOWLIST_PATH)
+    if os.path.exists(path):
+        sys.stderr.write(
+            "許可リストが既にある: {0}\n"
+            "seed は初回のみのコマンドである。面を1つ足したなら、その1行を手で書くこと:\n"
+            '  "<識別子>": {{"adr": "ADR-00X", "why": "なぜ許可するか1行"}}\n'
+            "決定が無いなら、実装をやめて ADR を1本作る（tsumiki:adr-rubber-duck）。\n".format(ALLOWLIST_PATH)
+        )
+        return 1
+    entries: dict = {}
 
     added = 0
     for kind, _label, snapshot in SNAPSHOTS:
@@ -87,7 +106,16 @@ def cmd_selftest(_args: argparse.Namespace) -> int:
     here = os.path.dirname(os.path.abspath(__file__))
     root = os.path.dirname(os.path.dirname(here))
     suite = unittest.TestLoader().discover(os.path.join(here, "tests"), top_level_dir=root)
-    return 0 if unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful() else 1
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    # **本数の下限を置く。** テストが1本も集まらなくても unittest は緑を返すので、
+    # ファイルを消す・名前を変えるだけで「ゲート自身の検査」が空振りになる。
+    if result.testsRun < MINIMUM_TESTS:
+        sys.stderr.write(
+            "テストが {0} 件しか集まらなかった（下限 {1}）。"
+            "収集漏れかファイルの削除を疑うこと\n".format(result.testsRun, MINIMUM_TESTS)
+        )
+        return 1
+    return 0 if result.wasSuccessful() else 1
 
 
 def main(argv: list) -> int:

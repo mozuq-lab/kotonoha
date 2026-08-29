@@ -2,405 +2,485 @@
   "_note": "負債ゲートの許可リスト。詳細は docs/adr/ADR-008-debt-gate-state-comparison.md。新しい面を足すときは adr に docs/adr/ の実在番号を書き、why に理由を1行で書くこと。",
   "entries": {
     "android_permissions": {
-      "android.permission.ACCESS_NETWORK_STATE": {
+      "frontend/kotonoha_app/android/app/src/debug/AndroidManifest.xml:uses-permission/android.permission.INTERNET": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "android.permission.INTERNET": {
+      "frontend/kotonoha_app/android/app/src/main/AndroidManifest.xml:uses-feature/android.software.tts": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "android.software.tts": {
+      "frontend/kotonoha_app/android/app/src/main/AndroidManifest.xml:uses-permission/android.permission.ACCESS_NETWORK_STATE": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/android/app/src/main/AndroidManifest.xml:uses-permission/android.permission.INTERNET": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/android/app/src/profile/AndroidManifest.xml:uses-permission/android.permission.INTERNET": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       }
     },
     "dart_dependencies": {
-      "analyzer": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/audioplayers@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "audioplayers": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/connectivity_plus@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "connectivity_plus": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/cupertino_icons@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "cupertino_icons": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/dio@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "dio": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/flutter@sdk": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "flutter": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/flutter_localizations@sdk": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "flutter_lints": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/flutter_riverpod@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "flutter_localizations": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/flutter_tts@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "flutter_riverpod": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/go_router@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "flutter_test": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/hive@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "flutter_tts": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/hive_flutter@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "go_router": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/intl@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "hive": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/logger@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "hive_flutter": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/path_provider@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "http_mock_adapter": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/shared_preferences@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "integration_test": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/uuid@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "intl": {
+      "frontend/kotonoha_app/pubspec.yaml:dependencies/volume_controller@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "logger": {
+      "frontend/kotonoha_app/pubspec.yaml:dev_dependencies/analyzer@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "mocktail": {
+      "frontend/kotonoha_app/pubspec.yaml:dev_dependencies/flutter_lints@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "path_provider": {
+      "frontend/kotonoha_app/pubspec.yaml:dev_dependencies/flutter_test@sdk": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "shared_preferences": {
+      "frontend/kotonoha_app/pubspec.yaml:dev_dependencies/http_mock_adapter@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "uuid": {
+      "frontend/kotonoha_app/pubspec.yaml:dev_dependencies/integration_test@sdk": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "volume_controller": {
+      "frontend/kotonoha_app/pubspec.yaml:dev_dependencies/mocktail@hosted": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       }
     },
     "env_example_keys": {
-      "ACCESS_TOKEN_EXPIRE_MINUTES": {
+      ".env.example:AI_API_KEY": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "AI_API_KEY": {
+      ".env.example:API_BASE_URL": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "AI_API_TIMEOUT": {
+      ".env.example:POSTGRES_DB": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "AI_CALL_DEADLINE_SECONDS": {
+      ".env.example:POSTGRES_PASSWORD": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "AI_MAX_RETRIES": {
+      ".env.example:POSTGRES_PORT": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "ANTHROPIC_MODEL": {
+      ".env.example:POSTGRES_USER": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "API_BASE_URL": {
+      ".env.example:SECRET_KEY": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "API_HOST": {
+      "backend/.env.example:ACCESS_TOKEN_EXPIRE_MINUTES": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "API_KEYS": {
+      "backend/.env.example:AI_API_TIMEOUT": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "API_PORT": {
+      "backend/.env.example:AI_CALL_DEADLINE_SECONDS": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "API_V1_STR": {
+      "backend/.env.example:AI_MAX_RETRIES": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "CORS_ORIGINS": {
+      "backend/.env.example:ANTHROPIC_MODEL": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "DEFAULT_AI_PROVIDER": {
+      "backend/.env.example:API_HOST": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "ENVIRONMENT": {
+      "backend/.env.example:API_KEYS": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "LOG_FILE_PATH": {
+      "backend/.env.example:API_PORT": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "LOG_LEVEL": {
+      "backend/.env.example:API_V1_STR": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "OPENAI_MODEL": {
+      "backend/.env.example:CORS_ORIGINS": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "POSTGRES_DB": {
+      "backend/.env.example:DEFAULT_AI_PROVIDER": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "POSTGRES_HOST": {
+      "backend/.env.example:ENVIRONMENT": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "POSTGRES_PASSWORD": {
+      "backend/.env.example:LOG_FILE_PATH": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "POSTGRES_PORT": {
+      "backend/.env.example:LOG_LEVEL": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "POSTGRES_USER": {
+      "backend/.env.example:OPENAI_MODEL": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "PROJECT_NAME": {
+      "backend/.env.example:POSTGRES_DB": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "RATE_LIMIT_SECONDS": {
+      "backend/.env.example:POSTGRES_HOST": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "RATE_LIMIT_STORAGE_URI": {
+      "backend/.env.example:POSTGRES_PASSWORD": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "RATE_LIMIT_TIMES": {
+      "backend/.env.example:POSTGRES_PORT": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "SECRET_KEY": {
+      "backend/.env.example:POSTGRES_USER": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "SESSION_EXPIRE_MINUTES": {
+      "backend/.env.example:PROJECT_NAME": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "TRUSTED_PROXY_COUNT": {
+      "backend/.env.example:RATE_LIMIT_SECONDS": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "VERSION": {
+      "backend/.env.example:RATE_LIMIT_STORAGE_URI": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "backend/.env.example:RATE_LIMIT_TIMES": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "backend/.env.example:SECRET_KEY": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "backend/.env.example:SESSION_EXPIRE_MINUTES": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "backend/.env.example:TRUSTED_PROXY_COUNT": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "backend/.env.example:VERSION": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/web/.env.example:API_BASE_URL": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/web/.env.example:API_VERSION": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/web/.env.example:BASE_HREF": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/web/.env.example:CACHE_VERSION": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/web/.env.example:DEBUG_MODE": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/web/.env.example:ENABLE_AI_CONVERSION": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/web/.env.example:ENABLE_ANALYTICS": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/web/.env.example:PUBLIC_URL": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "frontend/kotonoha_app/web/.env.example:PWA_UPDATE_STRATEGY": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       }
     },
     "ios_privacy_keys": {
-      "NSAppTransportSecurity": {
+      "frontend/kotonoha_app/ios/Runner/Info.plist:NSAppTransportSecurity": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "UIBackgroundModes": {
+      "frontend/kotonoha_app/ios/Runner/Info.plist:UIBackgroundModes": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       }
     },
     "python_dependencies": {
-      "alembic": {
+      "backend/requirements.txt/alembic@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "anthropic": {
+      "backend/requirements.txt/anthropic@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "asyncpg": {
+      "backend/requirements.txt/asyncpg@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "bcrypt": {
+      "backend/requirements.txt/bcrypt@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "black": {
+      "backend/requirements.txt/black@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "fastapi": {
+      "backend/requirements.txt/fastapi@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "httpx": {
+      "backend/requirements.txt/httpx@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "openai": {
+      "backend/requirements.txt/openai@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "psycopg2-binary": {
+      "backend/requirements.txt/psycopg2-binary@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "pydantic": {
+      "backend/requirements.txt/pydantic-settings@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "pydantic-settings": {
+      "backend/requirements.txt/pydantic@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "pytest": {
+      "backend/requirements.txt/pytest-asyncio@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "pytest-asyncio": {
+      "backend/requirements.txt/pytest-cov@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "pytest-cov": {
+      "backend/requirements.txt/pytest@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "python-jose": {
+      "backend/requirements.txt/python-jose@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "python-multipart": {
+      "backend/requirements.txt/python-multipart@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "redis": {
+      "backend/requirements.txt/redis@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "ruff": {
+      "backend/requirements.txt/ruff@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "slowapi": {
+      "backend/requirements.txt/slowapi@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "sqlalchemy": {
+      "backend/requirements.txt/sqlalchemy@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"
       },
-      "uvicorn": {
+      "backend/requirements.txt/uvicorn@index": {
         "adr": null,
         "grandfathered": true,
         "why": "Phase 1 以前から存在。決定の記録なし"

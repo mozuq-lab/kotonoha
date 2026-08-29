@@ -25,7 +25,12 @@ class Result:
     invalid: List[Tuple[str, str, str]] = field(default_factory=list)
     #: 状態を取得できなかった。**緑にしない。**
     errors: List[SnapshotError] = field(default_factory=list)
-    #: 許可リストにあるが実体が無い（掃除できる）。落とさない。
+    #: 許可リストにあるが実体が無い。**落とす。**
+    #:
+    #: 落とさないと「削除 → 許可だけ残る → ADR 無しで再導入できる」経路が開く。
+    #: Phase 2 は sqlalchemy / redis を消すので、そのまま放置すると
+    #: ADR-001 / ADR-002 の守りが削除の直後に無効化される（独立レビューの指摘）。
+    #: 直し方は許可リストから1行消すだけなので、削除作業を止める負担にはならない。
     stale: List[Tuple[str, str]] = field(default_factory=list)
     #: 経過措置で通した件数。
     grandfathered: int = 0
@@ -34,7 +39,7 @@ class Result:
 
     @property
     def blocking(self) -> bool:
-        return bool(self.unlisted or self.invalid or self.errors)
+        return bool(self.unlisted or self.invalid or self.errors or self.stale)
 
 
 def run(repo_root: str) -> Result:
