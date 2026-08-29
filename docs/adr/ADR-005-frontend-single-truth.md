@@ -24,7 +24,7 @@ null を返すフォールバックが「意図した設計」として実装さ
 ## 検討した選択肢
 
 お気に入りの真実:
-1. 現状維持（3箇所併存） 2. `HistoryItem.isFavorite` に一本化
+1. 現状維持（4箇所併存） 2. `HistoryItem.isFavorite` に一本化
 3. **`favoriteProvider` に一本化し、`isFavorite` を Hive migration で削除**（採用）
 
 永続化失敗の扱い:
