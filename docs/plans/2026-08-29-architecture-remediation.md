@@ -274,7 +274,10 @@ OpenSpec をやめても `openspec/specs/` は素の Markdown として残る。
 2. **最初の大改修と同時に学ばない。** 実行順序が 1→3→2 になったため（ADR-007）、
    導入は **frontend フェーズ（Phase 3）の後半**——お気に入り・永続化状態を
    「仕様として書き取る」段階——からにする。フェーズ前半の状態モデル設計・修正は
-   OpenSpec なしで行う
+   OpenSpec なしで行う。**最初の2 capability は既に実装された内容の baseline 書き取り**
+   であり、propose → 承認 → apply のサイクル対象外。planning boundary と delta 管理が
+   実際に効き始めるのは、その後の change から（再レビューの指摘を明文化——
+   実装後の仕様書き取りに planning boundary は適用しようがない）
 3. `openspec/config.yaml` の `context:` に技術スタックと ADR の要約を書く
    （これも B の押し出しチャネルになる）
 
@@ -320,11 +323,14 @@ OpenSpec をやめても `openspec/specs/` は素の Markdown として残る。
 
 **実行順序は 0 → 1 → 3 → リリース準備 → 2 → 4 → 5 とする**（章番号は変えない）。
 根拠は ADR-007: 初回リリースは AI 変換抜きでよく、リリースのクリティカルパスは
-frontend（Phase 3）のみ。backend（Phase 2）は公開後に続け、AI 変換はその時点で提供開始する。
+frontend（Phase 3）のみ。**Phase 2 はストア提出後、審査待ちと並行して進めてよい**——
+本公開の確認にゲートされるのは **AI 変換の有効化**（端末 API キーの配布。ADR-002 の
+支出上限の証跡確認を含む）だけで、backend のコード作業自体は公開を待たない
+（再レビューの指摘: 「公開後」のままだと審査中に進めてよいかを機械的に区別できない）。
 
 | 工程 | 内容 | 警報線 |
 |---|---|---|
-| Phase 1 | 負債ゲート・ブランチ処理 | 1.5日 |
+| Phase 1 | 負債ゲート・ブランチ処理 | 2日（AST ゲートの fixture 分を含む） |
 | Phase 3 | frontend の正しさ（リリース条件の主体） | 5〜8日 |
 | リリース準備 | クラッシュ報告の ADR＋実装・ストア登録・プライバシーポリシー更新・提出 | 3〜5日（審査待ちは別勘定） |
 | Phase 2 | backend 書き直し（公開後） | 5〜8日 |
@@ -407,7 +413,7 @@ Phase 0 を閉じるとき、Phase 1 以降を work package 単位で見積も�
 **文書は破れる**ので、これだけでは足りない。A（消す）を Phase 2・3 で、
 C（ゲート）を Phase 1 で入れる。**文書・押し出し・検査の3つを揃えて初めて機能する。**
 
-### Phase 1 — 負債ゲートを張り、作業ブランチを処理する（1.5日）
+### Phase 1 — 負債ゲートを張り、作業ブランチを処理する（2日）
 
 **先にゲートを張る。** これは以降のすべてのフェーズを守る仕組みなので、
 Phase 2・3 の大きな改修より前に置く。設定だけなので Phase 2 に依存しない。
@@ -446,8 +452,11 @@ Phase 4 の棚卸しで見直す。「これは存在すべきか」を問う工
 現在フックは**1つも設定されていない**（`PostToolUse` / `PermissionRequest` ともに0件）。
 押し出しチャネルが未使用のまま残っている。設定は `update-config` スキルで行う。
 
-実装は、`git diff` に対する grep と、PR 本文／編集内容の `ADR-\d+` 照合でよい。
-フックと CI で半日を見込む。
+実装は、大半の項目が `git diff` に対する grep と、PR 本文／編集内容の `ADR-\d+` 照合で
+足りる。**「可変グローバル・副作用の追加」だけは AST ベース**で対象ノードと allowlist を
+定め、陽性・陰性の fixture で検査自体をテストする（grep では `@router.post` や
+`getLogger` の誤検知と `client = X()` の見逃しが避けられない——再レビューの指摘）。
+フックと CI で1日を見込む。
 
 #### `fix/backend-production-hardening` の処理
 
@@ -518,8 +527,10 @@ redis==8.0.1
   in-memory なら起動失敗（ADR-002）。**検出できるのは同一コンテナ内の worker まで**——
   single-worker × 複数 replica は素通しするので、replica 上限は ADR-002 のデプロイ側契約
   （IaC 固定 or 上流レート制限）で縛る
-- stdlib `logging` の直接 import が `app/logging.py` 以外に0件（ADR-003。`str(exc)` の grep は
-  `logger.error(f"{exc}")` 形を捕まえられないため、受け口の型と canary 注入検査を主体にする）
+- stdlib `logging` の直接 import が `app/logging.py` 以外に0件、**`print(` / `sys.stderr` /
+  `traceback.print_exc` も `app/` に0件**（stdout / stderr へ書けるのは `app/logging.py` のみ。
+  ADR-003。grep は `logger.error(f"{exc}")` や `print(exc)` を捕まえられないため、
+  受け口の型と canary 注入検査を主体にする）
 - subprocess import smoke — 外部境界を封じた環境で `python -c "import app.main"` が
   外部アクセスゼロで完了する（ADR-004。代入を伴わない副作用呼び出しも捕まえる）
 
@@ -712,6 +723,8 @@ Issue #84 は「テストの陳腐化と考えられます」と書く一方、�
 - `openspec/specs/` に frontend の capability 単位で仕様を置く
 - 「お気に入り」「永続化の状態」の2つを最初の capability にする——
   どちらもこの Phase で決着させる概念で、仕様として書く価値がある
+  （この2つは **baseline の書き取り**で propose→apply の対象外。
+  以後の改修から change サイクルに入る。§5 条件2）
 - `openspec/config.yaml` の `context:` に ADR 7本の要約を書く（B の押し出し）
 
 **条件は §5「使う道具」の3つを守ること。**特に、archive 後に `openspec/changes/` 配下へ
@@ -808,7 +821,7 @@ Phase 4 を待たずに作ってよい。作った時点から回せる。
 |---|---|
 | 0 | `docs/adr/` に7本存在し、それぞれ「決定・却下案・理由」を含む。**`AGENTS.md` に決定の1行要約7本と「実装前に ADR を読む」指示が入っている。入力バッファの件が実ブラウザで切り分け済み** |
 | 1 | **負債ゲートが `PostToolUse` フックと CI の両方に入り、7種類の行為を検出して ADR 引用を要求する。** 意図的に依存を1行足したとき、**フックがその場で止め**、CI でも落ちることを確認済み。`fix/backend-production-hardening` から拾う対象が特定され、ブランチが閉じている |
-| 2 | `app/models` `app/crud` `app/db` `alembic` が存在しない。**`requirements.txt` に `sqlalchemy` `alembic` `asyncpg` `psycopg2-binary` `redis` が存在しない。** `grep -rn "str(exc)\|str(e)\|format_exc" app/` が 0件。`import-linter` `mypy --strict` `pytest-randomly` が CI で緑。**モックが外部 SDK 境界のみにあり、自分の関数を patch している箇所が0件。** 記号を含む API キー・プロバイダキーを設定した状態で起動し、`/health` が 200 を返し AI 変換が1往復する smoke が通る。**明示的に廃止した項目を除き、旧・新実装の正規化 OpenAPI diff が空（prefix・status code・エラー schema・429 ヘッダー・認証・CORS を含む）。同じ characterization テスト一式が旧・新の両実装で同結果。構造化ログに latency・成否・プロバイダが載ることをテストで観測済み。`AGENTS.md` の API仕様・開発コマンド節が新 backend の実態と一致している（Redis 前提の記述が残っていない）** |
+| 2 | `app/models` `app/crud` `app/db` `alembic` が存在しない。**`requirements.txt` に `sqlalchemy` `alembic` `asyncpg` `psycopg2-binary` `redis` が存在しない。** `grep -rn "str(exc)\|str(e)\|format_exc\|print(\|print_exc\|sys.stderr" app/` が `app/logging.py` の出力実装を除き0件。**例外境界（プロバイダ SDK・入力検証・想定外例外）ごとに canary 例外を注入し、stdout / stderr / HTTP ボディに canary が現れないことを観測するテストが緑。**`import-linter` `mypy --strict` `pytest-randomly` が CI で緑。**モックが外部 SDK 境界のみにあり、自分の関数を patch している箇所が0件。** 記号を含む API キー・プロバイダキーを設定した状態で起動し、`/health` が 200 を返し AI 変換が1往復する smoke が通る。**明示的に廃止した項目を除き、旧・新実装の正規化 OpenAPI diff が空（prefix・status code・エラー schema・429 ヘッダー・認証・CORS を含む）。同じ characterization テスト一式が旧・新の両実装で同結果。構造化ログに latency・成否・プロバイダが載ることをテストで観測済み。`AGENTS.md` の API仕様・開発コマンド節が新 backend の実態と一致している（Redis 前提の記述が残っていない）** |
 | 3 | Hive が開けないとき利用者に通知される。`isFavorite` が存在しない。往復テストが4 feature に存在。**Hive スキーマの許可リスト検査が CI にある。** **入力バッファの件（Phase 0 で切り分け済み）が、アプリ不具合だった場合は修正済み**。**E2E は残す4経路が CI で緑、外す2本は nightly か削除に振り分け済み。** **`openspec/specs/` に capability が2つ以上あり、`config.yaml` の `context:` に ADR 要約が入っている** |
 | 4 | **棚卸しがプロジェクト固有スキルとして存在し**、1回実施して結果が記録されている。その1回で **`AGENTS.md` の道具リストが全件実在することを確認済み**。`mutmut` が対象領域で回り、kill rate が記録されている |
 | 5 | `docs/adr/` `docs/spec/` `docs/privacy-policy.md` 以外の現行文書が archive へ移動済み |

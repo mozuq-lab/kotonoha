@@ -26,9 +26,11 @@
 案3。新 backend の `errors.py` は `ErrorCode` と `SafeError` しか受け取らない——
 `str(exc)` を渡せる引数が存在しなくなる。補助として:
 
-- grep ゲート: `str(exc)` / `str(e)` / `format_exc` が `app/` に0件（CI）。
-  **ただしこの grep は `logger.error(f"{exc}")` の形を捕まえられない**（独立レビューの
-  反例——背景に挙げた16箇所がまさにこの形）。grep は補助とし、主体は次の2つ:
+- grep ゲート: `str(exc)` / `str(e)` / `format_exc` に加え、**`print(` / `sys.stderr` /
+  `traceback.print_exc` も `app/` に0件**（stdout / stderr へ書けるのは `app/logging.py`
+  の出力実装だけ。再レビューの反例: `except … as exc: print(exc)` は当初の3語 grep・
+  logging 制限・mypy をすべて通過する）。
+  **grep は `logger.error(f"{exc}")` の形を捕まえられない**ため補助とし、主体は次の2つ:
 - **ログの受け口も型付きにする**: 出力は構造化ログ関数（`app/logging.py`）経由のみ。
   stdlib `logging` の直接 import は `app/logging.py` 以外で0件（grep / import-linter）
 - **canary 注入検査**: canary を仕込んだ例外を注入し、全シンク

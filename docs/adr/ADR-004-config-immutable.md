@@ -34,6 +34,13 @@
 **subprocess import smoke**: 外部境界を封じた環境で `python -c "import app.main"` が
 外部アクセスゼロで完了することを完了条件にする。
 
+ゲートの実装は grep ではなく **AST ベース**とする——モジュール直下の対象ノードと
+allowlist（デコレータ・型エイリアス・`logging.getLogger` 等の正当な呼び出し）を定義し、
+陽性（`register_provider()`）・陰性の fixture で**検査自体をテスト**する（grep では
+`@router.post` の誤検知と `client = X()` の見逃しが避けられない——再レビューの指摘）。
+import smoke が「通信しない資源生成」（クライアントの生成のみ等）を検出できないことも
+既知の限界として記録する。
+
 ## 決定理由（却下した案と理由）
 
 - **案1を却下**: 自己 patch 100箇所のテスト構造と split-brain の根本原因。
