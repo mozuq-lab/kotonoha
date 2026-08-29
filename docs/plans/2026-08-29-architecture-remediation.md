@@ -475,10 +475,10 @@ Phase 4 を待たずに作ってよい。作った時点から回せる。
 | Phase | 完了条件 |
 |---|---|
 | 0 | `docs/adr/` に6本存在し、それぞれ「決定・却下案・理由」を含む。**`CLAUDE.md` と `AGENTS.md` に決定の1行要約6本と「実装前に ADR を読む」指示が入っている** |
-| 1 | **負債ゲートが CI に入り、4種類の行為を検出して ADR 引用を要求する。** 意図的に依存を1行足した PR が落ちることを確認済み。`fix/backend-production-hardening` から拾う対象が特定され、ブランチが閉じている |
-| 2 | `app/models` `app/crud` `app/db` `alembic` が存在しない。**`requirements.txt` に `sqlalchemy` `alembic` `asyncpg` `psycopg2-binary` `redis` が存在しない。** `grep -rn "str(exc)\|str(e)\|format_exc" app/` が 0件。`import-linter` `mypy --strict` `pytest-randomly` が CI で緑。記号を含む API キー・プロバイダキーを設定した状態で起動し、`/health` が 200 を返し AI 変換が1往復する smoke が通る |
-| 3 | Hive が開けないとき利用者に通知される。`isFavorite` が存在しない。往復テストが4 feature に存在。**Hive スキーマの許可リスト検査が CI にある。** E2E 5本が CI で緑 |
-| 4 | 棚卸しの手順が `CONTRIBUTING.md` にあり、1回実施済み。`mutmut` が対象3領域で回り、kill rate が記録されている |
+| 1 | **負債ゲートが `PostToolUse` フックと CI の両方に入り、4種類の行為を検出して ADR 引用を要求する。** 意図的に依存を1行足したとき、**フックがその場で止め**、CI でも落ちることを確認済み。`fix/backend-production-hardening` から拾う対象が特定され、ブランチが閉じている |
+| 2 | `app/models` `app/crud` `app/db` `alembic` が存在しない。**`requirements.txt` に `sqlalchemy` `alembic` `asyncpg` `psycopg2-binary` `redis` が存在しない。** `grep -rn "str(exc)\|str(e)\|format_exc" app/` が 0件。`import-linter` `mypy --strict` `pytest-randomly` が CI で緑。**モックが外部 SDK 境界のみにあり、自分の関数を patch している箇所が0件。** 記号を含む API キー・プロバイダキーを設定した状態で起動し、`/health` が 200 を返し AI 変換が1往復する smoke が通る |
+| 3 | Hive が開けないとき利用者に通知される。`isFavorite` が存在しない。往復テストが4 feature に存在。**Hive スキーマの許可リスト検査が CI にある。** E2E 5本が CI で緑。**`openspec/specs/` に capability が2つ以上あり、`config.yaml` の `context:` に ADR 要約が入っている** |
+| 4 | **棚卸しがプロジェクト固有スキルとして存在し**、1回実施して結果が記録されている。`mutmut` が対象領域で回り、kill rate が記録されている |
 | 5 | `docs/adr/` `docs/spec/` `docs/privacy-policy.md` 以外の現行文書が archive へ移動済み |
 
 **Phase 1 の完了条件に「実際に落ちることを確認」を入れてある理由**: ゲートが
@@ -525,6 +525,8 @@ Phase 0 で GitHub Issue に起票する。ラベルは `deferred` / `rejected`�
 | 秘匿処理が収束しなかった経緯の記事 | `docs/articles/why-redaction-fixes-dont-converge.md` |
 | アーキテクチャ決定 | `docs/adr/`（Phase 0 で作成） |
 | Tsumiki 生成物の歴史記録 | `docs/archive/` |
+| 仕様（Phase 3 以降） | `openspec/specs/` |
+| 負債ゲートの設定 | `.claude/settings.json`（フック）／ `.github/workflows/`（CI） |
 
 この計画は Phase 5 の完了時に破棄する。残すべき内容は ADR と実行可能な検査に
 移されているはずで、移せていないものがあれば、それは移すべきものである。
