@@ -1,0 +1,410 @@
+{
+  "_note": "負債ゲートの許可リスト。詳細は docs/adr/ADR-008-debt-gate-state-comparison.md。新しい面を足すときは adr に docs/adr/ の実在番号を書き、why に理由を1行で書くこと。",
+  "entries": {
+    "android_permissions": {
+      "android.permission.ACCESS_NETWORK_STATE": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "android.permission.INTERNET": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "android.software.tts": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      }
+    },
+    "dart_dependencies": {
+      "analyzer": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "audioplayers": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "connectivity_plus": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "cupertino_icons": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "dio": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "flutter": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "flutter_lints": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "flutter_localizations": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "flutter_riverpod": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "flutter_test": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "flutter_tts": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "go_router": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "hive": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "hive_flutter": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "http_mock_adapter": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "integration_test": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "intl": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "logger": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "mocktail": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "path_provider": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "shared_preferences": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "uuid": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "volume_controller": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      }
+    },
+    "env_example_keys": {
+      "ACCESS_TOKEN_EXPIRE_MINUTES": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "AI_API_KEY": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "AI_API_TIMEOUT": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "AI_CALL_DEADLINE_SECONDS": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "AI_MAX_RETRIES": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "ANTHROPIC_MODEL": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "API_BASE_URL": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "API_HOST": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "API_KEYS": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "API_PORT": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "API_V1_STR": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "CORS_ORIGINS": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "DEFAULT_AI_PROVIDER": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "ENVIRONMENT": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "LOG_FILE_PATH": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "LOG_LEVEL": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "OPENAI_MODEL": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "POSTGRES_DB": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "POSTGRES_HOST": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "POSTGRES_PASSWORD": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "POSTGRES_PORT": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "POSTGRES_USER": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "PROJECT_NAME": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "RATE_LIMIT_SECONDS": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "RATE_LIMIT_STORAGE_URI": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "RATE_LIMIT_TIMES": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "SECRET_KEY": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "SESSION_EXPIRE_MINUTES": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "TRUSTED_PROXY_COUNT": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "VERSION": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      }
+    },
+    "ios_privacy_keys": {
+      "NSAppTransportSecurity": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "UIBackgroundModes": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      }
+    },
+    "python_dependencies": {
+      "alembic": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "anthropic": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "asyncpg": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "bcrypt": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "black": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "fastapi": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "httpx": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "openai": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "psycopg2-binary": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "pydantic": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "pydantic-settings": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "pytest": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "pytest-asyncio": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "pytest-cov": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "python-jose": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "python-multipart": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "redis": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "ruff": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "slowapi": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "sqlalchemy": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      },
+      "uvicorn": {
+        "adr": null,
+        "grandfathered": true,
+        "why": "Phase 1 以前から存在。決定の記録なし"
+      }
+    }
+  }
+}
