@@ -88,25 +88,31 @@ class PersistenceBanner extends ConsumerWidget {
 
     if (colors == null || message == null) return const SizedBox.shrink();
 
+    // 【Material で包む理由】: このバナーは AppShell に置かれ、各画面の
+    // Scaffold より外側にある。Material 祖先が無い位置の Text は
+    // WidgetsApp の既定スタイル（赤文字＋黄色の二重下線）を継承するため、
+    // style を部分指定しただけでは下線が残る（実機の Chrome で確認した）。
     return Semantics(
       label: message,
-      child: Container(
-        width: double.infinity,
+      child: Material(
         color: colors.background,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.warning_amber_rounded,
-                size: 18, color: colors.foreground),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                message,
-                style: TextStyle(color: colors.foreground, fontSize: 14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.warning_amber_rounded,
+                  size: 18, color: colors.foreground),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  message,
+                  style: TextStyle(color: colors.foreground, fontSize: 14),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

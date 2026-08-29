@@ -35,31 +35,38 @@ class OfflineBanner extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
+    // 【Material で包む理由】: このバナーは AppShell に置かれ、各画面の
+    // Scaffold より外側にある。Material 祖先が無い位置の Text は
+    // WidgetsApp の既定スタイル（赤文字＋黄色の二重下線）を継承するため、
+    // style を部分指定しただけでは下線が残る。
+    // Phase 3 WP-1 で実機（Chrome）の目視から発見した既存不具合。
     return Semantics(
       label: 'オフライン状態です。基本機能のみ利用可能です。',
-      child: Container(
-        width: double.infinity,
+      child: Material(
         color: Colors.grey[300],
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.wifi_off,
-              size: 18,
-              // 【AA対応】: grey[900] on grey[300] でコントラスト比 約12:1。
-              // 旧 grey[700] on grey[300] は約4.0:1でAA不足だった。
-              color: Colors.grey[900],
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'オフライン - 基本機能のみ利用可能',
-              style: TextStyle(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.wifi_off,
+                size: 18,
+                // 【AA対応】: grey[900] on grey[300] でコントラスト比 約12:1。
+                // 旧 grey[700] on grey[300] は約4.0:1でAA不足だった。
                 color: Colors.grey[900],
-                fontSize: 14,
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Text(
+                'オフライン - 基本機能のみ利用可能',
+                style: TextStyle(
+                  color: Colors.grey[900],
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

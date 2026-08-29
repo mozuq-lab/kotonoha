@@ -55,5 +55,21 @@ void main() {
 
       expect(find.text('画面本体'), findsOneWidget);
     });
+
+    testWidgets('バナーの文字にデバッグ用の下線が付かない', (tester) async {
+      // 【なぜ必要か】: AppShell のバナーは各画面の Scaffold より外側にあり、
+      // Material 祖先を持たない。この位置の Text は WidgetsApp の既定
+      // スタイル（赤文字＋黄色の二重下線）を継承するため、style を
+      // 部分指定するだけでは decoration が残る。実機（Chrome）で
+      // 下線が出ているのを目視して分かった。
+      await _pumpShell(tester, const PersistenceUnavailable());
+
+      final text = tester.widget<Text>(find.textContaining('保存できません'));
+      final effective = DefaultTextStyle.of(
+        tester.element(find.textContaining('保存できません')),
+      ).style.merge(text.style);
+
+      expect(effective.decoration ?? TextDecoration.none, TextDecoration.none);
+    });
   });
 }
