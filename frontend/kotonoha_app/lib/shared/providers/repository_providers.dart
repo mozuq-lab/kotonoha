@@ -13,6 +13,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/features/favorite/data/favorite_repository.dart';
 import 'package:kotonoha_app/features/history/data/history_repository.dart';
 import 'package:kotonoha_app/features/preset_phrase/data/preset_phrase_repository.dart';
@@ -22,21 +23,24 @@ import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
 /// 【Provider定義】: 履歴Repository（Box未オープン時はnull）
 final historyRepositoryProvider = Provider<HistoryRepository?>(
-  (ref) => Hive.isBoxOpen('history')
-      ? HistoryRepository(box: Hive.box<HistoryItem>('history'))
+  (ref) => Hive.isBoxOpen(PersistedArea.history.boxName)
+      ? HistoryRepository(
+          box: Hive.box<HistoryItem>(PersistedArea.history.boxName))
       : null,
 );
 
 /// 【Provider定義】: お気に入りRepository（Box未オープン時はnull）
 final favoriteRepositoryProvider = Provider<FavoriteRepository?>(
-  (ref) => Hive.isBoxOpen('favorites')
-      ? FavoriteRepository(box: Hive.box<FavoriteItem>('favorites'))
+  (ref) => Hive.isBoxOpen(PersistedArea.favorites.boxName)
+      ? FavoriteRepository(
+          box: Hive.box<FavoriteItem>(PersistedArea.favorites.boxName))
       : null,
 );
 
 /// 【Provider定義】: 定型文Repository（Box未オープン時はnull）
 final presetPhraseRepositoryProvider = Provider<PresetPhraseRepository?>(
-  (ref) => Hive.isBoxOpen('presetPhrases')
-      ? PresetPhraseRepository(box: Hive.box<PresetPhrase>('presetPhrases'))
+  (ref) => Hive.isBoxOpen(PersistedArea.presetPhrases.boxName)
+      ? PresetPhraseRepository(
+          box: Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName))
       : null,
 );

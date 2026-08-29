@@ -22,8 +22,19 @@ enum PersistedArea {
   favorites,
 }
 
-/// [PersistedArea] を利用者向けの名前にする
-extension PersistedAreaLabel on PersistedArea {
+/// [PersistedArea] と、Hive box 名・利用者向けの名前との対応
+extension PersistedAreaNames on PersistedArea {
+  /// 対応する Hive box の名前
+  ///
+  /// box 名の定義はここだけに置く。repository_providers も同じ値を使うこと。
+  /// 文字列を2箇所に書くと、片方だけ直したときに
+  /// 「保存できていないのにバナーが出ない」形で食い違う。
+  String get boxName => switch (this) {
+        PersistedArea.history => 'history',
+        PersistedArea.presetPhrases => 'presetPhrases',
+        PersistedArea.favorites => 'favorites',
+      };
+
   /// バナー等に表示する日本語名
   String get label => switch (this) {
         PersistedArea.history => '履歴',
@@ -66,19 +77,15 @@ final class PersistenceUnavailable extends PersistenceState {
   const PersistenceUnavailable();
 }
 
-/// box のオープン結果から永続化の状態を導く
+/// 開いている box の集合から永続化の状態を導く
 ///
-/// [openedAreas] はオープンに成功した領域。[hiveInitialized] は
-/// `Hive.initFlutter()` 自体が成功したかどうか。
-///
-/// Hive の初期化自体が失敗している場合、box が開けたように見えても
-/// 保存先が無いため [PersistenceUnavailable] とする。
+/// [openedAreas] は保存が効いている領域。`Hive.initFlutter()` 自体が
+/// 失敗した場合は box が1つも開かないため、空集合として渡ってきて
+/// [PersistenceUnavailable] になる。初期化の成否を別引数で受け取ると、
+/// 同じ事実の出所が2つになるので受け取らない。
 PersistenceState resolvePersistenceState({
   required Set<PersistedArea> openedAreas,
-  required bool hiveInitialized,
 }) {
-  if (!hiveInitialized) return const PersistenceUnavailable();
-
   final failedAreas = PersistedArea.values.toSet().difference(openedAreas);
   if (failedAreas.isEmpty) return const PersistenceReady();
   if (failedAreas.length == PersistedArea.values.length) {

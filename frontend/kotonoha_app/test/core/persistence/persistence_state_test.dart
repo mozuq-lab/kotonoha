@@ -11,7 +11,6 @@ void main() {
     test('全areaがオープン済みならReady', () {
       final state = resolvePersistenceState(
         openedAreas: PersistedArea.values.toSet(),
-        hiveInitialized: true,
       );
 
       expect(state, isA<PersistenceReady>());
@@ -20,7 +19,6 @@ void main() {
     test('一部areaだけ失敗ならRecoverableFailureで、失敗したareaを保持する', () {
       final state = resolvePersistenceState(
         openedAreas: {PersistedArea.history},
-        hiveInitialized: true,
       );
 
       expect(state, isA<PersistenceRecoverableFailure>());
@@ -36,7 +34,6 @@ void main() {
     test('RecoverableFailureのfailedAreasに成功したareaは含まれない', () {
       final state = resolvePersistenceState(
         openedAreas: {PersistedArea.history, PersistedArea.favorites},
-        hiveInitialized: true,
       ) as PersistenceRecoverableFailure;
 
       expect(state.failedAreas, isNot(contains(PersistedArea.history)));
@@ -46,19 +43,32 @@ void main() {
     test('全area失敗ならUnavailable', () {
       final state = resolvePersistenceState(
         openedAreas: const {},
-        hiveInitialized: true,
       );
 
       expect(state, isA<PersistenceUnavailable>());
     });
 
-    test('Hive初期化自体が失敗していればopenedAreasに関わらずUnavailable', () {
-      final state = resolvePersistenceState(
-        openedAreas: PersistedArea.values.toSet(),
-        hiveInitialized: false,
-      );
+    test('Hive初期化自体が失敗した場合はboxが1つも開かないためUnavailableになる', () {
+      // 【意図】: initFlutter() の失敗は「開いている box が無い」として
+      // 表れる。初期化の成否を別の引数で受け取ると同じ事実の出所が
+      // 2つになるため、この経路で表現している。
+      final state = resolvePersistenceState(openedAreas: const {});
 
       expect(state, isA<PersistenceUnavailable>());
+    });
+  });
+
+  group('PersistedArea', () {
+    test('boxNameは領域ごとに異なる', () {
+      final names = PersistedArea.values.map((a) => a.boxName).toSet();
+
+      expect(names, hasLength(PersistedArea.values.length));
+    });
+
+    test('labelは利用者向けに空でない文字列を返す', () {
+      for (final area in PersistedArea.values) {
+        expect(area.label, isNotEmpty);
+      }
     });
   });
 }
