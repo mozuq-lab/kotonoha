@@ -233,19 +233,7 @@ flutter pub get
 flutter pub outdated
 ```
 
-### 3. コード生成
-
-Riverpod、Hive、JSON Serializableなどのコード生成:
-
-```bash
-# コード生成（一回実行）
-flutter pub run build_runner build --delete-conflicting-outputs
-
-# 監視モード（開発中に自動生成）
-flutter pub run build_runner watch --delete-conflicting-outputs
-```
-
-### 4. アプリの起動
+### 3. アプリの起動
 
 ```bash
 # Web版で起動
@@ -480,14 +468,6 @@ flutter pub cache repair
 
 # 再取得
 flutter pub get
-```
-
-#### コード生成エラー
-
-```bash
-# キャッシュを削除して再生成
-flutter pub run build_runner clean
-flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
 #### Webビルドエラー

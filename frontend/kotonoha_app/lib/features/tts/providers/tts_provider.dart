@@ -46,15 +46,23 @@ class TTSServiceState {
   /// 状態のコピーを作成
   ///
   /// 指定されたフィールドのみを更新した新しい状態を返す。
+  ///
+  /// 【エラーの扱い】: `errorMessage` を省略した場合は現在のエラーを保持する。
+  /// 明示的に消したい場合は `clearErrorMessage: true` を指定すること。
+  /// AIConversionState.copyWith と同じ「clearXxxフラグ方式」に統一している。
+  /// （以前は `errorMessage ?? this.errorMessage` のみで、一度設定された
+  ///   エラーメッセージを二度と消せなかった）
   TTSServiceState copyWith({
     TTSState? state,
     TTSSpeed? currentSpeed,
     String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return TTSServiceState(
       state: state ?? this.state,
       currentSpeed: currentSpeed ?? this.currentSpeed,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -178,9 +186,22 @@ class TTSNotifier extends Notifier<TTSServiceState> {
 
   /// TTSServiceの状態変更時に呼ばれるコールバック
   void _onServiceStateChanged() {
+    _syncStateFromService();
+  }
+
+  /// TTSServiceの現在値を状態へ反映する
+  ///
+  /// 【エラーの扱い】: TTSServiceの`errorMessage`はエラー発生時にのみ代入され、
+  /// 成功時にnullへ戻されることがない。そのため「サービスがエラー状態か」を
+  /// 基準にし、エラーでなければ`clearErrorMessage`で明示的に消す。
+  /// これにより、一度失敗した後に成功しても古いエラーメッセージが
+  /// 残り続ける問題を防ぐ。
+  void _syncStateFromService() {
+    final hasError = _service.state == TTSState.error;
     state = state.copyWith(
       state: _service.state,
-      errorMessage: _service.errorMessage,
+      errorMessage: hasError ? _service.errorMessage : null,
+      clearErrorMessage: !hasError,
     );
   }
 
@@ -216,10 +237,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
   /// [text] 読み上げるテキスト
   Future<void> speak(String text) async {
     await _service.speak(text);
-    state = state.copyWith(
-      state: _service.state,
-      errorMessage: _service.errorMessage,
-    );
+    _syncStateFromService();
   }
 
   /// 読み上げを停止
@@ -229,7 +247,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
   /// 参照: requirements.md（141-145行目）
   Future<void> stop() async {
     await _service.stop();
-    state = state.copyWith(state: _service.state);
+    _syncStateFromService();
   }
 
   /// 読み上げ速度を設定

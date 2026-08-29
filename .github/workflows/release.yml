@@ -50,9 +50,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
-
       - name: Build Web (Release)
         run: >
           flutter build web --release
@@ -98,9 +95,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
 
       # For signed release, decode keystore from secrets
       - name: Decode Keystore
@@ -177,9 +171,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
 
       # For signed release with Apple certificates
       - name: Install Apple Certificate

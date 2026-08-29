@@ -27,15 +27,21 @@ class FavoriteState {
     this.error,
   });
 
+  /// 【状態コピー】: 指定したフィールドのみを更新した新しい状態を返す
+  ///
+  /// 【エラーの扱い】: `error` を省略した場合は現在のエラーを保持する。
+  /// 明示的に消したい場合は `clearError: true` を指定すること。
+  /// AIConversionState.copyWith と同じ「clearXxxフラグ方式」に統一している。
   FavoriteState copyWith({
     List<Favorite>? favorites,
     bool? isLoading,
     String? error,
+    bool clearError = false,
   }) {
     return FavoriteState(
       favorites: favorites ?? this.favorites,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }

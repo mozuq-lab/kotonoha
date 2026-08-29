@@ -146,6 +146,11 @@ class TTSService {
       return true;
     } catch (e) {
       // 【エラー処理】: 初期化失敗時もアプリは継続動作（NFR-301）
+      // 【状態も更新】: errorMessageだけでなくstateもerrorにする。
+      // stateを更新しないと「stateがエラー性の唯一の情報源」という前提が崩れ、
+      // TTSNotifier._syncStateFromService() が「エラーなし」と誤判定して
+      // 初期化失敗のメッセージを消してしまう。
+      state = TTSState.error;
       errorMessage = 'TTS初期化に失敗しました';
       _isInitialized = false;
       return false;

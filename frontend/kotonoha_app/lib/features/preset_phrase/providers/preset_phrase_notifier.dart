@@ -40,15 +40,21 @@ class PresetPhraseState {
     this.error,
   });
 
+  /// 【状態コピー】: 指定したフィールドのみを更新した新しい状態を返す
+  ///
+  /// 【エラーの扱い】: `error` を省略した場合は現在のエラーを保持する。
+  /// 明示的に消したい場合は `clearError: true` を指定すること。
+  /// AIConversionState.copyWith と同じ「clearXxxフラグ方式」に統一している。
   PresetPhraseState copyWith({
     List<PresetPhrase>? phrases,
     bool? isLoading,
     String? error,
+    bool clearError = false,
   }) {
     return PresetPhraseState(
       phrases: phrases ?? this.phrases,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }
@@ -61,6 +67,13 @@ class PresetPhraseState {
 /// 定型文のCRUD操作を提供するStateNotifier。
 /// 追加、更新、削除、お気に入り切り替え機能を実装。
 /// お気に入り操作時はFavoriteNotifierと連動する。
+///
+/// 【エラー状態の方針】: PresetPhraseScreen は `state.error != null` のとき
+/// リスト全体をエラー表示に差し替える。エラーを設定するのは
+/// initializeDefaultPhrases() の失敗のみで、同メソッドは phrases が非空だと
+/// 早期returnするため、一度エラーが付いたまま定型文が1件でも増えると
+/// 二度と解除できなくなる。これを防ぐため、成功した操作の完了時には
+/// `clearError: true` を明示して状態を復帰させる。
 class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   /// 【フィールド定義】: FavoriteNotifierへの参照
   /// 【実装内容】: お気に入り連動のために使用
@@ -103,8 +116,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     );
 
     // 状態を更新し、お気に入り順でソート (REQ-105)
+    // 【エラークリア】: 操作が成功したので直前のエラーは解消したとみなす
     final updatedPhrases = [...state.phrases, newPhrase];
-    state = state.copyWith(phrases: _sortPhrases(updatedPhrases));
+    state = state.copyWith(
+      phrases: _sortPhrases(updatedPhrases),
+      clearError: true,
+    );
 
     // 【永続化】: repoがあればHiveに保存
     final repo = ref.read(presetPhraseRepositoryProvider);
@@ -140,7 +157,11 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
     updatedPhrases[index] = updatedPhrase;
-    state = state.copyWith(phrases: _sortPhrases(updatedPhrases));
+    // 【エラークリア】: 操作が成功したので直前のエラーは解消したとみなす
+    state = state.copyWith(
+      phrases: _sortPhrases(updatedPhrases),
+      clearError: true,
+    );
 
     // 【永続化】: repoがあればHiveに保存
     final repo = ref.read(presetPhraseRepositoryProvider);
@@ -170,7 +191,8 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
     updatedPhrases.removeAt(index);
-    state = state.copyWith(phrases: updatedPhrases);
+    // 【エラークリア】: 操作が成功したので直前のエラーは解消したとみなす
+    state = state.copyWith(phrases: updatedPhrases, clearError: true);
 
     // 【永続化】: repoがあればHiveから削除
     final repo = ref.read(presetPhraseRepositoryProvider);
@@ -198,7 +220,11 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
     updatedPhrases[index] = updatedPhrase;
     // お気に入り順でソート (REQ-105)
-    state = state.copyWith(phrases: _sortPhrases(updatedPhrases));
+    // 【エラークリア】: 操作が成功したので直前のエラーは解消したとみなす
+    state = state.copyWith(
+      phrases: _sortPhrases(updatedPhrases),
+      clearError: true,
+    );
 
     // 【永続化】: repoがあればHiveに保存（isFavoriteフラグの変更を反映）
     final repo = ref.read(presetPhraseRepositoryProvider);
@@ -231,14 +257,16 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     final repo = ref.read(presetPhraseRepositoryProvider);
     if (repo != null) {
       // 【永続化】: Hiveから読み込み、お気に入り順でソートして反映
+      // 【エラークリア】: 読み込みに成功したので直前のエラーは明示的に消す
       state = state.copyWith(
         phrases: _sortPhrases(repo.loadAllSync()),
         isLoading: false,
+        clearError: true,
       );
       return;
     }
     // 【フォールバック】: インメモリ管理のみ
-    state = state.copyWith(isLoading: false);
+    state = state.copyWith(isLoading: false, clearError: true);
   }
 
   /// 【メソッド】: 初期定型文データを投入する
@@ -254,7 +282,8 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       return;
     }
 
-    state = state.copyWith(isLoading: true);
+    // 【エラークリア】: 再試行なので前回の失敗メッセージを残さない
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final allPhrases = DefaultPhrases.getAllPhrases();
@@ -284,9 +313,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
         await repo.saveAll(phrases);
       }
 
+      // 【エラークリア】: 冒頭のクリアに依存せず、成功パスでも明示的に消す。
+      // await repo.saveAll() の待機中に他経路がエラーを設定し得るため。
       state = state.copyWith(
         phrases: phrases,
         isLoading: false,
+        clearError: true,
       );
     } catch (e) {
       state = state.copyWith(
@@ -307,6 +339,8 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     if (repo != null) {
       await repo.deleteAll();
     }
+    // 【エラークリア】: ここでは行わない。phrasesを空にした直後なので
+    // 続く initializeDefaultPhrases() が早期returnせず必ず clearError する。
     state = state.copyWith(phrases: [], isLoading: true);
     await initializeDefaultPhrases();
   }
