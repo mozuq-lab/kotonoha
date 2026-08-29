@@ -280,40 +280,17 @@ alembic upgrade head
 
 **マージの引き金は完了条件であって「指摘ゼロ」ではない。** 残りは台帳へ送る。
 
-### 負債を作る行為には理由が要る — これは機械が止める
+### 負債を作る行為には理由が要る
 
-次の7つに触れる変更は、該当する ADR を引用すること。**引用が無いと止まる。**
+次に触れる変更は、該当する ADR を引用すること（無ければ決定から始める）。
 
-| 検出する行為 | 対象 |
-|---|---|
-| 依存の追加 | `backend/requirements*.txt` / `pubspec.yaml` に**新しいパッケージ名**が増えたとき |
-| 永続化面の追加 | Hive の `@HiveType` / `@HiveField` / box、DB テーブル、ファイル出力先 |
-| 秘密を持つ設定キーの追加 | `SecretStr` フィールド、`.env.example` の秘密キー |
-| モジュールレベルの可変グローバル・副作用の追加 | Python は AST 判定、Dart はトップレベル可変変数 |
-| 公開ルート（HTTP 面）の追加 | `@router.` / `@app.` / `include_router` / `mount` |
-| 外部送信先の追加 | 新しいホストの URL リテラル、HTTP クライアント呼び出し |
-| モバイル権限の追加 | `AndroidManifest.xml` / `Info.plist` の権限キー |
-
-**通し方は2つ。**
-
-1. 該当 ADR を読み、**追加した行の近くに `ADR-00X` を書く**（コメントで可）。
-   CI では PR 本文とコミットメッセージの引用も認める
-2. 該当する ADR が無いなら、**それはその領域の決定が存在しない**ということ。
-   実装をやめて ADR を1本作る（`tsumiki:adr-rubber-duck`）
-
-**発火するのは追加行だけ。** 削除・バージョン更新では発火しない
-（削除で止めると、依存を消す作業や Hive フィールドを消す作業を自分で塞ぐため）。
-
-```
-編集のたび    .claude/settings.json の PostToolUse フック（主。書いた瞬間に返す）
-PR のたび     .github/workflows/debt-gate.yml（二重の網。フックを持たない経路を拾う）
-手元で確認    python3 -m scripts.debt_gate.cli ci --base main --head HEAD
-検出器の検査  python3 -m scripts.debt_gate.cli selftest
-```
-
-**このゲートは既知の入口を検出する補助であって、負債の網羅ではない。**
-既存送信先への payload 追加・既存ルートの認証弱体化・破壊的 migration のような
-「意味的な変更」は素通しする。それらは層1（着手前の影響範囲）と層3（差分レビュー）が担う。
+- 依存の追加（`requirements.txt` / `pubspec.yaml`）
+- 永続化面の追加（Hive の TypeAdapter・フィールド、DB テーブル、ファイル出力先）
+- 秘密を持つ設定キーの追加
+- モジュールレベルの可変グローバルの追加
+- 公開ルート（HTTP 面）の追加
+- 外部送信先の追加（新しいホストへ送信するコード）
+- モバイル権限の追加（`AndroidManifest.xml` / `Info.plist`）
 
 ### コミット戦略
 - **1タスク完了ごとにコミット**: タスク（TASK-XXXX）が完了したら、必ずその時点でGitコミットを作成すること
