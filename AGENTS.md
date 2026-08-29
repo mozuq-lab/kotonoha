@@ -45,7 +45,7 @@
 | 設計 | データの状態遷移を洗い出す | `tsumiki:dcs:state-transition-analysis` |
 | 設計 | ドメイン語彙を整理する | `mattpocock-skills:domain-modeling` |
 | 実装 | 仕様を delta で積む | OpenSpec（`openspec/specs/` のみ恒久） |
-| 実装 | タスク分解済み計画を subagent で実行する | `superpowers:subagent-driven-development`（4条件つき: task分解入力・拘束の受け渡し・2系統はマージ境界・記録の台帳昇格。詳細は是正計画 §5） |
+| 実装 | **OpenSpec 管理外**のフェーズ単位の大改修を、タスク分解して subagent で実行する | `superpowers:subagent-driven-development`（5条件つき: task分解入力・拘束の受け渡し・2系統はマージ境界・記録の台帳昇格・**OpenSpec change の実装は `openspec-apply` が担い併用しない**。詳細は是正計画 §5） |
 | 検証 | セキュリティを**反証可能な形で**検査する | `tsumiki:ipa-security-check`（IPA 原典の出典が付く） |
 | 検証 | 仕様と実装の乖離を出す | `tsumiki:rev-requirements` / `rev-specs`（**逆生成物を正本にしない**） |
 | 棚卸し | 全体を見て概念の重複を検出する | **未整備。プロジェクト固有スキルとして作る** |

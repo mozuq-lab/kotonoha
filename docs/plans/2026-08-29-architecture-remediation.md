@@ -292,7 +292,7 @@ OpenSpec をやめても `openspec/specs/` は素の Markdown として残る。
 |---|---|---|
 | 改修依頼を受けた直後 | `openspec-explore` | **書かない。** 問題を整理し「そもそも必要か」を問う。ADR / spec の作成すら、対象を名指しして yes/no を取ってから |
 | 何を作るか固まった | `openspec-propose` | `proposal.md`（何を・なぜ）／`specs/` delta（システムが何をすべきか）／`design.md`（どう）／`tasks.md`（手順）を生成して**停止する** |
-| 人が承認した後 | `openspec-apply` | `tasks.md` を順に実装。`openspec status` で進捗が追える |
+| 人が承認した後 | `openspec-apply` | `tasks.md` を順に実装。`openspec status` で進捗が追える。**SDD は使わない**（§5「subagent-driven-development を使う条件」条件5） |
 | 実装完了 | `openspec-archive` | delta を `openspec/specs/` へ吸収し、change を archive |
 | 途中で方針変更 | `openspec-update-change` | 計画成果物だけ改訂（コードは触らない） |
 
@@ -313,7 +313,7 @@ implementer subagent を出し、タスクレビュー＋最終全体レビュ�
 工程記録（ledger・レビューパッケージ）は git-ignored の workspace に置かれ完了時に
 削除されるため、恒久成果物ルールとも整合する（採用初回に ignore が効いているか確認する）。
 
-条件は4つ。
+条件は5つ。
 
 1. **入力はタスク分解済みの実装計画**。各フェーズ着手時に `superpowers:writing-plans` で
    work package を task 化する（本計画の「着手時に分解」と同じ工程）。
@@ -327,6 +327,12 @@ implementer subagent を出し、タスクレビュー＋最終全体レビュ�
 4. **消える記録を昇格する**。フェーズ末に ledger の ruling・parked・deferred を
    台帳 #85 へ転記し、決定に触れる ruling は ADR へ昇格する（ledger は完了時に消える。
    「判断を状態を持たない場所に置かない」の原則）
+5. **`openspec-apply` と役割を分け、併用しない**。OpenSpec の change として始まった改修は
+   `openspec-apply` が実行する——1 change は完了条件の粒度（400行 / 12ファイル）に収まる
+   実質1タスクで、subagent 分業のオーバーヘッドが利益を上回らない。change が複数タスクに
+   割れるほど大きいなら、それは SDD を持ち込むシグナルではなく **change を分割する
+   シグナル**である。SDD が担うのは OpenSpec 管理外のフェーズ計画
+   （Phase 2 の書き直し・Phase 3 前半）のみ
 
 **Phase 1 では使わない**——工程が密結合（ゲート → フック → CI → 発火確認）で、
 `update-config` によるフック設定は権限確認を伴う対話作業のため。AST ゲート＋fixture のみ
