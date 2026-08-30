@@ -20,7 +20,7 @@
 | WP | 状態 |
 |---|---|
 | WP1 永続化の状態を明示する | **完了**（下記 §WP1） |
-| **WP2 お気に入りを1つの真実にする** | **着手中。6段に分解済み（下記 §WP2）。次は Stage 0** |
+| **WP2 お気に入りを1つの真実にする** | **完了**（5段。`feature/wp2-favorite-single-truth`。移行の段は撤回） |
 | WP3 往復テスト | **ADR-007 のリリース条件に入っていない** |
 | WP4 E2E | **完了**（4経路が CI 緑。Issue #84 / PR #87） |
 | WP5 Hive 許可リスト＋analyzer ルール | 未着手。**1d はリリース条件** |
@@ -46,7 +46,6 @@
   **削除した**。守っていたのは「実行中に Hive の open set が変わらない」で、
   変える経路は無い＝ P2。**P2 を守るために自作の検出器を持つのは規約違反**
   （「検出器の穴は守る対象の到達可能性を継承する」「自作の検出器は選択肢に入れない」）。
-  **WP2 の `favorite_migration.dart` は box の開き方を制約されない。**
   受け入れたリスクは台帳 L-36
 
 ---
@@ -166,8 +165,8 @@ mutation を当てて歯を確認**した（フェイルオープン化／検査
 `lib/features/preset_phrase/presentation/widgets/{phrase_list_widget,phrase_list_item}.dart`、
 `lib/features/history/presentation/history_screen.dart`、
 `lib/features/favorite/{data/favorite_repository.dart,providers/favorite_provider.dart}`、
-`lib/features/input_candidates/domain/input_candidate_scorer.dart`、
-`lib/core/persistence/favorite_migration.dart`（新規）
+`lib/features/input_candidates/domain/input_candidate_scorer.dart`
+（**`favorite_migration.dart` は作らない。移行の段は撤回した。下記 §WP2**）
 
 ---
 
@@ -201,8 +200,9 @@ mutation を当てて歯を確認**した（フェイルオープン化／検査
 
 
 **なぜ最初か:** 「保存できたように見えて消える」は、この製品の利用者にとって
-最悪の事象（B-2）。かつ WP2 のお気に入り移行が「保存されている前提」で動くため、
-先に保存の成否を観測できる形にしておく必要がある。
+最悪の事象（B-2）。保存の成否を観測できる形にしておく必要がある。
+（当初は「WP2 の移行が保存されている前提で動くため」とも書いていたが、
+その移行は撤回した。)
 
 ### 状態の定義（このフェーズで決める設計）
 
@@ -569,23 +569,24 @@ git commit -m "feat: 永続化の状態を型で表す (Phase 3 / WP-1)"
 `PresetPhrase.isFavorite` だけが真実だったお気に入りは Stage 3b で失われるが、
 `addFavoriteFromPresetPhrase` 経由で `FavoriteItem` になっているものは残る。
 
-- [ ] **Stage 0**: 死蔵5点を削除。あわせて test の `isFavorite: false` 62箇所を落とす
+- [x] **Stage 0**: 死蔵5点を削除。あわせて test の `isFavorite: false` 62箇所を落とす
       （名前付き引数のデフォルトと同値なので挙動不変。6ファイルがこれで対象外になる）。
       **fixture 編集は別コミットに割る**
-- [ ] **Stage 1**: `addFavoriteFromHistory(content, historyId)` を新設し、`history_screen` から
+- [x] **Stage 1**: `addFavoriteFromHistory(content, historyId)` を新設し、`history_screen` から
       id を通す。**星と重複判定は content のまま**。ADR-005 要件3をここで満たす
-- [ ] **Stage 3a**: 定型文 UI を `favoriteProvider` から描く。`phrase_list_widget` /
+- [x] **Stage 3a**: 定型文 UI を `favoriteProvider` から描く。`phrase_list_widget` /
       `phrase_list_item` / `phrase_category_section` に `Set<String> favoritePresetIds` を渡す
       （3つとも `StatelessWidget`）。**モデルはまだ触らない**
-- [ ] **Stage 3b**: `PresetPhrase.isFavorite` を削除。**14ファイルで完了条件の12を超える。
+- [x] **Stage 3b**: `PresetPhrase.isFavorite` を削除。**14ファイルで完了条件の12を超える。
       超過は承認済み**（fixture 修正はフラグ削除と同時でないとコンパイルが通らず、分割できない。
       台帳 L-38）。**`toggleFavorite` の `favoriteProvider` への委譲と `_sortPhrases` の
       移設もここ**（実行前 ruling）
-- [ ] **Stage 4**: `HistoryItem.isFavorite` を削除。**移行不要**——`history_provider.dart:91` が
+- [x] **Stage 4**: `HistoryItem.isFavorite` を削除。**移行不要**——`history_provider.dart:91` が
       常に `false` を書き、UI は読まない（`history_item_card` の `isFavorited` は別名の
       ウィジェット引数）。**保存値が全て false なので失われる情報がゼロ。順序自由**。
-      あわせて **`FavoriteNotifier.addFavorite`** を削除する（Stage 1 で lib 呼び出し元が
-      ゼロになった。content 重複判定という規則を `addFavoriteFromHistory` と二重に持つため）
+      **`FavoriteNotifier.addFavorite` の削除は撤回し、台帳へ送った**——UI から到達
+      できない（＝P2）ので「P2 は一切触らない」の規約に従う。削除にはテスト34箇所の
+      書き換えが要ると実測した
 
 ### adapter の後方互換（実測で確認済み）
 
