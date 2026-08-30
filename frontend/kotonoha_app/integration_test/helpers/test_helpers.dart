@@ -15,6 +15,7 @@ import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 export 'package:flutter/material.dart' show Icons;
 
@@ -32,11 +33,39 @@ IntegrationTestWidgetsFlutterBinding initializeE2ETestBinding() {
 /// [tester]: WidgetTester
 /// [overrides]: Provider上書き設定（オプション）
 /// [clearData]: true の場合、履歴・お気に入りデータをクリア（デフォルト: true）
+/// [completeTutorial]: true の場合、初回チュートリアルを完了済みにする
+///   （デフォルト: true）。**チュートリアル自体を検証するテスト以外は既定のままにする。**
+///
+/// 【チュートリアルを完了済みにする理由（Issue #84 の根本原因）】:
+/// E2E はストレージが空の状態から始まるため初回起動扱いになり、
+/// `TutorialOverlay` が表示される。このオーバーレイは
+/// `Container(color: Colors.black54)` で画面全体を覆っており、
+/// **配下へのタップをヒットテストで吸収する**（緊急ボタンだけは意図的に手前に置かれ、
+/// 常に操作できる。`app_shell.dart` の「安全性（重要）」コメントを参照）。
+///
+/// その結果「ウィジェットは見つかる・タップは実行される・状態は変わらない」が起き、
+/// 操作を伴うテストが軒並み落ちていた（`Found 0 widgets with text` が62件）。
+/// 操作を一切しない `app_startup_test.dart` だけが通っていたのはこのためである。
+///
+/// Issue #84 は「ヘッドレスWebで失敗」「テストの陳腐化」としていたが、
+/// **どちらも誤り**だった。ホストVMのウィジェットテストでも同じ条件で再現し
+/// （`tester.tap` が `_RenderColoredBox` に吸収されるヒットテスト警告を出す）、
+/// プラットフォームとは無関係だった。
 Future<void> pumpApp(
   WidgetTester tester, {
   dynamic overrides,
   bool clearData = true,
+  bool completeTutorial = true,
 }) async {
+  // 【チュートリアルの抑止】: pumpWidget より前に行う。
+  // AppShell は最初のフレーム後に tutorialProvider.initialize() を呼び、
+  // ここで読んだ値で表示要否が決まる。
+  if (completeTutorial) {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'tutorial_completed': true,
+    });
+  }
+
   await initHive();
 
   // テスト用にデータをクリア
