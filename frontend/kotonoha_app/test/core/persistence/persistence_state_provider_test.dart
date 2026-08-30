@@ -83,6 +83,29 @@ void main() {
       );
     });
 
+    test('repositoryを差し替えると永続化状態も追随する', () async {
+      // 【なぜこれを固定するか】: 「保存できているか」の真実が2つあると、
+      // 片方だけが古くなって「保存できていないのにバナーが出ない」が起きる。
+      // 状態を repository provider から導いていれば、両者は Riverpod の
+      // 依存関係で結ばれ、原理的に食い違えない。
+      // Hive.isBoxOpen を独立に読む実装では、override しても追随しない。
+      await Hive.openBox<HistoryItem>(PersistedArea.history.boxName);
+      await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      await Hive.openBox<FavoriteItem>(PersistedArea.favorites.boxName);
+
+      final container = ProviderContainer(
+        overrides: [favoriteRepositoryProvider.overrideWithValue(null)],
+      );
+      addTearDown(container.dispose);
+
+      final state = container.read(persistenceStateProvider);
+      expect(state, isA<PersistenceRecoverableFailure>());
+      expect(
+        (state as PersistenceRecoverableFailure).failedAreas,
+        equals({PersistedArea.favorites}),
+      );
+    });
+
     test('nullを返すrepositoryの領域と、状態が報告する失敗領域が一致する', () async {
       // 【この製品にとっての意味】: 利用者に「保存できない」と伝える根拠と、
       // 実際に保存を担うrepositoryの有無は、同じ事実でなければならない。
