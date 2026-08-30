@@ -43,34 +43,6 @@ class Favorite {
     this.sourceId,
   });
 
-  /// 【ファクトリコンストラクタ】: JSONからの変換
-  /// 【テスト対応】: TC-SYNC-003, TC-SYNC-301（sourceType, sourceIdの復元）
-  /// 🟡 信頼性レベル: 黄信号 - 既存パターンに基づく拡張
-  factory Favorite.fromJson(Map<String, dynamic> json) {
-    return Favorite(
-      id: json['id'] as String,
-      content: json['content'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      displayOrder: json['display_order'] as int? ?? 0,
-      sourceType: json['source_type'] as String?,
-      sourceId: json['source_id'] as String?,
-    );
-  }
-
-  /// 【メソッド定義】: JSONへの変換
-  /// 【テスト対応】: TC-SYNC-003, TC-SYNC-301（sourceType, sourceIdの保存）
-  /// 🟡 信頼性レベル: 黄信号 - 既存パターンに基づく拡張
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'content': content,
-      'created_at': createdAt.toIso8601String(),
-      'display_order': displayOrder,
-      'source_type': sourceType,
-      'source_id': sourceId,
-    };
-  }
-
   /// 【メソッド定義】: copyWithパターンでイミュータブルな更新
   /// 【テスト対応】: TC-SYNC-003, TC-SYNC-301（sourceType, sourceIdの更新対応）
   /// 🟡 信頼性レベル: 黄信号 - 既存パターンに基づく拡張

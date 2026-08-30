@@ -1,9 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kotonoha_app/core/persistence/persisted_box.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
-import 'package:kotonoha_app/shared/models/history_item.dart';
-import 'package:kotonoha_app/shared/models/preset_phrase.dart';
-import 'package:uuid/uuid.dart';
 
 /// 【Repository定義】: お気に入りのHive永続化を担当するRepository
 /// 【実装内容】: FavoriteItem のCRUD操作をHive Boxに委譲
@@ -19,19 +16,11 @@ import 'package:uuid/uuid.dart';
 /// - deleteAll(): 全お気に入りを削除
 /// - updateDisplayOrder(): 並び順を単一更新
 /// - reorderFavorites(): 並び順を一括更新
-/// - saveFromHistory(): 履歴からお気に入り作成
-/// - saveFromPreset(): 定型文からお気に入り作成
-/// - isDuplicate(): 重複チェック
 class FavoriteRepository {
   /// 【フィールド定義】: Hive Box（お気に入り保存用）
   /// 【実装内容】: コンストラクタで注入されたBoxを保持
   /// 🔵 信頼性レベル: 青信号 - TASK-0054で初期化済み
   final PersistedBox<FavoriteItem> _box;
-
-  /// 【フィールド定義】: UUID生成器
-  /// 【実装内容】: 履歴・定型文からお気に入り作成時に新しいUUIDを生成
-  /// 🔵 信頼性レベル: 青信号 - FR-065-005, FR-065-006
-  final Uuid _uuid;
 
   /// 【コンストラクタ】: Repository生成
   /// 【実装内容】: Hive Boxを外部から注入し、書き込みの成否を必ず報告する
@@ -42,9 +31,7 @@ class FavoriteRepository {
   FavoriteRepository({
     required Box<FavoriteItem> box,
     void Function(bool succeeded)? onWriteResult,
-    Uuid? uuid,
-  })  : _box = PersistedBox(box, onWriteResult: onWriteResult ?? _ignore),
-        _uuid = uuid ?? const Uuid();
+  }) : _box = PersistedBox(box, onWriteResult: onWriteResult ?? _ignore);
 
   /// 【メソッド定義】: 全お気に入りを読み込み（displayOrder昇順）
   /// 【実装内容】: Hive Boxから全データを取得し、displayOrderの昇順でソート
@@ -119,50 +106,6 @@ class FavoriteRepository {
     }
   }
 
-  /// 【メソッド定義】: 履歴からお気に入り作成
-  /// 【実装内容】: 履歴のcontentを使用し、新しいUUIDで保存
-  /// 【引数】: history - 元となる履歴アイテム
-  /// 【戻り値】: 作成されたFavoriteItem
-  /// 🔵 信頼性レベル: 青信号 - REQ-701, FR-065-005, AC-065-007
-  Future<FavoriteItem> saveFromHistory(HistoryItem history) async {
-    final maxOrder = _getMaxDisplayOrder();
-    final favorite = FavoriteItem(
-      id: _uuid.v4(),
-      content: history.content,
-      createdAt: DateTime.now(),
-      displayOrder: maxOrder + 1,
-    );
-    await save(favorite);
-    return favorite;
-  }
-
-  /// 【メソッド定義】: 定型文からお気に入り作成
-  /// 【実装内容】: 定型文のcontentを使用し、新しいUUIDで保存
-  /// 【引数】: preset - 元となる定型文
-  /// 【戻り値】: 作成されたFavoriteItem
-  /// 🔵 信頼性レベル: 青信号 - REQ-701, FR-065-006, AC-065-008
-  Future<FavoriteItem> saveFromPreset(PresetPhrase preset) async {
-    final maxOrder = _getMaxDisplayOrder();
-    final favorite = FavoriteItem(
-      id: _uuid.v4(),
-      content: preset.content,
-      createdAt: DateTime.now(),
-      displayOrder: maxOrder + 1,
-    );
-    await save(favorite);
-    return favorite;
-  }
-
-  /// 【メソッド定義】: 重複チェック
-  /// 【実装内容】: 同じcontentのお気に入りが既に存在するかチェック
-  /// 【引数】: content - チェックするテキスト
-  /// 【戻り値】: bool（既存の場合true）
-  /// 🟡 黄信号: FR-065-004, AC-065-013
-  Future<bool> isDuplicate(String content) async {
-    final favorites = await loadAll();
-    return favorites.any((fav) => fav.content == content);
-  }
-
   /// 【プライベートメソッド】: 全お気に入りをdisplayOrder昇順でソート
   /// 【実装内容】: Hive Boxから全データを取得し、displayOrderの昇順でソート
   /// 【二次ソート】: displayOrder同値の場合、createdAtの降順（新しい順）
@@ -177,16 +120,6 @@ class FavoriteRepository {
       return b.createdAt.compareTo(a.createdAt); // 降順（新しい方が先）
     });
     return favorites;
-  }
-
-  /// 【プライベートメソッド】: 最大displayOrder値を取得
-  /// 【実装内容】: 現在保存されているお気に入りの最大displayOrderを返す
-  /// 【戻り値】: int（お気に入りが0件の場合は-1）
-  /// 🔵 信頼性レベル: 青信号 - FR-065-003
-  int _getMaxDisplayOrder() {
-    final favorites = _box.values.toList();
-    if (favorites.isEmpty) return -1;
-    return favorites.map((f) => f.displayOrder).reduce((a, b) => a > b ? a : b);
   }
 }
 
