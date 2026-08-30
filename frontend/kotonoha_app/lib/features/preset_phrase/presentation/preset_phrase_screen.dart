@@ -16,6 +16,7 @@ import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_list_widget.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
+import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/quick_response/presentation/mixins/debounce_mixin.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart'
@@ -53,12 +54,21 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
   Widget build(BuildContext context) {
     // 定型文一覧を監視
     final phrasesState = ref.watch(presetPhraseNotifierProvider);
+    // 【設計変更】: Phase 3 / WP-2 / Stage 3a - お気に入りの正はfavoriteProvider
+    // （ADR-005）。定型文由来（sourceType == 'preset_phrase'）のお気に入りの
+    // sourceId集合を作り、下位ウィジェットへ渡す。履歴由来（sourceType ==
+    // 'history'）が混ざらないようsourceTypeで絞る。
+    final favoriteState = ref.watch(favoriteProvider);
+    final favoritePresetIds = favoriteState.favorites
+        .where((f) => f.sourceType == 'preset_phrase' && f.sourceId != null)
+        .map((f) => f.sourceId!)
+        .toSet();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('定型文'),
       ),
-      body: _buildBody(phrasesState),
+      body: _buildBody(phrasesState, favoritePresetIds),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context),
         tooltip: '定型文を追加',
@@ -68,7 +78,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
   }
 
   /// 【メソッド】: 本体を構築
-  Widget _buildBody(PresetPhraseState state) {
+  Widget _buildBody(PresetPhraseState state, Set<String> favoritePresetIds) {
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -81,6 +91,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
 
     return PhraseListWidget(
       phrases: state.phrases,
+      favoritePresetIds: favoritePresetIds,
       onPhraseSelected: _onPhraseSelected,
       onFavoriteToggle: _onFavoriteToggle,
       onEdit: _onEdit,

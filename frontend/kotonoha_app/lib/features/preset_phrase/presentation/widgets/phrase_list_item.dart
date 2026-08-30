@@ -29,6 +29,14 @@ class PhraseListItem extends StatelessWidget {
   /// 🔵 信頼性レベル: 青信号 - 要件定義に基づく
   final PresetPhrase phrase;
 
+  /// 【パラメータ定義】: お気に入り状態（表示用）
+  /// 【設計変更】: Phase 3 / WP-2 / Stage 3a - お気に入りの正はfavoriteProvider
+  /// （ADR-005）。このウィジェットは単一のphraseしか扱わないため、
+  /// 集合ではなく判定済みのbool値を上位から受け取る。
+  /// 上位は favoritePresetIds.contains(phrase.id) を渡すこと。
+  /// `phrase.isFavorite` はまだ残っているが、ここでは読まない。
+  final bool isFavorite;
+
   /// 【パラメータ定義】: タップ時のコールバック
   /// 🔵 信頼性レベル: 青信号 - AC-004に基づく
   final VoidCallback? onTap;
@@ -49,6 +57,7 @@ class PhraseListItem extends StatelessWidget {
   const PhraseListItem({
     super.key,
     required this.phrase,
+    required this.isFavorite,
     this.onTap,
     this.onFavoriteToggle,
     this.onEdit,
@@ -93,16 +102,18 @@ class PhraseListItem extends StatelessWidget {
                   ),
                 ),
                 // 【お気に入りアイコン】: お気に入り状態を表示・切り替え
+                // 【設計変更】: Phase 3 / WP-2 / Stage 3a - phrase.isFavorite
+                // ではなく、上位から渡されたisFavorite（favoriteProviderが正）で判定する
                 // 🟡 信頼性レベル: 黄信号 - REQ-105から推測
                 IconButton(
                   icon: Icon(
-                    phrase.isFavorite ? Icons.star : Icons.star_border,
-                    color: phrase.isFavorite
+                    isFavorite ? Icons.star : Icons.star_border,
+                    color: isFavorite
                         ? theme.colorScheme.primary
                         : theme.colorScheme.onSurfaceVariant,
                   ),
                   onPressed: onFavoriteToggle,
-                  tooltip: phrase.isFavorite ? 'お気に入りから削除' : 'お気に入りに追加',
+                  tooltip: isFavorite ? 'お気に入りから削除' : 'お気に入りに追加',
                 ),
                 // 【入力欄へボタン】: REQ-102対応。タップ=即時読み上げのみだった
                 // 定型文を、入力欄に入れて編集・AI変換する動線として追加する。

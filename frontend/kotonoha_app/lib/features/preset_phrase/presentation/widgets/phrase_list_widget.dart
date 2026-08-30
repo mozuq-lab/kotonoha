@@ -32,6 +32,14 @@ class PhraseListWidget extends StatelessWidget {
   /// 🔵 信頼性レベル: 青信号 - 要件定義に基づく
   final List<PresetPhrase> phrases;
 
+  /// 【パラメータ定義】: 定型文由来のお気に入りのid集合
+  /// 【設計変更】: Phase 3 / WP-2 / Stage 3a - お気に入りの正はfavoriteProvider
+  /// （ADR-005）。呼び出し側（PresetPhraseScreen）が favoriteProvider の
+  /// favorites のうち sourceType == 'preset_phrase' のものの sourceId を
+  /// 集めて渡す。`phrases` の要素の `isFavorite` フラグはもう読まない
+  /// （フラグ自体はStage 3bまで残す）。
+  final Set<String> favoritePresetIds;
+
   /// 【パラメータ定義】: 定型文タップ時のコールバック
   /// 🔵 信頼性レベル: 青信号 - AC-004に基づく
   final void Function(PresetPhrase) onPhraseSelected;
@@ -52,6 +60,7 @@ class PhraseListWidget extends StatelessWidget {
   const PhraseListWidget({
     super.key,
     required this.phrases,
+    required this.favoritePresetIds,
     required this.onPhraseSelected,
     this.onFavoriteToggle,
     this.onEdit,
@@ -67,14 +76,23 @@ class PhraseListWidget extends StatelessWidget {
     }
 
     // 【データ分類】: お気に入りとカテゴリ別に分類
+    // 【設計変更】: Phase 3 / WP-2 / Stage 3a - p.isFavorite ではなく
+    // favoritePresetIds.contains(p.id)（favoriteProviderが正）で判定する
     // 🔵 信頼性レベル: 青信号 - REQ-105、REQ-106に基づく
-    final favorites = phrases.where((p) => p.isFavorite).toList();
-    final dailyPhrases =
-        phrases.where((p) => !p.isFavorite && p.category == 'daily').toList();
-    final healthPhrases =
-        phrases.where((p) => !p.isFavorite && p.category == 'health').toList();
-    final otherPhrases =
-        phrases.where((p) => !p.isFavorite && p.category == 'other').toList();
+    final favorites =
+        phrases.where((p) => favoritePresetIds.contains(p.id)).toList();
+    final dailyPhrases = phrases
+        .where(
+            (p) => !favoritePresetIds.contains(p.id) && p.category == 'daily')
+        .toList();
+    final healthPhrases = phrases
+        .where(
+            (p) => !favoritePresetIds.contains(p.id) && p.category == 'health')
+        .toList();
+    final otherPhrases = phrases
+        .where(
+            (p) => !favoritePresetIds.contains(p.id) && p.category == 'other')
+        .toList();
 
     // 【セクション構築】: 表示するセクションのリストを作成
     // 🔵 信頼性レベル: 青信号 - REQ-105（お気に入り優先）、REQ-106（カテゴリ分類）
@@ -93,6 +111,7 @@ class PhraseListWidget extends StatelessWidget {
         PhraseCategorySection(
           category: 'daily',
           phrases: dailyPhrases,
+          favoritePresetIds: favoritePresetIds,
           onPhraseSelected: onPhraseSelected,
           onFavoriteToggle: onFavoriteToggle,
           onEdit: onEdit,
@@ -108,6 +127,7 @@ class PhraseListWidget extends StatelessWidget {
         PhraseCategorySection(
           category: 'health',
           phrases: healthPhrases,
+          favoritePresetIds: favoritePresetIds,
           onPhraseSelected: onPhraseSelected,
           onFavoriteToggle: onFavoriteToggle,
           onEdit: onEdit,
@@ -123,6 +143,7 @@ class PhraseListWidget extends StatelessWidget {
         PhraseCategorySection(
           category: 'other',
           phrases: otherPhrases,
+          favoritePresetIds: favoritePresetIds,
           onPhraseSelected: onPhraseSelected,
           onFavoriteToggle: onFavoriteToggle,
           onEdit: onEdit,
@@ -172,6 +193,7 @@ class PhraseListWidget extends StatelessWidget {
         ...favorites.map(
           (phrase) => PhraseListItem(
             phrase: phrase,
+            isFavorite: favoritePresetIds.contains(phrase.id),
             onTap: () => onPhraseSelected(phrase),
             onFavoriteToggle: onFavoriteToggle != null
                 ? () => onFavoriteToggle!(phrase)

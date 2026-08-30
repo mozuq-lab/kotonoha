@@ -56,6 +56,14 @@ void main() {
     );
   }
 
+  /// 【テストデータ準備】: Phase 3 / WP-2 / Stage 3a
+  /// お気に入りの正はfavoriteProvider（ADR-005）。PhraseListWidgetはもう
+  /// phrase.isFavorite を読まず、上位から渡されたfavoritePresetIdsで判定する。
+  /// フィクスチャ側のisFavoriteフラグは「このテストでお気に入り扱いにしたい
+  /// 定型文」を表す意図のまま残し、そこからfavoritePresetIdsを組み立てる。
+  Set<String> favoriteIdsOf(List<PresetPhrase> phrases) =>
+      phrases.where((p) => p.isFavorite).map((p) => p.id).toSet();
+
   group('PhraseListWidget - 正常系テスト', () {
     // =========================================================================
     // TC-040-001: 定型文一覧が正しく表示される
@@ -83,6 +91,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
+              favoritePresetIds: favoriteIdsOf(phrases),
               onPhraseSelected: (_) {},
             ),
           ),
@@ -126,6 +135,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
+              favoritePresetIds: favoriteIdsOf(phrases),
               onPhraseSelected: (_) {},
             ),
           ),
@@ -166,6 +176,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
+              favoritePresetIds: favoriteIdsOf(phrases),
               onPhraseSelected: (_) {},
             ),
           ),
@@ -203,6 +214,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: [testPhrase],
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (p) {
                 selectedPhrase = p;
                 callCount++;
@@ -244,6 +256,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
+              favoritePresetIds: favoriteIdsOf(phrases),
               onPhraseSelected: (_) {},
             ),
           ),
@@ -278,6 +291,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
+              favoritePresetIds: favoriteIdsOf(phrases),
               onPhraseSelected: (_) {},
             ),
           ),
@@ -312,6 +326,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
+              favoritePresetIds: favoriteIdsOf(phrases),
               onPhraseSelected: (_) {},
             ),
           ),
@@ -348,6 +363,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
+              favoritePresetIds: favoriteIdsOf(phrases),
               onPhraseSelected: (_) {},
             ),
           ),
@@ -382,6 +398,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: [phrase],
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -416,6 +433,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: [phrase],
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -453,6 +471,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: [phrase],
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -486,6 +505,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: [phrase],
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -519,6 +539,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: [phrase],
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -561,6 +582,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
+              favoritePresetIds: favoriteIdsOf(phrases),
               onPhraseSelected: (_) {},
             ),
           ),
@@ -596,6 +618,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
+              favoritePresetIds: favoriteIdsOf(phrases),
               onPhraseSelected: (_) {},
             ),
           ),

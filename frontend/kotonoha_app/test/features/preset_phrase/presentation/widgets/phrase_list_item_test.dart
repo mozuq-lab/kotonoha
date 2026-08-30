@@ -60,6 +60,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
+              isFavorite: phrase.isFavorite,
             ),
           ),
         ),
@@ -90,6 +91,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
+              isFavorite: phrase.isFavorite,
             ),
           ),
         ),
@@ -121,6 +123,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
+              isFavorite: phrase.isFavorite,
               onTap: () => tapped = true,
             ),
           ),
@@ -159,6 +162,7 @@ void main() {
               width: 200, // 幅を制限
               child: PhraseListItem(
                 phrase: phrase,
+                isFavorite: phrase.isFavorite,
               ),
             ),
           ),
@@ -193,6 +197,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
+              isFavorite: phrase.isFavorite,
             ),
           ),
         ),
@@ -224,6 +229,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
+              isFavorite: phrase.isFavorite,
             ),
           ),
         ),
@@ -259,6 +265,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
+              isFavorite: phrase.isFavorite,
             ),
           ),
         ),
@@ -292,6 +299,7 @@ void main() {
               width: 300,
               child: PhraseListItem(
                 phrase: phrase,
+                isFavorite: phrase.isFavorite,
               ),
             ),
           ),
@@ -315,6 +323,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
+              isFavorite: phrase.isFavorite,
             ),
           ),
         ),
@@ -347,6 +356,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
+              isFavorite: phrase.isFavorite,
               onFavoriteToggle: () => favoriteToggled = true,
             ),
           ),

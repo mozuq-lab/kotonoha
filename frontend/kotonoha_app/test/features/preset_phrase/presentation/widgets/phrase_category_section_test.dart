@@ -61,6 +61,7 @@ void main() {
             body: PhraseCategorySection(
               category: 'daily',
               phrases: phrases,
+              favoritePresetIds: const <String>{},
             ),
           ),
         ),
@@ -155,6 +156,7 @@ void main() {
             body: PhraseCategorySection(
               category: 'daily',
               phrases: phrases,
+              favoritePresetIds: const <String>{},
             ),
           ),
         ),
@@ -191,6 +193,7 @@ void main() {
             body: PhraseCategorySection(
               category: 'daily',
               phrases: [phrase],
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (p) => selectedPhrase = p,
             ),
           ),
