@@ -48,11 +48,8 @@ import 'package:hive/hive.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
-import 'package:kotonoha_app/shared/models/favorite_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
-import 'package:kotonoha_app/shared/models/history_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
-import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
 
 // ---------------------------------------------------------------------------
 // 許可リスト本体。**ここを増やすときは ADR の引用が要る。**
@@ -108,77 +105,76 @@ const _allowedWriteCalls = <String, List<String>>{
 };
 
 /// 検査B に使う値。**アダプタごとに1つ必ず要る**（無ければ検査が空振りする）。
-final _fixtures = <String, void Function(BinaryWriter)>{
-  'HistoryItemAdapter': (writer) => HistoryItemAdapter().write(
-        writer,
-        HistoryItem(
-          id: 'fixture-history',
-          content: 'みずをください',
-          createdAt: DateTime(2026, 1, 2, 3, 4, 5),
-          type: 'manualInput',
-        ),
+///
+/// キーはアダプタのクラス名。**本番の登録経路が返した実体**に対してこの値を
+/// 書かせる（テスト側で `XxxAdapter()` を new し直すと、typeId を据え置いたまま
+/// クラスを差し替える変更が素通りする）。
+Map<String, Object> buildFixtures() => <String, Object>{
+      'HistoryItemAdapter': HistoryItem(
+        id: 'fixture-history',
+        content: 'みずをください',
+        createdAt: DateTime(2026, 1, 2, 3, 4, 5),
+        type: 'manualInput',
       ),
-  'PresetPhraseAdapter': (writer) => PresetPhraseAdapter().write(
-        writer,
-        PresetPhrase(
-          id: 'fixture-preset',
-          content: 'ありがとう',
-          category: 'daily',
-          displayOrder: 3,
-          createdAt: DateTime(2026, 1, 2, 3, 4, 5),
-          updatedAt: DateTime(2026, 2, 3, 4, 5, 6),
-        ),
+      'PresetPhraseAdapter': PresetPhrase(
+        id: 'fixture-preset',
+        content: 'ありがとう',
+        category: 'daily',
+        displayOrder: 3,
+        createdAt: DateTime(2026, 1, 2, 3, 4, 5),
+        updatedAt: DateTime(2026, 2, 3, 4, 5, 6),
       ),
-  'FavoriteItemAdapter': (writer) => FavoriteItemAdapter().write(
-        writer,
-        FavoriteItem(
-          id: 'fixture-favorite',
-          content: 'おはようございます',
-          createdAt: DateTime(2026, 1, 2, 3, 4, 5),
-          displayOrder: 5,
-          sourceType: 'preset_phrase',
-          sourceId: 'fixture-preset',
-        ),
+      'FavoriteItemAdapter': FavoriteItem(
+        id: 'fixture-favorite',
+        content: 'おはようございます',
+        createdAt: DateTime(2026, 1, 2, 3, 4, 5),
+        displayOrder: 5,
+        sourceType: 'preset_phrase',
+        sourceId: 'fixture-preset',
       ),
-};
+    };
 
 void main() {
   group('Hive スキーマ許可リスト', () {
+    /// 本番の登録経路が登録したアダプタの実体
+    late List<TypeAdapter<dynamic>> registered;
+
+    setUp(() {
+      // 【権威をまっさらにする】: 既定アダプタも消えるが、この検査は
+      // エンコードを行わないので影響しない（hive 2.2.3 `HiveInterface.resetAdapters`）。
+      //
+      // **このファイルに「実 box へ書く」テストを足さないこと。**
+      // hive 2.2.3 の `HiveImpl` は既定アダプタ（DateTime 等）を
+      // コンストラクタでしか登録しないため、reset 後は再登録されず、
+      // 実書き込みは `HiveError: Cannot write, unknown type: DateTime` で落ちる。
+      Hive.resetAdapters();
+
+      // 【本番と同じ関数を呼ぶ】: 検査 A も B も、この1回の呼び出しの結果だけを見る。
+      registered = <TypeAdapter<dynamic>>[];
+      registerPersistedTypeAdapters(onRegistered: registered.add);
+    });
+
     // -----------------------------------------------------------------------
     // 検査A: 本番の登録経路が、許可された typeId しか登録しない
     // -----------------------------------------------------------------------
     group('A. 永続化面（typeId）が無断で増えていない', () {
-      setUp(() {
-        // 【権威をまっさらにする】: 既定アダプタも消えるが、この検査は
-        // エンコードを行わないので影響しない（hive 2.2.3 `HiveInterface.resetAdapters`）。
-        Hive.resetAdapters();
-      });
-
-      test('本番の登録経路を通した後、登録されている typeId が許可リストと一致する', () {
-        // Given: 何も登録されていない
-        expect(
-          _registeredTypeIds(),
-          isEmpty,
-          reason: 'resetAdapters() 後は利用者定義のアダプタが無いはず',
-        );
-
-        // When: **本番と同じ関数**で登録する（initHive() が呼ぶのと同じもの）
-        registerPersistedTypeAdapters();
-
-        // Then: Hive 自身が「登録されている」と答える typeId の集合
+      test('Hive が「登録済み」と答える typeId が許可リストと一致する', () {
         expect(
           _registeredTypeIds(),
           _allowedTypeIds,
-          reason: '永続化面を増やしたなら、根拠 ADR を引用して許可リストを更新すること'
-              '（AGENTS.md「負債を作る行為には理由が要る」）',
+          reason: '永続化面を増やしたなら、根拠 ADR を引用して許可リストを更新すること。'
+              '**その際 _allowedWriteCalls と buildFixtures() にも必ず足すこと**'
+              '（足さないと、そのアダプタのフィールドは以後どの検査も見ない）',
         );
       });
 
-      test('登録は冪等で、2回通しても面は増えない', () {
-        registerPersistedTypeAdapters();
-        registerPersistedTypeAdapters();
-
-        expect(_registeredTypeIds(), _allowedTypeIds);
+      test('本番が登録するアダプタの typeId 列が、重複なく許可リストと一致する', () {
+        // 【集合ではなく列で比べる理由】: 集合だと同じアダプタを2回登録する
+        // 変更が素通りする。順序と重複まで固定する。
+        expect(
+          registered.map((adapter) => adapter.typeId).toList(),
+          _allowedTypeIds.toList(),
+        );
       });
     });
 
@@ -186,36 +182,42 @@ void main() {
     // 検査B: 永続フィールドの並びと型が変わっていない
     // -----------------------------------------------------------------------
     group('B. 永続フィールドの形が変わっていない', () {
-      for (final adapterName in _allowedWriteCalls.keys) {
-        test('$adapterName の write() が出す呼び出し列が許可リストと一致する', () {
-          final writeFixture = _fixtures[adapterName];
+      test('検査対象のアダプタ集合が、本番の登録経路と一致する', () {
+        // 【これが A と B をつなぐ】: 許可リスト B に載っていないアダプタが
+        // 本番で登録されていたら赤にする。これが無いと、typeId だけ許可リストに
+        // 足した4つ目のアダプタが恒久的に無検査になる。
+        expect(
+          registered.map((adapter) => adapter.runtimeType.toString()).toSet(),
+          _allowedWriteCalls.keys.toSet(),
+          reason: '本番が登録するアダプタと、形を固定してある一覧がずれている',
+        );
+      });
+
+      test('各アダプタの write() が出す呼び出し列が許可リストと一致する', () {
+        final fixtures = buildFixtures();
+
+        for (final adapter in registered) {
+          final name = adapter.runtimeType.toString();
+          final fixture = fixtures[name];
           expect(
-            writeFixture,
+            fixture,
             isNotNull,
-            reason: '$adapterName に対応する fixture が無い。'
-                'fixture が無いとこの検査は空振りする',
+            reason: '$name に対応する fixture が無い。fixture が無いとこの検査は空振りする',
           );
 
           final recorder = _RecordingBinaryWriter();
-          writeFixture!(recorder);
+          // 【権威】: テストで new し直さず、**本番の登録経路が返した実体**に書かせる。
+          adapter.write(recorder, fixture!);
 
           expect(
             recorder.calls,
-            _allowedWriteCalls[adapterName],
-            reason: '永続フィールドの並び・型・数が変わっている。'
+            _allowedWriteCalls[name],
+            reason: '$name の永続フィールドの並び・型・数が変わっている。'
                 '**残るフィールドの番号を詰め直していないか**を必ず確認すること'
                 '（詰めると端末の既存データが TypeError で読めなくなり、'
                 'box が開かないまま無言でインメモリ動作になる）',
           );
-        });
-      }
-
-      test('許可リストにある全アダプタに fixture がある', () {
-        expect(
-          _fixtures.keys.toSet(),
-          _allowedWriteCalls.keys.toSet(),
-          reason: 'fixture と許可リストは1対1でなければ、検査が静かに空振りする',
-        );
+        }
       });
     });
 

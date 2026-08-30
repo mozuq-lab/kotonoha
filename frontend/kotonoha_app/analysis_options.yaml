@@ -17,7 +17,14 @@ linter:
     # **追加の基準**: 「守る対象のリスクが文書に名指しされていること」＋
     # 「analyzer が権威であること」の両方。無料だからという理由では足さない
     # （`docs/verification-principles.md` P1 の処方箋）。
-    # 導入時点の lib での違反はいずれも0件（2026-08-31 実測）。
+    #
+    # 【実測の範囲】: 導入時点の違反は **lib / test / integration_test の全体で0件**
+    # （2026-08-31、`fvm flutter analyze`（パス引数なし）で実測。exit 0）。
+    # **測る範囲はゲートの範囲と一致させること。** CI（.github/workflows/flutter.yml）も
+    # pre-commit（.pre-commit-config.yaml、`pass_filenames: false`）も
+    # `flutter analyze --no-fatal-infos` をパス引数なしで走らせるので、
+    # `flutter analyze lib` だけで測ると test 側の違反を見落とし、
+    # **frontend を触る全員のコミットが止まる**（2026-08-31 の2系統レビュー指摘 A3）。
     # -----------------------------------------------------------------------
 
     # await 忘れで書き込みが完了しないまま進むのを止める。

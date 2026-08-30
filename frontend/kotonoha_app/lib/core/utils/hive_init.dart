@@ -181,7 +181,13 @@ Future<Box<T>?> openBoxWithRecovery<T>(
 ///
 /// 【実装内容】: Hot Restart時等の重複登録エラーを防ぐための冪等な登録処理
 /// 🔵 信頼性レベル: 青信号 - REQ-5003、TASK-0014の実装詳細に基づく
-void _registerAdapterSafely<T>(TypeAdapter<T> adapter) {
+void _registerAdapterSafely<T>(
+  TypeAdapter<T> adapter, [
+  void Function(TypeAdapter<dynamic> adapter)? onRegistered,
+]) {
+  // 【観測フック】: 登録の成否に関わらず「本番が使うアダプタ」として通知する。
+  // 検査側が一覧を書き写さずに済ませるための seam（下の説明を参照）。
+  onRegistered?.call(adapter);
   try {
     if (!Hive.isAdapterRegistered(adapter.typeId)) {
       Hive.registerAdapter(adapter);
@@ -211,13 +217,24 @@ void _registerAdapterSafely<T>(TypeAdapter<T> adapter) {
 ///
 /// 【冪等性】: Hot Restart やテストの再実行で二重に呼ばれても、
 /// [_registerAdapterSafely] が登録済みを見て何もしない。
-void registerPersistedTypeAdapters() {
+///
+/// 【[onRegistered] という seam を置いた理由】: これが無いと、スキーマ許可リスト
+/// 検査は「どのアダプタを検査するか」を**自前の一覧として書き写す**しかない。
+/// すると 4つ目のアダプタを足したとき、検査は typeId が増えたことだけを赤にし、
+/// 開発者が許可リストの typeId を足した時点で緑に戻る——**そのアダプタの
+/// フィールド番号・型は以後誰も見ない**。番号の詰め直しによる端末データ喪失が
+/// 素通りする穴が、検査自身の赤いメッセージによって開く形になる
+/// （2026-08-31 の2系統レビューで指摘された）。
+/// 登録した実体をそのまま渡せば、検査は本番の登録経路を唯一の権威にできる。
+void registerPersistedTypeAdapters({
+  void Function(TypeAdapter<dynamic> adapter)? onRegistered,
+}) {
   // typeId 0: 発話履歴（REQ-601）
-  _registerAdapterSafely<HistoryItem>(HistoryItemAdapter());
+  _registerAdapterSafely<HistoryItem>(HistoryItemAdapter(), onRegistered);
   // typeId 1: 定型文（REQ-104）
-  _registerAdapterSafely<PresetPhrase>(PresetPhraseAdapter());
+  _registerAdapterSafely<PresetPhrase>(PresetPhraseAdapter(), onRegistered);
   // typeId 2: お気に入り（REQ-701）
-  _registerAdapterSafely<FavoriteItem>(FavoriteItemAdapter());
+  _registerAdapterSafely<FavoriteItem>(FavoriteItemAdapter(), onRegistered);
 }
 
 /// 【関数定義】: Hive初期化処理
