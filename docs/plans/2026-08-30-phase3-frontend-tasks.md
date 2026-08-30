@@ -20,7 +20,7 @@
 | WP | 状態 |
 |---|---|
 | WP1 永続化の状態を明示する | **完了**（下記 §WP1） |
-| **WP2 お気に入りを1つの真実にする** | **次はこれ。チェックリスト粒度なので着手時に task 分解が要る** |
+| **WP2 お気に入りを1つの真実にする** | **着手中。6段に分解済み（下記 §WP2）。次は Stage 0** |
 | WP3 往復テスト | **ADR-007 のリリース条件に入っていない** |
 | WP4 E2E | **完了**（4経路が CI 緑。Issue #84 / PR #87） |
 | WP5 Hive 許可リスト＋analyzer ルール | 未着手。**1d はリリース条件** |
@@ -518,34 +518,89 @@ git commit -m "feat: 永続化の状態を型で表す (Phase 3 / WP-1)"
 **着手前に読むこと:** ADR-005 の「決定理由」節。案2（`HistoryItem.isFavorite` に一本化）を
 却下した理由は「概念の所有者とライフサイクル」であって、現状の欠陥ではない。
 
-### 現状（2026-08-30 実測）
+### 実測でわかったこと（2026-08-30。着手前の分解をこれで書き換えた）
 
-| 箇所 | 実態 |
-|---|---|
-| `HistoryItem.isFavorite`（Hive field 4） | `history_provider.dart:91` が常に `false` で書く。UI は読まない |
-| `PresetPhrase.isFavorite`（Hive field 3） | 永続化され、`phrase_list_widget.dart:71-77` と `phrase_list_item.dart:99` が読む。`preset_phrase_notifier.toggleFavorite` が `favoriteNotifier` と双方向同期 |
-| `features/favorite/` | ロジック（`FavoriteNotifier`）。**これが正** |
-| `features/favorites/` | UI（`favorites_screen.dart`） |
-| `history_screen.dart:66-67,116,223` | **content 文字列**で照合している（ADR-005 は id と決めた） |
-| `FavoriteItem.sourceType/sourceId`（field 4,5） | 型はあるが `saveFromHistory`/`saveFromPreset` が設定していない |
-| `input_candidate_scorer.dart:85` | お気に入り判定を content で行っている |
+**1. 死蔵が5点ある。ADR-005 が「限界（正直な穴）」と書いた形が実在した。**
 
-- [ ] **Task 2.1**: `FavoriteItem` の `sourceType`/`sourceId` を生成時に必ず設定する（往復テストつき）
-- [ ] **Task 2.2**: `history_screen` の content 照合を **sourceId 照合**に変える
-- [ ] **Task 2.3**: `input_candidate_scorer` の content 照合を id 照合に変える
-- [ ] **Task 2.4**: `PresetPhrase.isFavorite` を削除。UI は `favoriteProvider` を読む。
-      `toggleFavorite` は `favoriteProvider` へ委譲し、双方向同期を消す
-- [ ] **Task 2.5**: `HistoryItem.isFavorite` を削除
-- [ ] **Task 2.6**: 一度きりの移行（`lib/core/persistence/favorite_migration.dart`）——
-      既存 box に `isFavorite == true` の `PresetPhrase` があれば `FavoriteItem` を生成する。
-      **未リリースだが開発・検証端末にデータがあるため、捨てずに移す**
-- [ ] **Task 2.7**: 往復テスト（`Favorite` domain → `FavoriteItem` storage → domain が恒等）
+| 死蔵 | 場所 | 根拠 |
+|---|---|---|
+| `FavoriteRepository.saveFromHistory` | `favorite_repository.dart:127` | lib からの呼び出し元ゼロ |
+| `FavoriteRepository.saveFromPreset` | `:144` | 同上 |
+| `FavoriteRepository.isDuplicate` | `:161` | 同上（`history_screen.dart:222` の `isDuplicate` は同名のローカル変数） |
+| `Favorite.fromJson` | `favorite.dart:49` | 消費者ゼロ。同期は MVP 範囲外 |
+| `Favorite.toJson` | `:63` | 同上 |
 
-**adapter の後方互換について（確認済み）:** 手書き TypeAdapter は
-`readByte()` した field 番号を map に入れてから読むため、`fields[3]` を参照しなくなっても
-既存バイト列は読める。書き込み側の `writeByte(N)` の N（フィールド数）を減らすこと。
+**2. お気に入りを実際に作る経路は2つだけ**——`FavoriteNotifier.addFavorite`（`favorite_provider.dart:99`。
+**source を設定しない**）と `addFavoriteFromPresetPhrase`（`:249`。設定する）。
+したがって `sourceType == 'history'` の `FavoriteItem` は**どの経路からも生成されない**。
 
----
+**3. `Favorite`（domain）と `FavoriteItem`（Hive）は重複ではない。**
+`favorite_provider.dart:77,87` が変換する意図した seam で、`repository_providers.dart:11-14`
+が「Box は外部 SDK の境界」と明示している。統合対象ではない。
+
+### 決定（2026-08-30、人の判断）
+
+**UI の射影は content でよい。真実が `favoriteProvider` に1つであることが ADR-005 の要点で、
+その真実をどう射影するかは用途ごとに決めてよい。**（フェーズ末に ADR-005 へ昇格する）
+
+- **履歴画面の星は content 照合のまま残す。** sourceId 照合にすると、定型文由来の同文に
+  星が付かない／同じ文言を再発話すると付かない／履歴50件上限でアンカーが消えると
+  二度と付かない。ADR-005 が名指しした衝突は「同文の**定型文どうし**」で、
+  それは `addFavoriteFromPresetPhrase` の sourceId 重複判定で既に解決済み
+- **`input_candidate_scorer` は触らない。**`computeCandidates` は `List<String>` しか受けず、
+  集計は候補テキストがキー、出力は `InputCandidate(text:, score:)` で、**id を持てる場所が
+  型の上に無い**。呼び出し元は `favoriteProvider` を watch した射影であり並行真実ではない
+
+### 分解（6段。各段が単独でマージ可能で、途中でもアプリは壊れない）
+
+**順序の拘束は「移行を先に書く」ではなく「移行が端末に届いてから削除を配る」。**
+危険なのは read ではなく **write** で、`writeByte(6)` のビルドが一度でも `repo.save()` を
+通すと、ディスクから field 3 が消えて移行は読むものを失う。
+
+- [ ] **Stage 0**: 死蔵5点を削除。あわせて test の `isFavorite: false` 62箇所を落とす
+      （名前付き引数のデフォルトと同値なので挙動不変。6ファイルがこれで対象外になる）。
+      **fixture 編集は別コミットに割る**
+- [ ] **Stage 1**: `addFavoriteFromHistory(content, historyId)` を新設し、`history_screen` から
+      id を通す。**星と重複判定は content のまま**。ADR-005 要件3をここで満たす
+- [ ] **Stage 2 — 移行**: `lib/core/persistence/favorite_migration.dart`（新規）。
+      presetPhrases を走査し、`isFavorite == true` かつ favorites に `sourceId == phrase.id` が
+      無いものだけ `FavoriteItem` を生成。**marker を持たず sourceId 存在チェックだけで冪等に**
+      （marker は永続化面の追加になり ADR 引用が要る）。**Stage 3b より前に配る**
+- [ ] **Stage 3a**: 定型文 UI を `favoriteProvider` から描く。`phrase_list_widget` /
+      `phrase_list_item` / `phrase_category_section` に `Set<String> favoritePresetIds` を渡す
+      （3つとも `StatelessWidget`）。**モデルはまだ触らない**
+- [ ] **Stage 3b**: `PresetPhrase.isFavorite` を削除。**14ファイルで完了条件の12を超える。
+      超過は承認済み**（fixture 修正はフラグ削除と同時でないとコンパイルが通らず、分割できない。
+      台帳 L-38）
+- [ ] **Stage 4**: `HistoryItem.isFavorite` を削除。**移行不要**——`history_provider.dart:91` が
+      常に `false` を書き、UI は読まない（`history_item_card` の `isFavorited` は別名の
+      ウィジェット引数）。**保存値が全て false なので失われる情報がゼロ。順序自由**
+
+### adapter の後方互換（実測で確認済み）
+
+read 側は**位置固定ではなく、フィールド番号をキーにした map 方式**——先頭の
+`readByte()` した数だけ `reader.readByte(): reader.read()` を読む。`reader.read()` は
+引数なしなので hive が値の型を先頭バイトから自己記述的に決める。したがって
+**削除したフィールドの値も正しくバイト数分だけ消費され、ストリームはずれない。**
+`writeByte(N)` の N を減らすだけでよい（`preset_phrase_adapter.dart:44` 7→6、
+`history_item_adapter.dart:40` 5→4）。
+
+> **最も危険な一手: 残るフィールドの番号を詰め直してはいけない。**
+> `PresetPhrase` の `isFavorite` は**中間の field 3** で、後ろに displayOrder(4)・
+> createdAt(5)・updatedAt(6) が続く。4,5,6 → 3,4,5 と詰めると旧バイト列で
+> `fields[3] as int` が `TypeError` を投げる。`hive_init.dart:48` の `_isCorruptionError` は
+> `FormatException` と `RangeError` しか破損とみなさないため、`:108-119` の「環境起因」に
+> 落ちて **box を開けないまま null を返す**——**定型文が全消えしたように見え、
+> 無言でインメモリ動作を続ける。**
+
+### 追加が要るテスト
+
+- 移行テスト（Stage 2）: 実 box に**現行アダプタで** `isFavorite: true` を書き、移行後に
+  favorites box を直接読んで `sourceType=='preset_phrase'` / `sourceId==phrase.id` を確認。
+  2回走らせて増えないこと
+- **旧7フィールドのバイト列を新アダプタで読む**テスト（Stage 3b）。map 方式の後方互換は
+  現状どのテストも守っていない
+- 往復テスト（`Favorite` domain → `FavoriteItem` storage → domain が恒等）
 
 ## WP3 — 往復テストを feature ごとに1本
 
@@ -601,6 +656,8 @@ UI → provider → repository → storage → 戻り。層を飛ばして下だ
 - [ ] SDD の ledger の ruling / parked / deferred を **台帳 Issue #85 へ転記**する
       （ledger は完了時に消える。判断を状態を持たない場所に置かない）
 - [ ] 決定に触れる ruling は ADR へ昇格する
+      （**確定分: WP2 の「UI の射影は content でよい。真実が favoriteProvider に1つで
+      あることが要点」を ADR-005 へ**）
 - [ ] マージ前の最終 whole-branch レビューを **2系統**（Claude ＋ Codex）で行う（§5 条件3）
 - [ ] この計画文書を破棄し、`docs/plans/2026-08-29-architecture-remediation.md` の
       状態行を更新する
