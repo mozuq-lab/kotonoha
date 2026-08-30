@@ -25,6 +25,15 @@ class _OfflineNetworkNotifier extends NetworkNotifier {
   NetworkState build() => NetworkState.offline;
 }
 
+/// テストから状態を切り替えられるネットワーク通知
+class _ControllableNetworkNotifier extends NetworkNotifier {
+  @override
+  NetworkState build() => NetworkState.offline;
+
+  /// 状態を差し替える
+  void setState(NetworkState next) => state = next;
+}
+
 /// [finder] が指すテキストに実際に適用される装飾を返す
 TextDecoration _effectiveDecoration(WidgetTester tester, Finder finder) {
   final text = tester.widget<Text>(finder);
@@ -52,5 +61,40 @@ void main() {
       _effectiveDecoration(tester, find.textContaining('オフライン')),
       TextDecoration.none,
     );
+  });
+
+  testWidgets('オンライン復帰通知の文字に下線が付かない', (tester) async {
+    // 【なぜ3本目も見るか】: AppShell の Column に載るバナーは
+    // PersistenceBanner / OfflineBanner / OnlineRecoveryNotification の3本。
+    // どれも Scaffold の外側にあり、同じ条件で下線を継承する。
+    final container = ProviderContainer(
+      overrides: [
+        persistenceStateProvider.overrideWithValue(const PersistenceReady()),
+        networkProvider.overrideWith(_ControllableNetworkNotifier.new),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: AppShell(child: Scaffold(body: Text('画面本体'))),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    (container.read(networkProvider.notifier) as _ControllableNetworkNotifier)
+        .setState(NetworkState.online);
+    await tester.pump();
+
+    expect(
+      _effectiveDecoration(tester, find.textContaining('オンラインに戻りました')),
+      TextDecoration.none,
+    );
+
+    // 表示タイマーを流し切ってから終わる
+    await tester.pump(const Duration(seconds: 10));
   });
 }

@@ -74,17 +74,28 @@ class PersistenceBanner extends ConsumerWidget {
     final state = ref.watch(persistenceStateProvider);
     final scheme = Theme.of(context).colorScheme;
 
-    final (colors, message) = switch (state) {
-      PersistenceReady() => (null, null),
+    // 【文言は失われる領域から作る】: バナーが「消える」と言ってよい対象は、
+    // PersistenceState が実際に把握している領域（＝PersistedArea）に限る。
+    //
+    // 【「入力内容」と書いてはいけない】: 下書き（入力バッファ）は Hive では
+    // なく SharedPreferences に保存され、AppLifecycleObserver が復元する。
+    // Hive が全滅しても入力内容は残るため、「入力内容は消えます」は誤報である。
+    // 1文字に分単位かかる利用者に「急げ・アプリを閉じるな」という誤った行動を
+    // 強いることになる。
+    final (colors, failedAreas) = switch (state) {
+      PersistenceReady() => (null, const <PersistedArea>{}),
       PersistenceUnavailable() => (
           unavailableBannerColors(scheme),
-          '保存できません。アプリを閉じると入力内容は消えます',
+          PersistedArea.values.toSet(),
         ),
       PersistenceRecoverableFailure(:final failedAreas) => (
           recoverableBannerColors(),
-          '${_areaNames(failedAreas)}を保存できません。アプリを閉じると消えます',
+          failedAreas,
         ),
     };
+    final message = failedAreas.isEmpty
+        ? null
+        : '${_areaNames(failedAreas)}を保存できません。アプリを閉じると消えます';
 
     if (colors == null || message == null) return const SizedBox.shrink();
 
@@ -92,8 +103,11 @@ class PersistenceBanner extends ConsumerWidget {
     // Scaffold より外側にある。Material 祖先が無い位置の Text は
     // WidgetsApp の既定スタイル（赤文字＋黄色の二重下線）を継承するため、
     // style を部分指定しただけでは下線が残る（実機の Chrome で確認した）。
+    // 【excludeSemantics】: 付けないと、この label と子 Text のラベルが
+    // 同一ノードに連結され、スクリーンリーダーが同じ文を2回読む。
     return Semantics(
       label: message,
+      excludeSemantics: true,
       child: Material(
         color: colors.background,
         child: Container(

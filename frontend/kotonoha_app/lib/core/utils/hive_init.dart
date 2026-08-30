@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/utils/hive_box_backup.dart'
     if (dart.library.io) 'package:kotonoha_app/core/utils/hive_box_backup_io.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
@@ -250,13 +251,19 @@ Future<void> initHive() async {
   // 【実装内容】: 'history'という名前でHistoryItem用のボックスをオープン
   // 【テスト対応】: TC-001の検証項目、TC-059-006
   // 🔵 信頼性レベル: 青信号 - REQ-601（履歴自動保存）の実現
-  await openBoxWithRecovery<HistoryItem>('history', hivePath: hivePath);
+  await openBoxWithRecovery<HistoryItem>(
+    PersistedArea.history.boxName,
+    hivePath: hivePath,
+  );
 
   // 【ボックスオープン】: presetPhrasesボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
   // 【実装内容】: 'presetPhrases'という名前でPresetPhrase用のボックスをオープン
   // 【テスト対応】: TC-001の検証項目、TC-059-006
   // 🔵 信頼性レベル: 青信号 - REQ-104（定型文機能）の実現
-  await openBoxWithRecovery<PresetPhrase>('presetPhrases', hivePath: hivePath);
+  await openBoxWithRecovery<PresetPhrase>(
+    PersistedArea.presetPhrases.boxName,
+    hivePath: hivePath,
+  );
 
   // 【TypeAdapter登録】: FavoriteItemAdapterの登録
   // 【実装内容】: typeId 2としてFavoriteItemAdapterを登録（重複登録時はtry-catchで無視）
@@ -268,5 +275,8 @@ Future<void> initHive() async {
   // 【実装内容】: 'favorites'という名前でFavoriteItem用のボックスをオープン
   // 【テスト対応】: TASK-0065、TC-059-006
   // 🔵 信頼性レベル: 青信号 - REQ-701（お気に入り機能）の実現
-  await openBoxWithRecovery<FavoriteItem>('favorites', hivePath: hivePath);
+  await openBoxWithRecovery<FavoriteItem>(
+    PersistedArea.favorites.boxName,
+    hivePath: hivePath,
+  );
 }

@@ -28,12 +28,14 @@ void main() {
     await Hive.close();
     tempDir = await Directory.systemTemp.createTemp('persistence_state_test_');
     Hive.init(tempDir.path);
-    if (!Hive.isAdapterRegistered(0))
-      Hive.registerAdapter(HistoryItemAdapter());
-    if (!Hive.isAdapterRegistered(1))
-      Hive.registerAdapter(PresetPhraseAdapter());
-    if (!Hive.isAdapterRegistered(2)) {
-      Hive.registerAdapter(FavoriteItemAdapter());
+    for (final adapter in <TypeAdapter<dynamic>>[
+      HistoryItemAdapter(),
+      PresetPhraseAdapter(),
+      FavoriteItemAdapter(),
+    ]) {
+      if (!Hive.isAdapterRegistered(adapter.typeId)) {
+        Hive.registerAdapter(adapter);
+      }
     }
   });
 

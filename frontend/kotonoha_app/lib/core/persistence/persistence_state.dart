@@ -26,9 +26,13 @@ enum PersistedArea {
 extension PersistedAreaNames on PersistedArea {
   /// 対応する Hive box の名前
   ///
-  /// box 名の定義はここだけに置く。repository_providers も同じ値を使うこと。
-  /// 文字列を2箇所に書くと、片方だけ直したときに
+  /// box 名の定義はここだけに置く。`hive_init.dart`（開く側）と
+  /// `repository_providers.dart`（読む側）はどちらもこの値を使う。
+  /// 文字列を複数箇所に書くと、片方だけ直したときに
   /// 「保存できていないのにバナーが出ない」形で食い違う。
+  ///
+  /// 【注意】: Hive は box 名を小文字化して扱う（hive 2.2.3 `hive_impl.dart`)。
+  /// 大小文字だけが違う名前を足すと、別領域のつもりで同一 box になる。
   String get boxName => switch (this) {
         PersistedArea.history => 'history',
         PersistedArea.presetPhrases => 'presetPhrases',

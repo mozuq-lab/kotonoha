@@ -73,31 +73,40 @@ class _OnlineRecoveryNotificationState
       children: [
         // オンライン復帰通知
         if (_showNotification)
+          // 【Material で包む理由】: この通知は AppShell に置かれ、各画面の
+          // Scaffold より外側にある。Material 祖先が無い位置の Text は
+          // WidgetsApp の既定スタイル（monospace・weight 900・黄色の二重下線）を
+          // 継承するため、style を部分指定しただけでは装飾が残る。
+          // PersistenceBanner / OfflineBanner と同じ扱いにする。
           Semantics(
             label: 'オンラインに戻りました。AI変換が利用可能です。',
-            child: Container(
-              width: double.infinity,
+            excludeSemantics: true,
+            child: Material(
               // 【AA対応】: green[900] on green[100] でコントラスト比 約5.9:1。
               // 旧 green[800] on green[300] は約3.0:1でAA不足だった。
               color: Colors.green[100],
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.wifi,
-                    size: 18,
-                    color: Colors.green[900],
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'オンラインに戻りました。AI変換が利用可能です',
-                    style: TextStyle(
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.wifi,
+                      size: 18,
                       color: Colors.green[900],
-                      fontSize: 14,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      'オンラインに戻りました。AI変換が利用可能です',
+                      style: TextStyle(
+                        color: Colors.green[900],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

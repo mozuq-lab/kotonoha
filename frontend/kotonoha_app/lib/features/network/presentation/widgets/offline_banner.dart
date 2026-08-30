@@ -42,6 +42,9 @@ class OfflineBanner extends ConsumerWidget {
     // Phase 3 WP-1 で実機（Chrome）の目視から発見した既存不具合。
     return Semantics(
       label: 'オフライン状態です。基本機能のみ利用可能です。',
+      // 【excludeSemantics】: 付けないと label と子 Text のラベルが
+      // 同一ノードに連結され、読み上げが重複する。
+      excludeSemantics: true,
       child: Material(
         color: Colors.grey[300],
         child: Container(
