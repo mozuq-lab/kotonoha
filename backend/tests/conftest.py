@@ -11,10 +11,10 @@ pytestテスト設定ファイル
 import os
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from urllib.parse import urlparse
 
 import pytest
 from sqlalchemy import text
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # 【テスト前準備】: テスト用のデータベース接続URLを環境変数から取得
@@ -29,6 +29,31 @@ TEST_DATABASE_URL = os.getenv(
 # 【テーブル名定義】: TRUNCATE対象のアプリケーションテーブル（alembic_versionは除く）
 # 🔵 test_migration_execution.py が alembic_version を参照するため TRUNCATE 対象から除外
 _APP_TABLES = ["ai_conversion_logs", "error_logs"]
+
+
+def postgres_settings_from_dsn(dsn: str) -> dict[str, object]:
+    """DSN を settings の POSTGRES_* フィールドへ分解する。
+
+    settings.DATABASE_URL / DATABASE_URL_SYNC は POSTGRES_* を素の値として
+    組み立てるため、ここで返す値も percent-decode 済みの素の値でなければならない。
+    urllib.parse.urlparse / urlsplit は percent-decode しないので使えない
+    （`p%40ss` が `p@ss` にならず、そのまま接続情報として使われる）。
+    分解は sqlalchemy.engine.make_url に任せる。
+
+    Args:
+        dsn: 分解対象の接続URL（例: TEST_DATABASE_URL）。
+
+    Returns:
+        dict[str, object]: settings へ適用する POSTGRES_* のキーと値。
+    """
+    url = make_url(dsn)
+    return {
+        "POSTGRES_USER": url.username,
+        "POSTGRES_PASSWORD": url.password,
+        "POSTGRES_HOST": url.host,
+        "POSTGRES_PORT": url.port or 5432,
+        "POSTGRES_DB": url.database,
+    }
 
 
 @pytest.fixture(scope="session")
@@ -54,14 +79,7 @@ def _alembic_schema():
     # TEST_DATABASE_URL の全コンポーネントを settings に一時パッチして alembic を
     # テスト DB に向ける（DB名ハードコードを避け、ローカル/CI 両対応）。
     # object.__setattr__ で Pydantic の __setattr__ をバイパスする。
-    _parsed = urlparse(TEST_DATABASE_URL)
-    _patched = {
-        "POSTGRES_USER": _parsed.username,
-        "POSTGRES_PASSWORD": _parsed.password,
-        "POSTGRES_HOST": _parsed.hostname,
-        "POSTGRES_PORT": _parsed.port or 5432,
-        "POSTGRES_DB": _parsed.path.lstrip("/"),
-    }
+    _patched = postgres_settings_from_dsn(TEST_DATABASE_URL)
     _originals = {key: getattr(settings, key) for key in _patched}
     for _key, _value in _patched.items():
         object.__setattr__(settings, _key, _value)

@@ -9,7 +9,7 @@ app/core/config.py の Settings クラステスト
 import pytest
 from pydantic import ValidationError
 
-from app.core.config import Settings
+from app.core.config import DEV_POSTGRES_PASSWORD, DEV_SECRET_KEY, Settings
 
 
 class TestEnvironmentValidation:
@@ -43,6 +43,42 @@ class TestEnvironmentValidation:
         """表記ゆれ・未知の値は設定読み込み時にエラーとなり、アプリ起動が失敗する"""
         with pytest.raises(ValidationError):
             Settings(ENVIRONMENT=value)
+
+
+class TestProductionRejectsDevelopmentDefaults:
+    """production で開発用デフォルト値のまま起動しようとすると拒否されることを確認する。
+
+    正常系（明示指定すれば受理される）しか見ていないと、比較そのものが静かに
+    成立しなくなったとき（例: `SecretStr` を導入すると `SecretStr("x") == "x"` は
+    例外を出さず常に False になる）に、検査が無効化されたことに気づけない。
+    負の側を pydantic の ValidationError で固定しておく。
+
+    比較対象の値はテスト側にハードコードせず app.core.config の定数を使う。
+    デフォルト値を変えたら validate_production_settings も一緒に動く必要があるため。
+    """
+
+    def test_rejects_production_with_default_secret_key(self):
+        """SECRET_KEY が開発用デフォルトのままの production は起動できない"""
+        with pytest.raises(ValidationError) as exc_info:
+            Settings(
+                _env_file=None,
+                ENVIRONMENT="production",
+                SECRET_KEY=DEV_SECRET_KEY,
+                POSTGRES_PASSWORD="a-sufficiently-random-production-password",  # noqa: S106
+            )
+        # どのフィールドが原因かが読み取れることまでを見る（文言の完全一致は見ない）
+        assert "SECRET_KEY" in str(exc_info.value)
+
+    def test_rejects_production_with_default_postgres_password(self):
+        """POSTGRES_PASSWORD が開発用デフォルトのままの production は起動できない"""
+        with pytest.raises(ValidationError) as exc_info:
+            Settings(
+                _env_file=None,
+                ENVIRONMENT="production",
+                SECRET_KEY="a-sufficiently-random-production-secret",  # noqa: S106
+                POSTGRES_PASSWORD=DEV_POSTGRES_PASSWORD,
+            )
+        assert "POSTGRES_PASSWORD" in str(exc_info.value)
 
 
 class TestAIAndRateLimitDefaults:
