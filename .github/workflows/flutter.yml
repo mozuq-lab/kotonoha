@@ -194,17 +194,25 @@ jobs:
           # - integration_test/device_test/: 実機前提（そもそもglob対象外）
           #
           # 一時的に除外する（Issue #84 で追跡。修正後に除外を解除すること）:
-          # 以下4本＋character_input_tts はヘッドレスWebで失敗する。握り潰しを
-          # 撤去したことで初めて可視化された既存の不具合で、テストがアプリの
-          # 現状に追随できていない（画面遷移が起きない・入力が反映されない等）。
+          # 以下3本はヘッドレスWebで失敗する。握り潰しを撤去したことで初めて
+          # 可視化された既存の不具合で、テストがアプリの現状に追随できていない
+          # （画面遷移が起きない・入力が反映されない等）。
           # インフラ側は正常で、app_startup_test.dart は5件すべて成功している。
+          #
+          # この3本は「壊れたらアプリとして使えない」経路なので残して直す:
+          # - character_input_tts: 文字盤入力→TTS（中核）
+          # - preset_phrase:       定型文の登録→呼び出し（永続化を通る）
+          # - large_emergency_buttons: 緊急ボタン（安全に関わる）
+          #
+          # 【削除済み（2026-08-30）】settings_accessibility_e2e_test.dart と
+          # history_favorite_test.dart は削除した。どちらもCI未実行で何も
+          # 守っておらず、同じ範囲を widget/provider 層が厚く被覆している
+          # （設定 15ファイル135件、履歴・お気に入り 17ファイル181件）。
           EXCLUDED="ai_conversion_e2e_test.dart
                     performance_profiling_e2e_test.dart
                     character_input_tts_test.dart
-                    history_favorite_test.dart
                     large_emergency_buttons_test.dart
-                    preset_phrase_test.dart
-                    settings_accessibility_e2e_test.dart"
+                    preset_phrase_test.dart"
 
           targets=()
           for target in integration_test/*_test.dart; do

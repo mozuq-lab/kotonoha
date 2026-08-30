@@ -69,15 +69,12 @@ frontend/kotonoha_app/
     ├── character_input_tts_test.dart    # 文字入力・読み上げテスト (TASK-0082)
     ├── preset_phrase_test.dart          # 定型文テスト (TASK-0083)
     ├── large_emergency_buttons_test.dart # 大ボタン・緊急ボタンテスト (TASK-0084)
-    ├── history_favorite_test.dart       # 履歴・お気に入りテスト (TASK-0085)
-    ├── settings_accessibility_e2e_test.dart # 設定・アクセシビリティ
     ├── ai_conversion_e2e_test.dart      # AI変換（CI除外: API必須）
     ├── performance_profiling_e2e_test.dart # 性能計測（CI除外: 不安定）
     ├── device_test/                     # 実機前提（CI除外）
     └── helpers/
         ├── helpers.dart                 # ヘルパーエクスポート
         ├── test_helpers.dart            # テストユーティリティ
-        ├── test_data_setup.dart         # テストデータ投入
         └── mock_api_server.dart         # モックAPIサーバー
 ```
 
