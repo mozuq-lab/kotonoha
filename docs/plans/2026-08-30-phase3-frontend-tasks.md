@@ -553,28 +553,39 @@ git commit -m "feat: 永続化の状態を型で表す (Phase 3 / WP-1)"
 
 ### 分解（6段。各段が単独でマージ可能で、途中でもアプリは壊れない）
 
-**順序の拘束は「移行を先に書く」ではなく「移行が端末に届いてから削除を配る」。**
-危険なのは read ではなく **write** で、`writeByte(6)` のビルドが一度でも `repo.save()` を
-通すと、ディスクから field 3 が消えて移行は読むものを失う。
+**移行（旧 Stage 2）は捨てた（2026-08-30、人の判断）。** 守る価値のあるデータが検証端末に
+無いため。実装してレビューまで通したが revert した（`f761afcf`）。理由は2つ。
+
+1. **移行を残すと、お気に入り画面から削除したものが再起動で復活する。**
+   `favorites_screen.dart:277`/`:301` → `deleteFavorite`/`clearAllFavorites` は
+   `FavoriteItem` を消すだけで `PresetPhrase.isFavorite` を落とさない。移行はそれを見て
+   作り直す。「すべて削除」の直後の再起動では全件戻る。**UI から到達可能**
+2. **移行は `p.isFavorite` を読むので、そのフィールドを消す Stage 3b と同じビルドに
+   存在できない。** つまり移行が価値を持つのは「3b を含まないビルド」で走ったときだけで、
+   その期間こそ 1 の回帰が生きる期間だった。残すなら2ビルドに分け、その間に検証端末で
+   1回起動する工程が要る
+
+**したがって順序の拘束は無くなり、残る4段は順序自由・同一ビルドでよい。**
+`PresetPhrase.isFavorite` だけが真実だったお気に入りは Stage 3b で失われるが、
+`addFavoriteFromPresetPhrase` 経由で `FavoriteItem` になっているものは残る。
 
 - [ ] **Stage 0**: 死蔵5点を削除。あわせて test の `isFavorite: false` 62箇所を落とす
       （名前付き引数のデフォルトと同値なので挙動不変。6ファイルがこれで対象外になる）。
       **fixture 編集は別コミットに割る**
 - [ ] **Stage 1**: `addFavoriteFromHistory(content, historyId)` を新設し、`history_screen` から
       id を通す。**星と重複判定は content のまま**。ADR-005 要件3をここで満たす
-- [ ] **Stage 2 — 移行**: `lib/core/persistence/favorite_migration.dart`（新規）。
-      presetPhrases を走査し、`isFavorite == true` かつ favorites に `sourceId == phrase.id` が
-      無いものだけ `FavoriteItem` を生成。**marker を持たず sourceId 存在チェックだけで冪等に**
-      （marker は永続化面の追加になり ADR 引用が要る）。**Stage 3b より前に配る**
 - [ ] **Stage 3a**: 定型文 UI を `favoriteProvider` から描く。`phrase_list_widget` /
       `phrase_list_item` / `phrase_category_section` に `Set<String> favoritePresetIds` を渡す
       （3つとも `StatelessWidget`）。**モデルはまだ触らない**
 - [ ] **Stage 3b**: `PresetPhrase.isFavorite` を削除。**14ファイルで完了条件の12を超える。
       超過は承認済み**（fixture 修正はフラグ削除と同時でないとコンパイルが通らず、分割できない。
-      台帳 L-38）
+      台帳 L-38）。**`toggleFavorite` の `favoriteProvider` への委譲と `_sortPhrases` の
+      移設もここ**（実行前 ruling）
 - [ ] **Stage 4**: `HistoryItem.isFavorite` を削除。**移行不要**——`history_provider.dart:91` が
       常に `false` を書き、UI は読まない（`history_item_card` の `isFavorited` は別名の
-      ウィジェット引数）。**保存値が全て false なので失われる情報がゼロ。順序自由**
+      ウィジェット引数）。**保存値が全て false なので失われる情報がゼロ。順序自由**。
+      あわせて **`FavoriteNotifier.addFavorite`** を削除する（Stage 1 で lib 呼び出し元が
+      ゼロになった。content 重複判定という規則を `addFavoriteFromHistory` と二重に持つため）
 
 ### adapter の後方互換（実測で確認済み）
 
@@ -595,9 +606,6 @@ read 側は**位置固定ではなく、フィールド番号をキーにした 
 
 ### 追加が要るテスト
 
-- 移行テスト（Stage 2）: 実 box に**現行アダプタで** `isFavorite: true` を書き、移行後に
-  favorites box を直接読んで `sourceType=='preset_phrase'` / `sourceId==phrase.id` を確認。
-  2回走らせて増えないこと
 - **旧7フィールドのバイト列を新アダプタで読む**テスト（Stage 3b）。map 方式の後方互換は
   現状どのテストも守っていない
 - 往復テスト（`Favorite` domain → `FavoriteItem` storage → domain が恒等）
