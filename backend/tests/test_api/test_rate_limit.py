@@ -873,10 +873,8 @@ class TestResolveStorageUri:
     def test_scheme_that_limits_does_not_know_fails_closed(self):
         """許可集合を自前で持たず、limits の集合をそのまま境界にしていることを固定する。
 
-        8周の直接原因は、`limits.storage.SCHEMES` を参照しながら `| {"unix"}` を
-        手で足し戻し、limits に存在しないスキーム（正しくは "redis+unix"）を
-        信頼したことだった。しかも当時のテストが、その存在しないスキームを
-        正解として固定していた。
+        壊れ方は、limits が知らないスキーム（例: "unix"。正しくは "redis+unix"）を
+        手書きの allowlist に足し戻し、安全なものとして素通しにする形。
 
         上の "foobar://" のテストでは足りない。foobar はどんな手書き allowlist にも
         入らないため、allowlist を足し戻しても緑のまま通る。
