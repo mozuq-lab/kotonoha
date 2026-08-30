@@ -15,6 +15,7 @@ import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
+import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 export 'package:flutter/material.dart' show Icons;
@@ -119,6 +120,21 @@ Future<void> clearHistoryAndFavorites() async {
   if (Hive.isBoxOpen('favorites')) {
     final favoritesBox = Hive.box<FavoriteItem>('favorites');
     await favoritesBox.clear();
+  }
+  // 【定型文も消す理由（Issue #84）】: 消さないと、削除を行うテストの結果が
+  // **次のテストへ持ち越される**。同一ターゲット内では box が開いたままで、
+  // `initializeDefaultPhrases()` は空のときしか投入しないため、
+  // 一度削除された定型文は二度と戻らない。
+  //
+  // 実際 083-009 は「おはようございます」を削除して findsNothing を確認しており、
+  // 以降のテストがその語を探すと「スクロールしても見つからない」で落ちていた。
+  // テストの実行順序に結果が依存する状態だった。
+  //
+  // 空にしておけば、次の pumpApp で initializeDefaultPhrases() が
+  // 87件を投入し直す（＝各テストが同じ初期状態から始まる）。
+  if (Hive.isBoxOpen('presetPhrases')) {
+    final presetBox = Hive.box<PresetPhrase>('presetPhrases');
+    await presetBox.clear();
   }
 }
 
@@ -324,17 +340,6 @@ Future<void> scrollAndTap(WidgetTester tester, Finder finder) async {
   await tester.tap(finder.first);
   await tester.pumpAndSettle();
 }
-
-/// 確認ダイアログ内のボタンを指す finder
-///
-/// 【ボタン型に依存しない理由】: テストが `find.widgetWithText(TextButton, ...)` の
-/// ように型を決め打ちすると、実装が ElevatedButton なら 0 件になり
-/// 「ダイアログが出ていない」ように見える。実際に E2E の緊急ダイアログ6件が
-/// これで落ちていた（Issue #84）。AlertDialog の子孫であることだけを条件にする。
-Finder inDialogButton(String label) => find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.text(label),
-    );
 
 /// 確認ダイアログ内のボタンをタップする
 ///

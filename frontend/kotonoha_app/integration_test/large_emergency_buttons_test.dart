@@ -360,9 +360,7 @@ void main() {
 
         // 【前提条件設定】: 緊急状態にする
         await tapIconButton(tester, Icons.notifications_active);
-        final yesButtonInDialog = inDialogButton('はい');
-        await tester.tap(yesButtonInDialog);
-        await tester.pumpAndSettle();
+        await tapDialogButton(tester, 'はい');
 
         // 【前提条件確認】: 緊急画面が表示されている
         expect(find.text('緊急呼び出し中'), findsOneWidget);
@@ -424,9 +422,7 @@ void main() {
             findsOneWidget);
 
         // 【実際の処理実行】: 「いいえ」を選択
-        final noButtonInDialog = inDialogButton('いいえ');
-        await tester.tap(noButtonInDialog);
-        await tester.pumpAndSettle();
+        await tapDialogButton(tester, 'いいえ');
 
         // 【結果検証】: 緊急処理が実行されず、通常画面が維持される
         expect(find.byType(EmergencyAlertScreen), findsNothing);
@@ -462,9 +458,7 @@ void main() {
             findsOneWidget);
 
         // クリーンアップ: 「いいえ」でダイアログを閉じる
-        final noButtonInDialog = inDialogButton('いいえ');
-        await tester.tap(noButtonInDialog);
-        await tester.pumpAndSettle();
+        await tapDialogButton(tester, 'いいえ');
       },
     );
   });
@@ -571,9 +565,7 @@ void main() {
             findsOneWidget);
 
         // ステップ2: 「はい」をタップ
-        final yesButtonInDialog = inDialogButton('はい');
-        await tester.tap(yesButtonInDialog);
-        await tester.pumpAndSettle();
+        await tapDialogButton(tester, 'はい');
 
         // 【結果検証】: 緊急画面が表示される
         expect(find.text('緊急呼び出し中'), findsOneWidget);
