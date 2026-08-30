@@ -53,7 +53,6 @@ PresetPhrase _createTestPhrase({required String id, required String content}) {
     id: id,
     content: content,
     category: 'daily',
-    isFavorite: false,
     displayOrder: 0,
     createdAt: now,
     updatedAt: now,

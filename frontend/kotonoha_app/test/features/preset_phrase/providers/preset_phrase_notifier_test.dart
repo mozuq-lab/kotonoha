@@ -244,7 +244,7 @@ void main() {
     /// 関連要件: CRUD-007, CRUD-106, AC-007
     /// 優先度: P0 必須
     test('TC-041-038: toggleFavorite()でお気に入りフラグを切り替えできる（false→true）', () async {
-      // 【前提条件】: 定型文を1件追加（isFavorite: false）
+      // 【前提条件】: 定型文を1件追加
       await notifier.addPhrase('お気に入りテスト', 'daily');
       final state = container.read(presetPhraseNotifierProvider);
       final existingId = state.phrases.first.id;

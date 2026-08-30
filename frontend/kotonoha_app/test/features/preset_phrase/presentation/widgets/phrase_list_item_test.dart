@@ -340,8 +340,7 @@ void main() {
     testWidgets('TC-040-035: お気に入りアイコンタップでonFavoriteToggleが発火する',
         (tester) async {
       bool favoriteToggled = false;
-      final phrase =
-          createTestPhrase(id: '1', content: 'お気に入りテスト', isFavorite: false);
+      final phrase = createTestPhrase(id: '1', content: 'お気に入りテスト');
 
       await tester.pumpWidget(
         MaterialApp(

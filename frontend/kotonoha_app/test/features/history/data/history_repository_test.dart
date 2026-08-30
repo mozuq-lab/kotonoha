@@ -74,7 +74,6 @@ void main() {
         content: 'こんにちは',
         createdAt: DateTime(2025, 1, 15, 10, 30),
         type: 'manualInput',
-        isFavorite: false,
       );
 
       // When（実行フェーズ）

@@ -93,7 +93,6 @@ void main() {
           content: '履歴$i',
           type: ['manualInput', 'preset', 'aiConverted'][i % 3],
           createdAt: DateTime.now().subtract(Duration(minutes: i)),
-          isFavorite: false,
         ),
       );
       for (final history in histories) {
@@ -222,7 +221,6 @@ void main() {
           id: 'async-$i',
           content: '非同期テスト$i',
           category: 'daily',
-          isFavorite: false,
           displayOrder: i,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),

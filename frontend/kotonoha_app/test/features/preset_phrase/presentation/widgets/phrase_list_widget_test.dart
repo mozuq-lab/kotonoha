@@ -111,8 +111,7 @@ void main() {
     testWidgets('TC-040-002: お気に入り定型文がリスト上部に優先表示される', (tester) async {
       // 【テストデータ準備】: お気に入り2件 + 通常1件
       final phrases = [
-        createTestPhrase(
-            id: '1', content: '通常定型文', category: 'daily', isFavorite: false),
+        createTestPhrase(id: '1', content: '通常定型文', category: 'daily'),
         createTestPhrase(
             id: '2', content: 'お気に入り定型文1', category: 'daily', isFavorite: true),
         createTestPhrase(

@@ -280,7 +280,6 @@ void main() {
                 id: 'normal-$i',
                 content: '通常定型文$i',
                 category: 'daily',
-                isFavorite: false,
                 displayOrder: i + 10,
                 createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
@@ -472,7 +471,6 @@ void main() {
               id: 'test-phrase',
               content: 'テスト定型文',
               category: 'daily',
-              isFavorite: false,
               displayOrder: 0,
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
@@ -487,7 +485,6 @@ void main() {
               content: 'テスト履歴',
               type: 'manualInput',
               createdAt: DateTime.now(),
-              isFavorite: false,
             ),
           );
 
@@ -588,7 +585,6 @@ void main() {
                 content: '履歴$i',
                 type: 'manualInput',
                 createdAt: DateTime.now().subtract(Duration(minutes: 50 - i)),
-                isFavorite: false,
               ),
             );
           }
@@ -619,7 +615,6 @@ void main() {
               content: '新しい履歴',
               type: 'manualInput',
               createdAt: DateTime.now(),
-              isFavorite: false,
             ),
           );
 

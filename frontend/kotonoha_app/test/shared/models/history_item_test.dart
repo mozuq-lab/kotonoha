@@ -64,7 +64,6 @@ void main() {
         content: 'ありがとう',
         createdAt: DateTime(2025, 11, 21, 10, 30),
         type: 'manualInput',
-        isFavorite: false,
       );
 
       // When（実行フェーズ）
@@ -122,7 +121,6 @@ void main() {
           content: 'ありがとう',
           createdAt: DateTime(2025, 11, 21, 10, 0),
           type: 'manualInput',
-          isFavorite: false,
         ),
         HistoryItem(
           id: 'uuid-002',
@@ -136,7 +134,6 @@ void main() {
           content: '助けてください',
           createdAt: DateTime(2025, 11, 21, 12, 0),
           type: 'aiConverted',
-          isFavorite: false,
         ),
       ];
 
@@ -191,7 +188,6 @@ void main() {
         content: 'テスト',
         createdAt: DateTime(2025, 11, 21, 10, 0),
         type: 'manualInput',
-        isFavorite: false,
       );
       await historyBox.put(item.id, item);
 
@@ -233,7 +229,6 @@ void main() {
           content: '履歴$i',
           createdAt: DateTime(2025, 11, 21, 10, 0).add(Duration(minutes: i)),
           type: 'manualInput',
-          isFavorite: false,
         );
         await historyBox.put(item.id, item);
       }
@@ -249,7 +244,6 @@ void main() {
         content: '新しい履歴',
         createdAt: DateTime(2025, 11, 21, 11, 0),
         type: 'manualInput',
-        isFavorite: false,
       );
       await historyBox.put(newItem.id, newItem);
 
