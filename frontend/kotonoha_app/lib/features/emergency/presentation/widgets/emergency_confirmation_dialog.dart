@@ -43,6 +43,24 @@ import 'package:kotonoha_app/core/utils/contrast.dart';
 /// );
 /// ```
 class EmergencyConfirmationDialog extends StatefulWidget {
+  /// 確認メッセージ
+  ///
+  /// 【定数として公開する理由】: テストがこの文言をハードコードすると、
+  /// 疑問符の全角・半角のような1文字の差で照合が外れ、しかも
+  /// 「ダイアログが出ていない」という誤った症状に見える。実際にそれが起き、
+  /// E2E の緊急ボタン7件が失敗していた（Issue #84）。
+  /// テストはこの定数を参照すること。
+  static const String confirmationMessage = '緊急呼び出しを実行しますか?';
+
+  /// タイトル
+  static const String dialogTitle = '緊急呼び出し';
+
+  /// 実行ボタンのラベル
+  static const String confirmLabel = 'はい';
+
+  /// キャンセルボタンのラベル
+  static const String cancelLabel = 'いいえ';
+
   /// 「はい」ボタンタップ時のコールバック
   final VoidCallback onConfirm;
 
@@ -127,7 +145,7 @@ class _EmergencyConfirmationDialogState
       label: '緊急呼び出し確認ダイアログ',
       child: AlertDialog(
         title: Text(
-          '緊急呼び出し',
+          EmergencyConfirmationDialog.dialogTitle,
           style: AppTextStyles.headingMedium,
         ),
         content: Column(
@@ -135,7 +153,7 @@ class _EmergencyConfirmationDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '緊急呼び出しを実行しますか?',
+              EmergencyConfirmationDialog.confirmationMessage,
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: AppSizes.paddingSmall),
@@ -193,7 +211,7 @@ class _EmergencyConfirmationDialogState
   /// 「いいえ」ボタンを構築
   Widget _buildCancelButton(Color backgroundColor, Color textColor) =>
       _buildDialogButton(
-        label: 'いいえ',
+        label: EmergencyConfirmationDialog.cancelLabel,
         backgroundColor: backgroundColor,
         textColor: textColor,
         onTap: widget.onCancel,
@@ -207,7 +225,7 @@ class _EmergencyConfirmationDialogState
   /// 緊急色は「目立たせる」ための色なので暗くはせず、
   /// 背景輝度から最良の文字色を選ぶことで赤を保ったまま基準を満たす。
   Widget _buildConfirmButton(Color backgroundColor) => _buildDialogButton(
-        label: 'はい',
+        label: EmergencyConfirmationDialog.confirmLabel,
         backgroundColor: backgroundColor,
         textColor: bestContrastingTextColor(backgroundColor),
         onTap: widget.onConfirm,

@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/emergency/presentation/screens/emergency_alert_screen.dart';
 
+import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
+
 import 'helpers/test_helpers.dart';
 
 void main() {
@@ -272,7 +274,8 @@ void main() {
         await tapIconButton(tester, Icons.notifications_active);
 
         // 【結果検証】: 確認ダイアログが表示される
-        expect(find.text('緊急呼び出しを実行しますか？'), findsOneWidget);
+        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
+            findsOneWidget);
 
         // 【結果検証】: 「はい」「いいえ」ボタンが表示される
         expect(find.text('はい'), findsWidgets); // 大ボタンにも「はい」があるのでfindsWidgets
@@ -295,7 +298,8 @@ void main() {
         await tapIconButton(tester, Icons.notifications_active);
 
         // 【前提条件確認】: 確認ダイアログが表示されている
-        expect(find.text('緊急呼び出しを実行しますか？'), findsOneWidget);
+        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
+            findsOneWidget);
 
         // 【実際の処理実行】: 「いいえ」ボタンをタップ
         // ダイアログ内の「いいえ」ボタンを見つける
@@ -305,7 +309,8 @@ void main() {
         await tester.pumpAndSettle();
 
         // 【結果検証】: ダイアログが閉じ、通常画面が維持される
-        expect(find.text('緊急呼び出しを実行しますか？'), findsNothing);
+        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
+            findsNothing);
         // 緊急画面は表示されない
         expect(find.byType(EmergencyAlertScreen), findsNothing);
       },
@@ -326,7 +331,8 @@ void main() {
         await tapIconButton(tester, Icons.notifications_active);
 
         // 【前提条件確認】: 確認ダイアログが表示されている
-        expect(find.text('緊急呼び出しを実行しますか？'), findsOneWidget);
+        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
+            findsOneWidget);
 
         // 【実際の処理実行】: ダイアログ内の「はい」ボタンをタップ
         final yesButtonInDialog = find.widgetWithText(TextButton, 'はい');
@@ -414,7 +420,8 @@ void main() {
         await tapIconButton(tester, Icons.notifications_active);
 
         // 【前提条件確認】: 確認ダイアログが表示される
-        expect(find.text('緊急呼び出しを実行しますか？'), findsOneWidget);
+        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
+            findsOneWidget);
 
         // 【実際の処理実行】: 「いいえ」を選択
         final noButtonInDialog = find.widgetWithText(TextButton, 'いいえ');
@@ -442,7 +449,8 @@ void main() {
         await tapIconButton(tester, Icons.notifications_active);
 
         // 【前提条件確認】: 確認ダイアログが表示される
-        expect(find.text('緊急呼び出しを実行しますか？'), findsOneWidget);
+        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
+            findsOneWidget);
 
         // 【実際の処理実行】: ダイアログ外（バリア）をタップ
         // ダイアログの外側をタップするためにスクリーンの端をタップ
@@ -450,7 +458,8 @@ void main() {
         await tester.pumpAndSettle();
 
         // 【結果検証】: ダイアログが閉じない
-        expect(find.text('緊急呼び出しを実行しますか？'), findsOneWidget);
+        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
+            findsOneWidget);
 
         // クリーンアップ: 「いいえ」でダイアログを閉じる
         final noButtonInDialog = find.widgetWithText(TextButton, 'いいえ');
@@ -558,7 +567,8 @@ void main() {
         await tapIconButton(tester, Icons.notifications_active);
 
         // 【結果検証】: 確認ダイアログが表示される
-        expect(find.text('緊急呼び出しを実行しますか？'), findsOneWidget);
+        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
+            findsOneWidget);
 
         // ステップ2: 「はい」をタップ
         final yesButtonInDialog = find.widgetWithText(TextButton, 'はい');
