@@ -244,6 +244,17 @@ Future<void> tapIconButton(
 ///
 /// [tester]: WidgetTester
 /// [label]: Semanticsラベル
+/// 確認ダイアログ内のボタンを指す finder
+///
+/// 【ボタン型に依存しない理由】: テストが `find.widgetWithText(TextButton, ...)` の
+/// ように型を決め打ちすると、実装が ElevatedButton なら 0 件になり
+/// 「ダイアログが出ていない」ように見える。実際に E2E の緊急ダイアログ6件が
+/// これで落ちていた（Issue #84）。AlertDialog の子孫であることだけを条件にする。
+Finder inDialogButton(String label) => find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text(label),
+    );
+
 /// 確認ダイアログ内のボタンをタップする
 ///
 /// 【なぜ専用のヘルパーが要るか】: 画面本体にもクイック応答の「はい」「いいえ」が

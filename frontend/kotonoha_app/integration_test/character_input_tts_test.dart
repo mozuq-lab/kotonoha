@@ -395,7 +395,8 @@ void main() {
 
           // サイクル: 全消去
           await tapIconButton(tester, Icons.delete_outline);
-          await tapButton(tester, 'はい');
+          // 画面本体にもクイック応答の「はい」があるため、ダイアログ内に限定する
+          await tapDialogButton(tester, 'はい');
         }
 
         // 【結果検証】: アプリが安定動作していること

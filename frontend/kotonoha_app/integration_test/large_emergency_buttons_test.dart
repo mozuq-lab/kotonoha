@@ -303,10 +303,10 @@ void main() {
 
         // 【実際の処理実行】: 「いいえ」ボタンをタップ
         // ダイアログ内の「いいえ」ボタンを見つける
-        final noButtonInDialog = find.widgetWithText(TextButton, 'いいえ');
-        expect(noButtonInDialog, findsOneWidget);
-        await tester.tap(noButtonInDialog);
-        await tester.pumpAndSettle();
+        // 【ボタン型に依存しない】: 実装は ElevatedButton だが、テストは
+        // TextButton を前提にしていて 0 件になっていた（Issue #84）。
+        // AlertDialog の子孫に限定して引く。
+        await tapDialogButton(tester, 'いいえ');
 
         // 【結果検証】: ダイアログが閉じ、通常画面が維持される
         expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
@@ -335,10 +335,10 @@ void main() {
             findsOneWidget);
 
         // 【実際の処理実行】: ダイアログ内の「はい」ボタンをタップ
-        final yesButtonInDialog = find.widgetWithText(TextButton, 'はい');
-        expect(yesButtonInDialog, findsOneWidget);
-        await tester.tap(yesButtonInDialog);
-        await tester.pumpAndSettle();
+        // 【ボタン型に依存しない】: 実装は ElevatedButton だが、テストは
+        // TextButton を前提にしていて 0 件になっていた（Issue #84）。
+        // AlertDialog の子孫に限定して引く。
+        await tapDialogButton(tester, 'はい');
 
         // 【結果検証】: 緊急画面が表示される
         expect(find.text('緊急呼び出し中'), findsOneWidget);
@@ -360,7 +360,7 @@ void main() {
 
         // 【前提条件設定】: 緊急状態にする
         await tapIconButton(tester, Icons.notifications_active);
-        final yesButtonInDialog = find.widgetWithText(TextButton, 'はい');
+        final yesButtonInDialog = inDialogButton('はい');
         await tester.tap(yesButtonInDialog);
         await tester.pumpAndSettle();
 
@@ -424,7 +424,7 @@ void main() {
             findsOneWidget);
 
         // 【実際の処理実行】: 「いいえ」を選択
-        final noButtonInDialog = find.widgetWithText(TextButton, 'いいえ');
+        final noButtonInDialog = inDialogButton('いいえ');
         await tester.tap(noButtonInDialog);
         await tester.pumpAndSettle();
 
@@ -462,7 +462,7 @@ void main() {
             findsOneWidget);
 
         // クリーンアップ: 「いいえ」でダイアログを閉じる
-        final noButtonInDialog = find.widgetWithText(TextButton, 'いいえ');
+        final noButtonInDialog = inDialogButton('いいえ');
         await tester.tap(noButtonInDialog);
         await tester.pumpAndSettle();
       },
@@ -571,7 +571,7 @@ void main() {
             findsOneWidget);
 
         // ステップ2: 「はい」をタップ
-        final yesButtonInDialog = find.widgetWithText(TextButton, 'はい');
+        final yesButtonInDialog = inDialogButton('はい');
         await tester.tap(yesButtonInDialog);
         await tester.pumpAndSettle();
 
