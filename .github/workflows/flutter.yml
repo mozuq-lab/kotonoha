@@ -189,9 +189,20 @@ jobs:
           # 除外理由と件数をログに出す。
           #
           # 恒久的に除外する:
-          # - ai_conversion_e2e_test.dart: AI変換APIとAPIキーが必要
           # - performance_profiling_e2e_test.dart: 実性能測定でCIでは不安定
           # - integration_test/device_test/: 実機前提（そもそもglob対象外）
+          #
+          # 未検証のため除外する:
+          # - ai_conversion_e2e_test.dart
+          #   旧理由は「AI変換APIとAPIキーが必要」で、コードの実態として正しかった。
+          #   helpers/mock_api_server.dart を import しながら**一度も使っておらず**、
+          #   実際には本物のAPIへ通信しようとしていた（2026-08-30 に判明）。
+          #   モックを aiConversionApiClientProvider へ配線したので実通信は断てたが、
+          #   ヘッドレスWebで通るかは未確認（ローカルの chromedriver が
+          #   Gatekeeper に阻まれ実行できなかった）。
+          #   ADR-007 により AI変換は初回リリースのクリティカルパス外であり、
+          #   Phase 2 の backend 書き直しで API の契約も変わるため、
+          #   除外を解除するかの判断は Phase 2 で行う。
           #
           # 一時的に除外する（Issue #84 で追跡。修正後に除外を解除すること）:
           # 以下3本はヘッドレスWebで失敗する。握り潰しを撤去したことで初めて

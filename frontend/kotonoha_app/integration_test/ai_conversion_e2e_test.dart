@@ -8,8 +8,11 @@
 @Tags(['e2e'])
 library;
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kotonoha_app/features/ai_conversion/data/api/ai_conversion_api_client.dart';
+import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_provider.dart';
 import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 
@@ -62,10 +65,28 @@ class _OnlineNetworkNotifier extends NetworkNotifier {
   NetworkState build() => NetworkState.online;
 }
 
+/// AI変換APIをモックに差し替えるオーバーライド
+///
+/// 【なぜ必要か】: このテストは `helpers/mock_api_server.dart` を import して
+/// いたが**一度も使っていなかった**ため、実際には本物のAI変換APIへ通信しようと
+/// していた。CI が「AI変換APIとAPIキーが必要」として恒久除外していたのは
+/// そのためである。`aiConversionApiClientProvider` を差し替えて実通信を断つ。
+///
+/// 【戻り値の型を書いていない理由】: `Override` は `riverpod` パッケージ側の型で、
+/// `flutter_riverpod` からは公開されていない。このファイルの既存2関数
+/// （createOfflineOverrides / createOnlineOverrides）も同じ理由で推論に任せている。
+mockAIConversionOverride() {
+  final dio = Dio();
+  MockApiServer.createMockAdapter(dio);
+  return aiConversionApiClientProvider
+      .overrideWithValue(AIConversionApiClient.withDio(dio));
+}
+
 /// オフライン状態をシミュレートするためのProviderオーバーライド
 createOfflineOverrides() {
   return [
     networkProvider.overrideWith(() => _OfflineNetworkNotifier()),
+    mockAIConversionOverride(),
   ];
 }
 
@@ -73,6 +94,7 @@ createOfflineOverrides() {
 createOnlineOverrides() {
   return [
     networkProvider.overrideWith(() => _OnlineNetworkNotifier()),
+    mockAIConversionOverride(),
   ];
 }
 
@@ -92,7 +114,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - REQ-901に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【結果検証】: AI変換ボタンが存在する
         expect(find.text('AI変換'), findsOneWidget);
@@ -109,7 +131,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - REQ-901, REQ-902に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 文字盤で「ありがとう」を入力
         await typeOnCharacterBoard(tester, 'ありがとう');
@@ -144,7 +166,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - REQ-904に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 文字盤で「ありがとう」を入力
         await typeOnCharacterBoard(tester, 'ありがとう');
@@ -178,7 +200,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - REQ-904に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 文字盤で「ありがとう」を入力
         await typeOnCharacterBoard(tester, 'ありがとう');
@@ -211,7 +233,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - REQ-901, REQ-401に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 文字盤で「ありがとう」を入力
         await typeOnCharacterBoard(tester, 'ありがとう');
@@ -249,7 +271,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - API仕様に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 文字盤で「あ」（1文字）を入力
         await typeOnCharacterBoard(tester, 'あ');
@@ -312,7 +334,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - REQ-5002に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 文字盤で「ありがとう」を入力
         await typeOnCharacterBoard(tester, 'ありがとう');
@@ -350,7 +372,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - API仕様に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 文字盤で「あい」（2文字）を入力
         await typeOnCharacterBoard(tester, 'あい');
@@ -381,7 +403,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - API仕様に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 文字盤で「あ」（1文字）を入力
         await typeOnCharacterBoard(tester, 'あ');
@@ -412,7 +434,7 @@ void main() {
         // 🟡 信頼性レベル: 黄信号 - 妥当な推測
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 何も入力しない
 
@@ -447,7 +469,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - NFR-002に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // 【実際の処理実行】: 文字盤で「ありがとう」を入力
         await typeOnCharacterBoard(tester, 'ありがとう');
@@ -479,7 +501,7 @@ void main() {
         // 🔵 信頼性レベル: 青信号 - REQ-901, REQ-601に基づく
 
         // 【テストデータ準備】: アプリを初期化
-        await pumpApp(tester);
+        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
 
         // ステップ1: 文字盤で入力
         await typeOnCharacterBoard(tester, 'ありがとう');
