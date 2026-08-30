@@ -259,98 +259,6 @@ void main() {
           );
         },
       );
-
-      test(
-        'TC-060-E2E-002-FAV: お気に入り定型文が一覧上部に優先表示される',
-        () async {
-          // 【テスト目的】: お気に入り定型文の優先表示を確認 🔵
-          // 【テスト内容】: お気に入りフラグのある定型文が上部に表示される
-          // 【期待される動作】: お気に入り3件が先頭に表示
-          // 🔵 青信号: REQ-105に基づく
-
-          // Given（準備フェーズ）
-          // 【テストデータ準備】: お気に入り3件、通常10件の定型文を準備
-          final presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
-
-          // 通常の定型文10件を追加
-          for (var i = 0; i < 10; i++) {
-            await presetBox.put(
-              'normal-$i',
-              PresetPhrase(
-                id: 'normal-$i',
-                content: '通常定型文$i',
-                category: 'daily',
-                isFavorite: false,
-                displayOrder: i + 10,
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-              ),
-            );
-          }
-
-          // お気に入り定型文3件を追加
-          for (var i = 0; i < 3; i++) {
-            await presetBox.put(
-              'fav-$i',
-              PresetPhrase(
-                id: 'fav-$i',
-                content: 'お気に入り$i',
-                category: 'daily',
-                isFavorite: true,
-                displayOrder: i,
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-              ),
-            );
-          }
-
-          container = ProviderContainer();
-
-          // When（実行フェーズ）
-          // 【実際の処理実行】: 定型文一覧を取得（お気に入り優先でソート）
-          final allPhrases = presetBox.values.toList();
-          allPhrases.sort((a, b) {
-            // お気に入りを優先
-            if (a.isFavorite && !b.isFavorite) return -1;
-            if (!a.isFavorite && b.isFavorite) return 1;
-            return a.displayOrder.compareTo(b.displayOrder);
-          });
-
-          // Then（検証フェーズ）
-          // 【結果検証】: 先頭3件がお気に入りであることを確認
-          expect(
-            allPhrases.length,
-            13,
-            reason: '全13件の定型文が存在',
-          ); // 【確認内容】: 定型文の総数 🔵
-
-          expect(
-            allPhrases[0].isFavorite,
-            true,
-            reason: '先頭がお気に入り',
-          ); // 【確認内容】: 1番目がお気に入り 🔵
-
-          expect(
-            allPhrases[1].isFavorite,
-            true,
-            reason: '2番目がお気に入り',
-          ); // 【確認内容】: 2番目がお気に入り 🔵
-
-          expect(
-            allPhrases[2].isFavorite,
-            true,
-            reason: '3番目がお気に入り',
-          ); // 【確認内容】: 3番目がお気に入り 🔵
-
-          expect(
-            allPhrases[3].isFavorite,
-            false,
-            reason: '4番目以降は通常',
-          ); // 【確認内容】: 4番目以降は通常定型文 🔵
-
-          await presetBox.close();
-        },
-      );
     });
 
     // =========================================================================
@@ -472,7 +380,6 @@ void main() {
               id: 'test-phrase',
               content: 'テスト定型文',
               category: 'daily',
-              isFavorite: false,
               displayOrder: 0,
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
@@ -487,7 +394,6 @@ void main() {
               content: 'テスト履歴',
               type: 'manualInput',
               createdAt: DateTime.now(),
-              isFavorite: false,
             ),
           );
 
@@ -588,7 +494,6 @@ void main() {
                 content: '履歴$i',
                 type: 'manualInput',
                 createdAt: DateTime.now().subtract(Duration(minutes: 50 - i)),
-                isFavorite: false,
               ),
             );
           }
@@ -619,7 +524,6 @@ void main() {
               content: '新しい履歴',
               type: 'manualInput',
               createdAt: DateTime.now(),
-              isFavorite: false,
             ),
           );
 

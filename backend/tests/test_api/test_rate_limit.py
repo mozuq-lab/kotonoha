@@ -10,6 +10,10 @@ TASK-0025: レート制限ミドルウェア実装 - TDD Redフェーズ
 🔵 rate-limit-middleware-testcases.md に基づく実装
 """
 
+import os
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -19,9 +23,30 @@ from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.main import app
 
+# backend/ ディレクトリ（app パッケージの親）。サブプロセス起動の作業ディレクトリに使う。
+_BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
 # AIクライアントモックのデフォルトレスポンス
 MOCK_CONVERT_RESPONSE = ("変換されたテキスト", 1000)
 MOCK_REGENERATE_RESPONSE = ("再変換されたテキスト", 1000)
+
+
+def _start_app_with_storage_uri(storage_uri: str) -> "subprocess.CompletedProcess[str]":
+    """RATE_LIMIT_STORAGE_URI を与えて `import app.main` するサブプロセスを実行する。
+
+    limiter は app.core.rate_limit のモジュールロード時に組み立てられるため、
+    「その設定でアプリが起動できるか」は、この import が成功するか否かそのものである。
+    戻り値ではなくプロセスの終了コードで判定できる、最も外側の境界。
+    """
+    return subprocess.run(  # noqa: S603
+        [sys.executable, "-c", "import app.main"],
+        cwd=_BACKEND_ROOT,
+        env={**os.environ, "RATE_LIMIT_STORAGE_URI": storage_uri},
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
 
 
 @pytest.fixture
@@ -844,3 +869,33 @@ class TestResolveStorageUri:
         assert isinstance(exc_info.value.__cause__, ConfigurationError)
         # メッセージにRATE_LIMIT_STORAGE_URIと対処のヒントが含まれることを確認
         assert "RATE_LIMIT_STORAGE_URI" in str(exc_info.value)
+
+    def test_scheme_that_limits_does_not_know_fails_closed(self):
+        """許可集合を自前で持たず、limits の集合をそのまま境界にしていることを固定する。
+
+        壊れ方は、limits が知らないスキーム（例: "unix"。正しくは "redis+unix"）を
+        手書きの allowlist に足し戻し、安全なものとして素通しにする形。
+
+        上の "foobar://" のテストでは足りない。foobar はどんな手書き allowlist にも
+        入らないため、allowlist を足し戻しても緑のまま通る。
+
+        判定は起動そのもの（プロセスの終了コード）で見る。resolve_storage_uri() と
+        _build_limiter() の両方を通る経路なので、どちらに手書きの許可集合を
+        差し込んでも赤になる。
+        """
+        from limits.storage import SCHEMES
+
+        # 権威（limits が公開している集合）に問う。limits 側が変われば、ここで赤になる。
+        assert "unix" not in SCHEMES
+        assert "memory" in SCHEMES
+
+        rejected = _start_app_with_storage_uri("unix://x")
+        accepted = _start_app_with_storage_uri("memory://")
+
+        # 対照: limits が知っているスキームなら起動できる
+        # （これが緑であることで、上の失敗が「スキームのせい」だと言える）
+        assert accepted.returncode == 0, accepted.stderr
+        # limits が知らないスキームでは起動できない（フェイルクローズ）
+        assert rejected.returncode != 0, rejected.stdout
+        # 運用者が原因の設定キーに辿り着ける診断が出ていること
+        assert "RATE_LIMIT_STORAGE_URI" in rejected.stderr

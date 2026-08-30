@@ -242,7 +242,6 @@ C が本命である。今回で言えば、`ai_conversion_logs` テーブルを
 
 | 採らない | 理由 |
 |---|---|
-| `kairo-*` フロー | 299 ファイルの工程記録を生んだ本体 |
 | `dev-plan` → `dev-impl` → `dev-run` → `dev-verify` | `docs/dev/plans/<name>/reports/` に成果物を積む設計。**恒久成果物が工程記録になる**点が Phase 5 の判断基準に反する |
 | `task-breakdown` | 同上 |
 

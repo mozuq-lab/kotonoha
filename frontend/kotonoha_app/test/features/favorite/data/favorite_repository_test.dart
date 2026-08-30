@@ -19,8 +19,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kotonoha_app/features/favorite/data/favorite_repository.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/favorite_item_adapter.dart';
-import 'package:kotonoha_app/shared/models/history_item.dart';
-import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
 void main() {
   group('FavoriteRepository - 基本的なCRUD操作', () {
@@ -437,89 +435,6 @@ void main() {
     });
   });
 
-  group('FavoriteRepository - 履歴・定型文からの登録', () {
-    late Directory tempDir;
-    late Box<FavoriteItem> favoriteBox;
-    late FavoriteRepository repository;
-
-    setUp(() async {
-      await Hive.close();
-      tempDir = await Directory.systemTemp.createTemp('hive_favorite_from_');
-      Hive.init(tempDir.path);
-
-      if (!Hive.isAdapterRegistered(2)) {
-        Hive.registerAdapter(FavoriteItemAdapter());
-      }
-
-      favoriteBox = await Hive.openBox<FavoriteItem>('test_favorites');
-      repository = FavoriteRepository(box: favoriteBox);
-    });
-
-    tearDown(() async {
-      await favoriteBox.close();
-      await Hive.deleteBoxFromDisk('test_favorites');
-      await Hive.close();
-
-      if (tempDir.existsSync()) {
-        await tempDir.delete(recursive: true);
-      }
-    });
-
-    // =========================================================================
-    // TC-065-019: 履歴からお気に入り登録（saveFromHistory）🔵
-    // =========================================================================
-    test('TC-065-019: 履歴からお気に入り登録できる', () async {
-      // 【テスト目的】: saveFromHistory()メソッドの正常動作確認
-      // 【テスト内容】: 履歴からお気に入りを作成できることを検証
-      // 【期待される動作】: お気に入りのcontent == 履歴のcontent、お気に入りのid ≠ 履歴のid
-      // 🔵 青信号: FR-065-005, AC-065-007
-
-      // Given（準備フェーズ）
-      final history = HistoryItem(
-        id: 'history-001',
-        content: '履歴テスト',
-        createdAt: DateTime.now(),
-        type: 'manualInput',
-      );
-
-      // When（実行フェーズ）
-      final favorite = await repository.saveFromHistory(history);
-
-      // Then（検証フェーズ）
-      expect(favorite.content, '履歴テスト');
-      expect(favorite.id, isNot('history-001')); // 新しいID
-      expect(favorite.displayOrder, greaterThanOrEqualTo(0));
-    });
-
-    // =========================================================================
-    // TC-065-020: 定型文からお気に入り登録（saveFromPreset）🔵
-    // =========================================================================
-    test('TC-065-020: 定型文からお気に入り登録できる', () async {
-      // 【テスト目的】: saveFromPreset()メソッドの正常動作確認
-      // 【テスト内容】: 定型文からお気に入りを作成できることを検証
-      // 【期待される動作】: お気に入りのcontent == 定型文のcontent、お気に入りのid ≠ 定型文のid
-      // 🔵 青信号: FR-065-006, AC-065-008
-
-      // Given（準備フェーズ）
-      final preset = PresetPhrase(
-        id: 'preset-001',
-        content: '定型文テスト',
-        category: 'daily',
-        displayOrder: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      // When（実行フェーズ）
-      final favorite = await repository.saveFromPreset(preset);
-
-      // Then（検証フェーズ）
-      expect(favorite.content, '定型文テスト');
-      expect(favorite.id, isNot('preset-001')); // 新しいID
-      expect(favorite.displayOrder, greaterThanOrEqualTo(0));
-    });
-  });
-
   group('FavoriteRepository - エッジケース', () {
     late Directory tempDir;
     late Box<FavoriteItem> favoriteBox;
@@ -673,28 +588,6 @@ void main() {
       expect(favorites[0].displayOrder, -1);
       expect(favorites[1].displayOrder, 0);
       expect(favorites[2].displayOrder, 1);
-    });
-
-    // =========================================================================
-    // TC-065-027: 重複登録チェック（isDuplicate）🟡
-    // =========================================================================
-    test('TC-065-027: 重複登録をチェックできる', () async {
-      // 【テスト目的】: isDuplicate()メソッドの正常動作確認
-      // 【テスト内容】: 同じcontentのお気に入りが既に存在するかチェックできることを検証
-      // 【期待される動作】: 既存の場合true、存在しない場合false
-      // 🟡 黄信号: FR-065-004, AC-065-013
-
-      // Given（準備フェーズ）
-      await repository.save(FavoriteItem(
-        id: 'f1',
-        content: 'こんにちは',
-        createdAt: DateTime.now(),
-        displayOrder: 0,
-      ));
-
-      // When & Then（実行・検証フェーズ）
-      expect(await repository.isDuplicate('こんにちは'), true);
-      expect(await repository.isDuplicate('さようなら'), false);
     });
   });
 

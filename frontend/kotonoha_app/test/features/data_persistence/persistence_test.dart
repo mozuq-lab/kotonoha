@@ -74,7 +74,6 @@ void main() {
           id: 'test-001',
           content: 'こんにちは',
           category: 'daily',
-          isFavorite: false,
           displayOrder: 0,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -83,7 +82,6 @@ void main() {
           id: 'test-002',
           content: 'お水をください',
           category: 'health',
-          isFavorite: false,
           displayOrder: 1,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -92,7 +90,6 @@ void main() {
           id: 'test-003',
           content: 'ありがとう',
           category: 'daily',
-          isFavorite: false,
           displayOrder: 2,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -101,7 +98,6 @@ void main() {
           id: 'test-004',
           content: '助けてください',
           category: 'health',
-          isFavorite: false,
           displayOrder: 3,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -110,7 +106,6 @@ void main() {
           id: 'test-005',
           content: 'さようなら',
           category: 'daily',
-          isFavorite: false,
           displayOrder: 4,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -135,21 +130,18 @@ void main() {
           content: 'テスト履歴1',
           type: 'manualInput',
           createdAt: DateTime.now(),
-          isFavorite: false,
         ),
         HistoryItem(
           id: 'hist-002',
           content: 'テスト履歴2',
           type: 'preset',
           createdAt: DateTime.now(),
-          isFavorite: false,
         ),
         HistoryItem(
           id: 'hist-003',
           content: 'テスト履歴3',
           type: 'manualInput',
           createdAt: DateTime.now(),
-          isFavorite: false,
         ),
       ];
       for (final history in histories) {
@@ -389,7 +381,6 @@ void main() {
           id: 'user-001',
           content: 'こんにちは',
           category: 'daily',
-          isFavorite: false,
           displayOrder: 70,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -398,7 +389,6 @@ void main() {
           id: 'user-002',
           content: 'お水をください',
           category: 'health',
-          isFavorite: false,
           displayOrder: 71,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -407,17 +397,12 @@ void main() {
           id: 'user-003',
           content: 'ありがとう',
           category: 'daily',
-          isFavorite: false,
           displayOrder: 72,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ),
       ];
       await presetRepository.saveAll(userPhrases);
-
-      // 定型文1件（user-001）をお気に入りに追加
-      final favoritePhrase = userPhrases[0].copyWith(isFavorite: true);
-      await presetRepository.save(favoritePhrase);
 
       // 設定でフォントサイズを「大（large）」に変更
       // 【実装対応】: 実際にアプリで使用されているSettingsNotifier
@@ -435,7 +420,6 @@ void main() {
         content: 'お水をください',
         type: 'manualInput',
         createdAt: DateTime.now(),
-        isFavorite: false,
       );
       await historyBox.put(history.id, history);
 
@@ -458,10 +442,6 @@ void main() {
       // Then（検証フェーズ）
       // 追加3件の定型文が保持されている
       expect(loadedPhrases.length, 3, reason: '3件の定型文が保持されている');
-
-      // お気に入り定型文（user-001）が`isFavorite: true`で保存されている
-      final favPhrase = loadedPhrases.firstWhere((p) => p.id == 'user-001');
-      expect(favPhrase.isFavorite, true, reason: 'お気に入りフラグがtrueで保存されている');
 
       // フォントサイズが「大（large）」のまま保持されている
       expect(loadedSettings.fontSize, FontSize.large,

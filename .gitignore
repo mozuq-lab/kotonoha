@@ -82,6 +82,10 @@ coverage.xml
 # tsumiki dcs 系コマンドの分析出力（一時的な成果物。コミットしない）
 .dcs/
 
+# subagent-driven-development の工程記録（ledger・レビューパッケージ）。
+# 完了時に削除される一時的な成果物。是正計画 §5 の条件（恒久成果物にしない）。
+.superpowers/
+
 # OpenSpec: 恒久成果物は specs/ のみ。change は工程記録なので追跡しない
 # （是正計画 §5「OpenSpec を使う条件」条件1。archive はツール実挙動として
 #   changes/archive/ への保存であり削除ではないため、ここで「捨てる」を実行可能にする）

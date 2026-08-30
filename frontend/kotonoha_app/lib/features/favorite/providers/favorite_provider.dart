@@ -278,6 +278,43 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     }
   }
 
+  /// 【メソッド定義】: 履歴由来のお気に入りを追加する
+  /// 【機能概要】: 履歴からお気に入りを追加する際、出所（履歴id）を記録する
+  /// 【重複判定】: content一致（sourceId一致ではない）
+  /// 【理由】: 履歴は同じ文言が何度でも生まれる（利用者が同じことを繰り返し発話する）。
+  /// sourceIdで判定すると同じ文言を発話するたびにお気に入りが増え、一覧に同一文言が
+  /// 並んでしまう。既存の addFavorite(String content) と同じcontent重複判定を使い、
+  /// sourceIdは出所の記録のためだけに持たせる（ADR-005 / Phase 3 WP-2 Stage 1）。
+  Future<void> addFavoriteFromHistory(String content, String historyId) async {
+    // 【入力値検証】: 空文字は追加しない
+    if (content.isEmpty) return;
+
+    // 【重複チェック】: addFavoriteと同じcontent一致で判定する
+    final exists = state.favorites.any((f) => f.content == content);
+    if (exists) return;
+
+    // 【Favorite作成】: 履歴由来のお気に入りを作成
+    final now = DateTime.now();
+    final newFavorite = Favorite(
+      id: _uuid.v4(),
+      content: content,
+      createdAt: now,
+      displayOrder: state.favorites.length,
+      sourceType: 'history', // 【元データ種類】: 履歴由来を示す
+      sourceId: historyId, // 【元データID】: 履歴のIDを保持（重複判定には使わない）
+    );
+
+    // 【状態更新】: Favoriteリストに追加
+    final updatedFavorites = [...state.favorites, newFavorite];
+    state = state.copyWith(favorites: updatedFavorites);
+
+    // 【永続化】: repoがあればHiveに保存（sourceType/sourceId含む）
+    final repo = ref.read(favoriteRepositoryProvider);
+    if (repo != null) {
+      await repo.save(_toItem(newFavorite));
+    }
+  }
+
   /// 【メソッド定義】: sourceIdに一致するお気に入りを削除する
   /// 【機能概要】: 定型文のお気に入り解除時に対応するFavoriteを削除
   /// 【実装方針】: sourceIdで検索して削除

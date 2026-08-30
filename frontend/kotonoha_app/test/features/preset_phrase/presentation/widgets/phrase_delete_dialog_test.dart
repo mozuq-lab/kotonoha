@@ -23,7 +23,6 @@ void main() {
     required String id,
     required String content,
     String category = 'daily',
-    bool isFavorite = false,
     int displayOrder = 0,
   }) {
     final now = DateTime.now();
@@ -31,7 +30,6 @@ void main() {
       id: id,
       content: content,
       category: category,
-      isFavorite: isFavorite,
       displayOrder: displayOrder,
       createdAt: now,
       updatedAt: now,
@@ -241,6 +239,82 @@ void main() {
       // 【結果検証】: ダイアログがまだ表示されていることを確認
       expect(find.byType(PhraseDeleteDialog),
           findsOneWidget); // 【確認内容】: ダイアログ状態 🔵
+    });
+  });
+
+  group('PhraseDeleteDialog - お気に入り連動削除の告知', () {
+    // =========================================================================
+    // Phase 3 / WP-2: 定型文削除でお気に入りも消えることを確認文で伝える
+    // =========================================================================
+    /// お気に入り登録済みの定型文を削除しようとすると、お気に入りからも
+    /// 消えることを示す文言が確認ダイアログに出る。
+    ///
+    /// 【テスト目的】: 無告知でお気に入りが消える事故を防ぐ
+    /// 【関連】: 全体レビュー指摘（定型文削除でお気に入りが無告知で消える）
+    testWidgets('お気に入り登録済みの定型文では、お気に入りが消える旨の文言が出る', (tester) async {
+      final phrase = createTestPhrase(id: '1', content: 'テスト定型文');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => PhraseDeleteDialog(
+                      phrase: phrase,
+                      isFavorite: true,
+                    ),
+                  );
+                },
+                child: const Text('ダイアログを開く'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('ダイアログを開く'));
+      await tester.pumpAndSettle();
+
+      // 【結果検証】: お気に入りが消える旨の文言が出ること（完全一致にしない）
+      expect(find.textContaining('お気に入り'), findsOneWidget);
+    });
+
+    /// 未登録の定型文を削除しようとしても、お気に入りが消える旨の文言は
+    /// 出ない（無用に利用者を不安にさせないため）。
+    ///
+    /// 【テスト目的】: 未登録時に無関係な文言を出さないことの確認
+    testWidgets('未登録の定型文では、お気に入りが消える旨の文言は出ない', (tester) async {
+      final phrase = createTestPhrase(id: '1', content: 'テスト定型文');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => PhraseDeleteDialog(
+                      phrase: phrase,
+                      isFavorite: false,
+                    ),
+                  );
+                },
+                child: const Text('ダイアログを開く'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('ダイアログを開く'));
+      await tester.pumpAndSettle();
+
+      // 【結果検証】: お気に入りに関する文言が出ないこと
+      expect(find.textContaining('お気に入り'), findsNothing);
     });
   });
 }

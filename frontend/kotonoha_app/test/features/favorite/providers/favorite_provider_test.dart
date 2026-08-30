@@ -276,5 +276,35 @@ void main() {
         expect(container.read(favoriteProvider).favorites.length, 1);
       });
     });
+
+    // =========================================================================
+    // 履歴由来お気に入りテスト（Phase 3 / WP-2 / Stage 1）
+    // =========================================================================
+    group('履歴由来お気に入りテスト', () {
+      test(
+          'addFavoriteFromHistoryで作られたお気に入りはsourceType==historyとsourceId==渡した履歴idを持ち、'
+          '同じcontentで2回呼んでも増えない', () async {
+        // Arrange
+        final notifier = container.read(favoriteProvider.notifier);
+
+        // Act
+        await notifier.addFavoriteFromHistory('こんにちは', 'history_1');
+
+        // Assert: 出所が記録される
+        final state = container.read(favoriteProvider);
+        expect(state.favorites.length, 1);
+        final favorite = state.favorites.first;
+        expect(favorite.content, 'こんにちは');
+        expect(favorite.sourceType, 'history');
+        expect(favorite.sourceId, 'history_1');
+
+        // Act: 同じcontentを別のhistoryIdから呼ぶ（利用者が同じ発話を繰り返す状況を模す）
+        await notifier.addFavoriteFromHistory('こんにちは', 'history_2');
+
+        // Assert: content一致で重複判定されるため増えない
+        final stateAfter = container.read(favoriteProvider);
+        expect(stateAfter.favorites.length, 1);
+      });
+    });
   });
 }

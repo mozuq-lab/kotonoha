@@ -74,7 +74,6 @@ void main() {
         content: 'こんにちは',
         createdAt: DateTime(2025, 1, 15, 10, 30),
         type: 'manualInput',
-        isFavorite: false,
       );
 
       // When（実行フェーズ）
@@ -93,7 +92,6 @@ void main() {
       expect(loaded!.id, 'test-001'); // 【確認内容】: idが保持されている
       expect(loaded.content, 'こんにちは'); // 【確認内容】: contentが保持されている
       expect(loaded.type, 'manualInput'); // 【確認内容】: typeが保持されている
-      expect(loaded.isFavorite, false); // 【確認内容】: isFavoriteが保持されている
     });
 
     // =========================================================================
@@ -535,30 +533,6 @@ void main() {
       final history = await repository.getById('special-test');
       expect(history, isNotNull);
       expect(history!.content, specialContent); // 【確認内容】: 特殊文字が保持されている
-    });
-
-    // =========================================================================
-    // TC-062-015: isFavoriteフラグの保存・取得 🔵
-    // =========================================================================
-    test('TC-062-015: isFavoriteフラグが正しく保存される', () async {
-      // 【テスト目的】: isFavoriteフィールドの永続化確認
-      // 【テスト内容】: trueが正確に保存・読み込みされることを検証
-      // 【期待される動作】: trueが正確に保存される
-      // 🔵 青信号: REQ-603
-
-      // When（実行フェーズ）
-      await repository.save(HistoryItem(
-        id: 'favorite-test',
-        content: 'お気に入りテスト',
-        createdAt: DateTime.now(),
-        type: 'preset',
-        isFavorite: true,
-      ));
-
-      // Then（検証フェーズ）
-      final history = await repository.getById('favorite-test');
-      expect(history, isNotNull);
-      expect(history!.isFavorite, true); // 【確認内容】: isFavoriteがtrue
     });
   });
 

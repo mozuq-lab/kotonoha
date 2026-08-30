@@ -29,6 +29,13 @@ class PhraseCategorySection extends StatelessWidget {
   /// 🔵 信頼性レベル: 青信号 - 要件定義に基づく
   final List<PresetPhrase> phrases;
 
+  /// 【パラメータ定義】: 定型文由来のお気に入りのid集合
+  /// 【設計変更】: Phase 3 / WP-2 / Stage 3a - お気に入りの正はfavoriteProvider
+  /// （ADR-005）。sourceType == 'preset_phrase' で絞ったsourceIdの集合を
+  /// 上位（PhraseListWidget）から受け取り、PhraseListItemへ判定済みのbool
+  /// として渡す。
+  final Set<String> favoritePresetIds;
+
   /// 【パラメータ定義】: 定型文タップ時のコールバック
   /// 🔵 信頼性レベル: 青信号 - AC-004に基づく
   final void Function(PresetPhrase)? onPhraseSelected;
@@ -50,6 +57,7 @@ class PhraseCategorySection extends StatelessWidget {
     super.key,
     required this.category,
     required this.phrases,
+    required this.favoritePresetIds,
     this.onPhraseSelected,
     this.onFavoriteToggle,
     this.onEdit,
@@ -103,6 +111,7 @@ class PhraseCategorySection extends StatelessWidget {
         ...phrases.map(
           (phrase) => PhraseListItem(
             phrase: phrase,
+            isFavorite: favoritePresetIds.contains(phrase.id),
             onTap: () => onPhraseSelected?.call(phrase),
             onFavoriteToggle: () => onFavoriteToggle?.call(phrase),
             onEdit: onEdit != null ? () => onEdit!(phrase) : null,

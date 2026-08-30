@@ -23,14 +23,12 @@ void main() {
     required String id,
     required String content,
     String category = 'daily',
-    bool isFavorite = false,
   }) {
     final now = DateTime.now();
     return PresetPhrase(
       id: id,
       content: content,
       category: category,
-      isFavorite: isFavorite,
       displayOrder: 0,
       createdAt: now,
       updatedAt: now,
@@ -61,6 +59,7 @@ void main() {
             body: PhraseCategorySection(
               category: 'daily',
               phrases: phrases,
+              favoritePresetIds: const <String>{},
             ),
           ),
         ),
@@ -155,6 +154,7 @@ void main() {
             body: PhraseCategorySection(
               category: 'daily',
               phrases: phrases,
+              favoritePresetIds: const <String>{},
             ),
           ),
         ),
@@ -191,6 +191,7 @@ void main() {
             body: PhraseCategorySection(
               category: 'daily',
               phrases: [phrase],
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (p) => selectedPhrase = p,
             ),
           ),

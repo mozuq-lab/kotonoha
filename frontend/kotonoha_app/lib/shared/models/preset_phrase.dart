@@ -24,13 +24,14 @@ class PresetPhrase extends HiveObject {
   @HiveField(2)
   final String category; // 'daily', 'health', 'other'
 
-  /// 【フィールド定義】: お気に入りフラグ
-  /// 【実装内容】: お気に入り登録された定型文はUI上部に優先表示
-  /// 🔵 信頼性レベル: 青信号 - REQ-105（お気に入り優先表示）に基づく
-  @HiveField(3)
-  final bool isFavorite;
+  // 【欠番】: field 3 は旧 isFavorite（Phase 3 / WP-2 / Stage 3b で削除）。
+  // お気に入りの正は favoriteProvider だけ（ADR-005「1概念1真実」）。
+  // **後続フィールドの番号は詰めない。** 詰めると、端末に既にある旧バイト列で
+  // fields[3]（bool）を displayOrder（int）として読むことになり TypeError が出る。
+  // 経緯は preset_phrase_adapter.dart と
+  // test/shared/models/preset_phrase_adapter_backward_compat_test.dart を見ること。
 
-  /// 【フィールド定義】: 並び順（お気に入り内での優先度）
+  /// 【フィールド定義】: 並び順
   /// 【実装内容】: ユーザーがカスタマイズ可能な表示順序
   /// 🔵 信頼性レベル: 青信号 - interfaces.dartのdisplayOrderフィールドに基づく
   @HiveField(4)
@@ -49,13 +50,12 @@ class PresetPhrase extends HiveObject {
   final DateTime updatedAt;
 
   /// 【コンストラクタ】: PresetPhrase生成
-  /// 【実装内容】: 全フィールドを初期化（isFavoriteのみデフォルト値false）
+  /// 【実装内容】: 全フィールドを初期化
   /// 🔵 信頼性レベル: 青信号 - テストケースTC-009〜TC-015の要件に基づく
   PresetPhrase({
     required this.id,
     required this.content,
     required this.category,
-    this.isFavorite = false,
     required this.displayOrder,
     required this.createdAt,
     required this.updatedAt,
@@ -63,13 +63,12 @@ class PresetPhrase extends HiveObject {
 
   /// 【copyWithメソッド】: 不変オブジェクトの部分更新
   /// 【実装内容】: 一部のフィールドのみ変更した新しいPresetPhraseを生成
-  /// 【テスト対応】: TC-012（お気に入りフラグ更新）、TC-013（削除テスト）で使用
+  /// 【テスト対応】: TC-013（削除テスト）で使用
   /// 🔵 信頼性レベル: 青信号 - Dartのベストプラクティスに基づく
   PresetPhrase copyWith({
     String? id,
     String? content,
     String? category,
-    bool? isFavorite,
     int? displayOrder,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -78,7 +77,6 @@ class PresetPhrase extends HiveObject {
       id: id ?? this.id,
       content: content ?? this.content,
       category: category ?? this.category,
-      isFavorite: isFavorite ?? this.isFavorite,
       displayOrder: displayOrder ?? this.displayOrder,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -107,6 +105,6 @@ class PresetPhrase extends HiveObject {
   /// 🔵 信頼性レベル: 青信号 - デバッグ・ログ出力のため
   @override
   String toString() {
-    return 'PresetPhrase(id: $id, content: $content, category: $category, isFavorite: $isFavorite, displayOrder: $displayOrder, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'PresetPhrase(id: $id, content: $content, category: $category, displayOrder: $displayOrder, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }

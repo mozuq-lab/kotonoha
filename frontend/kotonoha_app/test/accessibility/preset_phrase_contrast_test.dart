@@ -81,7 +81,6 @@ void main() {
       id: '1',
       content: 'テスト定型文',
       category: 'daily',
-      isFavorite: false,
       displayOrder: 0,
       createdAt: DateTime(2026, 1, 1),
       updatedAt: DateTime(2026, 1, 1),

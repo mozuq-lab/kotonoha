@@ -11,6 +11,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/data/default_phrases.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
 
@@ -238,25 +239,31 @@ void main() {
     ///
     /// 【テスト目的】: お気に入り切替の確認
     /// 【テスト内容】: お気に入り切替機能
-    /// 【期待される動作】: isFavoriteが反転する
+    /// 【期待される動作】: favoriteProviderに定型文由来のお気に入りが1件増える
+    ///
+    /// 【設計変更】: Phase 3 / WP-2 / Stage 3b - お気に入りの正はfavoriteProvider
+    /// だけになった（ADR-005「1概念1真実」）ので、確認先もそちらへ移した。
     ///
     /// 信頼性レベル: 🔵 青信号
-    /// 関連要件: CRUD-007, CRUD-106, AC-007
+    /// 関連要件: ADR-005, CRUD-007, CRUD-106, AC-007
     /// 優先度: P0 必須
-    test('TC-041-038: toggleFavorite()でお気に入りフラグを切り替えできる（false→true）', () async {
-      // 【前提条件】: 定型文を1件追加（isFavorite: false）
+    test('TC-041-038: toggleFavorite()でお気に入りにできる（未登録→登録）', () async {
+      // 【前提条件】: 定型文を1件追加
       await notifier.addPhrase('お気に入りテスト', 'daily');
       final state = container.read(presetPhraseNotifierProvider);
       final existingId = state.phrases.first.id;
-      expect(state.phrases.first.isFavorite, isFalse);
+      expect(container.read(favoriteProvider).favorites, isEmpty);
 
       // 【実行】: お気に入りを切り替え
       await notifier.toggleFavorite(existingId);
 
-      // 【結果検証】: フラグが反転していることを確認
-      final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.first.isFavorite,
-          isTrue); // 【確認内容】: isFavoriteの値 🔵
+      // 【結果検証】: お気に入りの正に、この定型文由来の1件が入る
+      final favorites = container.read(favoriteProvider).favorites;
+      expect(favorites.length, equals(1)); // 【確認内容】: 1件登録された 🔵
+      expect(favorites.first.sourceType,
+          equals('preset_phrase')); // 【確認内容】: 定型文由来 🔵
+      expect(favorites.first.sourceId, equals(existingId)); // 【確認内容】: どの定型文か 🔵
+      expect(favorites.first.content, equals('お気に入りテスト'));
     });
 
     // =========================================================================
@@ -266,12 +273,12 @@ void main() {
     ///
     /// 【テスト目的】: お気に入り解除の確認
     /// 【テスト内容】: お気に入り解除機能
-    /// 【期待される動作】: isFavoriteがtrue→falseに変わる
+    /// 【期待される動作】: favoriteProviderから定型文由来のお気に入りが消える
     ///
     /// 信頼性レベル: 🔵 青信号
-    /// 関連要件: CRUD-007
+    /// 関連要件: ADR-005, CRUD-007
     /// 優先度: P0 必須
-    test('TC-041-039: toggleFavorite()でお気に入り解除ができる（true→false）', () async {
+    test('TC-041-039: toggleFavorite()でお気に入り解除ができる（登録→未登録）', () async {
       // 【前提条件】: お気に入り登録済みの定型文を作成
       await notifier.addPhrase('お気に入りテスト', 'daily');
       final state = container.read(presetPhraseNotifierProvider);
@@ -279,46 +286,17 @@ void main() {
 
       // まずお気に入りに設定
       await notifier.toggleFavorite(existingId);
-      final favoriteState = container.read(presetPhraseNotifierProvider);
-      expect(favoriteState.phrases.first.isFavorite, isTrue);
+      expect(container.read(favoriteProvider).favorites.length, equals(1));
 
       // 【実行】: お気に入りを解除
       await notifier.toggleFavorite(existingId);
 
-      // 【結果検証】: フラグが反転していることを確認
-      final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.first.isFavorite,
-          isFalse); // 【確認内容】: isFavoriteの値 🔵
-    });
-
-    // =========================================================================
-    // TC-041-040: お気に入り切替後に一覧表示位置が更新される
-    // =========================================================================
-    /// TC-041-040: お気に入り切替後に一覧の表示順序が更新される
-    ///
-    /// 【テスト目的】: 表示順序更新の確認
-    /// 【テスト内容】: 一覧更新機能
-    /// 【期待される動作】: お気に入りが上部に移動する
-    ///
-    /// 信頼性レベル: 🔵 青信号
-    /// 関連要件: REQ-105, AC-008
-    /// 優先度: P0 必須
-    test('TC-041-040: お気に入り切替後に一覧の表示順序が更新される', () async {
-      // 【前提条件】: 複数の定型文を追加
-      await notifier.addPhrase('定型文1', 'daily'); // お気に入りにしない
-      await notifier.addPhrase('定型文2', 'daily'); // これをお気に入りにする
-
-      final state = container.read(presetPhraseNotifierProvider);
-      final phrase2Id = state.phrases[1].id;
-
-      // 【実行】: 定型文2をお気に入りに
-      await notifier.toggleFavorite(phrase2Id);
-
-      // 【結果検証】: お気に入りが上部に表示されることを確認
-      final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(
-          updatedState.phrases.first.content, equals('定型文2')); // 【確認内容】: 並び順 🔵
-      expect(updatedState.phrases.first.isFavorite, isTrue);
+      // 【結果検証】: お気に入りの正から消えていること
+      expect(container.read(favoriteProvider).favorites,
+          isEmpty); // 【確認内容】: 解除された 🔵
+      // 【確認内容】: 定型文そのものは残っている（解除は削除ではない）🔵
+      expect(container.read(presetPhraseNotifierProvider).phrases.length,
+          equals(1));
     });
   });
 

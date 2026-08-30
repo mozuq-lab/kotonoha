@@ -117,8 +117,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   onTap: () => _onHistoryTap(history.id, history.content),
                   onDelete: () => _deleteHistoryWithUndo(context, history),
                   onStop: _onStop,
-                  onLongPress: () => _showContextMenu(context, history.content),
-                  onFavoriteTap: () => _addToFavorite(context, history.content),
+                  onLongPress: () =>
+                      _showContextMenu(context, history.id, history.content),
+                  onFavoriteTap: () =>
+                      _addToFavorite(context, history.id, history.content),
                 );
               },
             ),
@@ -192,7 +194,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// コンテキストメニューを表示
   ///
   /// REQ-701: 履歴からお気に入りに追加
-  void _showContextMenu(BuildContext context, String content) {
+  void _showContextMenu(
+      BuildContext context, String historyId, String content) {
     showModalBottomSheet<void>(
       context: context,
       builder: (BuildContext sheetContext) {
@@ -204,7 +207,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 title: const Text(HistoryUIConstants.addToFavoriteLabel),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  _addToFavorite(context, content);
+                  _addToFavorite(context, historyId, content);
                 },
               ),
             ],
@@ -217,7 +220,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// お気に入りに追加
   ///
   /// REQ-701: お気に入り追加機能
-  void _addToFavorite(BuildContext context, String content) {
+  /// 【出所記録】: 履歴由来であることを sourceType/sourceId として記録する
+  /// （Phase 3 / WP-2 / Stage 1）。重複判定は content 一致のまま変えない。
+  void _addToFavorite(BuildContext context, String historyId, String content) {
     final favoriteState = ref.read(favoriteProvider);
     final isDuplicate =
         favoriteState.favorites.any((f) => f.content == content);
@@ -232,7 +237,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       );
     } else {
       // 追加成功
-      ref.read(favoriteProvider.notifier).addFavorite(content);
+      ref
+          .read(favoriteProvider.notifier)
+          .addFavoriteFromHistory(content, historyId);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(HistoryUIConstants.addToFavoriteSuccess),

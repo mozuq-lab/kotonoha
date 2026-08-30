@@ -73,7 +73,6 @@ void main() {
         id: 'test-uuid-001',
         content: 'こんにちは',
         category: 'daily',
-        isFavorite: false,
         displayOrder: 0,
         createdAt: DateTime(2025, 11, 26, 10, 0),
         updatedAt: DateTime(2025, 11, 26, 10, 0),
@@ -116,7 +115,6 @@ void main() {
           id: 'uuid-001',
           content: 'おはようございます',
           category: 'daily',
-          isFavorite: false,
           displayOrder: 0,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -125,7 +123,6 @@ void main() {
           id: 'uuid-002',
           content: 'お水をください',
           category: 'health',
-          isFavorite: true,
           displayOrder: 1,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -134,7 +131,6 @@ void main() {
           id: 'uuid-003',
           content: 'ありがとう',
           category: 'daily',
-          isFavorite: false,
           displayOrder: 2,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -175,7 +171,6 @@ void main() {
         id: 'uuid-update',
         content: '元の内容',
         category: 'daily',
-        isFavorite: false,
         displayOrder: 0,
         createdAt: DateTime(2025, 11, 26, 10, 0),
         updatedAt: DateTime(2025, 11, 26, 10, 0),
@@ -217,7 +212,6 @@ void main() {
         id: 'uuid-delete',
         content: '削除予定',
         category: 'other',
-        isFavorite: false,
         displayOrder: 0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -241,52 +235,6 @@ void main() {
     });
 
     // =========================================================================
-    // TC-055-005: お気に入りフラグがHiveに正しく保存される
-    // =========================================================================
-    test('TC-055-005: お気に入りフラグがHiveに正しく保存される', () async {
-      // 【テスト目的】: isFavoriteフィールドの永続化確認
-      // 【テスト内容】: true/falseの両方が正確に保存・読み込みされることを検証
-      // 【期待される動作】: true/falseが正確に保存・読み込みされる
-      // 🔵 青信号: REQ-105（お気に入り機能）の基盤
-
-      // Given（準備フェーズ）
-      // 【テストデータ準備】: お気に入りtrue/falseの2件
-      final favoritePhrase = PresetPhrase(
-        id: 'fav-001',
-        content: 'お気に入り',
-        category: 'daily',
-        isFavorite: true,
-        displayOrder: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      final normalPhrase = PresetPhrase(
-        id: 'normal-001',
-        content: '通常',
-        category: 'daily',
-        isFavorite: false,
-        displayOrder: 1,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      // When（実行フェーズ）
-      await repository.save(favoritePhrase);
-      await repository.save(normalPhrase);
-
-      // Then（検証フェーズ）
-      final loaded = await repository.loadAll();
-
-      // 【検証項目】: お気に入りフラグが正しく保持されること
-      // 🔵 青信号: bool型の正確な保存
-      final fav = loaded.firstWhere((p) => p.id == 'fav-001');
-      final normal = loaded.firstWhere((p) => p.id == 'normal-001');
-
-      expect(fav.isFavorite, true); // 【確認内容】: お気に入りフラグがtrue
-      expect(normal.isFavorite, false); // 【確認内容】: お気に入りフラグがfalse
-    });
-
-    // =========================================================================
     // TC-055-006: カテゴリ情報がHiveに正しく保存される
     // =========================================================================
     test('TC-055-006: カテゴリ情報がHiveに正しく保存される', () async {
@@ -301,7 +249,6 @@ void main() {
         id: 'cat-daily',
         content: '日常',
         category: 'daily',
-        isFavorite: false,
         displayOrder: 0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -310,7 +257,6 @@ void main() {
         id: 'cat-health',
         content: '体調',
         category: 'health',
-        isFavorite: false,
         displayOrder: 1,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -319,7 +265,6 @@ void main() {
         id: 'cat-other',
         content: 'その他',
         category: 'other',
-        isFavorite: false,
         displayOrder: 2,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -384,7 +329,6 @@ void main() {
         id: 'empty-content',
         content: '',
         category: 'daily',
-        isFavorite: false,
         displayOrder: 0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -418,7 +362,6 @@ void main() {
         id: 'long-content',
         content: longContent,
         category: 'daily',
-        isFavorite: false,
         displayOrder: 0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -473,7 +416,6 @@ void main() {
           id: 'bulk-$i',
           content: '定型文$i',
           category: ['daily', 'health', 'other'][i % 3],
-          isFavorite: i % 5 == 0,
           displayOrder: i,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -589,7 +531,6 @@ void main() {
         id: 'persist-001',
         content: '永続化テスト',
         category: 'daily',
-        isFavorite: true,
         displayOrder: 0,
         createdAt: DateTime(2025, 11, 26, 10, 0),
         updatedAt: DateTime(2025, 11, 26, 10, 0),
@@ -613,7 +554,7 @@ void main() {
       expect(loaded.length, 1); // 【確認内容】: 1件保持されている
       expect(loaded.first.id, 'persist-001'); // 【確認内容】: IDが保持されている
       expect(loaded.first.content, '永続化テスト'); // 【確認内容】: contentが保持されている
-      expect(loaded.first.isFavorite, true); // 【確認内容】: isFavoriteが保持されている
+      expect(loaded.first.displayOrder, 0); // 【確認内容】: displayOrderが保持されている
 
       // クリーンアップ
       await presetBox.close();

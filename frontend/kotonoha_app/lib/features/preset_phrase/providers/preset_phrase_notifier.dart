@@ -75,15 +75,16 @@ class PresetPhraseState {
 /// 二度と解除できなくなる。これを防ぐため、成功した操作の完了時には
 /// `clearError: true` を明示して状態を復帰させる。
 class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
-  /// 【フィールド定義】: FavoriteNotifierへの参照
-  /// 【実装内容】: お気に入り連動のために使用
-  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
-  late FavoriteNotifier? _favoriteNotifier;
+  /// 【お気に入りの正】: FavoriteNotifier を必要になった時点で引く
+  ///
+  /// 【設計変更】: Phase 3 / WP-2 / Stage 3b - 以前は build() で
+  /// `late FavoriteNotifier?` に保持していたが、build() を差し替えた
+  /// テスト用 Notifier では初期化されず LateInitializationError になる。
+  /// 参照は使う場所で引けばよい。
+  FavoriteNotifier get _favoriteNotifier => ref.read(favoriteProvider.notifier);
 
   @override
   PresetPhraseState build() {
-    _favoriteNotifier = ref.read(favoriteProvider.notifier);
-
     // 【永続化配線】: Repositoryが利用可能（Boxオープン済み）の場合はHiveから初期化
     // 【フォールバック】: repo==nilまたはデータ無しの場合は従来どおり空状態
     final repo = ref.read(presetPhraseRepositoryProvider);
@@ -109,7 +110,6 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       id: _uuid.v4(), // UUID形式のID自動生成 (CRUD-003)
       content: content,
       category: category,
-      isFavorite: false,
       displayOrder: state.phrases.length,
       createdAt: now, // タイムスタンプ自動設定 (CRUD-008)
       updatedAt: now,
@@ -138,7 +138,6 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     String id, {
     String? content,
     String? category,
-    bool? isFavorite,
   }) async {
     // 対象の定型文を検索 (EDGE-009対応)
     final index = state.phrases.indexWhere((p) => p.id == id);
@@ -151,7 +150,6 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     final updatedPhrase = original.copyWith(
       content: content ?? original.content,
       category: category ?? original.category,
-      isFavorite: isFavorite ?? original.isFavorite,
       updatedAt: DateTime.now(), // タイムスタンプ更新 (CRUD-008)
     );
 
@@ -182,12 +180,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       return;
     }
 
-    // 【連動処理】: お気に入り済みの定型文を削除する場合、Favoriteからも削除（TC-SYNC-202）
+    // 【連動処理】: 定型文を削除したら、対応するお気に入りも消す（TC-SYNC-202）
+    // 【無条件で呼ぶ理由】: Phase 3 / WP-2 / Stage 3b で PresetPhrase.isFavorite が
+    // 無くなったので、お気に入りかどうかは favoriteProvider しか知らない。
+    // deleteFavoriteBySourceId は該当が無ければ何もしないため、無条件でよい。
     // 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
-    final phrase = state.phrases[index];
-    if (phrase.isFavorite && _favoriteNotifier != null) {
-      await _favoriteNotifier!.deleteFavoriteBySourceId(id);
-    }
+    await _favoriteNotifier.deleteFavoriteBySourceId(id);
 
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
     updatedPhrases.removeAt(index);
@@ -202,51 +200,43 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   }
 
   /// 【メソッド】: お気に入りを切り替える
-  /// 【実装内容】: 指定IDの定型文のお気に入りフラグを反転し、Favoriteと連動
-  /// 【テスト対応】: TC-041-038〜040, TC-SYNC-001, TC-SYNC-002, TC-SYNC-003
-  /// 🔵 信頼性レベル: 青信号 - CRUD-007, CRUD-106, REQ-701に基づく
+  /// 【実装内容】: favoriteProvider へ委譲する。定型文レコードは変えない
+  /// 【テスト対応】: TC-041-038〜039, TC-SYNC-001, TC-SYNC-002, TC-SYNC-003
+  /// 🔵 信頼性レベル: 青信号 - ADR-005, CRUD-007, REQ-701に基づく
+  ///
+  /// 【設計変更】: Phase 3 / WP-2 / Stage 3b - お気に入りの正は favoriteProvider
+  /// だけになった（ADR-005「1概念1真実」）。以前は PresetPhrase.isFavorite を
+  /// 反転して Hive に書き戻し、さらに FavoriteNotifier へ連動させる双方向同期
+  /// だったが、真実が2つあると必ず食い違う。
+  ///
+  /// 【定型文レコードを書き換えない】: 定型文そのものは変わらないので
+  /// `repo.save()` は呼ばず、`updatedAt` も動かさない。
   Future<void> toggleFavorite(String id) async {
     final index = state.phrases.indexWhere((p) => p.id == id);
     if (index == -1) {
       return;
     }
 
-    final original = state.phrases[index];
-    final updatedPhrase = original.copyWith(
-      isFavorite: !original.isFavorite,
-      updatedAt: DateTime.now(),
-    );
+    final phrase = state.phrases[index];
 
-    final updatedPhrases = List<PresetPhrase>.from(state.phrases);
-    updatedPhrases[index] = updatedPhrase;
-    // お気に入り順でソート (REQ-105)
-    // 【エラークリア】: 操作が成功したので直前のエラーは解消したとみなす
-    state = state.copyWith(
-      phrases: _sortPhrases(updatedPhrases),
-      clearError: true,
-    );
-
-    // 【永続化】: repoがあればHiveに保存（isFavoriteフラグの変更を反映）
-    final repo = ref.read(presetPhraseRepositoryProvider);
-    if (repo != null) {
-      await repo.save(updatedPhrase);
-    }
-
-    // 【連動処理】: FavoriteNotifierへの連動（TC-SYNC-001, TC-SYNC-002）
-    // 【処理方針】: お気に入り追加時はFavoriteにも追加、解除時はFavoriteからも削除
-    // 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
-    if (_favoriteNotifier != null) {
-      if (updatedPhrase.isFavorite) {
-        // 【お気に入り追加】: Favoriteにも追加
-        await _favoriteNotifier!.addFavoriteFromPresetPhrase(
-          updatedPhrase.content,
-          updatedPhrase.id,
+    // 【現在の状態】: お気に入りかどうかは favoriteProvider に問う。
+    // 履歴由来（sourceType == 'history'）が混ざらないよう sourceType で絞る。
+    final isFavorite = ref.read(favoriteProvider).favorites.any(
+          (f) => f.sourceType == 'preset_phrase' && f.sourceId == id,
         );
-      } else {
-        // 【お気に入り解除】: Favoriteからも削除
-        await _favoriteNotifier!.deleteFavoriteBySourceId(updatedPhrase.id);
-      }
+
+    if (isFavorite) {
+      await _favoriteNotifier.deleteFavoriteBySourceId(id);
+    } else {
+      await _favoriteNotifier.addFavoriteFromPresetPhrase(
+        phrase.content,
+        phrase.id,
+      );
     }
+
+    // 【エラークリア】: 操作が成功したので直前のエラーは解消したとみなす。
+    // phrases は変えない（お気に入りは定型文の属性ではなくなった）。
+    state = state.copyWith(clearError: true);
   }
 
   /// 【メソッド】: 定型文一覧を読み込む
@@ -299,7 +289,6 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
             id: _uuid.v4(),
             content: content,
             category: category,
-            isFavorite: false,
             displayOrder: displayOrder++,
             createdAt: now,
             updatedAt: now,
@@ -345,18 +334,15 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     await initializeDefaultPhrases();
   }
 
-  /// 【プライベートメソッド】: 定型文をソートする
-  /// 【実装内容】: お気に入りを上部に、それ以外は表示順で並べ替え
+  /// 【プライベートメソッド】: 定型文を表示順で並べ替える
   /// 🔵 信頼性レベル: 青信号 - REQ-105に基づく
+  ///
+  /// 【設計変更】: Phase 3 / WP-2 / Stage 3b - お気に入りを先頭へ寄せる規則は
+  /// ここから外した。お気に入り優先表示は PhraseListWidget のセクション分割
+  /// （Stage 3a）が担っており、ここでも並べ替えると同じ規則が2箇所に散る。
   List<PresetPhrase> _sortPhrases(List<PresetPhrase> phrases) {
     final sorted = List<PresetPhrase>.from(phrases);
-    sorted.sort((a, b) {
-      // まずお気に入りを優先
-      if (a.isFavorite && !b.isFavorite) return -1;
-      if (!a.isFavorite && b.isFavorite) return 1;
-      // 同じお気に入り状態なら表示順で並べ替え
-      return a.displayOrder.compareTo(b.displayOrder);
-    });
+    sorted.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
     return sorted;
   }
 }

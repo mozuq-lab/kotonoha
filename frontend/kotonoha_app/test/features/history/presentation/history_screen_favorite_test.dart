@@ -357,5 +357,45 @@ void main() {
       expect(find.byIcon(Icons.star), findsOneWidget);
       expect(find.byIcon(Icons.star_border), findsNothing);
     });
+
+    /// Stage 1（Phase 3 / WP-2）: 履歴由来のお気に入りに出所（sourceId）が記録される
+    ///
+    /// 検証は描画されたウィジェットを操作した結果として行う（providerを直接叩かない）。
+    testWidgets('履歴の星をタップして作られたお気に入りは、その履歴のidをsourceIdに持つ',
+        (WidgetTester tester) async {
+      final testHistory = createTestHistory(
+        id: 'history_star_1',
+        content: 'こんにちは',
+      );
+      final mockHistoryState = HistoryState(histories: [testHistory]);
+
+      final mockTTSNotifier = MockTTSNotifier();
+      when(() => mockTTSNotifier.speak(any())).thenAnswer((_) async {});
+      when(() => mockTTSNotifier.stop()).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            historyProviderOverride(mockHistoryState),
+            ttsProvider.overrideWith(() => mockTTSNotifier),
+          ],
+          child: const MaterialApp(
+            home: HistoryScreen(),
+          ),
+        ),
+      );
+
+      // When: 星ボタンをタップする
+      await tester.tap(find.byIcon(Icons.star_border));
+      await tester.pumpAndSettle();
+
+      // Then: 作られたお気に入りのsourceIdが履歴のidと一致する
+      final context = tester.element(find.byType(HistoryScreen));
+      final container = ProviderScope.containerOf(context);
+      final favorites = container.read(favoriteProvider).favorites;
+      expect(favorites.length, 1);
+      expect(favorites.first.sourceId, testHistory.id);
+      expect(favorites.first.sourceType, 'history');
+    });
   });
 }

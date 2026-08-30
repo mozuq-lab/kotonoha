@@ -191,7 +191,6 @@ void main() {
           id: 'p1',
           content: '保存済み定型文',
           category: 'daily',
-          isFavorite: false,
           displayOrder: 0,
           createdAt: now,
           updatedAt: now,

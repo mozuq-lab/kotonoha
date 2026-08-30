@@ -64,7 +64,6 @@ void main() {
         content: 'ありがとう',
         createdAt: DateTime(2025, 11, 21, 10, 30),
         type: 'manualInput',
-        isFavorite: false,
       );
 
       // When（実行フェーズ）
@@ -100,10 +99,6 @@ void main() {
       // 【検証項目】: typeフィールドが一致すること
       // 🔵 青信号: 履歴種別の保持
       expect(retrieved.type, 'manualInput'); // 【確認内容】: 履歴種別が保持されている
-
-      // 【検証項目】: isFavoriteフィールドが一致すること
-      // 🔵 青信号: お気に入りフラグの保持
-      expect(retrieved.isFavorite, false); // 【確認内容】: お気に入りフラグが保持されている
     });
 
     // TC-005: HistoryItem複数データの保存・読み込みテスト
@@ -122,21 +117,18 @@ void main() {
           content: 'ありがとう',
           createdAt: DateTime(2025, 11, 21, 10, 0),
           type: 'manualInput',
-          isFavorite: false,
         ),
         HistoryItem(
           id: 'uuid-002',
           content: 'お願いします',
           createdAt: DateTime(2025, 11, 21, 11, 0),
           type: 'preset',
-          isFavorite: true,
         ),
         HistoryItem(
           id: 'uuid-003',
           content: '助けてください',
           createdAt: DateTime(2025, 11, 21, 12, 0),
           type: 'aiConverted',
-          isFavorite: false,
         ),
       ];
 
@@ -191,7 +183,6 @@ void main() {
         content: 'テスト',
         createdAt: DateTime(2025, 11, 21, 10, 0),
         type: 'manualInput',
-        isFavorite: false,
       );
       await historyBox.put(item.id, item);
 
@@ -233,7 +224,6 @@ void main() {
           content: '履歴$i',
           createdAt: DateTime(2025, 11, 21, 10, 0).add(Duration(minutes: i)),
           type: 'manualInput',
-          isFavorite: false,
         );
         await historyBox.put(item.id, item);
       }
@@ -249,7 +239,6 @@ void main() {
         content: '新しい履歴',
         createdAt: DateTime(2025, 11, 21, 11, 0),
         type: 'manualInput',
-        isFavorite: false,
       );
       await historyBox.put(newItem.id, newItem);
 
