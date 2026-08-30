@@ -15,6 +15,7 @@ import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
+import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_list_item.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -338,6 +339,38 @@ Future<void> scrollIntoView(
 Future<void> scrollAndTap(WidgetTester tester, Finder finder) async {
   await scrollIntoView(tester, finder);
   await tester.tap(finder.first);
+  await tester.pumpAndSettle();
+}
+
+/// [phraseText] の行の中にある [icon] を指す finder
+///
+/// 【なぜ行で絞るか】: 一覧には同じアイコンが定型文の数だけ並ぶ。
+/// `find.byIcon(...).last` のような位置指定は使ってはいけない——
+/// `ensureVisible` でスクロールすると `ListView.builder` がさらに下の要素を
+/// 構築するため、**新しい `.last` はまた画面外になる**。追いかけても届かない。
+/// 実測では `.last` の矩形が y=2016〜2040、画面高は 1024 だった（Issue #84）。
+///
+/// 対象の行を文言で特定し、その中のアイコンを引く。
+Finder iconInPhraseRow(String phraseText, IconData icon) => find.descendant(
+      of: find.ancestor(
+        of: find.text(phraseText),
+        matching: find.byType(PhraseListItem),
+      ),
+      matching: find.byIcon(icon),
+    );
+
+/// [phraseText] の行にある [icon] を、画面内へ出してからタップする
+Future<void> tapIconInPhraseRow(
+  WidgetTester tester,
+  String phraseText,
+  IconData icon,
+) async {
+  await scrollIntoView(tester, find.text(phraseText));
+  final target = iconInPhraseRow(phraseText, icon);
+  expect(target, findsOneWidget, reason: '「$phraseText」の行に対象のアイコンが見つからない');
+  await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
+  await tester.tap(target);
   await tester.pumpAndSettle();
 }
 

@@ -22,6 +22,16 @@ Future<void> navigateToPresetPhrases(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// [text] までスクロールで到達できるかを、失敗させずに判定する
+Future<bool> _canReach(WidgetTester tester, String text) async {
+  try {
+    await scrollIntoView(tester, find.text(text));
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 void main() {
   initializeE2ETestBinding();
 
@@ -506,24 +516,24 @@ void main() {
           const Offset(0, -100),
         );
 
-        // 「その他」カテゴリの定型文を削除（最初の3件のみ）
-        for (var i = 0; i < 3; i++) {
-          // 「その他」セクション内の削除ボタンを探す
-          final deleteButton = find.byIcon(Icons.delete_outline);
-          if (deleteButton.evaluate().isEmpty) break;
-
-          // 【ensureVisible の後に取り直す理由】: ensureVisible はスクロールを
-          // 起こし、その結果 ListView.builder の構築範囲が変わる。
-          // 直前に取った `.last` は別の要素を指しうるので、
-          // スクロール後に finder を評価し直してからタップする。
-          await tester.ensureVisible(deleteButton.last);
-          await tester.pumpAndSettle();
-
-          final visibleDeleteButtons = find.byIcon(Icons.delete_outline);
-          if (visibleDeleteButtons.evaluate().isEmpty) break;
-          await tester.tap(visibleDeleteButtons.last);
-          await tester.pumpAndSettle();
-          // 画面本体にも「削除」の語があるため、ダイアログ内に限定する
+        // 「その他」カテゴリの定型文を名指しで削除する
+        //
+        // 【`.last` を使わない理由】: 一覧には削除アイコンが定型文の数だけ並ぶ。
+        // ensureVisible でスクロールすると ListView.builder がさらに下の要素を
+        // 構築するため、**新しい `.last` はまた画面外**になり、追いかけても
+        // 届かない。実測で `.last` の矩形が y=2016〜2040、画面高 1024 だった。
+        // 対象の行を文言で特定する。
+        // その他カテゴリに実在する語（default_phrases.dart の otherPhrases）
+        for (final target in [
+          '誰か来てください',
+          'ナースコールを押してください',
+          '家族を呼んでください',
+        ]) {
+          if (find.text(target).evaluate().isEmpty &&
+              !await _canReach(tester, target)) {
+            continue;
+          }
+          await tapIconInPhraseRow(tester, target, Icons.delete_outline);
           await tapDialogButton(tester, '削除');
         }
 
@@ -818,10 +828,9 @@ void main() {
         expect(find.text('統合テスト'), findsOneWidget);
 
         // ステップ2: お気に入りに登録
-        // 「統合テスト」の星アイコンを見つけてタップ
-        final starIcon = find.byIcon(Icons.star_border).last;
-        await tester.tap(starIcon);
-        await tester.pumpAndSettle();
+        // 【行で特定する理由】: `.last` はスクロールのたびに指す要素が変わり、
+        // 画面外を指し続ける（Issue #84）。追加した定型文の行を名指しする。
+        await tapIconInPhraseRow(tester, '統合テスト', Icons.star_border);
 
         // 【結果検証】: お気に入り登録が成功し、一覧上部に移動する
         expect(find.byIcon(Icons.star), findsWidgets);
