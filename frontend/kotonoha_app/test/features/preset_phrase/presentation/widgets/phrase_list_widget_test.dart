@@ -138,6 +138,20 @@ void main() {
       // 【結果検証】: お気に入り定型文が表示されることを確認
       expect(find.text('お気に入り定型文1'), findsOneWidget); // 【確認内容】: お気に入り1が表示 🔵
       expect(find.text('お気に入り定型文2'), findsOneWidget); // 【確認内容】: お気に入り2が表示 🔵
+
+      // 【結果検証】: 「優先表示」＝画面上で上にあること。存在確認だけでは
+      // セクションの並びが入れ替わっても気づけないため、位置を比較する。
+      // 【比較の仕方】: 座標の絶対値は固定せず、2つのdyの大小関係だけを見る 🔵
+      expect(
+        tester.getTopLeft(find.text('お気に入り')).dy,
+        lessThan(tester.getTopLeft(find.text('日常')).dy),
+        reason: 'REQ-105: お気に入りセクションはカテゴリセクションより上に出る',
+      );
+      expect(
+        tester.getTopLeft(find.text('お気に入り定型文1')).dy,
+        lessThan(tester.getTopLeft(find.text('通常定型文')).dy),
+        reason: 'REQ-105: お気に入り定型文は通常の定型文より上に出る',
+      );
     });
 
     // =========================================================================

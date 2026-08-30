@@ -65,13 +65,14 @@ class _StubTTSNotifier extends TTSNotifier {
 PresetPhrase _createTestPhrase({
   required String id,
   required String content,
+  int displayOrder = 0,
 }) {
   final now = DateTime.now();
   return PresetPhrase(
     id: id,
     content: content,
     category: 'daily',
-    displayOrder: 0,
+    displayOrder: displayOrder,
     createdAt: now,
     updatedAt: now,
   );
@@ -227,6 +228,77 @@ void main() {
         expect(find.byIcon(Icons.star_border), findsOneWidget);
         expect(find.byIcon(Icons.star), findsNothing);
         expect(find.text('お気に入り'), findsNothing);
+      },
+    );
+
+    // =========================================================================
+    // Phase 3 / WP-2 / Stage 3b (fix): お気に入りセクションの「位置」を見る
+    // =========================================================================
+    /// 【このテストの狙い】: REQ-105「お気に入り定型文を一覧上部に優先表示」を、
+    /// **画面上の位置**で確かめる。
+    ///
+    /// 【なぜ要るか】: この段で notifier 側のお気に入り優先ソート（_sortPhrases）を
+    /// displayOrder のみに縮小し、「お気に入りが上に出る」責務を
+    /// PhraseListWidget のセクション分割へ一本化した。その前提を誰も検証していないと、
+    /// PhraseListWidget.build のセクション追加順が入れ替わっただけで
+    /// お気に入りがカテゴリの下に埋もれ、全テスト緑のまま出荷されてしまう。
+    ///
+    /// 発話で訂正できない利用者にとって、これは最もよく使う言葉に毎回タップが
+    /// 増えることを意味する。
+    ///
+    /// 【存在ではなく前後関係を見る】: 座標の絶対値は固定せず、2つの dy の
+    /// 大小関係だけを比較する（レイアウトの寸法変更では落ちない）。
+    testWidgets(
+      '星をタップしてお気に入りにすると、お気に入りセクションがカテゴリセクションより上に来る',
+      (tester) async {
+        // Given: 同じカテゴリ（日常）の定型文2件。どちらもお気に入りではない
+        final first = _createTestPhrase(id: 'p1', content: 'おはようございます');
+        final second =
+            _createTestPhrase(id: 'p2', content: 'こんばんは', displayOrder: 1);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              presetPhraseNotifierProvider.overrideWith(
+                () => _TestPresetPhraseNotifier(
+                  PresetPhraseState(phrases: [first, second]),
+                ),
+              ),
+              ttsProvider.overrideWith(_StubTTSNotifier.new),
+            ],
+            child: const MaterialApp(home: PresetPhraseScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 前提: お気に入りセクションは無く、「日常」セクションに2件並んでいる
+        expect(find.text('お気に入り'), findsNothing);
+        expect(find.text('日常'), findsOneWidget);
+        expect(find.byIcon(Icons.star_border), findsNWidgets(2));
+
+        // When: 1件目の星をタップしてお気に入りにする
+        await tester.tap(find.byIcon(Icons.star_border).first);
+        await tester.pumpAndSettle();
+
+        // Then: 星が塗りつぶしに変わり、両セクションが出ている
+        expect(find.byIcon(Icons.star), findsOneWidget);
+        expect(find.byIcon(Icons.star_border), findsOneWidget);
+        expect(find.text('お気に入り'), findsOneWidget);
+        expect(find.text('日常'), findsOneWidget);
+
+        // Then: お気に入りセクションの見出しが「日常」の見出しより上にあること
+        expect(
+          tester.getTopLeft(find.text('お気に入り')).dy,
+          lessThan(tester.getTopLeft(find.text('日常')).dy),
+          reason: 'REQ-105: お気に入りセクションはカテゴリセクションより上に出る',
+        );
+
+        // Then: 中身の定型文についても前後関係が保たれていること
+        expect(
+          tester.getTopLeft(find.text('おはようございます')).dy,
+          lessThan(tester.getTopLeft(find.text('こんばんは')).dy),
+          reason: 'お気に入りにした定型文が、通常の定型文より上に出る',
+        );
       },
     );
   });
