@@ -833,8 +833,21 @@ void main() {
         await tapIconInPhraseRow(tester, '統合テスト', Icons.star_border);
 
         // 【結果検証】: お気に入り登録が成功し、一覧上部に移動する
-        expect(find.byIcon(Icons.star), findsWidgets);
+        //
+        // 【スクロールが要る理由】: 登録すると項目は一覧**上部**の
+        // 「お気に入り」セクションへ移動するが、ビューポートは元の位置に
+        // 残るため、移動先は ListView.builder に構築されていない。
+        // `find.byIcon(Icons.star)` は 0 件を返し、「登録されていない」ように
+        // 見える（Issue #84）。
+        await scrollIntoView(tester, find.text('お気に入り'));
         expect(find.text('お気に入り'), findsOneWidget);
+
+        await scrollIntoView(tester, find.text('統合テスト'));
+        expect(
+          iconInPhraseRow('統合テスト', Icons.star),
+          findsOneWidget,
+          reason: '「統合テスト」の行の星が塗りつぶしになっていない',
+        );
 
         // ステップ3: タップして読み上げを要求する
         //
