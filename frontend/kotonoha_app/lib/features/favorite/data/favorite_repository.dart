@@ -1,4 +1,5 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:kotonoha_app/core/persistence/persisted_box.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
@@ -25,7 +26,7 @@ class FavoriteRepository {
   /// 【フィールド定義】: Hive Box（お気に入り保存用）
   /// 【実装内容】: コンストラクタで注入されたBoxを保持
   /// 🔵 信頼性レベル: 青信号 - TASK-0054で初期化済み
-  final Box<FavoriteItem> _box;
+  final PersistedBox<FavoriteItem> _box;
 
   /// 【フィールド定義】: UUID生成器
   /// 【実装内容】: 履歴・定型文からお気に入り作成時に新しいUUIDを生成
@@ -33,10 +34,16 @@ class FavoriteRepository {
   final Uuid _uuid;
 
   /// 【コンストラクタ】: Repository生成
-  /// 【実装内容】: Hive Boxを外部から注入（テスト容易性のため）
-  /// 🔵 信頼性レベル: 青信号 - DI（依存性注入）パターン
-  FavoriteRepository({required Box<FavoriteItem> box, Uuid? uuid})
-      : _box = box,
+  /// 【実装内容】: Hive Boxを外部から注入し、書き込みの成否を必ず報告する
+  /// [PersistedBox] で包む。生の Box は保持しないため、報告を経由しない
+  /// 書き込みを書くことができない（台帳 L-13）。
+  /// [onWriteResult] は書き込みのたびに呼ばれる。省略時は何もしない
+  /// （Hive を使わない既存テスト向け）。
+  FavoriteRepository({
+    required Box<FavoriteItem> box,
+    void Function(bool succeeded)? onWriteResult,
+    Uuid? uuid,
+  })  : _box = PersistedBox(box, onWriteResult: onWriteResult ?? _ignore),
         _uuid = uuid ?? const Uuid();
 
   /// 【メソッド定義】: 全お気に入りを読み込み（displayOrder昇順）
@@ -182,3 +189,6 @@ class FavoriteRepository {
     return favorites.map((f) => f.displayOrder).reduce((a, b) => a > b ? a : b);
   }
 }
+
+/// 書き込み結果を無視する既定の報告先
+void _ignore(bool _) {}

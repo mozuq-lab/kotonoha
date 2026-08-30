@@ -187,7 +187,11 @@ void main() {
 
       // Given（準備フェーズ）
       final presetBox = await Hive.openBox<PresetPhrase>('test_error_handling');
-      final repository = PresetPhraseRepository(box: presetBox);
+      final writeResults = <bool>[];
+      final repository = PresetPhraseRepository(
+        box: presetBox,
+        onWriteResult: writeResults.add,
+      );
 
       // When（実行フェーズ）
       // Boxを閉じた後に保存を試みる（エラー発生）
@@ -204,11 +208,22 @@ void main() {
       );
 
       // Then（検証フェーズ）
-      // エラーが発生することを確認（アプリはクラッシュしない）
+      // 【変更の経緯（台帳 L-13）】: 以前は `throwsA(isA<HiveError>())` を
+      // 期待していた。しかし呼び出し側（Notifier・画面）はこの Future を
+      // await しておらず、送出された例外は未処理の非同期エラーになるだけで
+      // 利用者には何も伝わらなかった。「保存できたように見えて消える」の
+      // 経路そのものである。
+      //
+      // ADR-005 は「保存されないことは必ず伝える」「伝えて継続する」と
+      // 定めているため、書き込み失敗は送出せず**報告**する形に変えた。
+      // このテストの本来の目的（エラーが握り潰されない・アプリが壊れない）は
+      // 報告の有無で検証するほうが正確である。
+      await repository.save(phrase);
+
       expect(
-        () => repository.save(phrase),
-        throwsA(isA<HiveError>()),
-        reason: '閉じたBoxへの保存はエラーになる',
+        writeResults,
+        contains(false),
+        reason: '閉じたBoxへの保存失敗が報告されていない（黙って捨てられている）',
       );
 
       await Hive.deleteBoxFromDisk('test_error_handling');
