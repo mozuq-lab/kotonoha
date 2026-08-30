@@ -212,13 +212,11 @@ jobs:
           #   Phase 2 の backend 書き直しで API の契約も変わるため、
           #   除外を解除するかの判断は Phase 2 で行う。
           #
-          # 一時的に除外する（Issue #84 で追跡。修正後に除外を解除すること）:
-          # 以下3本はヘッドレスWebで失敗する。握り潰しを撤去したことで初めて
-          # 可視化された既存の不具合で、テストがアプリの現状に追随できていない
-          # （画面遷移が起きない・入力が反映されない等）。
-          # インフラ側は正常で、app_startup_test.dart は5件すべて成功している。
-          #
-          # この3本は「壊れたらアプリとして使えない」経路なので残して直す:
+          # 【Issue #84 は原因特定・修正済み（2026-08-30）】
+          # 原因は「ヘッドレスWeb」でも「テストの陳腐化」でもなく、初回起動時の
+          # TutorialOverlay が Container(color: Colors.black54) で配下のタップを
+          # ヒットテストで吸収していたこと。pumpApp が閉じるよう修正した。
+          # 下記3本は「壊れたらアプリとして使えない」経路なので残す:
           # - character_input_tts: 文字盤入力→TTS（中核）
           # - preset_phrase:       定型文の登録→呼び出し（永続化を通る）
           # - large_emergency_buttons: 緊急ボタン（安全に関わる）
@@ -227,11 +225,16 @@ jobs:
           # history_favorite_test.dart は削除した。どちらもCI未実行で何も
           # 守っておらず、同じ範囲を widget/provider 層が厚く被覆している
           # （設定 15ファイル135件、履歴・お気に入り 17ファイル181件）。
-          EXCLUDED="ai_conversion_e2e_test.dart
-                    performance_profiling_e2e_test.dart
-                    character_input_tts_test.dart
-                    large_emergency_buttons_test.dart
-                    preset_phrase_test.dart"
+          # 【測定中（2026-08-30）】Issue #84 の根本原因（初回チュートリアルの
+          # オーバーレイがタップを吸収していた）を修正したので、下記3本の除外を
+          # 外して実際に何本通るかを測る。未対応の既知2点が残っているため
+          # 全部は通らない可能性がある。
+          # - 濁音の入力手順（TC-006 が 'が' を直接タップ。dakutenKey = '゛' が正）
+          # - ヘッドレスChrome の speechSynthesis が空になりやすく find.text('停止') 系
+          #
+          # なお performance_profiling_e2e_test.dart はファイルごと削除済みだが、
+          # この一覧に残っていた（削除時の漏れ）。glob に載らないので無害だが除いた。
+          EXCLUDED="ai_conversion_e2e_test.dart"
 
           targets=()
           for target in integration_test/*_test.dart; do
