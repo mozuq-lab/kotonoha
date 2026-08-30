@@ -47,9 +47,11 @@ void main() {
         expect(find.text('定型文'), findsOneWidget);
 
         // 【結果検証】: 初期データの定型文が表示される（サンプルとして「おはようございます」を確認）
+        await scrollIntoView(tester, find.text('おはようございます'));
         expect(find.text('おはようございます'), findsOneWidget);
 
         // 【結果検証】: 複数の定型文が表示される
+        await scrollIntoView(tester, find.text('こんにちは'));
         expect(find.text('こんにちは'), findsOneWidget);
         expect(find.text('ありがとうございます'), findsOneWidget);
       },
@@ -111,8 +113,12 @@ void main() {
         }
 
         // 【結果検証】: 各カテゴリ配下に該当する定型文が表示される
+        // 【スクロール位置が動いている】: 上のループで最下部まで移動しているため、
+        // 上部の語は再び未構築になっている。確認前に改めて画面内へ出す。
         // 日常カテゴリの定型文
+        await scrollIntoView(tester, find.text('おはようございます'));
         expect(find.text('おはようございます'), findsOneWidget);
+        await scrollIntoView(tester, find.text('こんにちは'));
         expect(find.text('こんにちは'), findsOneWidget);
 
         // 体調カテゴリの定型文
@@ -165,6 +171,7 @@ void main() {
         );
 
         // 【結果検証】: 実用的な定型文が含まれること
+        await scrollIntoView(tester, find.text('おはようございます'));
         expect(find.text('おはようございます'), findsOneWidget);
         expect(find.text('お水が飲みたいです'), findsOneWidget);
       },
@@ -195,6 +202,7 @@ void main() {
         // 停止ボタンも出ない。これは実行環境の性質であってアプリの挙動ではない。
         // TTS の実挙動は test/features/tts/ と実機テスト（台帳 L-25）が担う。
         // ここでは経路が繋がっていること（タップが通り画面が保たれること）を見る。
+        await scrollIntoView(tester, find.text('こんにちは'));
         expect(find.text('こんにちは'), findsWidgets);
       },
     );
@@ -230,6 +238,7 @@ void main() {
           await navigateTo(tester, 'ホーム');
 
           // 【結果検証】: 文字盤画面の入力欄に定型文が反映される
+          await scrollIntoView(tester, find.text('こんにちは'));
           expect(find.text('こんにちは'), findsOneWidget);
         }
       },
@@ -370,7 +379,10 @@ void main() {
         await tester.pumpAndSettle();
 
         // 【結果検証】: 星アイコンが塗りつぶされる
-        expect(find.byIcon(Icons.star), findsOneWidget);
+        // 【findsWidgets を使う理由】: お気に入りに登録すると、一覧のアイテム側と
+        // 画面上部の「お気に入り」セクション側の両方に星が出る。2件になるのが
+        // 正しい挙動であり、findsOneWidget は必ず落ちる。
+        expect(find.byIcon(Icons.star), findsWidgets);
 
         // 【結果検証】: お気に入りセクションが表示される
         expect(find.text('お気に入り'), findsOneWidget);
@@ -446,6 +458,7 @@ void main() {
 
         // 【前提条件確認】: 対象の定型文が存在することを確認
         final targetPhrase = find.text('こんにちは');
+        await scrollIntoView(tester, targetPhrase);
         expect(targetPhrase, findsOneWidget);
 
         // 【実際の処理実行】: 削除ボタン（ゴミ箱アイコン）をタップ
@@ -461,6 +474,7 @@ void main() {
         await tapButton(tester, 'キャンセル');
 
         // 【結果検証】: 定型文が一覧に残る
+        await scrollIntoView(tester, find.text('こんにちは'));
         expect(find.text('こんにちは'), findsOneWidget);
       },
     );
@@ -494,6 +508,11 @@ void main() {
           if (deleteButton.evaluate().isEmpty) break;
 
           // 最後の削除ボタンをタップ（その他カテゴリの定型文）
+          // 【ensureVisible が要る理由】: 画面外の要素はタップが外れ、
+          // ダイアログが開かない。その結果ダイアログ内の「削除」が
+          // 0 件になり、症状としては「ダイアログが出ない」に見える。
+          await tester.ensureVisible(deleteButton.last);
+          await tester.pumpAndSettle();
           await tester.tap(deleteButton.last);
           await tester.pumpAndSettle();
           // 画面本体にも「削除」の語があるため、ダイアログ内に限定する
