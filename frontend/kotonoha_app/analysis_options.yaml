@@ -11,6 +11,47 @@ include: package:flutter_lints/flutter.yaml
 
 linter:
   rules:
+    # -----------------------------------------------------------------------
+    # Phase 3 / WP-5 で追加（ADR-005 の検査条項を機械化できる範囲で機械化する）
+    #
+    # **追加の基準**: 「守る対象のリスクが文書に名指しされていること」＋
+    # 「analyzer が権威であること」の両方。無料だからという理由では足さない
+    # （`docs/verification-principles.md` P1 の処方箋）。
+    # 導入時点の lib での違反はいずれも0件（2026-08-31 実測）。
+    # -----------------------------------------------------------------------
+
+    # await 忘れで書き込みが完了しないまま進むのを止める。
+    # B-2（この製品の利用者にとって最悪の事象）=「保存できたように見えて消える」。
+    # 意図的な fire-and-forget は `unawaited()` で明示すること。
+    - unawaited_futures
+
+    # 型を dynamic へ落としたまま呼ぶのを止める。
+    # WP-5 で実測: hive 2.2.3 は `registerAdapter<dynamic>` を警告するだけで通し、
+    # その結果 `ResolvedAdapter<dynamic>` が全ての値に一致して最初のアダプタが
+    # 全書き込みを横取りする（＝静かにデータが壊れる）。
+    - avoid_dynamic_calls
+
+    # 購読・シンクの取りこぼしを止める。lib では network_provider が該当する。
+    - cancel_subscriptions
+    - close_sinks
+
+    # -----------------------------------------------------------------------
+    # 【記録】「トップレベル可変変数の禁止」は入れられない（2026-08-31 実測）
+    #
+    # 是正計画 §Phase 3 は analyzer ルールとして「トップレベル可変変数の禁止」を
+    # 挙げているが、**Dart の analyzer にそのルールは存在しない**
+    # （`avoid_top_level_mutable_variables` / `avoid_global_state` はどちらも
+    # `undefined_lint`。`dart analyze analysis_options.yaml` で確認）。
+    #
+    # `verification-principles.md` の P1 の処方箋に従い、**自作の検出器は作らない。**
+    # 1) 構造で表現不可能にできない（Dart はトップレベル var を禁止できない）
+    # 2) 消費できる権威の出力が無い
+    # 3) → 記録して受け入れる
+    #
+    # 受け皿は AGENTS.md「負債を作る行為には理由が要る」節（人の規律）＋層1・層3・層5。
+    # 導入時点で lib にトップレベル可変変数は0件（2026-08-31 実測）。
+    # -----------------------------------------------------------------------
+
     - prefer_const_constructors
     - prefer_const_literals_to_create_immutables
     - avoid_print
@@ -26,6 +67,15 @@ analyzer:
     - "**/*.freezed.dart"
   errors:
     invalid_annotation_target: ignore
+
+    # 【昇格の理由】: lint の既定は info で、CI の `flutter analyze --no-fatal-infos`
+    # では exit 0 になる（2026-08-31 実測）。**info のままでは CI を落とせず、
+    # 「検査が存在するだけで一度も発火しない」形になる**（ADR-008 の失敗の中身）。
+    # 上で追加した4つは「破ったら止める」ために入れたので warning へ昇格する。
+    unawaited_futures: warning
+    avoid_dynamic_calls: warning
+    cancel_subscriptions: warning
+    close_sinks: warning
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

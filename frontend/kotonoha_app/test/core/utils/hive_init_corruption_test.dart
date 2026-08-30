@@ -46,7 +46,10 @@ import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
 /// 戻り値・例外送出の有無だけを検証できるようにする。
 Future<T> runGuardingHiveOpenLeak<T>(Future<T> Function() body) async {
   final completer = Completer<T>();
-  runZonedGuarded(() async {
+  // 【unawaited の理由】: この Future は意図的に await しない。完了は completer で
+  // 受け取る。`unawaited_futures`（analysis_options.yaml）に対して「書き忘れではなく
+  // 意図的な fire-and-forget である」ことを明示する。
+  unawaited(runZonedGuarded(() async {
     try {
       completer.complete(await body());
     } catch (e, s) {
@@ -54,7 +57,7 @@ Future<T> runGuardingHiveOpenLeak<T>(Future<T> Function() body) async {
     }
   }, (error, stackTrace) {
     // Hive内部のFire-and-Forgetによる既知のリークを無視する
-  });
+  }));
   return completer.future;
 }
 
