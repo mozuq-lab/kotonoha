@@ -6,10 +6,11 @@
 /// これまでPresetPhrase.isFavoriteという並行真実を読んでいたが、この段で
 /// favoriteProviderを読むように付け替えた。
 ///
-/// 【このテストの狙い】: PresetPhrase.isFavoriteをfalseのままにしても、
-/// favoriteProviderに定型文由来（sourceType == 'preset_phrase'）のお気に入りが
-/// あれば星が塗りつぶしで表示されることを、描画されたウィジェット（最も外側の境界）で
-/// 確認する。これにより「UIがもうフラグを読んでいない」ことを実証する。
+/// 【このテストの狙い】: favoriteProviderに定型文由来（sourceType ==
+/// 'preset_phrase'）のお気に入りがあれば星が塗りつぶしで表示されることを、
+/// 描画されたウィジェット（最も外側の境界）で確認する。
+/// Stage 3b で PresetPhrase.isFavorite を削除したので、星の見た目を決められるのは
+/// favoriteProvider しかない。
 library;
 
 import 'package:flutter/material.dart';
@@ -64,14 +65,12 @@ class _StubTTSNotifier extends TTSNotifier {
 PresetPhrase _createTestPhrase({
   required String id,
   required String content,
-  bool isFavorite = false,
 }) {
   final now = DateTime.now();
   return PresetPhrase(
     id: id,
     content: content,
     category: 'daily',
-    isFavorite: isFavorite,
     displayOrder: 0,
     createdAt: now,
     updatedAt: now,
@@ -81,12 +80,11 @@ PresetPhrase _createTestPhrase({
 void main() {
   group('PresetPhraseScreen お気に入り表示（favoriteProviderが正）', () {
     testWidgets(
-      'favoriteProviderに定型文由来のお気に入りがあると、'
-      'PresetPhrase.isFavoriteがfalseのままでも星が塗りつぶしで表示される',
+      'favoriteProviderに定型文由来のお気に入りがあると、星が塗りつぶしで表示される',
       (tester) async {
-        // Given: PresetPhrase.isFavoriteはfalseのまま（並行真実を更新しない）
+        // Given: 定型文そのものはお気に入りかどうかを知らない
+        // （Stage 3b で PresetPhrase.isFavorite を削除した）
         final phrase = _createTestPhrase(id: 'p1', content: 'おはようございます');
-        expect(phrase.isFavorite, isFalse); // 前提確認: フラグは触っていない
 
         // favoriteProviderの方にだけ、定型文由来（sourceType: 'preset_phrase'）の
         // お気に入りを1件入れておく
@@ -167,6 +165,68 @@ void main() {
         expect(find.text('お気に入り'), findsNothing);
         expect(find.byIcon(Icons.star), findsNothing);
         expect(find.byIcon(Icons.star_border), findsOneWidget);
+      },
+    );
+
+    // =========================================================================
+    // Phase 3 / WP-2 / Stage 3b: 星タップ → favoriteProvider 更新 → 再描画
+    // =========================================================================
+    /// 【このテストの狙い】: 星をタップしてから画面が変わるまでの経路を、
+    /// 途中の値を覗かずに**描画結果だけ**で確かめる。
+    ///
+    /// PresetPhrase.isFavorite が無くなったので、星の見た目を決められるのは
+    /// favoriteProvider しかない。星が塗りつぶしに変わり、お気に入りセクションが
+    /// 現れたなら、タップが favoriteProvider に届いて画面が描き直されたということ。
+    ///
+    /// 【実 Hive を触らない】: Hive を初期化していないので
+    /// repositoryProvider は null を返し、Notifier はインメモリで動く
+    /// （testWidgets の FakeAsync と実ファイル I/O が待ち合うのを避ける）。
+    /// favoriteProvider は差し替えず**本物**を使う。差し替えると、
+    /// 検証したい経路そのものが消える。
+    testWidgets(
+      '星をタップすると、favoriteProviderが更新され、描画された星が塗りつぶしに変わる',
+      (tester) async {
+        // Given: お気に入りが1件も無い状態で定型文を1件表示する
+        final phrase = _createTestPhrase(id: 'p1', content: 'おはようございます');
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              presetPhraseNotifierProvider.overrideWith(
+                () => _TestPresetPhraseNotifier(
+                  PresetPhraseState(phrases: [phrase]),
+                ),
+              ),
+              ttsProvider.overrideWith(_StubTTSNotifier.new),
+            ],
+            child: const MaterialApp(home: PresetPhraseScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 前提: 星は空（枠線）で、お気に入りセクションは出ていない
+        expect(find.byIcon(Icons.star_border), findsOneWidget);
+        expect(find.byIcon(Icons.star), findsNothing);
+        expect(find.text('お気に入り'), findsNothing);
+
+        // When: 星をタップする
+        await tester.tap(find.byIcon(Icons.star_border));
+        await tester.pumpAndSettle();
+
+        // Then: 描画結果として星が塗りつぶしに変わり、お気に入りセクションが現れる
+        expect(find.byIcon(Icons.star), findsOneWidget);
+        expect(find.byIcon(Icons.star_border), findsNothing);
+        expect(find.text('お気に入り'), findsOneWidget);
+        expect(find.text('おはようございます'), findsOneWidget);
+
+        // When: もう一度タップして解除する
+        await tester.tap(find.byIcon(Icons.star));
+        await tester.pumpAndSettle();
+
+        // Then: 星が空に戻り、お気に入りセクションも消える
+        expect(find.byIcon(Icons.star_border), findsOneWidget);
+        expect(find.byIcon(Icons.star), findsNothing);
+        expect(find.text('お気に入り'), findsNothing);
       },
     );
   });

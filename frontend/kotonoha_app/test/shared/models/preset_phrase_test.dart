@@ -63,7 +63,6 @@ void main() {
         id: 'preset-uuid-001',
         content: 'お水をください',
         category: 'health',
-        isFavorite: true,
         displayOrder: 0,
         createdAt: DateTime(2025, 11, 21, 10, 0),
         updatedAt: DateTime(2025, 11, 21, 10, 0),
@@ -90,7 +89,6 @@ void main() {
       expect(retrieved!.id, 'preset-uuid-001'); // 【確認内容】: idフィールドが保持されている
       expect(retrieved.content, 'お水をください'); // 【確認内容】: contentフィールドが保持されている
       expect(retrieved.category, 'health'); // 【確認内容】: categoryフィールドが保持されている
-      expect(retrieved.isFavorite, true); // 【確認内容】: isFavoriteフィールドが保持されている
       expect(retrieved.displayOrder, 0); // 【確認内容】: displayOrderフィールドが保持されている
       expect(retrieved.createdAt,
           DateTime(2025, 11, 21, 10, 0)); // 【確認内容】: createdAtフィールドが保持されている
@@ -113,7 +111,6 @@ void main() {
           id: 'preset-001',
           content: 'おはようございます',
           category: 'daily',
-          isFavorite: true,
           displayOrder: 0,
           createdAt: DateTime(2025, 11, 21, 10, 0),
           updatedAt: DateTime(2025, 11, 21, 10, 0),
@@ -122,7 +119,6 @@ void main() {
           id: 'preset-002',
           content: 'お水をください',
           category: 'health',
-          isFavorite: true,
           displayOrder: 1,
           createdAt: DateTime(2025, 11, 21, 10, 5),
           updatedAt: DateTime(2025, 11, 21, 10, 5),
@@ -161,11 +157,10 @@ void main() {
       expect(allPresets.where((p) => p.category == 'health').length,
           1); // 【確認内容】: 「体調」カテゴリが1件
 
-      // 【検証項目】: isFavoriteフラグが保持されること
-      // 🔵 青信号: REQ-105のお気に入り機能基盤
-      expect(
-          allPresets.where((p) => p.isFavorite).length, 2); // 【確認内容】: お気に入りが2件
-      expect(allPresets.where((p) => !p.isFavorite).length, 1); // 【確認内容】: 通常が1件
+      // 【検証項目】: displayOrderが3件それぞれ保持されること
+      // 🔵 青信号: データの完全性確認
+      expect(allPresets.map((p) => p.displayOrder).toSet(),
+          {0, 1, 2}); // 【確認内容】: 3件のdisplayOrderが保持されている
     });
 
     // TC-011: PresetPhraseカテゴリ分類テスト
@@ -235,62 +230,6 @@ void main() {
       final dailyOnly =
           presetBox.values.where((p) => p.category == 'daily').toList();
       expect(dailyOnly.length, 1); // 【確認内容】: 「日常」カテゴリのみフィルタリングできる
-    });
-
-    // TC-012: PresetPhraseお気に入りフラグテスト
-    test('TC-012: isFavoriteフラグがtrueの定型文とfalseの定型文が正しく識別できることを確認', () async {
-      // 【テスト目的】: isFavoriteフラグの保存と読み込みを確認
-      // 【テスト内容】: お気に入りフラグがbool型で正確に保持されることを検証
-      // 【期待される動作】: お気に入りフラグがbool型で正確に保持される
-      // 🔵 青信号: REQ-105（お気に入り優先表示）の基盤
-
-      // Given（準備フェーズ）
-      // 【テストデータ準備】: お気に入り登録済み定型文と通常定型文
-      // 【初期条件設定】: ボックスが空の状態
-      final favoritePreset = PresetPhrase(
-        id: 'fav-001',
-        content: 'よく使う',
-        category: 'daily',
-        isFavorite: true,
-        displayOrder: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      final normalPreset = PresetPhrase(
-        id: 'normal-001',
-        content: 'たまに使う',
-        category: 'daily',
-        displayOrder: 1,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      // When（実行フェーズ）
-      // 【実際の処理実行】: 両方の定型文を保存
-      // 【処理内容】: お気に入りフラグが異なる定型文を保存
-      await presetBox.put(favoritePreset.id, favoritePreset);
-      await presetBox.put(normalPreset.id, normalPreset);
-
-      // Then（検証フェーズ）
-      // 【結果検証】: お気に入りフラグが正しく保存・識別できることを確認
-      // 【期待値確認】: REQ-105の基盤
-
-      // 【検証項目】: お気に入り定型文のisFavoriteがtrueであること
-      // 🔵 青信号: bool型の正確な保存
-      expect(presetBox.get('fav-001')!.isFavorite,
-          true); // 【確認内容】: お気に入りフラグがtrueで保存されている
-
-      // 【検証項目】: 通常定型文のisFavoriteがfalseであること
-      // 🔵 青信号: bool型の正確な保存
-      expect(presetBox.get('normal-001')!.isFavorite,
-          false); // 【確認内容】: お気に入りフラグがfalseで保存されている
-
-      // 【検証項目】: お気に入りのみフィルタリング可能であること
-      // 🔵 青信号: UI上部優先表示の基盤
-      final favoritesOnly =
-          presetBox.values.where((p) => p.isFavorite).toList();
-      expect(favoritesOnly.length, 1); // 【確認内容】: お気に入りのみフィルタリングできる
-      expect(favoritesOnly.first.id, 'fav-001'); // 【確認内容】: お気に入り定型文が取得できる
     });
 
     // TC-013: PresetPhrase削除テスト
@@ -363,7 +302,6 @@ void main() {
         id: 'preset-001',
         content: 'お水をください',
         category: 'health',
-        isFavorite: true,
         displayOrder: 0,
         createdAt: DateTime(2025, 11, 21, 10, 0),
         updatedAt: DateTime(2025, 11, 21, 10, 0),
@@ -392,7 +330,6 @@ void main() {
       // 🔵 青信号: データの完全性確認
       expect(restored!.content, 'お水をください'); // 【確認内容】: contentが復元されている
       expect(restored.category, 'health'); // 【確認内容】: categoryが復元されている
-      expect(restored.isFavorite, true); // 【確認内容】: isFavoriteが復元されている
       expect(restored.displayOrder, 0); // 【確認内容】: displayOrderが復元されている
 
       // クリーンアップ

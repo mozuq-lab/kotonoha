@@ -36,8 +36,8 @@ class PhraseListWidget extends StatelessWidget {
   /// 【設計変更】: Phase 3 / WP-2 / Stage 3a - お気に入りの正はfavoriteProvider
   /// （ADR-005）。呼び出し側（PresetPhraseScreen）が favoriteProvider の
   /// favorites のうち sourceType == 'preset_phrase' のものの sourceId を
-  /// 集めて渡す。`phrases` の要素の `isFavorite` フラグはもう読まない
-  /// （フラグ自体はStage 3bまで残す）。
+  /// 集めて渡す。`phrases` の要素はお気に入りかどうかを持たない
+  /// （Stage 3b で PresetPhrase.isFavorite を削除した）。
   final Set<String> favoritePresetIds;
 
   /// 【パラメータ定義】: 定型文タップ時のコールバック
@@ -76,7 +76,7 @@ class PhraseListWidget extends StatelessWidget {
     }
 
     // 【データ分類】: お気に入りとカテゴリ別に分類
-    // 【設計変更】: Phase 3 / WP-2 / Stage 3a - p.isFavorite ではなく
+    // 【設計変更】: Phase 3 / WP-2 / Stage 3a -
     // favoritePresetIds.contains(p.id)（favoriteProviderが正）で判定する
     // 🔵 信頼性レベル: 青信号 - REQ-105、REQ-106に基づく
     final favorites =

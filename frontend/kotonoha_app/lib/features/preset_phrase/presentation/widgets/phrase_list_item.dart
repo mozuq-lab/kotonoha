@@ -34,7 +34,8 @@ class PhraseListItem extends StatelessWidget {
   /// （ADR-005）。このウィジェットは単一のphraseしか扱わないため、
   /// 集合ではなく判定済みのbool値を上位から受け取る。
   /// 上位は favoritePresetIds.contains(phrase.id) を渡すこと。
-  /// `phrase.isFavorite` はまだ残っているが、ここでは読まない。
+  /// （Stage 3b で PresetPhrase.isFavorite は削除済み。定型文はお気に入りかを
+  /// 自分では知らない。）
   final bool isFavorite;
 
   /// 【パラメータ定義】: タップ時のコールバック
@@ -102,8 +103,8 @@ class PhraseListItem extends StatelessWidget {
                   ),
                 ),
                 // 【お気に入りアイコン】: お気に入り状態を表示・切り替え
-                // 【設計変更】: Phase 3 / WP-2 / Stage 3a - phrase.isFavorite
-                // ではなく、上位から渡されたisFavorite（favoriteProviderが正）で判定する
+                // 【設計変更】: Phase 3 / WP-2 / Stage 3a - 上位から渡された
+                // isFavorite（favoriteProviderが正）で判定する
                 // 🟡 信頼性レベル: 黄信号 - REQ-105から推測
                 IconButton(
                   icon: Icon(

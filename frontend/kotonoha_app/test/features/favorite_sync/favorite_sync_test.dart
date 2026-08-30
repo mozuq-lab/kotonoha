@@ -48,7 +48,7 @@ void main() {
     ///
     /// 【テスト目的】: toggleFavorite()で定型文をお気に入りにした際、
     ///                FavoriteNotifierにも自動追加されることを確認
-    /// 【テスト内容】: toggleFavorite()でisFavorite=trueになった際の連動
+    /// 【テスト内容】: toggleFavorite()でお気に入りになった際の連動
     /// 【期待される動作】: 両方のProviderに同じcontentが登録される
     ///
     /// 信頼性レベル: 🔵 青信号 - REQ-701に基づく
@@ -61,26 +61,24 @@ void main() {
 
       final presetState = container.read(presetPhraseNotifierProvider);
       final phraseId = presetState.phrases.first.id;
-      expect(
-          presetState.phrases.first.isFavorite, isFalse); // 【確認内容】: 初期状態確認 🔵
+      // 【設計変更】: Phase 3 / WP-2 / Stage 3b - お気に入りの正は favoriteProvider
+      // だけ（ADR-005）。初期状態は「お気に入りが0件」で確認する。
+      expect(container.read(favoriteProvider).favorites,
+          isEmpty); // 【確認内容】: 初期状態確認 🔵
 
       // 【実際の処理実行】: toggleFavorite()でお気に入りに追加
-      // 【処理内容】: 定型文のお気に入りフラグを切り替え
+      // 【処理内容】: 定型文のお気に入りを切り替え
       await presetPhraseNotifier.toggleFavorite(phraseId);
 
-      // 【結果検証】: PresetPhraseのisFavoriteがtrueになること
-      // 【期待値確認】: 定型文画面でお気に入り表示されるため
-      final updatedPresetState = container.read(presetPhraseNotifierProvider);
-      expect(updatedPresetState.phrases.first.isFavorite,
-          isTrue); // 【確認内容】: isFavorite=true 🔵
-
-      // 【結果検証】: FavoriteにもcontentがContainsること（連動機能）
+      // 【結果検証】: お気に入りの正に、この定型文由来の1件が入ること
       // 【期待値確認】: REQ-701「定型文をお気に入りとして登録」の実現
       final favoriteState = container.read(favoriteProvider);
       expect(favoriteState.favorites.length,
           equals(1)); // 【確認内容】: Favoriteに追加されている 🔵
       expect(favoriteState.favorites.first.content,
           equals(content)); // 【確認内容】: 同じcontentが登録 🔵
+      expect(favoriteState.favorites.first.sourceId,
+          equals(phraseId)); // 【確認内容】: どの定型文由来かが分かる 🔵
     });
 
     // =========================================================================
@@ -90,7 +88,7 @@ void main() {
     ///
     /// 【テスト目的】: お気に入り済みの定型文を解除した際、
     ///                FavoriteNotifierからも自動削除されることを確認
-    /// 【テスト内容】: toggleFavorite()でisFavorite=falseになった際の連動
+    /// 【テスト内容】: toggleFavorite()でお気に入りを解除した際の連動
     /// 【期待される動作】: 両方のProviderから該当項目が削除される
     ///
     /// 信頼性レベル: 🔵 青信号 - REQ-701に基づく
@@ -109,15 +107,17 @@ void main() {
       var favoriteState = container.read(favoriteProvider);
       expect(favoriteState.favorites.length,
           equals(1)); // 【確認内容】: Favoriteに追加済み 🔵
+      expect(favoriteState.favorites.first.sourceId,
+          equals(phraseId)); // 【確認内容】: この定型文由来である 🔵
 
       // 【実際の処理実行】: toggleFavorite()でお気に入りを解除
-      // 【処理内容】: 定型文のお気に入りフラグを解除
+      // 【処理内容】: 定型文のお気に入りを解除
       await presetPhraseNotifier.toggleFavorite(phraseId);
 
-      // 【結果検証】: PresetPhraseのisFavoriteがfalseになること
+      // 【結果検証】: 定型文自体は残っていること（お気に入り解除は削除ではない）
       final updatedPresetState = container.read(presetPhraseNotifierProvider);
-      expect(updatedPresetState.phrases.first.isFavorite,
-          isFalse); // 【確認内容】: isFavorite=false 🔵
+      expect(
+          updatedPresetState.phrases.length, equals(1)); // 【確認内容】: 定型文は消えない 🔵
 
       // 【結果検証】: Favoriteからも削除されること
       // 【期待値確認】: UX一貫性のため、解除時も連動が必要

@@ -23,14 +23,12 @@ void main() {
     required String id,
     required String content,
     String category = 'daily',
-    bool isFavorite = false,
   }) {
     final now = DateTime.now();
     return PresetPhrase(
       id: id,
       content: content,
       category: category,
-      isFavorite: isFavorite,
       displayOrder: 0,
       createdAt: now,
       updatedAt: now,

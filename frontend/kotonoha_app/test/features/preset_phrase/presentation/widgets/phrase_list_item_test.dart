@@ -24,7 +24,6 @@ void main() {
     required String id,
     required String content,
     String category = 'daily',
-    bool isFavorite = false,
     int displayOrder = 0,
   }) {
     final now = DateTime.now();
@@ -32,7 +31,6 @@ void main() {
       id: id,
       content: content,
       category: category,
-      isFavorite: isFavorite,
       displayOrder: displayOrder,
       createdAt: now,
       updatedAt: now,
@@ -60,7 +58,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
-              isFavorite: phrase.isFavorite,
+              isFavorite: false,
             ),
           ),
         ),
@@ -83,15 +81,16 @@ void main() {
     /// 関連要件: REQ-105
     /// 優先度: P1 重要
     testWidgets('TC-040-012: お気に入り定型文にお気に入りアイコンが表示される', (tester) async {
-      final phrase =
-          createTestPhrase(id: '1', content: 'お気に入り', isFavorite: true);
+      final phrase = createTestPhrase(id: '1', content: 'お気に入り');
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
-              isFavorite: phrase.isFavorite,
+              // 【設計変更】: Phase 3 / WP-2 / Stage 3b - お気に入りかどうかは
+              // 定型文のフラグではなく、favoriteProviderを読む呼び出し側が渡す
+              isFavorite: true,
             ),
           ),
         ),
@@ -123,7 +122,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
-              isFavorite: phrase.isFavorite,
+              isFavorite: false,
               onTap: () => tapped = true,
             ),
           ),
@@ -162,7 +161,7 @@ void main() {
               width: 200, // 幅を制限
               child: PhraseListItem(
                 phrase: phrase,
-                isFavorite: phrase.isFavorite,
+                isFavorite: false,
               ),
             ),
           ),
@@ -197,7 +196,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
-              isFavorite: phrase.isFavorite,
+              isFavorite: false,
             ),
           ),
         ),
@@ -229,7 +228,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
-              isFavorite: phrase.isFavorite,
+              isFavorite: false,
             ),
           ),
         ),
@@ -265,7 +264,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
-              isFavorite: phrase.isFavorite,
+              isFavorite: false,
             ),
           ),
         ),
@@ -299,7 +298,7 @@ void main() {
               width: 300,
               child: PhraseListItem(
                 phrase: phrase,
-                isFavorite: phrase.isFavorite,
+                isFavorite: false,
               ),
             ),
           ),
@@ -323,7 +322,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
-              isFavorite: phrase.isFavorite,
+              isFavorite: false,
             ),
           ),
         ),
@@ -356,7 +355,7 @@ void main() {
           home: Scaffold(
             body: PhraseListItem(
               phrase: phrase,
-              isFavorite: phrase.isFavorite,
+              isFavorite: false,
               onFavoriteToggle: () => favoriteToggled = true,
             ),
           ),

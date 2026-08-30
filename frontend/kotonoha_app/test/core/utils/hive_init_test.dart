@@ -223,7 +223,6 @@ void main() {
         id: 'preset-001',
         content: 'おはようございます',
         category: 'daily',
-        isFavorite: true,
         displayOrder: 1,
         createdAt: now,
         updatedAt: now,
@@ -238,7 +237,6 @@ void main() {
       expect(loaded!.id, 'preset-001');
       expect(loaded.content, 'おはようございます');
       expect(loaded.category, 'daily');
-      expect(loaded.isFavorite, true);
       expect(loaded.displayOrder, 1);
     });
 

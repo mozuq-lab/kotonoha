@@ -28,7 +28,6 @@ void main() {
     required String id,
     required String content,
     String category = 'daily',
-    bool isFavorite = false,
     int displayOrder = 0,
   }) {
     final now = DateTime.now();
@@ -36,7 +35,6 @@ void main() {
       id: id,
       content: content,
       category: category,
-      isFavorite: isFavorite,
       displayOrder: displayOrder,
       createdAt: now,
       updatedAt: now,
@@ -56,13 +54,9 @@ void main() {
     );
   }
 
-  /// 【テストデータ準備】: Phase 3 / WP-2 / Stage 3a
-  /// お気に入りの正はfavoriteProvider（ADR-005）。PhraseListWidgetはもう
-  /// phrase.isFavorite を読まず、上位から渡されたfavoritePresetIdsで判定する。
-  /// フィクスチャ側のisFavoriteフラグは「このテストでお気に入り扱いにしたい
-  /// 定型文」を表す意図のまま残し、そこからfavoritePresetIdsを組み立てる。
-  Set<String> favoriteIdsOf(List<PresetPhrase> phrases) =>
-      phrases.where((p) => p.isFavorite).map((p) => p.id).toSet();
+  // 【設計変更】: Phase 3 / WP-2 / Stage 3b - PresetPhrase.isFavorite を削除した。
+  // どの定型文がお気に入りかは favoriteProvider だけが知っているので、
+  // 各テストは favoritePresetIds を明示的に渡す（フィクスチャからは導出しない）。
 
   group('PhraseListWidget - 正常系テスト', () {
     // =========================================================================
@@ -91,7 +85,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
-              favoritePresetIds: favoriteIdsOf(phrases),
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -121,13 +115,8 @@ void main() {
       // 【テストデータ準備】: お気に入り2件 + 通常1件
       final phrases = [
         createTestPhrase(id: '1', content: '通常定型文', category: 'daily'),
-        createTestPhrase(
-            id: '2', content: 'お気に入り定型文1', category: 'daily', isFavorite: true),
-        createTestPhrase(
-            id: '3',
-            content: 'お気に入り定型文2',
-            category: 'health',
-            isFavorite: true),
+        createTestPhrase(id: '2', content: 'お気に入り定型文1', category: 'daily'),
+        createTestPhrase(id: '3', content: 'お気に入り定型文2', category: 'health'),
       ];
 
       await tester.pumpWidget(
@@ -135,7 +124,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
-              favoritePresetIds: favoriteIdsOf(phrases),
+              favoritePresetIds: const <String>{'2', '3'},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -176,7 +165,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
-              favoritePresetIds: favoriteIdsOf(phrases),
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -256,7 +245,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
-              favoritePresetIds: favoriteIdsOf(phrases),
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -291,7 +280,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
-              favoritePresetIds: favoriteIdsOf(phrases),
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -326,7 +315,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
-              favoritePresetIds: favoriteIdsOf(phrases),
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -354,8 +343,8 @@ void main() {
     testWidgets('TC-040-008: お気に入りのみ存在する場合の正常表示', (tester) async {
       // 【テストデータ準備】: お気に入りのみ（通常カテゴリなし状態をシミュレート）
       final phrases = [
-        createTestPhrase(id: '1', content: 'お気に入り1', isFavorite: true),
-        createTestPhrase(id: '2', content: 'お気に入り2', isFavorite: true),
+        createTestPhrase(id: '1', content: 'お気に入り1'),
+        createTestPhrase(id: '2', content: 'お気に入り2'),
       ];
 
       await tester.pumpWidget(
@@ -363,7 +352,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
-              favoritePresetIds: favoriteIdsOf(phrases),
+              favoritePresetIds: const <String>{'1', '2'},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -568,10 +557,8 @@ void main() {
     /// 優先度: P0 必須
     testWidgets('TC-040-029: お気に入りとカテゴリの両方が正しい順序で表示される', (tester) async {
       final phrases = [
-        createTestPhrase(
-            id: '1', content: 'お気に入り1', category: 'daily', isFavorite: true),
-        createTestPhrase(
-            id: '2', content: 'お気に入り2', category: 'health', isFavorite: true),
+        createTestPhrase(id: '1', content: 'お気に入り1', category: 'daily'),
+        createTestPhrase(id: '2', content: 'お気に入り2', category: 'health'),
         createTestPhrase(id: '3', content: '日常1', category: 'daily'),
         createTestPhrase(id: '4', content: '体調1', category: 'health'),
         createTestPhrase(id: '5', content: 'その他1', category: 'other'),
@@ -582,7 +569,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
-              favoritePresetIds: favoriteIdsOf(phrases),
+              favoritePresetIds: const <String>{'1', '2'},
               onPhraseSelected: (_) {},
             ),
           ),
@@ -618,7 +605,7 @@ void main() {
           home: Scaffold(
             body: PhraseListWidget(
               phrases: phrases,
-              favoritePresetIds: favoriteIdsOf(phrases),
+              favoritePresetIds: const <String>{},
               onPhraseSelected: (_) {},
             ),
           ),

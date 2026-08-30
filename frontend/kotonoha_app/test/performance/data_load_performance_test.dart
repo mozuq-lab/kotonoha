@@ -77,7 +77,6 @@ void main() {
           id: 'phrase-$i',
           content: '定型文$i',
           category: ['daily', 'health', 'other'][i % 3],
-          isFavorite: i % 10 == 0,
           displayOrder: i,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -170,7 +169,6 @@ void main() {
           id: 'large-phrase-$i',
           content: '定型文$i' * 10, // やや長いcontent
           category: ['daily', 'health', 'other'][i % 3],
-          isFavorite: i % 10 == 0,
           displayOrder: i,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),

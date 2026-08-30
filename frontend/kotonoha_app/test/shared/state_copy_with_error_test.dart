@@ -287,7 +287,9 @@ void main() {
 
       final state = container.read(presetPhraseNotifierProvider);
       expect(state.error, isNull);
-      expect(state.phrases.first.isFavorite, isTrue);
+      // 【設計変更】: Phase 3 / WP-2 / Stage 3b - お気に入りの正はfavoriteProvider
+      // だけ（ADR-005）。切り替えが効いたことはそちらで確認する。
+      expect(container.read(favoriteProvider).favorites.length, equals(1));
     });
 
     test('deletePhrase() の成功でエラーが解消する', () async {

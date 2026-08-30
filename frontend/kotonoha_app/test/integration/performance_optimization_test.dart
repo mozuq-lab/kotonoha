@@ -96,7 +96,6 @@ void main() {
           id: 'e2e-$i',
           content: '定型文$i',
           category: 'daily',
-          isFavorite: i == 0, // 最初のをお気に入りに
           displayOrder: i,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -263,7 +262,6 @@ void main() {
           id: 'large-e2e-$i',
           content: '大量データテスト$i',
           category: ['daily', 'health', 'other'][i % 3],
-          isFavorite: i % 50 == 0,
           displayOrder: i,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),

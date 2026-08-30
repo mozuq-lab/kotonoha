@@ -23,7 +23,6 @@ void main() {
     required String id,
     required String content,
     String category = 'daily',
-    bool isFavorite = false,
     int displayOrder = 0,
   }) {
     final now = DateTime.now();
@@ -31,7 +30,6 @@ void main() {
       id: id,
       content: content,
       category: category,
-      isFavorite: isFavorite,
       displayOrder: displayOrder,
       createdAt: now,
       updatedAt: now,

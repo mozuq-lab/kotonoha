@@ -404,10 +404,6 @@ void main() {
       ];
       await presetRepository.saveAll(userPhrases);
 
-      // 定型文1件（user-001）をお気に入りに追加
-      final favoritePhrase = userPhrases[0].copyWith(isFavorite: true);
-      await presetRepository.save(favoritePhrase);
-
       // 設定でフォントサイズを「大（large）」に変更
       // 【実装対応】: 実際にアプリで使用されているSettingsNotifier
       // （features/settings/providers/settings_provider.dart）を通して検証する
@@ -446,10 +442,6 @@ void main() {
       // Then（検証フェーズ）
       // 追加3件の定型文が保持されている
       expect(loadedPhrases.length, 3, reason: '3件の定型文が保持されている');
-
-      // お気に入り定型文（user-001）が`isFavorite: true`で保存されている
-      final favPhrase = loadedPhrases.firstWhere((p) => p.id == 'user-001');
-      expect(favPhrase.isFavorite, true, reason: 'お気に入りフラグがtrueで保存されている');
 
       // フォントサイズが「大（large）」のまま保持されている
       expect(loadedSettings.fontSize, FontSize.large,
