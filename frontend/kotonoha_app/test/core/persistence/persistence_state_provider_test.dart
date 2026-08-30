@@ -28,14 +28,19 @@ void main() {
     await Hive.close();
     tempDir = await Directory.systemTemp.createTemp('persistence_state_test_');
     Hive.init(tempDir.path);
-    for (final adapter in <TypeAdapter<dynamic>>[
-      HistoryItemAdapter(),
-      PresetPhraseAdapter(),
-      FavoriteItemAdapter(),
-    ]) {
-      if (!Hive.isAdapterRegistered(adapter.typeId)) {
-        Hive.registerAdapter(adapter);
-      }
+    // 【型引数を明示する理由】: `List<TypeAdapter<dynamic>>` でまとめて登録すると
+    // Hive は dynamic 型の adapter として扱い、**すべての書き込みを最初の
+    // adapter へ回す**（Hive 自身が警告を出す）。このテストは読み取りしか
+    // しないので表面化しないが、書き込みを足した瞬間に
+    // 「type 'PresetPhrase' is not a subtype of type 'HistoryItem'」で落ちる。
+    if (!Hive.isAdapterRegistered(0)) {
+      Hive.registerAdapter<HistoryItem>(HistoryItemAdapter());
+    }
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter<PresetPhrase>(PresetPhraseAdapter());
+    }
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter<FavoriteItem>(FavoriteItemAdapter());
     }
   });
 
