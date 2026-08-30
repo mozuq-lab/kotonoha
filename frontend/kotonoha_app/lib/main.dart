@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kotonoha_app/app.dart';
-import 'package:kotonoha_app/core/persistence/favorite_migration.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 
 /// アプリケーションのエントリーポイント
@@ -34,18 +33,6 @@ void main() async {
   // 文字盤・TTS等の基本機能はインメモリ動作で継続できる（NFR-301）。
   try {
     await initHive();
-
-    // 定型文お気に入りの移行: PresetPhrase.isFavorite → FavoriteItem
-    //
-    // 【順序の制約】: initHive()（box オープン）より後、runApp() より前。
-    // provider がまだ無い時点なので、移行関数は box を直接触る。
-    // Stage 3b で PresetPhrase.isFavorite（Hive field 3）を削除すると
-    // ディスク上のフラグは読めなくなるため、この移行を含むビルドが
-    // Stage 3b より前に配布されている必要がある。
-    //
-    // 【失敗の扱い】: 移行自体も内部で例外を飲んで正常に返すが、
-    // 万一送出されても initHive() と同じ扱いで runApp へ到達させる（NFR-301）。
-    await migratePresetPhraseFavorites();
   } catch (error, stackTrace) {
     debugPrint('[main] Hive初期化に失敗しました。インメモリ動作で起動を継続します: $error');
     debugPrintStack(stackTrace: stackTrace);
