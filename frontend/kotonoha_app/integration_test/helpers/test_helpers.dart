@@ -273,9 +273,17 @@ Future<void> tapIconButton(
 /// 【なぜ必要か】: 定型文一覧は `ListView.builder` で、**画面外の要素は
 /// ウィジェットとして構築されない**。したがって `find.text` は 0 件を返し、
 /// 「表示されていない」ではなく「存在しない」ように見える。
-/// E2E の定型文12件がこれで落ちていた（Issue #84）。
 ///
-/// 見つかるまで下方向へスクロールする。見つからなければテストを失敗させる。
+/// 【双方向に探す理由】: `scrollUntilVisible` は与えた delta の向きにしか
+/// 動かない。下向きだけで探すと、**一度下へ行った後で上の要素へ戻れない**。
+/// 見つからないまま maxScrolls を使い切り `Bad state: No element` で落ちる
+/// ——「対象が存在しない」ように見えるが、実際はスクロール位置の問題である。
+/// 実測で確認した（Issue #84）:
+///
+///   最下部へ移動後、上部の語を下向きで探す → Bad state: No element
+///   同じ語を上向きで探す                   → 成功
+///
+/// まず下向き、見つからなければ上向きに探す。
 Future<void> scrollIntoView(
   WidgetTester tester,
   Finder finder, {
@@ -289,19 +297,25 @@ Future<void> scrollIntoView(
   }
 
   final scrollable = find.byType(Scrollable);
-  expect(
-    scrollable,
-    findsWidgets,
-    reason: 'スクロール可能な領域が見つからない',
-  );
+  expect(scrollable, findsWidgets, reason: 'スクロール可能な領域が見つからない');
 
-  await tester.scrollUntilVisible(
-    finder,
-    delta,
-    scrollable: scrollable.first,
-    maxScrolls: maxScrolls,
-  );
-  await tester.pumpAndSettle();
+  for (final direction in <double>[delta, -delta]) {
+    try {
+      await tester.scrollUntilVisible(
+        finder,
+        direction,
+        scrollable: scrollable.first,
+        maxScrolls: maxScrolls,
+      );
+      await tester.pumpAndSettle();
+      return;
+    } on StateError {
+      // この向きでは見つからなかった。逆向きを試す。
+      await tester.pumpAndSettle();
+    }
+  }
+
+  fail('スクロールしても対象が見つからない: $finder');
 }
 
 /// 遅延生成リストの要素をスクロールして出してからタップする
