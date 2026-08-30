@@ -350,7 +350,64 @@ Phase 3 WP-1 の実例。実装者（＝私）は次を単独で行った。
 
 ## 3. 実測で確認した技術的事実
 
-新しい backend を書くときに再発しうるもの。すべて実際に実行して確認した。
+再発しうるもの。**すべて実際に実行して確認した。**
+backend 側は「新しい backend を書くとき」、frontend 側は「テストを書くとき」に効く。
+
+### `testWidgets` の中では実 Hive への書き込みが完了しない（`runAsync` で解決する）
+
+**実測（2026-08-30、Flutter 3.41.5 / hive 2.2.3）**: 同一のコードを、テストの
+種類だけ変えて実行した。
+
+| 条件 | 結果 |
+|---|---|
+| 素の `test()` 内で `box.put()` | **3ms で完了** |
+| `testWidgets()` 内で `box.put()` | **完了しない**（ハング） |
+| `testWidgets()` 内 ＋ **`await tester.runAsync(() => box.put(...))`** | **7ms で完了** |
+
+**機序**: `testWidgets` は本体を `FakeAsync` のスコープ内で実行する
+（`flutter_test/lib/src/binding.dart`: "Call the testBody inside a [FakeAsync]
+scope on which [pump] can advance time"）。この中では時間が `tester.pump()` で
+しか進まない。一方 Hive の VM バックエンドは `RandomAccessFile` による
+**実ファイル I/O** を行い、その完了は OS スレッド経由で実イベントループに届く。
+テスト本体は FakeAsync の中で `await` して止まっているため、その完了が
+処理されず、互いに待ち合う。
+
+Flutter 自身が `runAsync` の文書でこの状況を名指ししている——
+"methods **spawn isolates or OS threads** and thus cannot be executed
+synchronously by calling `pump`"。`runAsync` は fake async から脱出する
+zone を fork する。
+
+**なぜここに書くか**: この制約に気づかないと、症状は「テストが無言でハングする」
+だけで、原因を指す情報が一切出ない。実際、
+`preset_phrase_screen_debounce_test.dart` は
+「initializeDefaultPhrases() は phrases が空の場合のみ動作するため、非空の初期状態を
+与えることで実データ投入をスキップさせる」というコメントとともに**この経路を回避**
+しており、対処法（`runAsync`）ではなく回避が選ばれていた。
+
+**帰結**: **`initializeDefaultPhrases()`（全利用者が通る初回起動の経路）は
+widget 層で一度も検証されていない。** E2E だけがこの経路を通るため、
+そこでの失敗診断が高くついていた（Issue #84）。
+
+### Hive の `registerAdapter` は型引数を省略すると全書き込みを壊す
+
+**実測（2026-08-30）**: `List<TypeAdapter<dynamic>>` でループ登録すると、
+Hive は dynamic 型の adapter として扱い、**すべての書き込みを最初の adapter へ
+回す**。Hive 自身が警告を出す。
+
+```
+Registering type adapters for dynamic type is must be avoided, otherwise all the
+write requests to Hive will be handled by given adapter.
+```
+
+読み取りしかしないテストでは表面化せず、書き込みを足した瞬間に
+`type 'PresetPhrase' is not a subtype of type 'HistoryItem'` で落ちる。
+`Hive.registerAdapter<PresetPhrase>(PresetPhraseAdapter())` のように
+**型引数を明示する**こと。
+
+**この誤りは lint 対応から生まれた。** `curly_braces_in_flow_control_structures`
+を消すために `if` の羅列をループへ書き換えた結果である。
+**書き換えが別種の欠陥を作っていないかは、lint が緑になっても分からない。**
+
 
 ### `SecretStr`（pydantic 2.12.5 で確認）
 

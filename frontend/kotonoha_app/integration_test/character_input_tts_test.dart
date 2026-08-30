@@ -97,7 +97,8 @@ void main() {
         expect(find.text('入力内容をすべて消去しますか？'), findsOneWidget);
 
         // 【実際の処理実行】: 確認ダイアログで「はい」を選択
-        await tapButton(tester, 'はい');
+        // 画面本体にもクイック応答の「はい」があるため、ダイアログ内に限定する
+        await tapDialogButton(tester, 'はい');
 
         // 【結果検証】: 入力欄が空になること（プレースホルダーが表示される）
         expect(find.text('あいうえお'), findsNothing);
@@ -111,8 +112,12 @@ void main() {
         // 【テストデータ準備】: アプリを初期化
         await pumpApp(tester);
 
-        // 【前提条件設定】: 長い文字列を入力
-        await typeOnCharacterBoard(tester, 'こんにちはありがとうございます');
+        // 【前提条件設定】: 長めの文字列を入力
+        // 【濁音を使わない理由】: 「ありがとう」の「が」は既定表示外のカテゴリにあり、
+        // 直接タップできない（dakutenKey = '゛' を使うのがアプリの設計）。
+        // このテストの主題は読み上げの停止であって濁音入力ではないため、
+        // 清音だけで長さを稼ぐ。濁音入力は別途テストすること（Issue #84）。
+        await typeOnCharacterBoard(tester, 'こんにちはさようなら');
 
         // 【実際の処理実行】: 読み上げボタンをタップ
         await tapButton(tester, '読み上げ');
@@ -167,7 +172,8 @@ void main() {
         expect(find.text('入力内容をすべて消去しますか？'), findsOneWidget);
 
         // 【実際の処理実行】: 確認ダイアログで「いいえ」を選択
-        await tapButton(tester, 'いいえ');
+        // 画面本体にもクイック応答の「いいえ」があるため、ダイアログ内に限定する
+        await tapDialogButton(tester, 'いいえ');
 
         // 【結果検証】: 入力欄の内容が保持されること
         expect(find.text('あいうえお'), findsOneWidget);
@@ -389,7 +395,8 @@ void main() {
 
           // サイクル: 全消去
           await tapIconButton(tester, Icons.delete_outline);
-          await tapButton(tester, 'はい');
+          // 画面本体にもクイック応答の「はい」があるため、ダイアログ内に限定する
+          await tapDialogButton(tester, 'はい');
         }
 
         // 【結果検証】: アプリが安定動作していること
