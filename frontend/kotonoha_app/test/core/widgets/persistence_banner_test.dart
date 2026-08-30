@@ -114,6 +114,24 @@ void main() {
       }
     });
 
+    testWidgets('failedAreas が空でも警告が消えない（フェイルセーフ）', (tester) async {
+      // 【なぜ】: ADR-005 は「保存されないことは必ず伝える」と定めている。
+      // resolvePersistenceState は空集合の RecoverableFailure を作らないが、
+      // コンストラクタは公開されており、型が空集合を禁じてもいない。
+      // failure 状態で無音になる経路は、到達可能性に関わらず塞ぐ。
+      // 沈黙は、文言が多少不自然であることより悪い。
+      await _pumpBanner(
+        tester,
+        const PersistenceRecoverableFailure(<PersistedArea>{}),
+      );
+
+      expect(find.textContaining('保存できません'), findsOneWidget);
+      expect(
+        tester.getSize(find.byType(PersistenceBanner)).height,
+        greaterThan(0),
+      );
+    });
+
     testWidgets('保存できない警告が読み上げで二重にならない', (tester) async {
       // 【なぜ】: Semantics(label:) の子に同じ文言の Text を置くと、
       // ラベルが連結されて同一ノードに2回入り、読み上げが二重になる。

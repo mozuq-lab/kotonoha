@@ -34,6 +34,27 @@ class _ControllableNetworkNotifier extends NetworkNotifier {
   void setState(NetworkState next) => state = next;
 }
 
+/// [finder] が指すウィジェットのセマンティクスラベルに、[phrase] が
+/// 何回現れるかを数える
+///
+/// 【なぜ数えるか】: `Semantics(label:)` の子に同じ文言の `Text` を置くと
+/// ラベルが連結され、スクリーンリーダーが同じ文を2回読む。
+/// 「Semantics が在ること」を見るだけのテストでは、この退行を検出できない。
+///
+/// [phrase] を含むテキストの直近の `Semantics` を辿る。ラッパーウィジェットを
+/// 直接指すと、画面本体まで含む親ノードを拾ってラベルが空になることがある。
+int _labelOccurrences(WidgetTester tester, String phrase) {
+  final node = tester.getSemantics(
+    find
+        .ancestor(
+          of: find.textContaining(phrase),
+          matching: find.byType(Semantics),
+        )
+        .first,
+  );
+  return phrase.allMatches(node.label).length;
+}
+
 /// [finder] が指すテキストに実際に適用される装飾を返す
 TextDecoration _effectiveDecoration(WidgetTester tester, Finder finder) {
   final text = tester.widget<Text>(finder);
@@ -95,6 +116,62 @@ void main() {
     );
 
     // 表示タイマーを流し切ってから終わる
+    await tester.pump(const Duration(seconds: 10));
+  });
+
+  testWidgets('オフラインバナーが読み上げで二重にならない', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          persistenceStateProvider.overrideWithValue(const PersistenceReady()),
+          networkProvider.overrideWith(_OfflineNetworkNotifier.new),
+        ],
+        child: const MaterialApp(
+          home: AppShell(child: Scaffold(body: Text('画面本体'))),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      _labelOccurrences(tester, 'オフライン'),
+      1,
+    );
+
+    handle.dispose();
+  });
+
+  testWidgets('オンライン復帰通知が読み上げで二重にならない', (tester) async {
+    final handle = tester.ensureSemantics();
+    final container = ProviderContainer(
+      overrides: [
+        persistenceStateProvider.overrideWithValue(const PersistenceReady()),
+        networkProvider.overrideWith(_ControllableNetworkNotifier.new),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: AppShell(child: Scaffold(body: Text('画面本体'))),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    (container.read(networkProvider.notifier) as _ControllableNetworkNotifier)
+        .setState(NetworkState.online);
+    await tester.pump();
+
+    expect(
+      _labelOccurrences(tester, 'オンラインに戻りました'),
+      1,
+    );
+
+    handle.dispose();
     await tester.pump(const Duration(seconds: 10));
   });
 }

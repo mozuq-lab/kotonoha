@@ -68,7 +68,12 @@ final class PersistenceReady extends PersistenceState {
 /// `openBoxWithRecovery` は非破損エラー（ディスクフル・権限）では box を
 /// 削除せず null を返すため、原因が解消すれば次回のオープンは成功する。
 final class PersistenceRecoverableFailure extends PersistenceState {
-  /// 保存できない領域。空にはならない
+  /// 保存できない領域
+  ///
+  /// `resolvePersistenceState` は空集合を作らないが、**型もコンストラクタも
+  /// それを強制していない**（`const` コンストラクタでは要素数を assert できない）。
+  /// 描画側は空集合でも無音にならないよう倒すこと——ADR-005 は
+  /// 「保存されないことは必ず伝える」と定めている。
   final Set<PersistedArea> failedAreas;
 
   /// 失敗した領域を指定して作る

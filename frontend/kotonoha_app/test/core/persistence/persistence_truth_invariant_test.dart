@@ -36,19 +36,34 @@ List<File> _libSources() {
 
 void main() {
   group('永続化状態のキャッシュが古くならないための前提', () {
-    test('実行中に Hive box を閉じるコードが lib に無い', () {
+    test('実行中に Hive の open set を変える呼び出しが lib に無い', () {
       final offenders = <String>[];
 
       for (final file in _libSources()) {
         final source = file.readAsStringSync();
-        // 【hive_init.dart の除外】: 破損復旧のための deleteBoxFromDisk は
+
+        // 【Hive を触らないファイルは対象外】: これを先に置くことで、
+        // 下の `.close()` のような広いパターンを入れても
+        // StreamSubscription.close() 等を誤検出しない。
+        if (!source.contains('package:hive')) continue;
+
+        // 【hive_init.dart の除外】: 破損復旧の削除と box のオープンは
         // initHive の中＝runApp の前にしか走らないため、実行中の状態変化に
-        // あたらない。
-        final isHiveInit = file.path.endsWith('hive_init.dart');
+        // あたらない。パス区切りまで含めて比較する（`*_hive_init.dart` という
+        // 名前を付けて検査を外れる抜け道を塞ぐ）。
+        final isHiveInit = file.path.endsWith('/hive_init.dart');
 
         for (final pattern in <String>[
-          'Hive.close(',
-          if (!isHiveInit) 'deleteBoxFromDisk(',
+          // Hive.close() / h.close() / Hive.box(...).close() を一括で拾う。
+          // receiver の書き方に依存しない。
+          '.close()',
+          // deleteFromDisk / deleteBoxFromDisk の両方
+          if (!isHiveInit) 'FromDisk(',
+          // 型引数の有無に依存しない（`Hive.openBox('x')` が最も書かれやすい）
+          if (!isHiveInit) 'Hive.openBox',
+          if (!isHiveInit) 'Hive.openLazyBox',
+          // hive_init.dart の公開ヘルパを他ファイルから呼ぶ経路
+          if (!isHiveInit) 'openBoxWithRecovery',
         ]) {
           if (source.contains(pattern)) {
             offenders.add('${file.path}: $pattern');
@@ -59,33 +74,67 @@ void main() {
       expect(
         offenders,
         isEmpty,
-        reason: '実行中に box を閉じると persistenceStateProvider の値が古くなり、'
+        reason: '実行中に Hive の open set が変わると '
+            'persistenceStateProvider の値が古くなり、'
             '「保存できていないのにバナーが出ない」が起きる。'
             'provider を box の状態変化に追随させる改修が必要（台帳 Issue #85）。'
             '検出: $offenders',
       );
     });
 
-    test('Hive box を開くのは hive_init.dart だけである', () {
-      final offenders = <String>[];
+    test('main.dart は runApp より前に initHive を await する', () {
+      // 【なぜ必要か】: 前提は2つある。「box を開くのは initHive の中だけ」と
+      // 「それが runApp の前に完了する」。後者を検査していなかったため、
+      // await を1つ外すだけで前提が崩れてもテストは緑のままだった。
+      final source = File('lib/main.dart').readAsStringSync();
 
-      for (final file in _libSources()) {
-        if (file.path.endsWith('hive_init.dart')) continue;
-        final source = file.readAsStringSync();
-        // コメント中の言及は対象外。実際の呼び出し（`Hive.openBox<`）を見る。
-        if (source.contains('Hive.openBox<') ||
-            source.contains('Hive.openLazyBox<')) {
-          offenders.add(file.path);
-        }
-      }
-
+      final awaitIndex = source.indexOf('await initHive()');
       expect(
-        offenders,
-        isEmpty,
-        reason: 'box を後から開くと、それ以前に評価された '
-            'persistenceStateProvider が古い状態を返し続ける。'
-            '検出: $offenders',
+        awaitIndex,
+        greaterThanOrEqualTo(0),
+        reason: 'main.dart が initHive() を await していない。'
+            'runApp 後に box が開くと、それ以前に評価された '
+            'persistenceStateProvider が古い状態を返し続ける。',
+      );
+      expect(
+        source.indexOf('runApp('),
+        greaterThan(awaitIndex),
+        reason: 'runApp が initHive() の await より前にある。',
       );
     });
   });
+
+  group('この検査自体が機能しているかの自己検査', () {
+    // 【なぜ必要か】: この検査は「Provider キャッシュ問題は本番で到達不能」
+    // という判断の唯一の根拠である。ザルなら、その判断ごと崩れる。
+    // 検出対象の文字列が実際に検出されることを、代表例で固定する。
+    test('回避されやすい書き方が検出パターンに含まれている', () {
+      const evasions = <String, String>{
+        "Hive.openBox('x')  型引数なし": 'Hive.openBox',
+        "Hive.box<T>('history').close()  box 単体を閉じる": '.close()',
+        'Hive.deleteFromDisk()': 'FromDisk(',
+        'Hive.openLazyBox()': 'Hive.openLazyBox',
+        'openBoxWithRecovery を他ファイルから呼ぶ': 'openBoxWithRecovery',
+      };
+
+      for (final entry in evasions.entries) {
+        expect(
+          _runtimePatterns.contains(entry.value),
+          isTrue,
+          reason: '${entry.key} を取り逃す（パターン ${entry.value} が無い）',
+        );
+      }
+    });
+  });
 }
+
+/// 実行中に Hive の open set を変えうる呼び出しの検出パターン
+///
+/// 上のテスト本体と自己検査の両方が参照する。片方だけ直して食い違うことを防ぐ。
+const _runtimePatterns = <String>[
+  '.close()',
+  'FromDisk(',
+  'Hive.openBox',
+  'Hive.openLazyBox',
+  'openBoxWithRecovery',
+];

@@ -93,9 +93,17 @@ class PersistenceBanner extends ConsumerWidget {
           failedAreas,
         ),
     };
-    final message = failedAreas.isEmpty
+    // 【フェイルセーフ】: ADR-005 は「保存されないことは**必ず**伝える」と
+    // 定めている。failure 状態で無音になる経路を作ってはならない。
+    // resolvePersistenceState は空集合の RecoverableFailure を作らないが、
+    // コンストラクタは公開されており、型が空集合を禁じてもいない。
+    // 領域名が得られないときは、対象を特定しない文言に倒す。
+    // **沈黙は、文言が多少不自然であることより悪い。**
+    final message = colors == null
         ? null
-        : '${_areaNames(failedAreas)}を保存できません。アプリを閉じると消えます';
+        : failedAreas.isEmpty
+            ? '保存できません。アプリを閉じると消えます'
+            : '${_areaNames(failedAreas)}を保存できません。アプリを閉じると消えます';
 
     if (colors == null || message == null) return const SizedBox.shrink();
 
