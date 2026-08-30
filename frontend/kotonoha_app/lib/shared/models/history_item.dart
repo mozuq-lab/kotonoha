@@ -30,21 +30,21 @@ class HistoryItem extends HiveObject {
   @HiveField(3)
   final String type; // 'manualInput', 'preset', 'aiConverted', 'quickButton'
 
-  /// 【フィールド定義】: お気に入りフラグ
-  /// 【実装内容】: 履歴からお気に入りに追加された場合にtrue
-  /// 🔵 信頼性レベル: 青信号 - REQ-603（履歴からお気に入り登録）に基づく
-  @HiveField(4)
-  final bool isFavorite;
+  // 【欠番】: field 4 は旧 isFavorite（Phase 3 / WP-2 / Stage 4 で削除）。
+  // お気に入りの正は favoriteProvider だけ（ADR-005「1概念1真実」）。
+  // 常に false しか書かれておらず UI も一度も読んでいなかったため、移行不要で削除した。
+  // **番号は詰めない**（field 4 は最終フィールドなので後続への影響は無いが、
+  // writeByte の総数だけ 5→4 にする）。経緯は history_item_adapter.dart と
+  // test/shared/models/history_item_adapter_backward_compat_test.dart を見ること。
 
   /// 【コンストラクタ】: HistoryItem生成
-  /// 【実装内容】: 全フィールドを初期化（isFavoriteのみデフォルト値false）
+  /// 【実装内容】: 全フィールドを初期化
   /// 🔵 信頼性レベル: 青信号 - テストケースTC-004〜TC-008の要件に基づく
   HistoryItem({
     required this.id,
     required this.content,
     required this.createdAt,
     required this.type,
-    this.isFavorite = false,
   });
 
   /// 【copyWithメソッド】: 不変オブジェクトの部分更新
@@ -56,14 +56,12 @@ class HistoryItem extends HiveObject {
     String? content,
     DateTime? createdAt,
     String? type,
-    bool? isFavorite,
   }) {
     return HistoryItem(
       id: id ?? this.id,
       content: content ?? this.content,
       createdAt: createdAt ?? this.createdAt,
       type: type ?? this.type,
-      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 
@@ -89,6 +87,6 @@ class HistoryItem extends HiveObject {
   /// 🔵 信頼性レベル: 青信号 - デバッグ・ログ出力のため
   @override
   String toString() {
-    return 'HistoryItem(id: $id, content: $content, createdAt: $createdAt, type: $type, isFavorite: $isFavorite)';
+    return 'HistoryItem(id: $id, content: $content, createdAt: $createdAt, type: $type)';
   }
 }

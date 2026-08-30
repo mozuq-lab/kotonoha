@@ -12,7 +12,14 @@ import 'package:kotonoha_app/shared/models/history_item.dart';
 /// - 1: content (String)
 /// - 2: createdAt (DateTime)
 /// - 3: type (String)
-/// - 4: isFavorite (bool)
+/// - 4: **欠番**（旧 isFavorite (bool)。Phase 3 / WP-2 / Stage 4 で削除）
+///
+/// 常に false しか書かれておらず、UI も一度も読んでいなかったため移行不要で削除した。
+/// **フィールド番号を詰めないこと。** field 4 は最終フィールドだったので後続フィールドへの
+/// 影響は無いが、旧バイト列（端末に既にあるレコード）は自己記述的（フィールド番号を
+/// キーにした map）に読むため、0〜3 の番号を変えなければ旧レコードも新レコードも
+/// 同じコードで読める。`writeByte` の総数だけ 5→4 にする。
+/// 根拠テスト: test/shared/models/history_item_adapter_backward_compat_test.dart
 ///
 /// 🔵 信頼性レベル: 青信号 - REQ-601、REQ-5003に基づく
 class HistoryItemAdapter extends TypeAdapter<HistoryItem> {
@@ -30,14 +37,16 @@ class HistoryItemAdapter extends TypeAdapter<HistoryItem> {
       content: fields[1] as String,
       createdAt: fields[2] as DateTime,
       type: fields[3] as String,
-      isFavorite: fields[4] as bool? ?? false,
+      // fields[4] は旧 isFavorite。読まずに捨てる（番号は詰めない）
     );
   }
 
   @override
   void write(BinaryWriter writer, HistoryItem obj) {
     writer
-      ..writeByte(5)
+      // 【フィールド数】: 旧形式は5。isFavorite を書かなくなったので4。
+      // 番号（0,1,2,3）はそのまま。総数だけが減る。
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -45,9 +54,7 @@ class HistoryItemAdapter extends TypeAdapter<HistoryItem> {
       ..writeByte(2)
       ..write(obj.createdAt)
       ..writeByte(3)
-      ..write(obj.type)
-      ..writeByte(4)
-      ..write(obj.isFavorite);
+      ..write(obj.type);
   }
 
   @override

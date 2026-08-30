@@ -88,7 +88,6 @@ class HistoryNotifier extends Notifier<HistoryState> {
         content: h.content,
         createdAt: h.createdAt,
         type: h.type.name,
-        isFavorite: false,
       );
 
   /// 【メソッド定義】: 履歴を追加する

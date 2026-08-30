@@ -192,7 +192,6 @@ void main() {
         content: 'テストメッセージ',
         createdAt: now,
         type: 'manualInput',
-        isFavorite: true,
       );
 
       // When
@@ -204,7 +203,6 @@ void main() {
       expect(loaded!.id, 'test-001');
       expect(loaded.content, 'テストメッセージ');
       expect(loaded.type, 'manualInput');
-      expect(loaded.isFavorite, true);
     });
 
     // TC-054-002: PresetPhraseの保存・読み込みテスト
