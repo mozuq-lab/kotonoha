@@ -189,8 +189,16 @@ jobs:
           # 除外理由と件数をログに出す。
           #
           # 恒久的に除外する:
-          # - performance_profiling_e2e_test.dart: 実性能測定でCIでは不安定
           # - integration_test/device_test/: 実機前提（そもそもglob対象外）
+          #
+          # 【削除済み（2026-08-30）】performance_profiling_e2e_test.dart は削除した。
+          # 11件のうち9件は CI で動く既存テストが同じ閾値を実測しており
+          # （文字盤タップ 100ms は e2e_phase3_integration の lessThan(100)、
+          # TTS 開始 1秒 は performance_optimization の lessThanOrEqualTo(1000)）、
+          # 未被覆だった2件（長文500文字のTTS開始・空入力からのTTS応答）は
+          # test/integration/performance_optimization_test.dart へ移植した。
+          # ヘッドレスWebでの計測は、NFRが対象とするタブレット実機の性能を
+          # 表さないため、除外し続けるより削除して被覆を動く層へ寄せた。
           #
           # 未検証のため除外する:
           # - ai_conversion_e2e_test.dart

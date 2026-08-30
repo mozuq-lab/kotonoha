@@ -50,7 +50,6 @@ flutter test integration_test/ -d <device_id>
 | 除外対象 | 理由 |
 |---|---|
 | `ai_conversion_e2e_test.dart` | AI変換APIとAPIキーが必要 |
-| `performance_profiling_e2e_test.dart` | 実性能測定でCIでは不安定 |
 | `device_test/` 配下 | 実機前提（サブディレクトリのためglob対象外） |
 
 ## テストファイル構成
@@ -70,7 +69,6 @@ frontend/kotonoha_app/
     ├── preset_phrase_test.dart          # 定型文テスト (TASK-0083)
     ├── large_emergency_buttons_test.dart # 大ボタン・緊急ボタンテスト (TASK-0084)
     ├── ai_conversion_e2e_test.dart      # AI変換（CI除外: API必須）
-    ├── performance_profiling_e2e_test.dart # 性能計測（CI除外: 不安定）
     ├── device_test/                     # 実機前提（CI除外）
     └── helpers/
         ├── helpers.dart                 # ヘルパーエクスポート

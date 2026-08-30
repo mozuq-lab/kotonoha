@@ -135,6 +135,64 @@ void main() {
     // =========================================================================
     // 統合テスト: 連続操作時のパフォーマンス維持
     // =========================================================================
+    test('長文（500文字）でもTTS読み上げ開始が1秒以内', () async {
+      // 【テスト目的】: 長文でも読み上げ開始までの時間が要件を満たすこと
+      // 【なぜ必要か】: 利用者は1文字ずつ入力するため長文を作ることがある。
+      // 文字数に比例して開始が遅くなると、待たされたぶんだけ会話が途切れる。
+      // 【移植元】: integration_test/performance_profiling_e2e_test.dart
+      // TC-E2E-088-010。CI で一度も実行されていなかったため、動く層へ移した。
+      // 🔵 青信号 - CLAUDE.md「TTS読み上げ開始: 1秒以内」
+
+      // Given: 500文字のテキストと初期化済みTTS
+      await ttsService.initialize();
+      final longText = 'あ' * 500;
+
+      // When: 読み上げ開始までの時間を計測
+      final stopwatch = Stopwatch()..start();
+      await ttsService.speak(longText);
+      stopwatch.stop();
+
+      // Then: 1秒以内に開始する
+      expect(
+        stopwatch.elapsedMilliseconds,
+        lessThanOrEqualTo(1000),
+        reason: '長文（500文字）でTTS読み上げ開始が1秒を超えた'
+            '（${stopwatch.elapsedMilliseconds}ms）',
+      );
+      expect(ttsService.state, isNot(TTSState.error));
+    });
+
+    test('空文字の読み上げ要求でもエラー状態にならず、後続の読み上げができる', () async {
+      // 【テスト目的】: 空入力で読み上げを要求しても壊れないこと
+      // 【なぜ必要か】: 利用者は誤タップで空のまま読み上げを押しうる。
+      // ここで TTS がエラー状態に落ちると、次の発話までできなくなる——
+      // 発話で訂正できない利用者にとって復帰手段が無い。
+      // 【移植元】: integration_test/performance_profiling_e2e_test.dart
+      // TC-E2E-088-011。
+      // 🟡 黄信号 - 要件からの妥当な推測（誤タップは B-2 の観点）
+
+      // Given: 初期化済みTTS
+      await ttsService.initialize();
+
+      // When: 空文字で読み上げを要求する
+      await ttsService.speak('');
+
+      // Then: エラー状態にならない
+      expect(
+        ttsService.state,
+        isNot(TTSState.error),
+        reason: '空文字の読み上げ要求でTTSがエラー状態に落ちた',
+      );
+
+      // Then: 続けて通常の読み上げができる
+      await ttsService.speak('みずをください');
+      expect(
+        ttsService.state,
+        isNot(TTSState.error),
+        reason: '空文字の要求の後、通常の読み上げができなくなった',
+      );
+    });
+
     test('連続操作: 複数の定型文を連続選択・読み上げ', () async {
       // 【テスト目的】: 複数の定型文を連続して選択・読み上げする際のパフォーマンス
       // 【テスト内容】: 5回連続の選択・読み上げで各回100ms以内
