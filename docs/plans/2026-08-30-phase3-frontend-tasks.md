@@ -20,7 +20,7 @@
 | WP | 状態 |
 |---|---|
 | WP1 永続化の状態を明示する | **完了**（下記 §WP1） |
-| **WP2 お気に入りを1つの真実にする** | **完了**（5段。`feature/wp2-favorite-single-truth`。移行の段は撤回） |
+| **WP2 お気に入りを1つの真実にする** | **完了・main にマージ済み**（PR #88。E2E 4本を含む CI 緑。移行の段は撤回） |
 | WP3 往復テスト | **ADR-007 のリリース条件に入っていない** |
 | WP4 E2E | **完了**（4経路が CI 緑。Issue #84 / PR #87） |
 | WP5 Hive 許可リスト＋analyzer ルール | 未着手。**1d はリリース条件** |
@@ -662,11 +662,13 @@ UI → provider → repository → storage → 戻り。層を飛ばして下だ
 
 ## フェーズ末にやること（§5 条件4）
 
-- [ ] SDD の ledger の ruling / parked / deferred を **台帳 Issue #85 へ転記**する
-      （ledger は完了時に消える。判断を状態を持たない場所に置かない）
+- [x] SDD の ledger の ruling / parked / deferred を **台帳 Issue #85 へ転記**する
+      （WP2 分は転記済み。L-39〜L-46。**撤回した自分の裁定2件も含めた**）
 - [ ] 決定に触れる ruling は ADR へ昇格する
       （**確定分: WP2 の「UI の射影は content でよい。真実が favoriteProvider に1つで
       あることが要点」を ADR-005 へ**）
-- [ ] マージ前の最終 whole-branch レビューを **2系統**（Claude ＋ Codex）で行う（§5 条件3）
+- [x] マージ前の最終 whole-branch レビューを **2系統**（Claude ＋ Codex）で行う（§5 条件3）
+      （WP2 で実施。**片方しか見つけなかった指摘が2件とも重要だった**——E2E 未実行と、
+      連鎖削除と ADR-005 の矛盾）
 - [ ] この計画文書を破棄し、`docs/plans/2026-08-29-architecture-remediation.md` の
       状態行を更新する
