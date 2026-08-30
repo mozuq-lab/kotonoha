@@ -84,6 +84,30 @@ Future<void> pumpApp(
   await tester.pumpAndSettle();
 }
 
+/// アプリを再起動した状態にする
+///
+/// 【なぜ pumpApp の再呼び出しでは駄目か】: `pumpWidget` に同じ型のウィジェットを
+/// 渡すと、Flutter は要素を**作り直さず更新する**。`ProviderScope` の要素が
+/// 生き続けるため Riverpod の `ProviderContainer` も維持され、その中の
+/// `GoRouter` も直前の画面のまま残る。つまり「再起動したつもり」で
+/// **画面遷移すらリセットされない**。
+///
+/// E2E の永続化テスト2件がこれで落ちていた——再起動後にホームへ戻っている前提で
+/// AppBar のボタンを探していたが、実際は前の画面のままだった（Issue #84）。
+///
+/// いったん別のウィジェットを描画して要素を破棄し、そのうえで組み直す。
+/// Hive の box は開いたままなので、永続化されたデータは保持される
+/// （このヘルパーが検証したいのはまさにそれである）。
+Future<void> restartApp(
+  WidgetTester tester, {
+  dynamic overrides,
+}) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pumpAndSettle();
+
+  await pumpApp(tester, overrides: overrides, clearData: false);
+}
+
 /// 履歴・お気に入りデータをクリアするヘルパー
 ///
 /// テスト間の独立性を確保するために使用。
@@ -244,6 +268,49 @@ Future<void> tapIconButton(
 ///
 /// [tester]: WidgetTester
 /// [label]: Semanticsラベル
+/// 遅延生成リストの中から [finder] が指す要素を画面内へスクロールして出す
+///
+/// 【なぜ必要か】: 定型文一覧は `ListView.builder` で、**画面外の要素は
+/// ウィジェットとして構築されない**。したがって `find.text` は 0 件を返し、
+/// 「表示されていない」ではなく「存在しない」ように見える。
+/// E2E の定型文12件がこれで落ちていた（Issue #84）。
+///
+/// 見つかるまで下方向へスクロールする。見つからなければテストを失敗させる。
+Future<void> scrollIntoView(
+  WidgetTester tester,
+  Finder finder, {
+  double delta = 200,
+  int maxScrolls = 60,
+}) async {
+  if (finder.evaluate().isNotEmpty) {
+    await tester.ensureVisible(finder.first);
+    await tester.pumpAndSettle();
+    return;
+  }
+
+  final scrollable = find.byType(Scrollable);
+  expect(
+    scrollable,
+    findsWidgets,
+    reason: 'スクロール可能な領域が見つからない',
+  );
+
+  await tester.scrollUntilVisible(
+    finder,
+    delta,
+    scrollable: scrollable.first,
+    maxScrolls: maxScrolls,
+  );
+  await tester.pumpAndSettle();
+}
+
+/// 遅延生成リストの要素をスクロールして出してからタップする
+Future<void> scrollAndTap(WidgetTester tester, Finder finder) async {
+  await scrollIntoView(tester, finder);
+  await tester.tap(finder.first);
+  await tester.pumpAndSettle();
+}
+
 /// 確認ダイアログ内のボタンを指す finder
 ///
 /// 【ボタン型に依存しない理由】: テストが `find.widgetWithText(TextButton, ...)` の
