@@ -181,7 +181,13 @@ Future<Box<T>?> openBoxWithRecovery<T>(
 ///
 /// 【実装内容】: Hot Restart時等の重複登録エラーを防ぐための冪等な登録処理
 /// 🔵 信頼性レベル: 青信号 - REQ-5003、TASK-0014の実装詳細に基づく
-void _registerAdapterSafely<T>(TypeAdapter<T> adapter) {
+void _registerAdapterSafely<T>(
+  TypeAdapter<T> adapter, [
+  void Function(TypeAdapter<dynamic> adapter)? onRegistered,
+]) {
+  // 【観測フック】: 登録の成否に関わらず「本番が使うアダプタ」として通知する。
+  // 検査側が一覧を書き写さずに済ませるための seam（下の説明を参照）。
+  onRegistered?.call(adapter);
   try {
     if (!Hive.isAdapterRegistered(adapter.typeId)) {
       Hive.registerAdapter(adapter);
@@ -193,6 +199,42 @@ void _registerAdapterSafely<T>(TypeAdapter<T> adapter) {
       '[hive_init] TypeAdapter(typeId=${adapter.typeId}) の登録に失敗しました: $error',
     );
   }
+}
+
+/// 永続化する型の TypeAdapter を Hive へ登録する
+///
+/// **この関数が「アプリが永続化する型の一覧」の唯一の持ち主である。**
+/// [initHive] が呼ぶのはもちろん、スキーマ許可リスト検査
+/// （`test/core/persistence/hive_schema_allowlist_test.dart`）も**この関数を呼ぶ**。
+/// 検査が登録手順を別に書き写すと、本番にだけ足されたアダプタを見逃す（台帳 L-31）。
+///
+/// 【型引数を明示している理由】: `List<TypeAdapter<dynamic>>` にまとめてループで
+/// 登録してはいけない。hive 2.2.3 の `TypeRegistryImpl.registerAdapter` は
+/// `T == dynamic` を検知して警告を出すだけで登録自体は通し、その結果
+/// `ResolvedAdapter<dynamic>.matchesType` が**あらゆる値に真を返す**ため、
+/// 最初に登録したアダプタが全ての書き込みを横取りする。一覧を短く書くために
+/// `dynamic` へ落とすと、静かにデータが壊れる。
+///
+/// 【冪等性】: Hot Restart やテストの再実行で二重に呼ばれても、
+/// [_registerAdapterSafely] が登録済みを見て何もしない。
+///
+/// 【[onRegistered] という seam を置いた理由】: これが無いと、スキーマ許可リスト
+/// 検査は「どのアダプタを検査するか」を**自前の一覧として書き写す**しかない。
+/// すると 4つ目のアダプタを足したとき、検査は typeId が増えたことだけを赤にし、
+/// 開発者が許可リストの typeId を足した時点で緑に戻る——**そのアダプタの
+/// フィールド番号・型は以後誰も見ない**。番号の詰め直しによる端末データ喪失が
+/// 素通りする穴が、検査自身の赤いメッセージによって開く形になる
+/// （2026-08-31 の2系統レビューで指摘された）。
+/// 登録した実体をそのまま渡せば、検査は本番の登録経路を唯一の権威にできる。
+void registerPersistedTypeAdapters({
+  void Function(TypeAdapter<dynamic> adapter)? onRegistered,
+}) {
+  // typeId 0: 発話履歴（REQ-601）
+  _registerAdapterSafely<HistoryItem>(HistoryItemAdapter(), onRegistered);
+  // typeId 1: 定型文（REQ-104）
+  _registerAdapterSafely<PresetPhrase>(PresetPhraseAdapter(), onRegistered);
+  // typeId 2: お気に入り（REQ-701）
+  _registerAdapterSafely<FavoriteItem>(FavoriteItemAdapter(), onRegistered);
 }
 
 /// 【関数定義】: Hive初期化処理
@@ -235,17 +277,14 @@ Future<void> initHive() async {
     }
   }
 
-  // 【TypeAdapter登録】: HistoryItemAdapterの登録
-  // 【実装内容】: typeId 0としてHistoryItemAdapterを登録（重複登録時はtry-catchで無視）
+  // 【TypeAdapter登録】: 永続化する型のアダプタをまとめて登録する
+  // 【実装内容】: 登録の一覧は registerPersistedTypeAdapters() が唯一の持ち主。
+  // スキーマ許可リスト検査（test/core/persistence/hive_schema_allowlist_test.dart）は
+  // **この同じ関数**を呼ぶ。テスト側が登録手順を再現すると、本番にだけ足された
+  // 永続化面を見逃す（台帳 L-31）。
   // 【テスト対応】: TC-002、TC-003
-  // 🔵 信頼性レベル: 青信号 - REQ-601（履歴自動保存）の基盤
-  _registerAdapterSafely(HistoryItemAdapter());
-
-  // 【TypeAdapter登録】: PresetPhraseAdapterの登録
-  // 【実装内容】: typeId 1としてPresetPhraseAdapterを登録（重複登録時はtry-catchで無視）
-  // 【テスト対応】: TC-002、TC-003
-  // 🔵 信頼性レベル: 青信号 - REQ-104（定型文機能）の基盤
-  _registerAdapterSafely(PresetPhraseAdapter());
+  // 🔵 信頼性レベル: 青信号 - REQ-601 / REQ-104 / REQ-701 の基盤
+  registerPersistedTypeAdapters();
 
   // 【ボックスオープン】: historyボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
   // 【実装内容】: 'history'という名前でHistoryItem用のボックスをオープン
@@ -264,12 +303,6 @@ Future<void> initHive() async {
     PersistedArea.presetPhrases.boxName,
     hivePath: hivePath,
   );
-
-  // 【TypeAdapter登録】: FavoriteItemAdapterの登録
-  // 【実装内容】: typeId 2としてFavoriteItemAdapterを登録（重複登録時はtry-catchで無視）
-  // 【テスト対応】: TASK-0065
-  // 🔵 信頼性レベル: 青信号 - REQ-701（お気に入り機能）の基盤
-  _registerAdapterSafely(FavoriteItemAdapter());
 
   // 【ボックスオープン】: favoritesボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
   // 【実装内容】: 'favorites'という名前でFavoriteItem用のボックスをオープン
