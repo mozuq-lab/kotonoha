@@ -1,0 +1,139 @@
+{
+  "GET /": {
+    "request": null,
+    "response_200": {
+      "properties": [
+        "message",
+        "version"
+      ],
+      "required": [
+        "message",
+        "version"
+      ]
+    },
+    "responses": [
+      "200"
+    ],
+    "security": []
+  },
+  "GET /api/v1/health": {
+    "request": null,
+    "response_200": {
+      "properties": [
+        "ai_provider",
+        "database",
+        "status",
+        "timestamp",
+        "version"
+      ],
+      "required": [
+        "ai_provider",
+        "database",
+        "status",
+        "timestamp",
+        "version"
+      ]
+    },
+    "responses": [
+      "200",
+      "500"
+    ],
+    "security": []
+  },
+  "GET /health": {
+    "request": null,
+    "response_200": {
+      "properties": [
+        "ai_provider",
+        "database",
+        "status",
+        "timestamp",
+        "version"
+      ],
+      "required": [
+        "ai_provider",
+        "database",
+        "status",
+        "timestamp",
+        "version"
+      ]
+    },
+    "responses": [
+      "200",
+      "500"
+    ],
+    "security": []
+  },
+  "POST /api/v1/ai/convert": {
+    "request": {
+      "properties": [
+        "input_text",
+        "politeness_level"
+      ],
+      "required": [
+        "input_text",
+        "politeness_level"
+      ]
+    },
+    "response_200": {
+      "properties": [
+        "converted_text",
+        "original_text",
+        "politeness_level",
+        "processing_time_ms"
+      ],
+      "required": [
+        "converted_text",
+        "original_text",
+        "politeness_level",
+        "processing_time_ms"
+      ]
+    },
+    "responses": [
+      "200",
+      "422"
+    ],
+    "security": [
+      [
+        "APIKeyHeader"
+      ]
+    ]
+  },
+  "POST /api/v1/ai/regenerate": {
+    "request": {
+      "properties": [
+        "input_text",
+        "politeness_level",
+        "previous_result"
+      ],
+      "required": [
+        "input_text",
+        "politeness_level",
+        "previous_result"
+      ]
+    },
+    "response_200": {
+      "properties": [
+        "converted_text",
+        "original_text",
+        "politeness_level",
+        "processing_time_ms"
+      ],
+      "required": [
+        "converted_text",
+        "original_text",
+        "politeness_level",
+        "processing_time_ms"
+      ]
+    },
+    "responses": [
+      "200",
+      "422"
+    ],
+    "security": [
+      [
+        "APIKeyHeader"
+      ]
+    ]
+  }
+}
