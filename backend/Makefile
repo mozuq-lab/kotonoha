@@ -14,6 +14,7 @@ gate:  ## 完了条件の grep ゲート
 	bash scripts/gates.sh
 
 check: lint gate  ## lint + 型 + 層契約 + ゲート
+	black --check app tests
 	mypy
 	lint-imports
 
