@@ -77,7 +77,6 @@
 - 非同期対応で高速（Node.js/Go並みのパフォーマンス）
 - 自動APIドキュメント生成（Swagger UI / ReDoc）
 - Pydanticで型安全性を確保
-- SQLAlchemyでリレーショナルDBの強力な操作が可能
 - MVP開発に最適な学習コスト
 - 将来の拡張性が高い
 
@@ -567,7 +566,6 @@ npm test                          # CDKスタックテスト実行
 
 ### FastAPI
 - [FastAPI公式ドキュメント](https://fastapi.tiangolo.com/)
-- [SQLAlchemy公式ドキュメント](https://docs.sqlalchemy.org/)
 - [Pydantic公式ドキュメント](https://docs.pydantic.dev/)
 
 ### PostgreSQL

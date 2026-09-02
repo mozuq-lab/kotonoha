@@ -1,5 +1,7 @@
 # 開発環境セットアップガイド
 
+> **注意（2026-09-02）**: この文書の backend 節（PostgreSQL・alembic・`uvicorn app.main:app`）は旧 backend 向けで、Phase 2 の書き直し（ADR-001）で廃止された。現行の手順は `AGENTS.md`「開発コマンド」と `docs/tech-stack.md`「セットアップ手順」を正とする。この文書は Phase 5 で archive へ移す。
+
 このドキュメントでは、kotonohaプロジェクトの開発環境を構築する手順を詳しく説明します。
 
 ## 目次
