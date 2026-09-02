@@ -169,6 +169,7 @@ async def test_openai_failures_become_safe_errors(
     finally:
         await provider.aclose()
     assert info.value.code is code and info.value.__context__ is None
+    assert info.value.cause_type  # 型名は残す（診断用）。Anthropic 側と揃える
 
 
 def test_build_provider_follows_default_provider_and_key_presence() -> None:

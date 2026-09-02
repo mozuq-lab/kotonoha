@@ -121,6 +121,8 @@ class OpenAIProvider:
             )
             content = completion.choices[0].message.content if completion.choices else None
             text = content.strip() if content else ""
+            if not text:
+                raise _EmptyCompletionError
         except openai.APITimeoutError as exc:
             code, cause = ErrorCode.AI_API_TIMEOUT, type(exc)
         except openai.RateLimitError as exc:
@@ -129,12 +131,12 @@ class OpenAIProvider:
             code, cause, retryable = ErrorCode.AI_API_ERROR, type(exc), True
         except openai.APIStatusError as exc:
             code, cause = ErrorCode.AI_API_ERROR, type(exc)
+        except _EmptyCompletionError as exc:
+            code, cause = ErrorCode.AI_API_ERROR, type(exc)
         except Exception as exc:
             code, cause = ErrorCode.INTERNAL_ERROR, type(exc)
         if code is not None:
             raise SafeError(code, cause=cause, retryable=retryable)
-        if not text:
-            raise SafeError(ErrorCode.AI_API_ERROR)
         return text
 
     async def aclose(self) -> None:
