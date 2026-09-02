@@ -17,8 +17,10 @@ from fastapi.testclient import TestClient
 
 from app.ai.prompts import Prompt
 from app.config import ProviderName
+from app.errors import VALIDATION_MESSAGE, ErrorCode, SafeError
 from app.main import create_app
 from tests.conftest import make_config
+from tests.test_startup import _base_env, _free_port, _spawn, _stop, _wait_for
 
 BACKEND = Path(__file__).resolve().parents[1]
 CONVERT = "/api/v1/ai/convert"
@@ -74,6 +76,10 @@ def test_validation_boundary(capsys: pytest.CaptureFixture[str]) -> None:
     out, err = capsys.readouterr()
     assert reply.status_code == 422
     _assert_absent(CANARY, reply.text, out, err)
+    detail = reply.json()["detail"]
+    assert detail  # 空振り防止
+    allowed_messages = set(VALIDATION_MESSAGE.values())
+    assert all(err["msg"] in allowed_messages for err in detail)
 
 
 class ExplodingProvider:
@@ -120,3 +126,40 @@ def test_config_boundary_in_a_real_process(tmp_path: Path) -> None:
         and "ANTHROPIC_API_KEY" in proc.stderr
         and "RATE_LIMIT_TIMES" in proc.stderr
     )
+
+
+def test_provider_init_boundary_in_a_real_process() -> None:
+    """provider 生成（SDK の httpx.AsyncClient 構築）失敗が lifespan の境界で SafeError に
+    変換され、第三者ライブラリの自由文・設定値が stdout/stderr に出ないことをプロセス全体で見る。
+    """
+    port = _free_port()
+    env = _base_env(
+        ENVIRONMENT="development",
+        API_KEYS="k",
+        ANTHROPIC_API_KEY="sk-x",
+        HTTPS_PROXY=f"foo://{CANARY}-PROXY-USER:{CANARY}-PROXY-PASS@proxy.invalid",
+    )
+    proc = _spawn(port, env)
+    try:
+        assert not _wait_for(port, seconds=6)
+    finally:
+        out, err = _stop(proc)
+    assert proc.returncode is not None and proc.returncode != 0
+    assert "STARTUP_PROVIDER_INIT_FAILED" in err
+    _assert_absent(CANARY, out, err)
+
+
+def test_provider_init_boundary_raises_safe_error_in_process(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def _exploding_factory(_config: object) -> None:
+        raise RuntimeError(f"{CANARY}-provider-init")
+
+    app = create_app(make_config(), provider_factory=_exploding_factory, environ={}, argv=[])
+    with pytest.raises(SafeError) as info:
+        with TestClient(app):
+            pass
+    assert info.value.code is ErrorCode.STARTUP_PROVIDER_INIT_FAILED
+    assert info.value.__context__ is None
+    out, err = capsys.readouterr()
+    _assert_absent(CANARY, out, err)

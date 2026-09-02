@@ -112,6 +112,7 @@ D8 は ADR-006 の改訂（Task 9）。他は ADR の範囲内。
 | ファイルログ（`LOG_FILE_PATH`） | あり | **削除**（stdout のみ） | ADR-001 |
 | `RATE_LIMIT_STORAGE_URI` `SECRET_KEY` `POSTGRES_*` `SESSION_EXPIRE_MINUTES` `API_HOST` `API_PORT` `API_V1_STR` `ACCESS_TOKEN_EXPIRE_MINUTES` | 設定キー | **削除**（残っていれば警告のみ） | ADR-001 / 002、Issue #86 B-3-7 |
 | health の `ai_provider` | 初期化済みの client 優先 | **実際に使う** `DEFAULT_AI_PROVIDER` | 値域 `anthropic/openai/none` は同じ |
+| OpenAPI のスキーマ名（`AIConversionRequest`→`ConversionRequest` 等）と制約の表現 | 旧名 | 新名 | 生成クライアントは無く、frontend は手書き。契約テストはプロパティ名と必須項目を比べる |
 
 ---
 

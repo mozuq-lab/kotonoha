@@ -21,6 +21,10 @@ from app.ratelimit import RateLimiter, client_identifier
         ("1.1.1.1", "9.9.9.9", 2, "9.9.9.9"),  # チェーンが短い → 接続元（フェイルクローズ）
         ("", "9.9.9.9", 1, "9.9.9.9"),
         (None, None, 1, "unknown"),
+        # 過大設定の失敗形（文書化済み。守りはデプロイ側）: 実 proxy 1段なのに
+        # trusted_proxy_count=2 だと、proxy が実IPを追記した末尾から2番目＝
+        # 攻撃者が詰めた値を識別子として採用してしまう。
+        ("spoof, 203.0.113.10", "10.0.0.1", 2, "spoof"),
     ],
 )
 def test_client_identifier(xff: str | None, host: str | None, count: int, expected: str) -> None:

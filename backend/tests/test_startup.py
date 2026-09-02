@@ -168,13 +168,15 @@ def test_symbol_keys_health_and_conversion_round_trip(fake_provider: FakeAnthrop
     assert PROVIDER_KEY not in out + err and DEVICE_KEY not in out + err
 
 
-@pytest.mark.parametrize("variant", ["argv", "env"])
+@pytest.mark.parametrize("variant", ["argv", "env", "env_plus_prefixed"])
 def test_multiple_workers_refuse_to_serve(variant: str) -> None:
     port = _free_port()
     env = _base_env(ENVIRONMENT="development")
     args: tuple[str, ...] = ()
     if variant == "argv":
         args = ("--workers", "2")
+    elif variant == "env_plus_prefixed":
+        env["WEB_CONCURRENCY"] = "+2"  # uvicorn の int() は受理するが .isdigit() は偽になる値
     else:
         env["WEB_CONCURRENCY"] = "2"
     proc = _spawn(port, env, *args)

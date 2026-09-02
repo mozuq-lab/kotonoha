@@ -23,6 +23,12 @@ def client_identifier(
 ) -> str:
     """B-3-8 / B-3-9: 信頼する段数分のチェーンが無ければ
     XFF を採用せず接続元へ（フェイルクローズ）。
+
+    過大設定に注意: ``trusted_proxy_count`` に実構成より大きい値を設定すると、
+    クライアントが X-Forwarded-For に値を詰めて自分の識別子を選べるようになり、
+    レート制限を回避できる（右から N 番目を機械的に採用するため）。実段数と
+    一致させること。上流（ALB 等）で受信 XFF を上書きする構成を推奨する
+    （ADR-002 のデプロイ側契約）。
     """
     if trusted_proxy_count > 0 and forwarded_for:
         parts = [part.strip() for part in forwarded_for.split(",") if part.strip()]

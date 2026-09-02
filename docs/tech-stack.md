@@ -380,7 +380,7 @@ cp backend/.env.example backend/.env
 
 ### 2. Docker環境起動
 ```bash
-# PostgreSQL等のサービスを起動
+# backend コンテナを起動（DB は無い。ステートレスな AI 変換プロキシのみ）
 docker-compose up -d
 
 # ログ確認
@@ -391,21 +391,19 @@ docker-compose logs -f
 ```bash
 cd backend
 
-# 仮想環境作成
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# 仮想環境作成（3.12 固定。ADR-003 の ErrorCode(StrEnum) が 3.11+ を要求）
+uv venv --python 3.12 .venv  # uv が無ければ: python3.12 -m venv .venv
 
 # 依存関係インストール
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+.venv/bin/pip install -r requirements-dev.txt
 
-# データベースマイグレーション
-alembic upgrade head
+# アプリ設定（AIキー・API_KEYS・レート制限等）
+cp .env.example .env
 
-# 開発サーバー起動
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# 開発サーバー起動（Application Factory なので --factory が要る）
+.venv/bin/uvicorn app.main:create_app --factory --reload
 
-# ブラウザで確認
+# ブラウザで確認（development / test でのみ公開。ADR-004）
 # http://localhost:8000/docs （Swagger UI）
 # http://localhost:8000/redoc （ReDoc）
 ```

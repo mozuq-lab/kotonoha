@@ -150,6 +150,12 @@ def test_auth_skipped_only_when_local(capsys: pytest.CaptureFixture[str]) -> Non
         ({}, ["uvicorn", "--workers=4"], 4),
         ({}, ["uvicorn", "-w", "2"], 2),
         ({"WEB_CONCURRENCY": "x"}, ["--workers", "y"], 1),
+        ({"WEB_CONCURRENCY": "+2"}, [], 2),
+        ({"WEB_CONCURRENCY": " 2 "}, [], 2),
+        ({}, ["uvicorn", "--workers=+2"], 2),
+        ({}, ["uvicorn", "--workers", " 3"], 3),
+        ({"WEB_CONCURRENCY": "0"}, [], 1),
+        ({"WEB_CONCURRENCY": "-1"}, [], 1),
     ],
 )
 def test_configured_worker_count(environ: dict[str, str], argv: list[str], expected: int) -> None:

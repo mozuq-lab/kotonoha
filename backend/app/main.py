@@ -22,6 +22,7 @@ from app.config import API_PREFIX, RuntimeConfig, load_config
 from app.errors import (
     HTTP_STATUS,
     USER_MESSAGE,
+    VALIDATION_MESSAGE,
     ConfigError,
     ErrorCode,
     RateLimitExceeded,
@@ -40,19 +41,32 @@ from app.routes import build_router
 ProviderFactory = Callable[[RuntimeConfig], Provider | None]
 
 
+def _parse_worker_count(raw: str) -> int | None:
+    """uvicorn 自身の ``int()`` と同じ解析（符号・前後空白を許す）。0 以下は 1 に丸める。"""
+    try:
+        value = int(raw)
+    except ValueError:
+        return None
+    return max(1, value)
+
+
 def configured_worker_count(environ: Mapping[str, str], argv: Sequence[str]) -> int:
     """uvicorn / gunicorn 系が使う指定（WEB_CONCURRENCY・--workers N・--workers=N・
     -w N）の最大値。
     """
     counts = [1]
-    web = environ.get("WEB_CONCURRENCY", "")
-    if web.isdigit():
-        counts.append(int(web))
+    parsed = _parse_worker_count(environ.get("WEB_CONCURRENCY", ""))
+    if parsed is not None:
+        counts.append(parsed)
     for index, arg in enumerate(argv):
-        if arg in ("--workers", "-w") and index + 1 < len(argv) and argv[index + 1].isdigit():
-            counts.append(int(argv[index + 1]))
-        elif arg.startswith("--workers=") and arg.removeprefix("--workers=").isdigit():
-            counts.append(int(arg.removeprefix("--workers=")))
+        if arg in ("--workers", "-w") and index + 1 < len(argv):
+            parsed = _parse_worker_count(argv[index + 1])
+        elif arg.startswith("--workers="):
+            parsed = _parse_worker_count(arg.removeprefix("--workers="))
+        else:
+            continue
+        if parsed is not None:
+            counts.append(parsed)
     return max(counts)
 
 
@@ -85,7 +99,14 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        provider = provider_factory(cfg)  # 資源は lifespan で生成する（ADR-004）
+        init_cause: type[BaseException] | None = None
+        provider: Provider | None = None
+        try:
+            provider = provider_factory(cfg)  # 資源は lifespan で生成する（ADR-004）
+        except Exception as exc:  # SDK/サードパーティの自由文を境界の外へ出さない
+            init_cause = type(exc)
+        if init_cause is not None:
+            raise SafeError(ErrorCode.STARTUP_PROVIDER_INIT_FAILED, cause=init_cause)
         service = ConversionService(
             provider, max_retries=cfg.AI_MAX_RETRIES, deadline_seconds=cfg.AI_CALL_DEADLINE_SECONDS
         )
@@ -95,7 +116,20 @@ def create_app(
             yield
         finally:
             if provider is not None:
-                await provider.aclose()
+                close_cause: type[BaseException] | None = None
+                try:
+                    await provider.aclose()
+                except Exception as exc:  # 終了時は raise せず型名だけ記録する
+                    close_cause = type(exc)
+                if close_cause is not None:
+                    log_event(
+                        RequestFailed(
+                            route="lifespan",
+                            error_code=ErrorCode.INTERNAL_ERROR.value,
+                            cause_type=close_cause.__name__,
+                        ),
+                        level="ERROR",
+                    )
 
     app = FastAPI(
         title=cfg.PROJECT_NAME,
@@ -168,14 +202,17 @@ async def _safe_error_handler(request: Request, exc: Exception) -> JSONResponse:
 
 async def _validation_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
-    detail = [
-        {
-            "type": err.get("type", "unknown"),
-            "loc": list(err.get("loc", ())),
-            "msg": err.get("msg", ""),
-        }
-        for err in exc.errors()  # input / ctx / url は載せない
-    ]
+    detail: list[dict[str, object]] = []
+    for err in exc.errors():  # input / ctx / url は読まない
+        error_type = err.get("type", "unknown")
+        detail.append(
+            {
+                "type": error_type,
+                "loc": list(err.get("loc", ())),
+                # pydantic の自由文（err["msg"]）は読まない。type から有限語彙へ写像する（ADR-003）
+                "msg": VALIDATION_MESSAGE.get(error_type, VALIDATION_MESSAGE["default"]),
+            }
+        )
     return JSONResponse(
         status_code=422,
         content={

@@ -25,6 +25,7 @@ class ErrorCode(StrEnum):
     INTERNAL_ERROR = "INTERNAL_ERROR"
     CONFIG_INVALID = "CONFIG_INVALID"
     STARTUP_MULTIPLE_WORKERS = "STARTUP_MULTIPLE_WORKERS"
+    STARTUP_PROVIDER_INIT_FAILED = "STARTUP_PROVIDER_INIT_FAILED"
 
 
 HTTP_STATUS: Final[Mapping[ErrorCode, int]] = MappingProxyType(
@@ -39,6 +40,7 @@ HTTP_STATUS: Final[Mapping[ErrorCode, int]] = MappingProxyType(
         ErrorCode.INTERNAL_ERROR: 500,
         ErrorCode.CONFIG_INVALID: 500,
         ErrorCode.STARTUP_MULTIPLE_WORKERS: 500,
+        ErrorCode.STARTUP_PROVIDER_INIT_FAILED: 500,
     }
 )
 
@@ -67,6 +69,24 @@ USER_MESSAGE: Final[Mapping[ErrorCode, str]] = MappingProxyType(
         ErrorCode.STARTUP_MULTIPLE_WORKERS: (
             "レート制限がプロセス内メモリのため worker は1つでなければなりません（ADR-002）。"
         ),
+        ErrorCode.STARTUP_PROVIDER_INIT_FAILED: (
+            "AI プロバイダの初期化に失敗したため起動できません。"
+        ),
+    }
+)
+
+# 422 の detail[].msg に載せてよい有限語彙（ADR-003）。pydantic の err["msg"]（自由文）は読まない。
+# キーは pydantic / FastAPI の err["type"]。既定は "default"。
+VALIDATION_MESSAGE: Final[Mapping[str, str]] = MappingProxyType(
+    {
+        "missing": "必須項目がありません",
+        "string_too_short": "文字数が下限を下回っています",
+        "string_too_long": "文字数が上限を超えています",
+        "enum": "許可されていない値です",
+        "literal_error": "許可されていない値です",
+        "value_error": "入力が不正です",
+        "json_invalid": "JSON として解釈できません",
+        "default": "入力が不正です",
     }
 )
 
