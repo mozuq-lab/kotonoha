@@ -56,13 +56,11 @@
 
 ### フレームワーク・言語
 - **FastAPI**: 0.124+ (`backend/requirements.txt` は `fastapi==0.124.0` を固定)
-- **Python**: 3.10+ (Pythonの安定版、Alembic要件を満たす)
+- **Python**: 3.12
 - **Uvicorn**: ASGIサーバー（FastAPI標準）
 
-### ORM・データベース接続
-- **SQLAlchemy**: 2.x (最新版、async対応)
-- **Alembic**: 1.18+ (データベースマイグレーションツール。`alembic==1.18.3` を固定)
-- **asyncpg**: 非同期PostgreSQLドライバ
+### 永続化
+- **無し。** backend はステートレス（ADR-001）。運用情報は stdout の構造化ログ（JSON Lines）で取る
 
 ### 認証・セキュリティ
 - **JWT (JSON Web Token)**: トークンベース認証
@@ -85,39 +83,15 @@
 - MVP開発に最適な学習コスト
 - 将来の拡張性が高い
 
-## 💾 データベース
+## 💾 データベース（廃止）
 
-### メインデータベース
-- **PostgreSQL**: 15+ (最新安定版)
-  - ACID準拠のトランザクション
-  - JSONB型でNoSQL的な柔軟性も確保
-  - あなたのデータベース設計経験を活かせる
-  - 高度なインデックス戦略
-  - 将来のスケーリングに対応
-
-### キャッシュ（オプション）
-- **Redis**: 7+ (必要に応じて)
-  - セッション管理
-  - 高速キャッシュ
-  - リアルタイム機能のPub/Sub
-
-### ファイルストレージ
-- **開発環境**: ローカルファイルシステム
-- **本番環境**: AWS S3 / Azure Blob Storage / Google Cloud Storage
-
-### 設計方針
-- 適切な正規化レベル（第3正規形を基本）
-- インデックス戦略でクエリ最適化
-- 外部キー制約でデータ整合性を保証
-- Alembicでマイグレーション管理
+2026-09 の Phase 2 で削除した。経緯と再訪条件は ADR-001。
 
 ## 🛠️ 開発環境・ツール
 
 ### コンテナ化
 - **Docker**: 最新安定版
 - **Docker Compose**: 開発環境の一貫性確保
-  - PostgreSQL
-  - Redis（オプション）
   - FastAPI
   - Flutter Web（必要に応じて）
 
@@ -178,7 +152,6 @@
 **管理対象リソース**:
 - VPC、サブネット、セキュリティグループ
 - ECS/Fargate クラスター（バックエンドAPI）
-- RDS for PostgreSQL
 - S3バケット（ログ、将来的なファイルストレージ）
 - CloudWatch（監視・ログ）
 - Secrets Manager（環境変数・認証情報）
@@ -243,7 +216,6 @@
 - **CORS**: 適切なオリジン設定
 - **Rate Limiting**: API呼び出し回数制限（必要に応じて）
 - **Input Validation**: Pydanticで厳密なバリデーション
-- **SQL Injection対策**: SQLAlchemy ORMを使用
 - **XSS対策**: 適切なエスケープ処理
 
 ### 環境変数管理

@@ -20,11 +20,13 @@
 案3。新 backend（Phase 2）の層を contract にする:
 
 ```
-routes → ai / errors / config
-ai     → errors / config
-errors → （依存なし）
-config → （依存なし）
-logging → config
+main    → routes
+routes  → schemas / auth / ratelimit / ai / errors / config / logging
+schemas → ai（PolitenessLevel の語彙を1つにするため）
+auth | ratelimit | ai → config / errors / logging（互いには依存しない）
+config  → errors / logging（設定失敗を ConfigError で表し、削除済みキーの警告を出すため）
+logging → errors 以下
+errors  → （依存なし）
 ```
 
 CI で `import-linter` 緑を必須にする。frontend 側は Dart analyzer ルール
@@ -42,3 +44,11 @@ CI で `import-linter` 緑を必須にする。frontend 側は Dart analyzer ル
 - 「core から db を import」のような変更は CI で機械的に落ちる。議論にならない
 - 層をまたぐ新しい依存が必要になったら、contract の変更が差分に現れ、
   そこが ADR を書く契機になる
+
+## 改訂（2026-09-02、Phase 2 実装時）
+
+草案は `config → 依存なし` としていたが、pydantic の ValidationError が入力値（秘密）を
+文字列に含むため、config は失敗を型（`ConfigError`）に載せ替えて外へ出す必要があり、
+errors への依存が要る。語彙を2つ持たないために `config → errors` を許した。
+`schemas → ai` も同じ理由（丁寧さレベルの列挙を1つにする）。契約は `backend/pyproject.toml`
+の `[tool.importlinter]` が正本で、CI の `lint-imports` が強制する。

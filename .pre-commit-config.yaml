@@ -32,14 +32,6 @@ repos:
       - id: black
         files: ^backend/
 
-  # Python: Type checking (optional, uncomment if using mypy)
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.13.0
-  #   hooks:
-  #     - id: mypy
-  #       files: ^backend/app/
-  #       additional_dependencies: [pydantic, fastapi]
-
   # Flutter/Dart: Analyze and Format
   - repo: local
     hooks:

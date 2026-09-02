@@ -68,7 +68,7 @@
 ## 技術スタック
 
 - **フロントエンド**: Flutter 3.38.1 + Riverpod 3.x（`flutter_riverpod: ^3.1.0`）
-- **バックエンド**: FastAPI 0.124 + SQLAlchemy 2.x + PostgreSQL 15+
+- **バックエンド**: FastAPI 0.124 + Python 3.12。**ステートレス（DB 無し）**。AI プロバイダへのプロキシのみ
 - **IaC**: AWS CDK 2.x (TypeScript)
 - **開発環境**: Docker + Docker Compose
 
@@ -135,11 +135,11 @@ backend/、frontend/、docker/などのコード構造については `docs/tech
 よく使うコマンド：
 
 ```bash
-# Docker環境起動
+# 開発用コンテナ（backend のみ。DB は無い）
 docker-compose up -d
 
-# バックエンドサーバー起動（リポジトリルートから）
-(cd backend && uvicorn app.main:app --reload)
+# バックエンドサーバー起動（リポジトリルートから。Application Factory なので --factory が要る）
+(cd backend && .venv/bin/uvicorn app.main:create_app --factory --reload)
 
 # Flutterアプリ起動（ローカルのdocker-compose構成ならデフォルトのままでよい）
 # 以降はリポジトリルートから frontend/kotonoha_app に移動した状態で実行する
@@ -157,12 +157,10 @@ if [ -n "${AI_API_KEY:-}" ]; then
 fi
 flutter run -d chrome "${DEFINES[@]}"
 
-# テスト実行
-pytest                    # Backend
+# テスト・型・層契約・ゲート（backend/）
+pytest                    # pytest-randomly が順序をシャッフルする
+make check                # ruff + black + mypy --strict + lint-imports + scripts/gates.sh
 flutter test              # Frontend
-
-# DBマイグレーション
-alembic upgrade head
 ```
 
 詳細なコマンド、セットアップ手順については `docs/tech-stack.md` を参照してください。
@@ -217,16 +215,14 @@ alembic upgrade head
 - ドキュメント: `http://localhost:8000/docs` (Swagger UI)
 
 ### 主要エンドポイント
-- `POST /api/v1/ai/convert` - AI変換（平均3秒以内）
-  - 入力テキストを丁寧さレベルに応じて変換
-  - politeness_level: "casual", "normal", "polite"
+- `POST /api/v1/ai/convert` - AI変換（平均3秒以内）。`X-API-Key` 必須（development / test で `API_KEYS` 未設定のときだけ省略）
 - `POST /api/v1/ai/regenerate` - AI変換再生成
-- `GET /api/v1/health` - ヘルスチェック
+- `GET /api/v1/health` - ヘルスチェック（`status` / `ai_provider` / `version` / `timestamp`。DB 項目は無い）
 
 ### レート制限
-- AI変換API: 1リクエスト/10秒/IP（デフォルト。**要件IDは未割当**——従来引用されていた NFR-101 は「会話内容の端末内保存」の要件でレート制限とは無関係。守る対象の定義は ADR-002 で行う）
-  - `RATE_LIMIT_TIMES`（回数）・`RATE_LIMIT_SECONDS`（秒数）環境変数で変更可能
-  - マルチワーカー/マルチインスタンス構成では `RATE_LIMIT_STORAGE_URI` にRedis等の共有ストレージURIを指定すること（未指定時はプロセス内メモリのため各プロセスで独立したカウンタになる）
+- AI変換API: 1リクエスト/10秒/IP（`RATE_LIMIT_TIMES` / `RATE_LIMIT_SECONDS`）。守る対象の定義は **ADR-002**
+  - カウンタは**プロセス内メモリ**。共有ストレージの設定キーは存在しない。worker を 2 以上にすると起動時に
+    `STARTUP_MULTIPLE_WORKERS` で落ちる（同一コンテナ内のみ検出。replica 上限はデプロイ側の契約——ADR-002）
   - **`TRUSTED_PROXY_COUNT`（デフォルト0）**: レート制限のクライアント識別に信頼する自前プロキシ（ALB/CDN等）の段数。ALB配下など本番でリバースプロキシを経由する構成では**必須設定**
     - `0` の場合は `X-Forwarded-For` を一切信頼せず接続元IPを使用する
     - `1` 以上の場合は XFF の右からN番目（＝信頼プロキシが観測したクライアントIP）を採用する
