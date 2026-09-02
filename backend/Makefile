@@ -10,6 +10,13 @@ format:  ## Format code with black and ruff
 	black app tests
 	ruff check app tests --fix
 
+gate:  ## 完了条件の grep ゲート
+	bash scripts/gates.sh
+
+check: lint gate  ## lint + 型 + 層契約 + ゲート
+	mypy
+	lint-imports
+
 test:  ## Run tests
 	pytest
 
