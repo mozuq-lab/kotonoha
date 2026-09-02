@@ -16,4 +16,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')" || exit 1
 # worker は 1 つ（ADR-002）。--workers を足すと起動ガードで落ちる
-CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+# --no-proxy-headers: XFF の解釈は app/ratelimit.py の1箇所に閉じる（I-2）
+CMD ["uvicorn", "app.main:create_app", "--factory", "--no-proxy-headers", "--host", "0.0.0.0", "--port", "8000"]

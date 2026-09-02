@@ -46,8 +46,11 @@ class RateLimiter:
         self._trusted_proxy_count = trusted_proxy_count
 
     async def hit(self, namespace: str, request: Request) -> None:
+        # C-1: 同名ヘッダーが複数行だと .get() は先頭の1本しか返さない。RFC 9110 §5.2 では
+        # 複数行はカンマ結合と等価なので、全行を結合してから client_identifier に渡す
+        # （先頭行に攻撃者が任意文字列を置いて毎回別バケットにするのを防ぐ）。
         identifier = client_identifier(
-            forwarded_for=request.headers.get("X-Forwarded-For"),
+            forwarded_for=", ".join(request.headers.getlist("x-forwarded-for")) or None,
             client_host=request.client.host if request.client else None,
             trusted_proxy_count=self._trusted_proxy_count,
         )

@@ -139,7 +139,7 @@ backend/、frontend/、docker/などのコード構造については `docs/tech
 docker-compose up -d
 
 # バックエンドサーバー起動（リポジトリルートから。Application Factory なので --factory が要る）
-(cd backend && .venv/bin/uvicorn app.main:create_app --factory --reload)
+(cd backend && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)
 
 # Flutterアプリ起動（ローカルのdocker-compose構成ならデフォルトのままでよい）
 # 以降はリポジトリルートから frontend/kotonoha_app に移動した状態で実行する

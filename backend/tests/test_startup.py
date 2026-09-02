@@ -86,6 +86,7 @@ def _spawn(port: int, env: dict[str, str], *args: str) -> subprocess.Popen[str]:
             "uvicorn",
             "app.main:create_app",
             "--factory",
+            "--no-proxy-headers",  # I-2: XFF の解釈は app/ratelimit.py の1箇所に閉じる
             "--port",
             str(port),
             *args,
@@ -146,6 +147,9 @@ def test_symbol_keys_health_and_conversion_round_trip(fake_provider: FakeAnthrop
         ANTHROPIC_API_KEY=PROVIDER_KEY,
         ANTHROPIC_BASE_URL=f"http://127.0.0.1:{fake_provider.server_address[1]}",
         CORS_ORIGINS="http://localhost:3000",
+        # .env の RATE_LIMIT_* に依存しない（I-2 のテストが1リクエスト目で使い切る前提）
+        RATE_LIMIT_TIMES="1",
+        RATE_LIMIT_SECONDS="60",
     )
     proc = _spawn(port, env)
     try:
@@ -157,11 +161,21 @@ def test_symbol_keys_health_and_conversion_round_trip(fake_provider: FakeAnthrop
         reply = httpx.post(
             f"{base}/api/v1/ai/convert",
             json={"input_text": "水 ぬるく", "politeness_level": "normal"},
-            headers={"X-API-Key": DEVICE_KEY},
+            headers={"X-API-Key": DEVICE_KEY, "X-Forwarded-For": "spoof-a"},
         )
         assert reply.status_code == 200
         assert reply.json()["converted_text"] == "お水をぬるめでお願いします"
         assert fake_provider.seen_api_keys == [PROVIDER_KEY]
+        # I-2: TRUSTED_PROXY_COUNT 未設定（=0）なので XFF は信頼しないはず。接続元は
+        # 127.0.0.1 なので、--no-proxy-headers が無いと uvicorn が scope["client"] を
+        # XFF の値（spoof-a / spoof-b）へ書き換えてしまい、レート制限が別バケットとして
+        # 素通しする（[200, 200] になる）。
+        second = httpx.post(
+            f"{base}/api/v1/ai/convert",
+            json={"input_text": "水 ぬるく", "politeness_level": "normal"},
+            headers={"X-API-Key": DEVICE_KEY, "X-Forwarded-For": "spoof-b"},
+        )
+        assert second.status_code == 429
     finally:
         out, err = _stop(proc)
     assert '"event": "ConversionCompleted"' in out

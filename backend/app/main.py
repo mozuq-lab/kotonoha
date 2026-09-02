@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.ai.providers import Provider, build_provider
 from app.ai.service import ConversionService
@@ -39,6 +40,48 @@ from app.ratelimit import RateLimiter
 from app.routes import build_router
 
 ProviderFactory = Callable[[RuntimeConfig], Provider | None]
+
+
+class ExceptionBoundaryMiddleware:
+    """想定外例外の最後の受け皿（純 ASGI ミドルウェア）。
+
+    Starlette の ``ServerErrorMiddleware`` は応答を作った後に必ず例外を再送出するため、
+    ハンドラ（``add_exception_handler(Exception, ...)``）だけでは uvicorn が例外の文字列
+    表現込みの traceback を stderr へ出してしまう。その手前で受け止める。ここを通る例外は
+    型名しか残らない。
+
+    ``add_middleware`` は後から足したものが外側になるため、CORS より前に登録して
+    CORS の内側・router の外側（``ExceptionMiddleware`` の外側）に置く。
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        cause: type[BaseException] | None = None
+        try:
+            await self.app(scope, receive, send)
+        except Exception as exc:  # 第三者ライブラリ／他ミドルウェアの自由文を外へ出さない
+            cause = type(exc)
+        else:
+            return
+        assert cause is not None  # else 節で return 済みなのでここは except 経由のみ
+        log_event(
+            RequestFailed(
+                route=scope["path"],
+                error_code=ErrorCode.INTERNAL_ERROR.value,
+                cause_type=cause.__name__,
+            ),
+            level="ERROR",
+        )
+        response = JSONResponse(status_code=500, content=_error_body(ErrorCode.INTERNAL_ERROR))
+        try:
+            await response(scope, receive, send)
+        except Exception:  # noqa: S110 -- 応答が既に始まっていた場合の送信失敗。ログは上で出ている
+            pass
 
 
 def _parse_worker_count(raw: str) -> int | None:
@@ -140,6 +183,7 @@ def create_app(
         openapi_url="/openapi.json" if cfg.docs_enabled else None,
         lifespan=lifespan,
     )
+    app.add_middleware(ExceptionBoundaryMiddleware)  # CORS の内側・router の外側（I-1）
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(cfg.cors_origins()),
@@ -149,7 +193,6 @@ def create_app(
     )
     app.add_exception_handler(SafeError, _safe_error_handler)
     app.add_exception_handler(RequestValidationError, _validation_handler)
-    app.add_exception_handler(Exception, _unexpected_handler)
 
     limiter = RateLimiter(
         times=cfg.RATE_LIMIT_TIMES,
@@ -221,16 +264,3 @@ async def _validation_handler(request: Request, exc: Exception) -> JSONResponse:
             "error_code": ErrorCode.VALIDATION_ERROR.value,
         },
     )
-
-
-async def _unexpected_handler(request: Request, exc: Exception) -> JSONResponse:
-    """routes が拾えなかった層（ミドルウェア等）の最後の受け皿。型名だけ記録する。"""
-    log_event(
-        RequestFailed(
-            route=request.url.path,
-            error_code=ErrorCode.INTERNAL_ERROR.value,
-            cause_type=type(exc).__name__,
-        ),
-        level="ERROR",
-    )
-    return JSONResponse(status_code=500, content=_error_body(ErrorCode.INTERNAL_ERROR))

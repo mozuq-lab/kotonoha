@@ -106,6 +106,30 @@ def test_unexpected_exception_boundary(capsys: pytest.CaptureFixture[str]) -> No
     assert '"cause_type": "KeyError"' in out
 
 
+class AcloseExplodingProvider:
+    name: ProviderName = "anthropic"
+
+    async def complete(self, prompt: Prompt) -> str:
+        return "ok"
+
+    async def aclose(self) -> None:
+        raise RuntimeError("CANARY-aclose")
+
+
+def test_lifespan_aclose_failure_boundary(capsys: pytest.CaptureFixture[str]) -> None:
+    """I-5: lifespan 終了時に provider.aclose() が失敗しても、例外は外へ出さず型名だけ記録する
+    （app/main.py の lifespan finally 節）。"""
+    app = create_app(
+        make_config(), provider_factory=lambda _c: AcloseExplodingProvider(), environ={}, argv=[]
+    )
+    with TestClient(app):
+        pass
+    out, err = capsys.readouterr()
+    assert '"event": "RequestFailed"' in out
+    assert '"cause_type": "RuntimeError"' in out
+    _assert_absent("CANARY-aclose", out, err)
+
+
 def test_config_boundary_in_a_real_process(tmp_path: Path) -> None:
     """設定失敗はプロセスの stdout / stderr 全体で観測する（8周で唯一破られなかった検証法）。"""
     (tmp_path / ".env").write_text(
@@ -147,6 +171,27 @@ def test_provider_init_boundary_in_a_real_process() -> None:
     assert proc.returncode is not None and proc.returncode != 0
     assert "STARTUP_PROVIDER_INIT_FAILED" in err
     _assert_absent(CANARY, out, err)
+
+
+async def boom() -> None:
+    raise RuntimeError("CANARY-middleware")
+
+
+def test_exception_boundary_stops_uvicorn_traceback_leak(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """I-1: ServerErrorMiddleware は応答を作った後に必ず再送出するため、その手前の
+    ExceptionBoundaryMiddleware（CORS の内側・router の外側）で受け止める。
+    ``raise_server_exceptions=True`` のまま例外が test に伝播しなければ、
+    ServerErrorMiddleware まで届いていないことが分かる。"""
+    app = create_app(make_config(), provider_factory=lambda _c: None, environ={}, argv=[])
+    app.router.add_api_route("/boom", boom)
+    with TestClient(app, raise_server_exceptions=True) as client:
+        reply = client.get("/boom")
+    out, err = capsys.readouterr()
+    assert reply.status_code == 500 and reply.json()["error"]["code"] == "INTERNAL_ERROR"
+    _assert_absent("CANARY-middleware", reply.text, out, err)
+    assert '"cause_type": "RuntimeError"' in out
 
 
 def test_provider_init_boundary_raises_safe_error_in_process(

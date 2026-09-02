@@ -82,3 +82,17 @@ def test_times_greater_than_one() -> None:
     client = _client(RateLimiter(times=2, seconds=5, trusted_proxy_count=1))
     headers = {"X-Forwarded-For": "8.8.8.8"}
     assert [client.get("/a", headers=headers).status_code for _ in range(3)] == [200, 200, 429]
+
+
+def test_multiple_xff_header_lines_do_not_bypass_rate_limit() -> None:
+    """C-1: 同名ヘッダーが複数行だと ``.get()`` は先頭の1本しか見ないため、攻撃者が
+    先頭行に任意文字列を置くと毎回別バケットになってしまう（RFC 9110 §5.2: 複数行は
+    カンマ結合と等価）。"""
+    client = _client(RateLimiter(times=1, seconds=60, trusted_proxy_count=1))
+    first = client.get(
+        "/a", headers=[("x-forwarded-for", "spoof-1"), ("x-forwarded-for", "5.5.5.5")]
+    )
+    second = client.get(
+        "/a", headers=[("x-forwarded-for", "spoof-2"), ("x-forwarded-for", "5.5.5.5")]
+    )
+    assert [first.status_code, second.status_code] == [200, 429]

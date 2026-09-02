@@ -63,10 +63,8 @@
 - **無し。** backend はステートレス（ADR-001）。運用情報は stdout の構造化ログ（JSON Lines）で取る
 
 ### 認証・セキュリティ
-- **JWT (JSON Web Token)**: トークンベース認証
-- **OAuth2 + Bearer Token**: FastAPI標準の認証方式
-- **passlib + bcrypt**: パスワードハッシュ化
-- **python-jose**: JWT生成・検証
+- **端末 API キー**: `X-API-Key` ヘッダー、`hmac.compare_digest` で比較（複数キー対応）
+- アカウント管理・トークン認証の仕組みは MVP 範囲外で持たない
 
 ### バリデーション
 - **Pydantic**: 2.x (FastAPI標準、データバリデーション・型安全性)
@@ -207,10 +205,8 @@
 - **TLS 1.2+**: 暗号化通信
 
 ### 認証・認可
-- **JWT**: アクセストークン（短命、15分程度）
-- **Refresh Token**: リフレッシュトークン（長命、7日程度）
-- **OAuth2**: 標準的な認証フロー
-- **Password Hashing**: bcrypt（コスト係数12以上）
+- **端末 API キー**: `X-API-Key` ヘッダー、`hmac.compare_digest` で比較（複数キー対応）。
+  アカウント管理・トークン認証の仕組みは MVP 範囲外で持たない
 
 ### API セキュリティ
 - **CORS**: 適切なオリジン設定
@@ -295,41 +291,33 @@ kotonoha/
 │       ├── analysis_options.yaml
 │       └── README.md
 │
-├── backend/                     # FastAPI バックエンド
+├── backend/                     # FastAPI バックエンド（ステートレスな AI 変換プロキシ。ADR-001）
 │   ├── app/
-│   │   ├── main.py             # FastAPIアプリエントリーポイント
-│   │   ├── api/                # APIエンドポイント
-│   │   │   ├── v1/
-│   │   │   │   ├── endpoints/  # ai.py（AI変換）、health.py
-│   │   │   │   └── api.py      # ルーター統合
-│   │   │   └── deps.py         # 依存性注入・APIキー認証
-│   │   ├── core/               # コア機能
-│   │   │   ├── config.py       # 設定管理（pydantic-settings）
-│   │   │   ├── security.py     # APIキー検証
-│   │   │   ├── rate_limit.py   # レート制限（slowapi）
-│   │   │   ├── exceptions.py   # 例外定義
-│   │   │   └── logging_config.py
-│   │   ├── db/                 # DB接続設定・ベースクラス
-│   │   ├── models/             # SQLAlchemy モデル
-│   │   ├── schemas/            # Pydantic スキーマ
-│   │   ├── crud/               # CRUD操作
-│   │   └── utils/              # AIクライアント、ハッシュ等
-│   ├── alembic/                # データベースマイグレーション
-│   │   ├── versions/           # マイグレーションファイル
-│   │   └── env.py
-│   ├── tests/                  # テストファイル
+│   │   ├── __init__.py
+│   │   ├── main.py             # Application Factory（create_app）。ミドルウェア・例外ハンドラ登録
+│   │   ├── config.py           # 設定管理（pydantic-settings、RuntimeConfig。ADR-004）
+│   │   ├── errors.py           # ErrorCode・SafeError（ADR-003）
+│   │   ├── logging.py          # 構造化ログ（stdout JSON Lines）。stdlib logging を import してよいのはここだけ
+│   │   ├── schemas.py          # リクエスト/レスポンスの Pydantic スキーマ
+│   │   ├── auth.py             # 端末 API キー認証（X-API-Key）
+│   │   ├── ratelimit.py        # レート制限（limits ライブラリ、プロセス内メモリ。ADR-002）
+│   │   ├── routes.py           # ルーター（/health, /ai/convert, /ai/regenerate の3本）
+│   │   └── ai/                 # prompts.py・providers.py（Provider Protocol）・service.py
+│   ├── tests/
 │   │   ├── conftest.py         # pytest設定
-│   │   ├── test_api/           # APIテスト
-│   │   └── test_security/      # 認証テスト
+│   │   ├── ai/                 # app/ai 配下の単体テスト
+│   │   ├── contract/           # 旧・新 backend の外部契約 characterization テスト
+│   │   └── test_*.py           # app/ の各モジュールに対応する単体テスト
+│   ├── scripts/gates.sh        # 完了条件の grep ゲート（make gate）
 │   ├── requirements.txt        # Python依存関係
+│   ├── requirements-dev.txt    # 開発依存（lint・型・テスト）
 │   ├── .env.example            # 環境変数サンプル（アプリ設定）
-│   ├── pyproject.toml          # Ruff/Black/pytest設定
+│   ├── pyproject.toml          # Ruff/Black/mypy/pytest/import-linter設定
 │   ├── Makefile
 │   └── Dockerfile              # 本番用（マルチステージ・非root）
 │
 ├── docker/                      # 開発環境用Docker設定
-│   ├── backend/Dockerfile      # 開発用（--reload 有効）
-│   └── postgres/               # Dockerfile + init.sql
+│   └── backend/Dockerfile      # 開発用（--reload 有効。context はリポジトリルート）
 │
 ├── scripts/                     # ビルドスクリプト
 │   ├── build-web.sh
@@ -400,8 +388,9 @@ uv venv --python 3.12 .venv  # uv が無ければ: python3.12 -m venv .venv
 # アプリ設定（AIキー・API_KEYS・レート制限等）
 cp .env.example .env
 
-# 開発サーバー起動（Application Factory なので --factory が要る）
-.venv/bin/uvicorn app.main:create_app --factory --reload
+# 開発サーバー起動（Application Factory なので --factory が要る。
+# --no-proxy-headers: XFF の解釈は app/ratelimit.py の1箇所に閉じる。ADR-002）
+.venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload
 
 # ブラウザで確認（development / test でのみ公開。ADR-004）
 # http://localhost:8000/docs （Swagger UI）
@@ -530,13 +519,10 @@ set -a; source .env; set +a         # リポジトリルートで実行
 
 ### FastAPI
 ```bash
-uvicorn app.main:app --reload     # 開発サーバー起動
-alembic revision --autogenerate -m "message"  # マイグレーション作成
-alembic upgrade head              # マイグレーション適用
-alembic downgrade -1              # マイグレーションロールバック
+.venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload  # 開発サーバー起動
 pytest                            # テスト実行
 ruff check .                      # リントチェック
-ruff format .                     # コード整形
+black app tests                   # コード整形（.pre-commit-config.yaml は black に統一）
 ```
 
 ### AWS CDK
@@ -599,7 +585,7 @@ npm test                          # CDKスタックテスト実行
   - 状態管理をRiverpod 2.x → 3.x（`flutter_riverpod: ^3.1.0`）に修正（pubspec.yaml確認）
 - **2026-08-24**: 依存バージョン表記を実装と突き合わせて修正
   - FastAPI 0.121+ → 0.124+（`backend/requirements.txt`: `fastapi==0.124.0`）
-  - Alembic 1.17+ → 1.18+（`backend/requirements.txt`: `alembic==1.18.3`）
+  - Alembic 1.17+ → 1.18+（`backend/requirements.txt`: `alembic==1.18.3`）（旧 backend、Phase 2 で廃止）
   - go_router のバージョン（17.x）を明記（`pubspec.yaml`: `go_router: ^17.0.1`）
   - Dart の表記を「3.10（Flutter 3.38.1 同梱）」に統一（`bin/cache/dart-sdk/version` = 3.10.0 を確認。
     `pubspec.lock` の `sdks.dart: ">=3.9.0"` はロックを解決できる下限であって使用中の版ではない）

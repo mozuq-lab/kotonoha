@@ -70,3 +70,12 @@
 
 関連: [ADR-001](ADR-001-backend-stateless.md)／[ADR-003](ADR-003-errors-are-typed.md)
 （秘匿が不要になる理由の残り半分）
+
+## 改訂（2026-09-02、Phase 2 実装時）
+
+`memory://` という URI は slowapi を外したことで存在しなくなり、`limits` の
+`MemoryStorage` を直接使う（計画 D2）。守る対象と単一インスタンス前提は変わらない。
+あわせて uvicorn は `--no-proxy-headers` で起動し、XFF の解釈は `app/ratelimit.py` の
+1箇所に閉じる。`TRUSTED_PROXY_COUNT` の過大設定はフェイルクローズにならず、クライアント
+が識別子を選べる（`.env.example` 参照）。守りはデプロイ側の契約（上流で XFF を上書き
+する）。
