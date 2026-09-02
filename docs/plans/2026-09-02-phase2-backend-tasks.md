@@ -1061,7 +1061,7 @@ Expected: `ModuleNotFoundError: No module named 'app.errors'`
 """エラーは型で表現する（ADR-003）。
 
 このモジュールは ``ErrorCode`` と ``SafeError`` の系統しか提供しない。例外メッセージ
-（``str(exc)``）を受け取る引数はどこにも無い。原因例外は *型名* だけを保持する。
+例外のメッセージ文字列を受け取る引数はどこにも無い。原因例外は *型名* だけを保持する。
 """
 
 from __future__ import annotations
