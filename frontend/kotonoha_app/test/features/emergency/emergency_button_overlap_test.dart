@@ -32,6 +32,7 @@ import 'package:kotonoha_app/core/router/app_router.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
 import 'package:kotonoha_app/features/emergency/presentation/providers/emergency_state_provider.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_button_with_confirmation.dart';
+import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 import 'package:kotonoha_app/features/settings/models/app_settings.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 
@@ -321,6 +322,87 @@ void main() {
         );
       }
     });
+
+    /// ルーター設定（＝アプリが実際に配信するルート）から全パスを集める。
+    ///
+    /// **手書きの一覧にしないこと。** 画面を1つ足したときに検査から漏れる。
+    /// 実際、この検査を入れるまで `/favorites` `/help` `/face-to-face` の3画面は
+    /// どの緊急ボタン検査も通っていなかった（2026-08-31 実測）。
+    List<String> allRoutePaths() {
+      final paths = <String>[];
+      void walk(List<RouteBase> routes) {
+        for (final route in routes) {
+          if (route is GoRoute && route.path.startsWith('/')) {
+            paths.add(route.path);
+          }
+          walk(route.routes);
+        }
+      }
+
+      walk(router.configuration.routes);
+      return paths;
+    }
+
+    /// 【向きを2つ回す理由】: 緊急ボタンバーは縦向きなら画面下部の横帯、
+    /// 横向きなら画面右端の縦帯とレイアウトが変わる（`_buildEmergencyButtonBar`）。
+    /// 推奨端末は9.7インチ以上のタブレットで横持ちの利用が普通にあるため、
+    /// 縦だけ確かめても「発報できない」側の検査としては足りない。
+    const reachabilityScreens = <String, Size>{
+      'スマホ縦(390x844)': Size(390, 844),
+      'タブレット横(1024x768)': Size(1024, 768),
+    };
+
+    for (final screen in reachabilityScreens.entries) {
+      testWidgets('REQ-301: ${screen.key} の全ルートで緊急ボタンにタップが届き、確認ダイアログが開く',
+          (tester) async {
+        // 【「見えている」で終わらせない理由】: ADR-007 の条件2 が問うのは
+        // 「発報できないこと」の検査である。ウィジェットが存在していても、
+        // 手前の要素がヒットテストを吸収すれば発報できない（Issue #84 で
+        // 実際に起きた形）。**タップが届いて確認ダイアログが開くところまで**見る。
+        await pumpAppAt(tester, screen.value);
+
+        final paths = allRoutePaths();
+        expect(
+          paths,
+          contains(AppRoutes.faceToFace),
+          reason: 'ルーター設定からパスを列挙できていること（列挙に失敗すると検査が空振りする）',
+        );
+
+        for (final path in paths) {
+          router.go(path);
+          await tester.pumpAndSettle();
+
+          expect(
+            find.byType(EmergencyButtonWithConfirmation),
+            findsOneWidget,
+            reason: '[${screen.key}] $path に緊急ボタンが表示されていない'
+                '（REQ-301: 全画面で常時表示）',
+          );
+
+          await tester.tap(find.byType(EmergencyButtonWithConfirmation));
+          await tester.pumpAndSettle();
+
+          // 【finder を型で取る理由】: `find.text('はい')` はホーム画面の
+          // クイック応答ボタン「はい」とも一致してしまい、ダイアログが
+          // 開いていなくても緑になりうる（2026-08-31 に実測して気づいた）。
+          expect(
+            find.byType(EmergencyConfirmationDialog),
+            findsOneWidget,
+            reason: '[${screen.key}] $path で緊急ボタンにタップが届いていない'
+                '（手前の要素が吸収している）',
+          );
+
+          // 次のルートへ進む前に元の状態へ戻す
+          await tester.tap(
+            find.descendant(
+              of: find.byType(EmergencyConfirmationDialog),
+              matching: find.text('いいえ'),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
+      });
+    }
 
     testWidgets('定型文画面: 追加FAB（右下）が緊急ボタンに覆われない', (tester) async {
       // 【修正前の不具合】: 定型文画面の「定型文を追加」FABは
