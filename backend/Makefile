@@ -1,4 +1,4 @@
-.PHONY: lint format test test-cov clean help
+.PHONY: lint format gate check test test-cov clean help
 
 help:  ## Display this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -9,6 +9,14 @@ lint:  ## Run ruff linter
 format:  ## Format code with black and ruff
 	black app tests
 	ruff check app tests --fix
+
+gate:  ## 完了条件の grep ゲート
+	bash scripts/gates.sh
+
+check: lint gate  ## lint + 型 + 層契約 + ゲート
+	black --check app tests
+	mypy
+	lint-imports
 
 test:  ## Run tests
 	pytest

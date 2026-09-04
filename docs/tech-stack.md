@@ -56,19 +56,15 @@
 
 ### フレームワーク・言語
 - **FastAPI**: 0.124+ (`backend/requirements.txt` は `fastapi==0.124.0` を固定)
-- **Python**: 3.10+ (Pythonの安定版、Alembic要件を満たす)
+- **Python**: 3.12
 - **Uvicorn**: ASGIサーバー（FastAPI標準）
 
-### ORM・データベース接続
-- **SQLAlchemy**: 2.x (最新版、async対応)
-- **Alembic**: 1.18+ (データベースマイグレーションツール。`alembic==1.18.3` を固定)
-- **asyncpg**: 非同期PostgreSQLドライバ
+### 永続化
+- **無し。** backend はステートレス（ADR-001）。運用情報は stdout の構造化ログ（JSON Lines）で取る
 
 ### 認証・セキュリティ
-- **JWT (JSON Web Token)**: トークンベース認証
-- **OAuth2 + Bearer Token**: FastAPI標準の認証方式
-- **passlib + bcrypt**: パスワードハッシュ化
-- **python-jose**: JWT生成・検証
+- **端末 API キー**: `X-API-Key` ヘッダー、`hmac.compare_digest` で比較（複数キー対応）
+- アカウント管理・トークン認証の仕組みは MVP 範囲外で持たない
 
 ### バリデーション
 - **Pydantic**: 2.x (FastAPI標準、データバリデーション・型安全性)
@@ -81,43 +77,18 @@
 - 非同期対応で高速（Node.js/Go並みのパフォーマンス）
 - 自動APIドキュメント生成（Swagger UI / ReDoc）
 - Pydanticで型安全性を確保
-- SQLAlchemyでリレーショナルDBの強力な操作が可能
 - MVP開発に最適な学習コスト
 - 将来の拡張性が高い
 
-## 💾 データベース
+## 💾 データベース（廃止）
 
-### メインデータベース
-- **PostgreSQL**: 15+ (最新安定版)
-  - ACID準拠のトランザクション
-  - JSONB型でNoSQL的な柔軟性も確保
-  - あなたのデータベース設計経験を活かせる
-  - 高度なインデックス戦略
-  - 将来のスケーリングに対応
-
-### キャッシュ（オプション）
-- **Redis**: 7+ (必要に応じて)
-  - セッション管理
-  - 高速キャッシュ
-  - リアルタイム機能のPub/Sub
-
-### ファイルストレージ
-- **開発環境**: ローカルファイルシステム
-- **本番環境**: AWS S3 / Azure Blob Storage / Google Cloud Storage
-
-### 設計方針
-- 適切な正規化レベル（第3正規形を基本）
-- インデックス戦略でクエリ最適化
-- 外部キー制約でデータ整合性を保証
-- Alembicでマイグレーション管理
+2026-09 の Phase 2 で削除した。経緯と再訪条件は ADR-001。
 
 ## 🛠️ 開発環境・ツール
 
 ### コンテナ化
 - **Docker**: 最新安定版
 - **Docker Compose**: 開発環境の一貫性確保
-  - PostgreSQL
-  - Redis（オプション）
   - FastAPI
   - Flutter Web（必要に応じて）
 
@@ -178,7 +149,6 @@
 **管理対象リソース**:
 - VPC、サブネット、セキュリティグループ
 - ECS/Fargate クラスター（バックエンドAPI）
-- RDS for PostgreSQL
 - S3バケット（ログ、将来的なファイルストレージ）
 - CloudWatch（監視・ログ）
 - Secrets Manager（環境変数・認証情報）
@@ -234,16 +204,13 @@
 - **TLS 1.2+**: 暗号化通信
 
 ### 認証・認可
-- **JWT**: アクセストークン（短命、15分程度）
-- **Refresh Token**: リフレッシュトークン（長命、7日程度）
-- **OAuth2**: 標準的な認証フロー
-- **Password Hashing**: bcrypt（コスト係数12以上）
+- **端末 API キー**: `X-API-Key` ヘッダー、`hmac.compare_digest` で比較（複数キー対応）。
+  アカウント管理・トークン認証の仕組みは MVP 範囲外で持たない
 
 ### API セキュリティ
 - **CORS**: 適切なオリジン設定
 - **Rate Limiting**: API呼び出し回数制限（必要に応じて）
 - **Input Validation**: Pydanticで厳密なバリデーション
-- **SQL Injection対策**: SQLAlchemy ORMを使用
 - **XSS対策**: 適切なエスケープ処理
 
 ### 環境変数管理
@@ -323,41 +290,33 @@ kotonoha/
 │       ├── analysis_options.yaml
 │       └── README.md
 │
-├── backend/                     # FastAPI バックエンド
+├── backend/                     # FastAPI バックエンド（ステートレスな AI 変換プロキシ。ADR-001）
 │   ├── app/
-│   │   ├── main.py             # FastAPIアプリエントリーポイント
-│   │   ├── api/                # APIエンドポイント
-│   │   │   ├── v1/
-│   │   │   │   ├── endpoints/  # ai.py（AI変換）、health.py
-│   │   │   │   └── api.py      # ルーター統合
-│   │   │   └── deps.py         # 依存性注入・APIキー認証
-│   │   ├── core/               # コア機能
-│   │   │   ├── config.py       # 設定管理（pydantic-settings）
-│   │   │   ├── security.py     # APIキー検証
-│   │   │   ├── rate_limit.py   # レート制限（slowapi）
-│   │   │   ├── exceptions.py   # 例外定義
-│   │   │   └── logging_config.py
-│   │   ├── db/                 # DB接続設定・ベースクラス
-│   │   ├── models/             # SQLAlchemy モデル
-│   │   ├── schemas/            # Pydantic スキーマ
-│   │   ├── crud/               # CRUD操作
-│   │   └── utils/              # AIクライアント、ハッシュ等
-│   ├── alembic/                # データベースマイグレーション
-│   │   ├── versions/           # マイグレーションファイル
-│   │   └── env.py
-│   ├── tests/                  # テストファイル
+│   │   ├── __init__.py
+│   │   ├── main.py             # Application Factory（create_app）。ミドルウェア・例外ハンドラ登録
+│   │   ├── config.py           # 設定管理（pydantic-settings、RuntimeConfig。ADR-004）
+│   │   ├── errors.py           # ErrorCode・SafeError（ADR-003）
+│   │   ├── logging.py          # 構造化ログ（stdout JSON Lines）。stdlib logging を import してよいのはここだけ
+│   │   ├── schemas.py          # リクエスト/レスポンスの Pydantic スキーマ
+│   │   ├── auth.py             # 端末 API キー認証（X-API-Key）
+│   │   ├── ratelimit.py        # レート制限（limits ライブラリ、プロセス内メモリ。ADR-002）
+│   │   ├── routes.py           # ルーター（/health, /ai/convert, /ai/regenerate の3本）
+│   │   └── ai/                 # prompts.py・providers.py（Provider Protocol）・service.py
+│   ├── tests/
 │   │   ├── conftest.py         # pytest設定
-│   │   ├── test_api/           # APIテスト
-│   │   └── test_security/      # 認証テスト
+│   │   ├── ai/                 # app/ai 配下の単体テスト
+│   │   ├── contract/           # 旧・新 backend の外部契約 characterization テスト
+│   │   └── test_*.py           # app/ の各モジュールに対応する単体テスト
+│   ├── scripts/gates.sh        # 完了条件の grep ゲート（make gate）
 │   ├── requirements.txt        # Python依存関係
+│   ├── requirements-dev.txt    # 開発依存（lint・型・テスト）
 │   ├── .env.example            # 環境変数サンプル（アプリ設定）
-│   ├── pyproject.toml          # Ruff/Black/pytest設定
+│   ├── pyproject.toml          # Ruff/Black/mypy/pytest/import-linter設定
 │   ├── Makefile
 │   └── Dockerfile              # 本番用（マルチステージ・非root）
 │
 ├── docker/                      # 開発環境用Docker設定
-│   ├── backend/Dockerfile      # 開発用（--reload 有効）
-│   └── postgres/               # Dockerfile + init.sql
+│   └── backend/Dockerfile      # 開発用（--reload 有効。context はリポジトリルート）
 │
 ├── scripts/                     # ビルドスクリプト
 │   ├── build-web.sh
@@ -408,7 +367,7 @@ cp backend/.env.example backend/.env
 
 ### 2. Docker環境起動
 ```bash
-# PostgreSQL等のサービスを起動
+# backend コンテナを起動（DB は無い。ステートレスな AI 変換プロキシのみ）
 docker-compose up -d
 
 # ログ確認
@@ -419,21 +378,20 @@ docker-compose logs -f
 ```bash
 cd backend
 
-# 仮想環境作成
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# 仮想環境作成（3.12 固定。ADR-003 の ErrorCode(StrEnum) が 3.11+ を要求）
+uv venv --python 3.12 .venv  # uv が無ければ: python3.12 -m venv .venv
 
 # 依存関係インストール
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+.venv/bin/pip install -r requirements-dev.txt
 
-# データベースマイグレーション
-alembic upgrade head
+# アプリ設定（AIキー・API_KEYS・レート制限等）
+cp .env.example .env
 
-# 開発サーバー起動
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# 開発サーバー起動（Application Factory なので --factory が要る。
+# --no-proxy-headers: XFF の解釈は app/ratelimit.py の1箇所に閉じる。ADR-002）
+.venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload
 
-# ブラウザで確認
+# ブラウザで確認（development / test でのみ公開。ADR-004）
 # http://localhost:8000/docs （Swagger UI）
 # http://localhost:8000/redoc （ReDoc）
 ```
@@ -560,13 +518,10 @@ set -a; source .env; set +a         # リポジトリルートで実行
 
 ### FastAPI
 ```bash
-uvicorn app.main:app --reload     # 開発サーバー起動
-alembic revision --autogenerate -m "message"  # マイグレーション作成
-alembic upgrade head              # マイグレーション適用
-alembic downgrade -1              # マイグレーションロールバック
+.venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload  # 開発サーバー起動
 pytest                            # テスト実行
 ruff check .                      # リントチェック
-ruff format .                     # コード整形
+black app tests                   # コード整形（.pre-commit-config.yaml は black に統一）
 ```
 
 ### AWS CDK
@@ -611,7 +566,6 @@ npm test                          # CDKスタックテスト実行
 
 ### FastAPI
 - [FastAPI公式ドキュメント](https://fastapi.tiangolo.com/)
-- [SQLAlchemy公式ドキュメント](https://docs.sqlalchemy.org/)
 - [Pydantic公式ドキュメント](https://docs.pydantic.dev/)
 
 ### PostgreSQL
@@ -629,7 +583,7 @@ npm test                          # CDKスタックテスト実行
   - 状態管理をRiverpod 2.x → 3.x（`flutter_riverpod: ^3.1.0`）に修正（pubspec.yaml確認）
 - **2026-08-24**: 依存バージョン表記を実装と突き合わせて修正
   - FastAPI 0.121+ → 0.124+（`backend/requirements.txt`: `fastapi==0.124.0`）
-  - Alembic 1.17+ → 1.18+（`backend/requirements.txt`: `alembic==1.18.3`）
+  - Alembic 1.17+ → 1.18+（`backend/requirements.txt`: `alembic==1.18.3`）（旧 backend、Phase 2 で廃止）
   - go_router のバージョン（17.x）を明記（`pubspec.yaml`: `go_router: ^17.0.1`）
   - Dart の表記を「3.10（Flutter 3.38.1 同梱）」に統一（`bin/cache/dart-sdk/version` = 3.10.0 を確認。
     `pubspec.lock` の `sdks.dart: ">=3.9.0"` はロックを解決できる下限であって使用中の版ではない）

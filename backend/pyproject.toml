@@ -1,51 +1,53 @@
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "B", "ANN", "S", "C90"]
 ignore = ["S101"]
 
-[tool.ruff.lint.isort]
-# backend/alembic/（マイグレーションディレクトリ）がパッケージ名alembicを遮蔽し、
-# ruffのバージョンによってfirst-party/third-partyの推論が揺れるため明示指定する
-known-third-party = ["alembic"]
-
 [tool.ruff.lint.per-file-ignores]
-# テストファイル: assert使用、型注釈省略、日本語docstringの行長、日本語関数名、テスト用パスワード文字列を許容
-"tests/*" = ["S101", "ANN", "E501", "N802", "S105"]
-# FastAPIのDepends()パターンはB008の例外として許容
-"app/api/*" = ["B008"]
-# main.py: FastAPIのDepends()パターン、日本語docstringの行長を許容
-"app/main.py" = ["B008", "E501"]
-# モデル・スキーマ: 日本語コメント・docstringの行長を許容
-"app/models/*" = ["E501"]
-"app/schemas/*" = ["E501"]
-# AIクライアント: 日本語文字列の行長を許容
-"app/utils/ai_client.py" = ["E501"]
-# Alembicマイグレーション: 自動生成コードの行長とimport順序を許容
-"alembic/*" = ["E501", "E402"]
+"tests/*" = ["S101", "ANN", "E501", "N802", "S105", "S106"]
+# FastAPI の Depends()/Security() を既定値に置く形は B008 の例外
+"app/routes.py" = ["B008"]
+"app/auth.py" = ["B008"]
 
 [tool.black]
 line-length = 100
-target-version = ['py310']
+target-version = ["py312"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+files = ["app"]
+
+[tool.importlinter]
+root_package = "app"
+
+# ADR-006。上の層は下の層を import してよい。逆は禁止。`|` は互いに import しない兄弟
+[[tool.importlinter.contracts]]
+name = "ADR-006 layers"
+type = "layers"
+layers = [
+    "app.main",
+    "app.routes",
+    "app.schemas",
+    "app.auth | app.ratelimit | app.ai",
+    "app.config",
+    "app.logging",
+    "app.errors",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-python_classes = "Test*"
-python_functions = "test_*"
 asyncio_mode = "auto"
-# 【イベントループスコープ設定】: functionスコープでイベントループを管理し、テスト間の分離を保証
-# 【実装方針】: 各テスト関数ごとに新しいイベントループを作成し、接続プール問題を回避
-# 🔵 pytest-asyncio 0.25.x の推奨設定に基づく
 asyncio_default_fixture_loop_scope = "function"
 asyncio_default_test_loop_scope = "function"
-# addopts = "--cov=app --cov-report=html --cov-report=term-missing"  # pytest-covをインストール後に有効化
 
 [tool.coverage.run]
 source = ["app"]
-omit = ["*/tests/*", "*/migrations/*"]
 
 [tool.coverage.report]
 fail_under = 80
