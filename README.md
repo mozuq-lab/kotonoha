@@ -104,7 +104,7 @@ docker-compose up -d
 cd backend
 uv venv --python 3.12 --seed .venv   # 3.12 固定。--seed が無いと pip が入らない
 .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/pip install pre-commit && (cd .. && backend/.venv/bin/pre-commit install)
+(cd .. && backend/.venv/bin/pre-commit install)   # git フックの登録
 cp .env.example .env
 .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload
 ```

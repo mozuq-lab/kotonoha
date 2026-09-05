@@ -386,9 +386,8 @@ uv venv --python 3.12 --seed .venv
 # 依存関係インストール
 .venv/bin/pip install -r requirements-dev.txt
 
-# pre-commit（requirements-dev.txt には無い。.git/hooks/pre-commit はこの venv の
-# python を指すので、venv を作り直したらフックも入れ直す）
-.venv/bin/pip install pre-commit
+# git フックの登録（pre-commit 本体は requirements-dev.txt に含まれる。.git/hooks/pre-commit は
+# この venv の python を指すので、venv を作り直したらフックも入れ直す）
 (cd .. && backend/.venv/bin/pre-commit install)
 
 # 旧 backend を checkout していた作業ツリーでは、pull 後も app/models 等に __pycache__ だけが
