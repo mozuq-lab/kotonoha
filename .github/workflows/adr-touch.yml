@@ -40,7 +40,7 @@ jobs:
             echo '|---|---|---|---|---|'
             cat touched.txt
           } > body.md
-          id=$(gh api "repos/$REPO/issues/$PR/comments" --jq '[.[] | select(.body | startswith("<!-- adr-touch -->"))][0].id // empty')
+          id=$(gh api --paginate "repos/$REPO/issues/$PR/comments" --jq '[.[] | select(.body | startswith("<!-- adr-touch -->"))][0].id // empty' | head -n1)
           if [ -n "$id" ]; then
             gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@body.md > /dev/null
           else
