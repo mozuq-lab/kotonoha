@@ -3,7 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **破棄条件**: Phase 5（文書の作り直し）の完了 PR がマージされたら削除する。Part A の決定は
-それまでに AGENTS.md（核）へ移し、Part B の作業記録は PR に残す。
+Phase 5 で **ADR-010（文書の枠組み）** として書き（作成条件 3 つを満たす: PR の外を縛る／却下案がある／
+検査は `scripts/inventory.sh` の数字）、核には索引の 1 行と規律だけを残す。Part B の作業記録は PR に残す。
 
 作成: 2026-09-05 ／ 親計画: `docs/plans/2026-08-29-architecture-remediation.md` §5 Phase 4・5 ／
 決定の経緯: 2026-09-05 のセッション（台帳 #85 のコメントに要点あり）
@@ -100,6 +101,10 @@ mutmut 3.7.0（backend の mutation testing、CI には入れない）／`gh` CL
 | 005 frontend の 1 真実 | 未卒業 | 許可リスト検査は一部。今後の実装を縛る |
 | 007 リリース基準 | 未卒業 | リリースまで生きる |
 | 009 クラッシュ報告 | 未卒業 | リリースまで生きる |
+| 010 文書の枠組み（Phase 5 で作成） | 未卒業 | 検査は `scripts/inventory.sh` の数字（核 120 行以内・未卒業 5 本以下・実在しないパス参照 0）。棚卸しが数字を守り始めたら卒業 |
+
+未卒業は 010 を含めて 5 本になる。002 と 005 は長く枠を占める見込みなので、実質の回転枠は 3 本。6 本目を書くときは
+卒業・統合・撤回のどれかを先に行い、どれもできない状態が 2 回続いたら上限の数字を見直す（記録は 010 の書き直し）。
 
 ### A4. 却下済みの案を拾う 3 層
 
