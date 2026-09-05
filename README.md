@@ -33,8 +33,6 @@
 | ルーティング | go_router | 17.0.1 |
 | バックエンド | FastAPI | 0.124.0 |
 | ORM | SQLAlchemy | 2.0.44 |
-| データベース | PostgreSQL | 15 |
-| マイグレーション | Alembic | 1.18.3 |
 | コンテナ | Docker + Docker Compose | 最新版 |
 
 ## アーキテクチャの特徴
@@ -67,7 +65,7 @@
 
 - Docker Desktop インストール済み
 - Flutter SDK 3.38.1以上 インストール済み
-- Python 3.10以上 インストール済み
+- Python 3.12（uv があれば `uv venv --python 3.12` が取得する）
 - Git インストール済み
 
 ### 1. リポジトリクローン
@@ -104,16 +102,18 @@ docker-compose up -d
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload
+uv venv --python 3.12 --seed .venv   # 3.12 固定。--seed が無いと pip が入らない
+.venv/bin/pip install -r requirements-dev.txt
+(cd .. && backend/.venv/bin/pre-commit install)   # git フックの登録
+cp .env.example .env
+.venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload
 ```
 
-ブラウザで確認:
+ブラウザで確認（`/docs` は development / test でのみ公開）:
 - http://localhost:8000/docs (Swagger UI)
-- http://localhost:8000/health (ヘルスチェック)
+- http://localhost:8000/api/v1/health (ヘルスチェック)
+
+DB は無い（ADR-001）。詳細は `docs/tech-stack.md`「3. バックエンド（FastAPI）セットアップ」。
 
 ### 5. フロントエンドセットアップ
 
@@ -201,20 +201,18 @@ kotonoha/
 ```bash
 docker-compose up -d              # サービス起動
 docker-compose down               # サービス停止
-docker-compose logs -f postgres   # ログ確認
+docker-compose logs -f backend    # ログ確認
 ```
 
 ### バックエンド（FastAPI）
 
 ```bash
 cd backend
-uvicorn app.main:app --reload     # 開発サーバー起動
-pytest                            # テスト実行
-pytest --cov=app                  # カバレッジ測定
-ruff check .                      # Lintチェック
-ruff format .                     # コード整形
-alembic upgrade head              # マイグレーション適用
-alembic revision --autogenerate -m "message"  # マイグレーション作成
+.venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload  # 開発サーバー起動
+.venv/bin/pytest                  # テスト実行（pytest-randomly が順序をシャッフルする）
+.venv/bin/pytest --cov=app        # カバレッジ測定
+PATH="$PWD/.venv/bin:$PATH" make check   # ruff + black + mypy --strict + lint-imports + gates
+PATH="$PWD/.venv/bin:$PATH" make format  # コード整形（black に統一。ruff format は使わない）
 ```
 
 ### フロントエンド（Flutter）

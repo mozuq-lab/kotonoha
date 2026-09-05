@@ -131,82 +131,10 @@ docker exec -it kotonoha_postgres psql -U kotonoha_user -d kotonoha_db -c "SELEC
 
 ## バックエンド開発環境
 
-### 1. Python仮想環境の作成
-
-```bash
-cd backend
-
-# 仮想環境を作成
-python -m venv venv
-
-# 仮想環境を有効化
-# macOS / Linux
-source venv/bin/activate
-
-# Windows
-venv\Scripts\activate
-```
-
-### 2. 依存関係のインストール
-
-```bash
-# 必須パッケージ
-pip install -r requirements.txt
-
-# 開発用パッケージ（オプション）
-pip install -r requirements-dev.txt  # 存在する場合
-```
-
-### 3. データベースマイグレーション
-
-```bash
-# マイグレーションを適用
-alembic upgrade head
-
-# マイグレーション状態を確認
-alembic current
-```
-
-### 4. 開発サーバーの起動
-
-```bash
-# 開発サーバーを起動（ホットリロード有効）
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 5. APIドキュメントの確認
-
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **ヘルスチェック**: http://localhost:8000/health
-
-### コマンド一覧
-
-```bash
-# 開発サーバー起動
-uvicorn app.main:app --reload
-
-# テスト実行
-pytest
-
-# カバレッジ付きテスト
-pytest --cov=app --cov-report=html
-
-# Lintチェック
-ruff check app tests
-
-# コード整形
-ruff format app tests
-
-# マイグレーション作成
-alembic revision --autogenerate -m "説明"
-
-# マイグレーション適用
-alembic upgrade head
-
-# マイグレーションロールバック
-alembic downgrade -1
-```
+> **この節の旧手順（`python -m venv venv`・alembic・`uvicorn app.main:app`）は Phase 2（ADR-001）で
+> 旧 backend ごと廃止した。** 現行の手順（3.12 の venv 作成・pre-commit の導入・`--factory` での起動・
+> `make check`）は `docs/tech-stack.md`「3. バックエンド（FastAPI）セットアップ」と
+> `AGENTS.md`「開発コマンド」が正で、ここには写さない。DB とマイグレーションは存在しない。
 
 ## フロントエンド開発環境
 
