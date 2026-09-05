@@ -11,7 +11,7 @@ Our goal is to enable users to express what they want to say with minimal effort
 
 <b>Preset Phrases</b>
 - Over 80 pre-loaded common phrases
-- Organized by categories: Daily, Health, Emotions
+- Organized by categories: Daily, Health, Other
 - One-tap instant speech
 - Add your own custom phrases
 
@@ -35,7 +35,7 @@ Our goal is to enable users to express what they want to say with minimal effort
 
 - Font size: Small, Medium, Large
 - Themes: Light, Dark, High Contrast
-- Speech rate: Slow, Normal, Fast
+- Speech rate: Very slow, Slow, Normal, Fast
 - Large, easy-to-tap button design
 
 <b>Offline Support</b>
