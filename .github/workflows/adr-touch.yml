@@ -20,8 +20,10 @@ jobs:
 
       - name: Match changed files against the ADR index
         id: match
+        env:
+          BASE: ${{ github.base_ref }}
         run: |
-          git diff --name-only "origin/${{ github.base_ref }}...HEAD" | scripts/adr-touch.sh > touched.txt
+          git diff --name-only "origin/$BASE...HEAD" | scripts/adr-touch.sh > touched.txt
           echo "n=$(wc -l < touched.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
 
       - name: Create or update the comment
