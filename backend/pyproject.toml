@@ -51,3 +51,19 @@ source = ["app"]
 
 [tool.coverage.report]
 fail_under = 80
+
+[tool.mutmut]
+# 3.7.0 では paths_to_mutate/tests_dir は deprecated（mutmut --help 実行時に警告）。
+# 現行キーは source_paths / pytest_add_cli_args_test_selection。
+source_paths = ["app/config.py", "app/errors.py", "app/auth.py", "app/ratelimit.py"]
+# mutmut は mutants/ に対象ファイルだけをコピーする。config.py は app.logging を、
+# 4 ファイルとも app（パッケージ）を import するため、依存先を also_copy で補う。
+also_copy = ["app/__init__.py", "app/logging.py"]
+# tests/ 配下には app.main 経由でアプリ全体を組み立てるテストもあり、対象4ファイルの
+# コピーだけでは import に失敗する。対象と無関係なテストを巻き込まないよう明示的に絞る。
+pytest_add_cli_args_test_selection = [
+    "tests/test_config.py",
+    "tests/test_errors.py",
+    "tests/test_auth.py",
+    "tests/test_ratelimit.py",
+]

@@ -16,6 +16,9 @@
 - [ ] L-56 誤仕様固定テスト検出スキルと mutmut 導入・kill rate 記録が未着手 — Phase 4 の完了条件
 - [ ] L-57 Android 12 以上の実機で、自動バックアップにアプリデータが載らないことを確認 — #99
 - [ ] L-13 box が開いたまま書き込み失敗を検出しない（ディスクフル） — hive 2.2.3 `box_impl.dart:82`。ADR-005（永続化の失敗は利用者に伝える）の穴
+- [ ] L-59 `exc.errors(include_input=False, ...)` から `include_input=False` を落とす mutant が生存 — ValidationError の入力値が `ConfigError` へ漏れないことを検査するテストが無い（ADR-003） — backend/app/config.py:161（mutmut 生存。L-56 の続き）
+- [ ] L-60 `SafeError.__init__` の `super().__init__(code.value)` を `None` にする mutant が生存 — 基底 `SafeError` の文字列表現が `ErrorCode` を保持することを検査するテストが無い — backend/app/errors.py:108（mutmut 生存。L-56 の続き）
+- [ ] L-61 `RateLimiter.__init__` の `RateLimitItemPerSecond(times, seconds)` の `seconds` を `None` にする mutant が生存 — 設定した秒数がレート制限ウィンドウ長に反映されることを検査するテストが無い — backend/app/ratelimit.py:42（mutmut 生存。L-56 の続き）
 
 ## 判断待ち
 - [ ] L-39 ADR-005 の却下理由と連鎖削除の矛盾 — docs/adr/ADR-005。Phase 5 の後に扱う
