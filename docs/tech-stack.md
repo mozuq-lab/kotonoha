@@ -379,10 +379,21 @@ docker-compose logs -f
 cd backend
 
 # 仮想環境作成（3.12 固定。ADR-003 の ErrorCode(StrEnum) が 3.11+ を要求）
-uv venv --python 3.12 .venv  # uv が無ければ: python3.12 -m venv .venv
+# --seed が無いと pip が入らず、次の行が落ちる。uv 管理の Python では
+# `python3.12 -m venv` が ensurepip で失敗するので uv venv を使う（2026-09-05 実測）
+uv venv --python 3.12 --seed .venv
 
 # 依存関係インストール
 .venv/bin/pip install -r requirements-dev.txt
+
+# pre-commit（requirements-dev.txt には無い。.git/hooks/pre-commit はこの venv の
+# python を指すので、venv を作り直したらフックも入れ直す）
+.venv/bin/pip install pre-commit
+(cd .. && backend/.venv/bin/pre-commit install)
+
+# 旧 backend を checkout していた作業ツリーでは、pull 後も app/models 等に __pycache__ だけが
+# 残り、`make check` の gates が「存在する」と判定して落ちる。無視対象のファイルだけを消す:
+# (cd .. && git clean -fdX -- backend/app backend/alembic backend/tests)
 
 # アプリ設定（AIキー・API_KEYS・レート制限等）
 cp .env.example .env

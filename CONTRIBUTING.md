@@ -70,12 +70,11 @@ cp backend/.env.example backend/.env    # バックエンドのアプリ設定
 # Docker環境を起動
 docker-compose up -d
 
-# バックエンドセットアップ
+# バックエンドセットアップ（詳細は docs/tech-stack.md「3. バックエンド（FastAPI）セットアップ」）
 cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-alembic upgrade head
+uv venv --python 3.12 --seed .venv   # 3.12 固定。--seed が無いと pip が入らない
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pip install pre-commit && (cd .. && backend/.venv/bin/pre-commit install)
 
 # フロントエンドセットアップ
 cd ../frontend/kotonoha_app
