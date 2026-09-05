@@ -354,6 +354,21 @@ jobs:
           path: frontend/kotonoha_app/build/app/outputs/flutter-apk/app-internal-release.apk
           retention-days: 30
 
+      # 配布物（AAB）が PR 時点で作れることを毎回確かめる。release.yml は tag でしか走らず、
+      # flavor 未指定のまま一度も成功していなかった（2026-09-05 に発見）。署名は付けない。
+      - name: Build App Bundle (production, unsigned)
+        run: >
+          flutter build appbundle --release --flavor production
+          --dart-define=API_BASE_URL="${API_BASE_URL}"
+          --dart-define=AI_API_KEY="${AI_API_KEY}"
+
+      - name: Upload App Bundle
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-aab-production
+          path: frontend/kotonoha_app/build/app/outputs/bundle/productionRelease/app-production-release.aab
+          retention-days: 30
+
   build-ios:
     name: Build iOS
     runs-on: macos-latest
