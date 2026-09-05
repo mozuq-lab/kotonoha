@@ -7,7 +7,7 @@
 ## 未対応
 - [ ] L-04 `docs/design/kotonoha/api-endpoints.md:381` が NFR-101 をレート制限の根拠として誤引用 — 正本は ADR-002。Phase 5 の正本整理で解消
 - [ ] L-08 `lib/features/README.md` が例示するディレクトリが実在しない — Phase 5 の文書整理で解消
-- [ ] L-25 `integration_test/device_test/`（実機QA手順、1,773行）が一度も実行されていない — ADR-007 のストア提出前に必要
+- [ ] L-25 `frontend/kotonoha_app/integration_test/device_test/`（実機QA手順、1,773行）が一度も実行されていない — ADR-007 のストア提出前に必要
 - [ ] L-43 `docs/design/kotonoha/interfaces.dart`・`database-schema.sql` が `isFavorite`/`is_favorite` を残しコードと食い違う — Phase 5 の文書整理で解消
 - [ ] L-51 サポート連絡先が `support@kotonoha-app.example.com` のまま（RFC 2606 の予約ドメイン） — docs/support.md, docs/privacy-policy.md。ADR-007 条件 4
 - [ ] L-52 Android のアップロード鍵が無い（AAB・mapping・シンボルは #97 で解決済み） — .github/workflows/release.yml。開発者登録後
@@ -15,17 +15,18 @@
 - [ ] L-55 AI 変換の平均応答時間（3秒以内）が未測定 — ADR-002 のプロバイダ支出上限設定と同日に実測（backend 公開の前提）
 - [ ] L-56 誤仕様固定テスト検出スキルと mutmut 導入・kill rate 記録が未着手 — Phase 4 の完了条件
 - [ ] L-57 Android 12 以上の実機で、自動バックアップにアプリデータが載らないことを確認 — #99
+- [ ] L-13 box が開いたまま書き込み失敗を検出しない（ディスクフル） — hive 2.2.3 `box_impl.dart:82`。ADR-005（永続化の失敗は利用者に伝える）の穴
 
 ## 判断待ち
 - [ ] L-39 ADR-005 の却下理由と連鎖削除の矛盾 — docs/adr/ADR-005。Phase 5 の後に扱う
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002, AGENTS.md「レート制限」
+- [ ] L-64 Phase 5 の完了条件「実在しないパス参照 0 件」は README の Swagger URL（/docs）や ADR-007 のアプリ route 名が数に入るため到達不能。核＋台帳に絞るか観測値扱いにする（除外規則は足さない） — docs/plans/2026-09-05-docs-framework-and-inventory.md A5
 
 ## 却下（次のフェーズ境界で削除）
 - [-] L-02 E2E 5本が CI 対象外 — #84（クローズ済み。環境／テストの問題でアプリ不具合ではないと切り分け済み）
-- [-] L-03 高コントラスト利用者が起動時に白画面を1フレーム見る — `lib/core/themes/theme_provider.dart`（TC-001 が正しい挙動として固定）
+- [-] L-03 高コントラスト利用者が起動時に白画面を1フレーム見る — `frontend/kotonoha_app/lib/core/themes/theme_provider.dart`（TC-001 が正しい挙動として固定）
 - [-] L-09 コミット規約: AGENTS.md の記載（`TASK-XXXX`）と実態（`docs:` 形式）の乖離 — AGENTS.md「コミット戦略」
 - [-] L-12 `persistenceStateProvider` が box の状態変化に追随しない — 根本原因を修正済み（`repository_providers` 経由化、`59035413f2e`）
-- [-] L-13 box が開いたまま書き込み失敗を検出しない（ディスクフル） — hive 2.2.3 `box_impl.dart:82`
 - [-] L-14 `PersistedArea` は「保存領域」ではなく実質「Hive box」 — #85
 - [-] L-15 `Semantics(label:)` の重複読み上げが33箇所 — `empty_history_widget.dart:30`
 - [-] L-16 `Recoverable`/`Unavailable` は原因ではなく件数で決まる — #85
@@ -39,23 +40,23 @@
 - [-] L-24 バナーのラベル重複検査は1ノード内の重複しか見えない — 対象ファイル削除済み（L-32 決定、`52410e2`）
 - [-] L-26 `ai_conversion_e2e_test.dart` のヘッドレスWeb実行可否が未確認 — ai_conversion_e2e_test.dart
 - [-] L-27 E2Eから性能閾値検証を除去 — 検証は L-25（実機）に統合済みと説明
-- [-] L-28 E2EからTTS実発話検証を除去 — test/features/tts/ と実機テストが担うと説明
+- [-] L-28 E2EからTTS実発話検証を除去 — frontend/kotonoha_app/test/features/tts/ と実機テストが担うと説明
 - [-] L-29 定型文画面から履歴への導線が無くE2E被覆から外れた — #85
 - [-] L-30 `initializeDefaultPhrases()`（初回起動のデータ投入経路）が widget 層で未検証 — docs/verification-principles.md §3
-- [-] L-31 本番 Hive 初期化経路を通るテストが1本のみ — lib/core/utils/hive_init.dart:184
+- [-] L-31 本番 Hive 初期化経路を通るテストが1本のみ — frontend/kotonoha_app/lib/core/utils/hive_init.dart:184
 - [-] L-33 差分面積（400行/12ファイル）のCI機械化 — 棄却済み（逆方向に発火しすぎるゲートと判定）
 - [-] L-34 `ruff check .` が `alembic/` に既存4件の import 未整列を出す — alembic/env.py
 - [-] L-35 ローカルで `flutter drive` が実行できない（ChromeDriver/Chrome版不一致） — #85
 - [-] L-36 実行中の Hive box 開閉を検査しない — L-32 決定（`persistence_truth_invariant_test.dart` 削除）で受け入れたリスク
 - [-] L-38 Stage 3b が完了条件（400行/12ファイル）を超過 — 超過を承認済み（人の判断）
-- [-] L-38 の残り: `PresetPhrase` の残るフィールド番号を詰め直さないこと — lib/core/utils/hive_init.dart:48（Stage 3b 完了済み、恒久注意）
+- [-] L-38 の残り: `PresetPhrase` の残るフィールド番号を詰め直さないこと — frontend/kotonoha_app/lib/core/utils/hive_init.dart:48（Stage 3b 完了済み、恒久注意）
 - [-] L-38 の残り: 移行（Stage 2）配布順序の制約 — `f761afc`（Stage 2 は撤回済みで対象消失）
 - [-] L-40 「定型文がお気に入りか」の判定述語が2箇所に別の形で存在 — preset_phrase_screen.dart:63
 - [-] L-41 `FavoriteNotifier.addFavorite()` が呼び出し元ゼロで残存 — favorite_provider.dart（削除は撤回済み、UIから到達不能）
 - [-] L-42 履歴由来お気に入りの `sourceType`/`sourceId` を誰も読んでいない — ADR-005
 - [-] L-44 `TC-040-029` の題と中身が乖離 — TC-040-029
 - [-] L-45 `PhraseCategorySection` の星判定はアプリ内では常に false — #85
-- [-] L-46 `favorite/`（ロジック）と `favorites/`（UI）のディレクトリ分裂 — ADR-005（月1棚卸しへ送付済み）
+- [-] L-46 `frontend/kotonoha_app/lib/features/favorite/`（ロジック）と `frontend/kotonoha_app/lib/features/favorites/`（UI）のディレクトリ分裂 — ADR-005（月1棚卸しへ送付済み）
 - [-] L-47 許可リスト検査は起動時の共有登録経路しか守らない — 記録して受け入れ済み
 - [-] L-48 「トップレベル可変変数の禁止」は Dart の analyzer では実現できない — 再訪条件: 同等の lint が Dart に入ったとき
 - [-] L-49 許可リスト検査Bの fixture が nullable フィールドに非 null しか流さない — TC-065-001（実害は別テストが押さえ済み）
