@@ -29,7 +29,7 @@ h "道具の実在（AGENTS.md に載る plugin:skill）"
 for t in $(grep -o '`[a-z-]*:[a-z:_-]*`' AGENTS.md | tr -d '`' | sort -u); do
   p=${t%%:*}; s=${t#*:}; s=${s//:/\/}
   en=$(python3 -c "import json,sys;d=json.load(open('$HOME/.claude/settings.json')).get('enabledPlugins',{});print(any(k.startswith('$p@') and v for k,v in d.items()))")
-  ex=$(ls -d "$HOME"/.claude/plugins/cache/*/"$p"/*/skills/"$s" "$HOME"/.claude/plugins/cache/*/"$p"/*/commands/"$s".md "$HOME"/.claude/plugins/cache/"$p"/"$p"/*/skills/"$s" 2>/dev/null | head -1)
+  ex=$(find "$HOME/.claude/plugins/cache" \( -type d -path "*/$p/*/skills/*$s" -o -type f -path "*/$p/*/commands/$s.md" \) 2>/dev/null | head -1)
   printf '  %-45s 有効=%-5s 定義=%s\n' "$t" "$en" "${ex:+あり}${ex:-なし}"
 done
 
