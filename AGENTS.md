@@ -33,7 +33,7 @@
 | 目的 | いま使う道具 |
 |---|---|
 | **完了と言う前に、実物を動かして確認する** | `superpowers:verification-before-completion` / `run` |
-| **改修に着手する前に、影響範囲を出す** | `tsumiki:dcs:impact-analysis`（**手順1,076行・質問4問・13ファイル出力。目的は「触る範囲を数える」ことなので、質問と出力ファイルは省いてよい**） |
+| **改修に着手する前に、影響範囲を出す** | **未割当**（tsumiki:dcs:impact-analysis は 2026-09 の棚卸しで無効と確認。目的は残す——触るファイルを列挙して数える） |
 | 負債を作る行為に気づく | **層 2（`scripts/adr-touch.sh` が PR にコメント）**。機械は止めない（ADR-008） |
 
 上2つは、8周のレビュー往復が収束しなかった直接の原因に対応する
@@ -43,15 +43,15 @@
 
 | 段階 | 目的 | いま使う道具 |
 |---|---|---|
-| 決める | 決定を引き出し、**却下案と理由ごと**記録する | `tsumiki:adr-rubber-duck`（出力先 `docs/adr/`） |
+| 決める | 決定を引き出し、**却下案と理由ごと**記録する | **未割当**（tsumiki:adr-rubber-duck は 2026-09 の棚卸しで無効と確認。目的は残す。出力先は `docs/adr/`） |
 | 決める | 決定を叩いて弱いものを落とす | `mattpocock-skills:grilling` / `openspec-explore` |
 | 設計 | 境界（seam）の位置とモックの置き場を決める | `mattpocock-skills:codebase-design` |
-| 設計 | データの状態遷移を洗い出す | `tsumiki:dcs:state-transition-analysis` |
+| 設計 | データの状態遷移を洗い出す | **未割当**（tsumiki:dcs:state-transition-analysis は 2026-09 の棚卸しで無効と確認。目的は残す） |
 | 設計 | ドメイン語彙を整理する | `mattpocock-skills:domain-modeling` |
 | 実装 | 仕様を delta で積む | OpenSpec（`openspec/specs/` のみ恒久） |
 | 実装 | **OpenSpec 管理外**のフェーズ単位の大改修を、タスク分解して subagent で実行する | `superpowers:subagent-driven-development`（5条件つき: task分解入力・拘束の受け渡し・2系統はマージ境界・記録の台帳昇格・**OpenSpec change の実装は `openspec-apply` が担い併用しない**。詳細は是正計画 §5） |
-| 検証 | セキュリティを**反証可能な形で**検査する | **未割当**（`tsumiki:ipa-security-check` は 2026-09-05 に使わないと決定。目的は残す。旧台帳 #85 L-54） |
-| 検証 | 仕様と実装の乖離を出す | `tsumiki:rev-requirements` / `rev-specs`（**逆生成物を正本にしない**） |
+| 検証 | セキュリティを**反証可能な形で**検査する | **未割当**（tsumiki:ipa-security-check は 2026-09-05 に使わないと決定。目的は残す。旧台帳 #85 L-54） |
+| 検証 | 仕様と実装の乖離を出す | **未割当**（tsumiki:rev-requirements / rev-specs は 2026-09 の棚卸しで無効と確認。目的は残す。**逆生成物を正本にしない**） |
 | 棚卸し | 全体を見て概念の重複を検出する | `inventory`（`.claude/skills/inventory/SKILL.md`。毎月 1 日の Issue から） |
 | 棚卸し | **この表の道具が実在し、まだ最適かを点検する** | `inventory`（`.claude/skills/inventory/SKILL.md`。毎月 1 日の Issue から） |
 
@@ -270,9 +270,9 @@ flutter test              # Frontend
 1. **索引の未卒業の行ごとに「この変更はこの決定に触れるか」を yes/no で書く**（5 行以下。PR 本文に残す）。
    yes の行だけ本文（`docs/adr/`）を読む。どの行にも当たらなければ、その領域の決定は存在しない——
    実装ではなく決定から始めるかを問う。2026-09 時点は索引 9 行すべて未卒業。卒業判定は Phase 5
-2. **影響範囲を出す**（`tsumiki:dcs:impact-analysis`）。「そもそも必要か」を
+2. **影響範囲を出す**（道具は未割当。触るファイルを列挙して数える）。「そもそも必要か」を
    ここで問う。8周のレビュー往復は、この工程が無かったために起きた
-3. 大きな決定を伴うなら、実装の前に ADR を1本作る（`tsumiki:adr-rubber-duck`）
+3. 大きな決定を伴うなら、実装の前に ADR を1本作る（道具は未割当。`docs/adr/` の形式に手で従う）
 
 ### レビューは5層で行う
 
@@ -280,10 +280,10 @@ flutter test              # Frontend
 
 | 層 | いつ | 何を見る |
 |---|---|---|
-| 1. 前段 | 着手前 | `dcs:impact-analysis` ＋ ADR 確認。**「存在すべきか」はここでしか問えない** |
+| 1. 前段 | 着手前 | 影響範囲の列挙（道具は未割当）＋ ADR 確認。**「存在すべきか」はここでしか問えない** |
 | 2. 機械 | 編集・PR | ADR 索引のコメント（`scripts/adr-touch.sh`。止めない）／構造検査／型検査。**差分の外を見るのはこれだけ** |
 | 3. 差分レビュー | PR ごと | 差分のみ。観点は P0 基準に限定。**2系統**で当てる |
-| 4. 反証可能な検査 | 定期 | **道具は未割当**（`tsumiki:ipa-security-check` は 2026-09-05 に使わないと決定。出典付きで原典で決着させる、という要件は残す） |
+| 4. 反証可能な検査 | 定期 | **道具は未割当**（tsumiki:ipa-security-check は 2026-09-05 に使わないと決定。出典付きで原典で決着させる、という要件は残す） |
 | 5. 全体 | 月1 | 棚卸し |
 
 **マージの引き金は完了条件であって「指摘ゼロ」ではない。** 残りは台帳へ送る。
@@ -340,7 +340,7 @@ flutter test              # Frontend
 
 | 層 | いつ | 何を見る |
 |---|---|---|
-| 1. 前段 | 着手前 | `dcs:impact-analysis` ＋ **上のリストに触れるかの自己点検** |
+| 1. 前段 | 着手前 | 影響範囲の列挙（道具は未割当）＋ **上のリストに触れるかの自己点検** |
 | 2. 機械 | 編集・PR | `import-linter` / `mypy --strict`。**上のリストは `scripts/adr-touch.sh` が PR コメントとして貼る（止めない）** |
 | 3. 差分レビュー | PR ごと | 差分＋上のリスト |
 | 5. 全体 | 月1 | 棚卸し |

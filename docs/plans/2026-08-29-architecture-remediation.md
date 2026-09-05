@@ -1,6 +1,6 @@
 # アーキテクチャ是正計画
 
-作成: 2026-08-29 ／ 状態: **Phase 0・1・2・3 完了（2026-09-02）。次は リリース準備 → Phase 4**
+作成: 2026-08-29 ／ 状態: **Phase 0・1・2・3・4 完了（2026-09-06）。次は Phase 5**
 
 - Phase 0: ADR 7本承認・入力バッファ切り分け済み・台帳 #85 起票済み
 - Phase 3: frontend の正しさ（2026-08-31 完了）。永続化状態の明示（WP-1）／
@@ -19,6 +19,10 @@
   到達行数は `app/` 1,260行/13ファイル（旧 3,545行/32ファイル）、`tests/` 2,009行
   （旧 9,391行）。決定は ADR-006 の改訂（D8）へ昇格済み。作業計画
   （`2026-09-02-phase2-backend-tasks.md`）は完了につき破棄した（2026-09-05）
+- Phase 4: 検査しきれない残余（2026-09-06 完了）。ADR 索引＋層 2 の PR コメント（`scripts/adr-touch.sh`）／
+  月 1 の Issue（`inventory-reminder.yml`）／台帳（`docs/ledger.md`）／棚卸しスキル
+  （`.claude/skills/inventory/` ＋ `scripts/inventory.sh`）／`mutmut`。棚卸しを 1 回実施した（Issue #107）——
+  道具リストは全件を現物で確認し、無効だった tsumiki の 4 目的を降ろした（目的は残す）。kill rate 85.9%（#106）
 
 この文書は単独で読めるように書いてある。前提となる会話の文脈は不要。
 
@@ -782,7 +786,7 @@ Issue #84 は「テストの陳腐化と考えられます」と書く一方、�
 **条件は §5「使う道具」の3つを守ること。**特に、archive 後に `openspec/changes/` 配下へ
 tracked ファイルを残さないこと（条件1の gitignore ＋ CI 検査）。
 
-### Phase 4 — 検査しきれない残余に対処する（1〜2日）
+### Phase 4 — 検査しきれない残余に対処する（1〜2日）— **完了（2026-09-06）**
 
 Phase 1〜3 で入れた検査は「決定の違反」と「負債を作る行為」を捕まえる。
 **捕まらないものが2種類残る。**
@@ -875,7 +879,7 @@ Phase 4 を待たずに作ってよい。作った時点から回せる。
 | 1 | **負債ゲートの要否が決着し、ADR として記録されている**（ADR-008: 機械では作らない）。廃止した場合は **`AGENTS.md` に人の規律として7項目が載っている**こと。`openspec/changes/` 配下の tracked ファイル禁止が CI に入っている（§5 条件1）。`fix/backend-production-hardening` から拾う対象が **GitHub Issue に一覧化**され、ブランチには以後コミットしない（**削除はしない**——証拠として残す） |
 | 2 | `app/models` `app/crud` `app/db` `alembic` が存在しない。**`requirements.txt` に `sqlalchemy` `alembic` `asyncpg` `psycopg2-binary` `redis` が存在しない。** `grep -rn "str(exc)\|str(e)\|format_exc\|print(\|print_exc\|sys.stderr" app/` が `app/logging.py` の出力実装を除き0件。**例外境界（プロバイダ SDK・入力検証・想定外例外）ごとに canary 例外を注入し、stdout / stderr / HTTP ボディに canary が現れないことを観測するテストが緑。**`import-linter` `mypy --strict` `pytest-randomly` が CI で緑。**モックが外部 SDK 境界のみにあり、自分の関数を patch している箇所が0件。** 記号を含む API キー・プロバイダキーを設定した状態で起動し、`/health` が 200 を返し AI 変換が1往復する smoke が通る。**明示的に廃止した項目を除き、旧・新実装の正規化 OpenAPI diff が空（prefix・status code・エラー schema・429 ヘッダー・認証・CORS を含む）。同じ characterization テスト一式が旧・新の両実装で同結果。構造化ログに latency・成否・プロバイダが載ることをテストで観測済み。`AGENTS.md` の API仕様・開発コマンド節が新 backend の実態と一致している（Redis 前提の記述が残っていない）** |
 | 3 | Hive が開けないとき利用者に通知される。`isFavorite` が存在しない。往復テストが4 feature に存在。**Hive スキーマの許可リスト検査が CI にある。** **入力バッファの件（Phase 0 で切り分け済み）が、アプリ不具合だった場合は修正済み**。**E2E は残す4経路が CI で緑、外す2本は nightly か削除に振り分け済み。** **`openspec/specs/` に capability が2つ以上あり、`config.yaml` の `context:` に ADR 要約が入っている** |
-| 4 | **棚卸しがプロジェクト固有スキルとして存在し**、1回実施して結果が記録されている。その1回で **`AGENTS.md` の道具リストが全件実在することを確認済み**。`mutmut` が対象領域で回り、kill rate が記録されている |
+| 4 | **満たした（2026-09-06）。** **棚卸しがプロジェクト固有スキルとして存在し**（`.claude/skills/inventory/`）、1回実施して結果が記録されている（Issue #107、`docs/ledger.md`「計測」2026-09-06）。その1回で **`AGENTS.md` の道具リストが全件実在することを確認済み**（無効だった tsumiki 4 件は降ろした）。`mutmut` が対象領域で回り、kill rate が記録されている（85.9%、#106）。加えて層 2 が PR に実際にコメントした実績 1 件（#106） |
 | 5 | `docs/adr/` `docs/spec/` `docs/privacy-policy.md` 以外の現行文書が archive へ移動済み |
 
 **Phase 1 の完了条件に「実際に落ちることを確認」を入れてある理由**: ゲートが
