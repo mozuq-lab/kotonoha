@@ -34,7 +34,7 @@
 |---|---|
 | **完了と言う前に、実物を動かして確認する** | `superpowers:verification-before-completion` / `run` |
 | **改修に着手する前に、影響範囲を出す** | `tsumiki:dcs:impact-analysis`（**手順1,076行・質問4問・13ファイル出力。目的は「触る範囲を数える」ことなので、質問と出力ファイルは省いてよい**） |
-| 負債を作る行為をその場で検出する | `PostToolUse` フック（設定は `update-config`） |
+| 負債を作る行為に気づく | **層 2（`scripts/adr-touch.sh` が PR にコメント）**。機械は止めない（ADR-008） |
 
 上2つは、8周のレビュー往復が収束しなかった直接の原因に対応する
 （誰もアプリを起動しなかった／触る範囲を数えなかった）。
@@ -52,8 +52,8 @@
 | 実装 | **OpenSpec 管理外**のフェーズ単位の大改修を、タスク分解して subagent で実行する | `superpowers:subagent-driven-development`（5条件つき: task分解入力・拘束の受け渡し・2系統はマージ境界・記録の台帳昇格・**OpenSpec change の実装は `openspec-apply` が担い併用しない**。詳細は是正計画 §5） |
 | 検証 | セキュリティを**反証可能な形で**検査する | **未割当**（`tsumiki:ipa-security-check` は 2026-09-05 に使わないと決定。目的は残す。旧台帳 #85 L-54） |
 | 検証 | 仕様と実装の乖離を出す | `tsumiki:rev-requirements` / `rev-specs`（**逆生成物を正本にしない**） |
-| 棚卸し | 全体を見て概念の重複を検出する | **未整備。プロジェクト固有スキルとして作る** |
-| 棚卸し | **この表の道具が実在し、まだ最適かを点検する** | 同上（月1） |
+| 棚卸し | 全体を見て概念の重複を検出する | `inventory`（`.claude/skills/inventory/SKILL.md`。毎月 1 日の Issue から） |
+| 棚卸し | **この表の道具が実在し、まだ最適かを点検する** | `inventory`（`.claude/skills/inventory/SKILL.md`。毎月 1 日の Issue から） |
 
 **採らないもの**: `dev-plan` → `dev-impl` → `dev-run` → `dev-verify`、`task-breakdown`。
 いずれも成果物を積み上げる設計。
