@@ -1,19 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    kotonoha Android backup rules
-    Configures what data to include/exclude from Android auto-backup
-    Privacy-focused: Only backup essential settings, not sensitive data
+    kotonoha の自動バックアップ規則（Android 11 以下の端末用。12 以上は data_extraction_rules.xml）。
+
+    対象は設定（SharedPreferences）だけ。<include> を1つでも書くと、それ以外のファイルは既定で
+    対象外になる（Android 公式「Back up user data with Auto Backup」）。文字盤の入力・定型文・
+    履歴・お気に入りを持つ Hive のファイルは file ドメインなので含まれない（NFR-101: 端末内保存）。
+
+    以前あった <exclude>（app_flutter/hive / cache / temp）は、include が無い前提の書き方で、
+    include がある今は無効かつ lint（FullBackupContent）のエラーになっていたので消した。
 -->
 <full-backup-content>
-    <!-- Include shared preferences (app settings) -->
     <include domain="sharedpref" path="." />
-
-    <!-- Exclude Hive database files (local storage with potentially sensitive data) -->
-    <exclude domain="file" path="app_flutter/hive" />
-
-    <!-- Exclude cached data -->
-    <exclude domain="cache" path="." />
-
-    <!-- Exclude temporary files -->
-    <exclude domain="file" path="temp" />
 </full-backup-content>
