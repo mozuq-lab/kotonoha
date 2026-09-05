@@ -1,0 +1,32 @@
+name: Inventory reminder
+
+# 毎月 1 日に棚卸しの Issue を立てる。数えるのは機械、判断は人。
+# 廃棄条件: 立てた Issue が 3 か月連続で閉じられなかったら、棚卸しが回っていないので仕組みごと見直す。
+on:
+  schedule:
+    - cron: '0 0 1 * *'   # 09:00 JST
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open this month's inventory issue (idempotent)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          title="棚卸し $(date -u +%Y-%m)"
+          n=$(gh issue list --repo "$REPO" --label inventory --state open --search "\"$title\" in:title" --json number --jq 'length')
+          [ "$n" != "0" ] && { echo "already open"; exit 0; }
+          gh issue create --repo "$REPO" --title "$title" --label inventory --body "$(cat <<'EOF'
+          月 1 の棚卸し。手順は `.claude/skills/inventory/SKILL.md`、計測は `scripts/inventory.sh`。
+
+          - 結果は `docs/ledger.md` に 1 問題 1 行で書き、「計測」節の数字を更新する
+          - その PR の本文に `Closes #<この Issue 番号>` を書く。ここには結果を書かない（作業の記録は PR）
+          - 直すのは棚卸しの外。ここでは問題を数えるだけ
+          EOF
+          )"
