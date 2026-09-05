@@ -121,20 +121,25 @@ jobs:
 
       - name: Build APK (Release)
         run: >
-          flutter build apk --release
+          flutter build apk --release --flavor production
           --dart-define=API_BASE_URL="${API_BASE_URL}"
           --dart-define=AI_API_KEY="${AI_API_KEY}"
 
       - name: Build App Bundle (Release)
         run: >
-          flutter build appbundle --release
+          flutter build appbundle --release --flavor production
           --dart-define=API_BASE_URL="${API_BASE_URL}"
           --dart-define=AI_API_KEY="${AI_API_KEY}"
 
+      # flavor（production / internal）を定義しているため、出力先は flutter-apk/app-production-release.apk と
+      # bundle/productionRelease/app-production-release.aab になる。flavor 無しの build は Gradle は通るが
+      # Flutter ツールが bundle/release/ を探して失敗する（2026-09-05 実測）。
+      # AAB には R8 の mapping（BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map）と
+      # libflutter のネイティブシンボルが同梱され、Play Console がそのまま読む（台帳 #85 L-52）。
       - name: Rename artifacts
         run: |
-          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/kotonoha-${{ needs.validate-tag.outputs.version }}.apk
-          mv build/app/outputs/bundle/release/app-release.aab build/app/outputs/bundle/release/kotonoha-${{ needs.validate-tag.outputs.version }}.aab
+          mv build/app/outputs/flutter-apk/app-production-release.apk build/app/outputs/flutter-apk/kotonoha-${{ needs.validate-tag.outputs.version }}.apk
+          mv build/app/outputs/bundle/productionRelease/app-production-release.aab build/app/outputs/bundle/productionRelease/kotonoha-${{ needs.validate-tag.outputs.version }}.aab
 
       - name: Upload APK
         uses: actions/upload-artifact@v6
@@ -147,7 +152,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: android-aab-release
-          path: frontend/kotonoha_app/build/app/outputs/bundle/release/kotonoha-${{ needs.validate-tag.outputs.version }}.aab
+          path: frontend/kotonoha_app/build/app/outputs/bundle/productionRelease/kotonoha-${{ needs.validate-tag.outputs.version }}.aab
           retention-days: 90
 
   build-ios:
