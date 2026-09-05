@@ -93,3 +93,7 @@ openspec/changes/
 
 # adr-rubber-duck の壁打ちセッション記録（工程記録。恒久成果物は ADR 本体のみ）
 docs/adr/.sessions/
+
+# mutmut の作業ディレクトリ・キャッシュ（1回計測用の一時成果物。恒久成果物は docs/ledger.md の記録のみ）
+backend/mutants/
+backend/.mutmut-cache
