@@ -24,7 +24,7 @@ test:  ## Run tests
 test-cov:  ## Run tests with coverage report
 	pytest --cov=app --cov-report=html --cov-report=term-missing
 
-mutation:  ## mutation testing（config / errors / auth / ratelimit）。kill rate は docs/ledger.md の計測へ。CI には入れない（ADR-008）
+mutation:  ## mutation testing（config / errors / auth / ratelimit）。kill rate は docs/ledger.md の計測へ。CI には入れない（ADR-008）。合計（killed/survived）は mutmut run の末尾の出力から読む。mutmut results は生存一覧だけ
 	mutmut run
 	mutmut results
 
