@@ -9,3 +9,4 @@ black==26.1.0
 mypy==2.3.1
 import-linter==2.14
 pre-commit==4.6.0
+mutmut==3.7.0

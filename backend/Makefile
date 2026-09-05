@@ -1,4 +1,4 @@
-.PHONY: lint format gate check test test-cov clean help
+.PHONY: lint format gate check test test-cov clean help mutation
 
 help:  ## Display this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -23,6 +23,10 @@ test:  ## Run tests
 
 test-cov:  ## Run tests with coverage report
 	pytest --cov=app --cov-report=html --cov-report=term-missing
+
+mutation:  ## mutation testing（config / errors / auth / ratelimit）。kill rate は docs/ledger.md の計測へ。CI には入れない（ADR-008）。合計（killed/survived）は mutmut run の末尾の出力から読む。mutmut results は生存一覧だけ
+	mutmut run
+	mutmut results
 
 clean:  ## Clean up generated files
 	rm -rf .pytest_cache
