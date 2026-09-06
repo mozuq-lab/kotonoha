@@ -5,7 +5,7 @@
 独立に原因を調べ、実測で確認できたことをここにまとめる。
 
 **特定の手法（Tsumiki 等）にも、特定の問題（秘匿）にも依存しない内容だけを残してある。**
-経緯そのものは `docs/articles/why-redaction-fixes-dont-converge.md` にある。
+経緯そのものは `docs/archive/articles/why-redaction-fixes-dont-converge.md` にある。
 
 > **この文書の行き先**: ここに書かれた原則は、実行可能な検査（型・lint・テスト）に
 > 変換できたものから順に削る。文書として残っているものは「まだ人の注意力に頼っている」
