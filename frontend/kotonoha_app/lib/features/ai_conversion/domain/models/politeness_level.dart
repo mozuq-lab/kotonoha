@@ -1,9 +1,9 @@
 /// 丁寧さレベル定義
 ///
 /// TASK-0067: AI変換APIクライアント実装
-/// 【TDD Redフェーズ】: スタブファイル
+/// TDD Redフェーズ: スタブファイル
 ///
-/// 信頼性レベル: 🔵 青信号（interfaces.dartベース）
+/// 信頼性レベル: 青信号（interfaces.dartベース）
 /// 関連要件: REQ-903
 library;
 

@@ -5,7 +5,7 @@
 /// TASK-0071: 設定画面UI実装（セクション分け）
 /// TASK-0075: ヘルプ画面・初回チュートリアル実装
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 library;
 
 import 'package:flutter/material.dart';
@@ -51,7 +51,7 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 【表示設定セクション】: REQ-801, REQ-803
+            // 表示設定セクション: REQ-801, REQ-803
             const SettingsSectionWidget(
               title: '表示設定',
               children: [
@@ -62,21 +62,21 @@ class SettingsScreen extends StatelessWidget {
                 SimpleModeSettingsWidget(),
               ],
             ),
-            // 【音声設定セクション】: REQ-404
+            // 音声設定セクション: REQ-404
             const SettingsSectionWidget(
               title: '音声設定',
               children: [
                 TTSSpeedSettingsWidget(),
               ],
             ),
-            // 【AI設定セクション】: REQ-903
+            // AI設定セクション: REQ-903
             const SettingsSectionWidget(
               title: 'AI設定',
               children: [
                 AIPolitenessSettingsWidget(),
               ],
             ),
-            // 【その他セクション】: REQ-3001, NFR-205
+            // その他セクション: REQ-3001, NFR-205
             SettingsSectionWidget(
               title: 'その他',
               children: [

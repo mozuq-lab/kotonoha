@@ -57,7 +57,7 @@ class StatusButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 【AA対応】: GridView.countのchildAspectRatioが子のサイズを制約するため、
+    // AA対応: GridView.countのchildAspectRatioが子のサイズを制約するため、
     // 各セルの高さが最小タップターゲット(44px)を下回らないようにaspectRatioを動的計算する。
     return LayoutBuilder(
       builder: (context, constraints) {

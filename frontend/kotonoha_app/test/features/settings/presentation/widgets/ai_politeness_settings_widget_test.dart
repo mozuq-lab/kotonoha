@@ -5,7 +5,7 @@
 ///
 /// テスト対象: AI丁寧さレベル設定ウィジェットが正しく表示・動作すること
 ///
-/// 【TDD Redフェーズ】: AI丁寧さレベル設定UIのウィジェットテスト
+/// TDD Redフェーズ: AI丁寧さレベル設定UIのウィジェットテスト
 library;
 
 import 'package:flutter/material.dart';

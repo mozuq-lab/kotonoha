@@ -5,7 +5,7 @@
 ///
 /// テスト対象: lib/features/status_buttons/presentation/widgets/status_button.dart
 ///
-/// 【TDD Redフェーズ】: ウィジェットが未実装のため、このテストは失敗する
+/// TDD Redフェーズ: ウィジェットが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';

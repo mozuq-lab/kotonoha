@@ -2,7 +2,7 @@
 ///
 /// TASK-0075: ヘルプ画面・初回チュートリアル実装
 ///
-/// 信頼性レベル: 🟡 黄信号（REQ-3001から推測）
+/// 信頼性レベル: 黄信号（REQ-3001から推測）
 /// 関連要件:
 /// - REQ-3001: 初回起動時の簡易チュートリアル表示
 library;
@@ -131,12 +131,12 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
             child: Center(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  // 【高さ適応レイアウト】: 横持ちスマホ（例: 844×390）や分割画面など
+                  // 高さ適応レイアウト: 横持ちスマホ（例: 844×390）や分割画面など
                   // 可視高さが低い環境でカードがビューポートを超えてオーバーフローしない
                   // よう、可視高さに応じてアイコン・余白を縮小し、本文はスクロール可能にする。
                   // Next/Skipボタンとステップインジケーターは常にスクロール領域外の
                   // 固定位置に置き、タップ不能にならないようにする。
-                  // 🟡 信頼性レベル: 黄信号 - Codexレビュー指摘（P2）に基づく
+                  // 信頼性レベル: 黄信号 - Codexレビュー指摘（P2）に基づく
                   final availableHeight = constraints.maxHeight.isFinite
                       ? constraints.maxHeight
                       : MediaQuery.sizeOf(context).height;

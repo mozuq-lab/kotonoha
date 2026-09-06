@@ -5,7 +5,7 @@
 ///
 /// テスト対象: テーマ設定がProviderで正しく管理されること
 ///
-/// 【TDD Redフェーズ】: テーマ設定の全テストケースを作成
+/// TDD Redフェーズ: テーマ設定の全テストケースを作成
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -39,20 +39,20 @@ void main() {
       /// 関連要件: REQ-803
       /// 検証内容: テーマ「ライト」が正しく選択・適用されること
       test('TC-073-002: テーマ「ライト」の選択と適用', () async {
-        // 【テスト目的】: テーマ「ライト」が正しく設定されることを確認 🔵
-        // 🔵 青信号: REQ-803「ライトモード」
+        // テスト目的: テーマ「ライト」が正しく設定されることを確認
+        // 青信号: REQ-803「ライトモード」
 
-        // Given: 【テストデータ準備】: ProviderContainer作成
+        // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
         // Provider初期化
         await container.read(settingsNotifierProvider.future);
 
-        // When: 【実際の処理実行】: テーマを「ライト」に設定
+        // When: 実際の処理実行: テーマを「ライト」に設定
         final notifier = container.read(settingsNotifierProvider.notifier);
         await notifier.setTheme(AppTheme.light);
 
-        // Then: 【結果検証】: テーマがlightに更新されている
+        // Then: 結果検証: テーマがlightに更新されている
         final state = container.read(settingsNotifierProvider);
         expect(state.requireValue.theme, AppTheme.light);
 
@@ -65,20 +65,20 @@ void main() {
       /// 関連要件: REQ-803
       /// 検証内容: テーマ「ダーク」が正しく選択・適用されること
       test('TC-073-003: テーマ「ダーク」の選択と適用', () async {
-        // 【テスト目的】: テーマ「ダーク」が正しく設定されることを確認 🔵
-        // 🔵 青信号: REQ-803「ダークモード」
+        // テスト目的: テーマ「ダーク」が正しく設定されることを確認
+        // 青信号: REQ-803「ダークモード」
 
-        // Given: 【テストデータ準備】: ProviderContainer作成
+        // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
         // Provider初期化
         await container.read(settingsNotifierProvider.future);
 
-        // When: 【実際の処理実行】: テーマを「ダーク」に設定
+        // When: 実際の処理実行: テーマを「ダーク」に設定
         final notifier = container.read(settingsNotifierProvider.notifier);
         await notifier.setTheme(AppTheme.dark);
 
-        // Then: 【結果検証】: テーマがdarkに更新されている
+        // Then: 結果検証: テーマがdarkに更新されている
         final state = container.read(settingsNotifierProvider);
         expect(state.requireValue.theme, AppTheme.dark);
 
@@ -91,20 +91,20 @@ void main() {
       /// 関連要件: REQ-803
       /// 検証内容: テーマ「高コントラスト」が正しく選択・適用されること
       test('TC-073-004: テーマ「高コントラスト」の選択と適用', () async {
-        // 【テスト目的】: テーマ「高コントラスト」が正しく設定されることを確認 🔵
-        // 🔵 青信号: REQ-803「高コントラストモード」
+        // テスト目的: テーマ「高コントラスト」が正しく設定されることを確認
+        // 青信号: REQ-803「高コントラストモード」
 
-        // Given: 【テストデータ準備】: ProviderContainer作成
+        // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
         // Provider初期化
         await container.read(settingsNotifierProvider.future);
 
-        // When: 【実際の処理実行】: テーマを「高コントラスト」に設定
+        // When: 実際の処理実行: テーマを「高コントラスト」に設定
         final notifier = container.read(settingsNotifierProvider.notifier);
         await notifier.setTheme(AppTheme.highContrast);
 
-        // Then: 【結果検証】: テーマがhighContrastに更新されている
+        // Then: 結果検証: テーマがhighContrastに更新されている
         final state = container.read(settingsNotifierProvider);
         expect(state.requireValue.theme, AppTheme.highContrast);
 
@@ -117,10 +117,10 @@ void main() {
       /// 関連要件: REQ-2008
       /// 検証内容: 設定変更後すぐにUIに反映されること
       test('TC-073-005: テーマ変更が即座に反映される', () async {
-        // 【テスト目的】: テーマ変更が楽観的更新で即座に反映されることを確認 🔵
-        // 🔵 青信号: REQ-2008「テーマ変更時に即座に変更」
+        // テスト目的: テーマ変更が楽観的更新で即座に反映されることを確認
+        // 青信号: REQ-2008「テーマ変更時に即座に変更」
 
-        // Given: 【テストデータ準備】: ProviderContainer作成
+        // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
         // Provider初期化
@@ -130,11 +130,11 @@ void main() {
         var state = container.read(settingsNotifierProvider);
         expect(state.requireValue.theme, AppTheme.light);
 
-        // When: 【実際の処理実行】: テーマを「ダーク」に変更
+        // When: 実際の処理実行: テーマを「ダーク」に変更
         final notifier = container.read(settingsNotifierProvider.notifier);
         await notifier.setTheme(AppTheme.dark);
 
-        // Then: 【結果検証】: 即座に状態が更新されている
+        // Then: 結果検証: 即座に状態が更新されている
         state = container.read(settingsNotifierProvider);
         expect(state.requireValue.theme, AppTheme.dark);
 
@@ -147,21 +147,21 @@ void main() {
       /// 関連要件: REQ-5003
       /// 検証内容: アプリ再起動後に保存したテーマが復元されること
       test('TC-073-006: アプリ再起動後のテーマ設定復元', () async {
-        // 【テスト目的】: SharedPreferencesに保存した値が復元されることを確認 🔵
-        // 🔵 青信号: REQ-5003「アプリ強制終了しても設定を失わない」
+        // テスト目的: SharedPreferencesに保存した値が復元されることを確認
+        // 青信号: REQ-5003「アプリ強制終了しても設定を失わない」
 
-        // Given: 【テストデータ準備】: SharedPreferencesにダークテーマを保存
-        // 【後方互換性】: 旧形式（enum index int）で保存されたデータでも
+        // Given: テストデータ準備: SharedPreferencesにダークテーマを保存
+        // 後方互換性: 旧形式（enum index int）で保存されたデータでも
         // 正しく復元できることを検証する（マイグレーション対応）
         SharedPreferences.setMockInitialValues({
           'theme': AppTheme.dark.index,
         });
 
-        // When: 【実際の処理実行】: Provider初期化（再起動をシミュレート）
+        // When: 実際の処理実行: Provider初期化（再起動をシミュレート）
         final container = ProviderContainer();
         await container.read(settingsNotifierProvider.future);
 
-        // Then: 【結果検証】: ダークテーマが復元されている
+        // Then: 結果検証: ダークテーマが復元されている
         final state = container.read(settingsNotifierProvider);
         expect(state.requireValue.theme, AppTheme.dark);
 
@@ -174,10 +174,10 @@ void main() {
       /// 関連要件: REQ-803, REQ-2008
       /// 検証内容: テーマ変更時にcurrentThemeProviderが正しいThemeDataを返すこと
       test('TC-073-007: currentThemeProviderがテーマ変更に追従する', () async {
-        // 【テスト目的】: currentThemeProviderが設定と連携していることを確認 🔵
-        // 🔵 青信号: REQ-803、REQ-2008
+        // テスト目的: currentThemeProviderが設定と連携していることを確認
+        // 青信号: REQ-803、REQ-2008
 
-        // Given: 【テストデータ準備】: ProviderContainer作成
+        // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
         // Provider初期化
@@ -187,11 +187,11 @@ void main() {
         var currentTheme = container.read(currentThemeProvider);
         expect(currentTheme, lightTheme);
 
-        // When: 【実際の処理実行】: テーマを「ダーク」に変更
+        // When: 実際の処理実行: テーマを「ダーク」に変更
         final notifier = container.read(settingsNotifierProvider.notifier);
         await notifier.setTheme(AppTheme.dark);
 
-        // Then: 【結果検証】: currentThemeProviderがdarkThemeを返す
+        // Then: 結果検証: currentThemeProviderがdarkThemeを返す
         currentTheme = container.read(currentThemeProvider);
         expect(currentTheme, darkTheme);
 
@@ -216,17 +216,17 @@ void main() {
       /// 関連要件: NFR-301, EDGE-201
       /// 検証内容: ローディング中もアプリが動作すること
       test('TC-073-009: 設定読み込み中のデフォルトテーマ使用', () async {
-        // 【テスト目的】: ローディング中もデフォルトテーマで動作することを確認 🟡
-        // 🟡 黄信号: EDGE-201、NFR-301 から推測
+        // テスト目的: ローディング中もデフォルトテーマで動作することを確認
+        // 黄信号: EDGE-201、NFR-301 から推測
 
-        // Given: 【テストデータ準備】: ProviderContainer作成
+        // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
-        // When: 【実際の処理実行】: ローディング中の状態を確認
+        // When: 実際の処理実行: ローディング中の状態を確認
         // ローディング状態の場合、currentThemeProviderはデフォルト（ライト）を返す
         final currentTheme = container.read(currentThemeProvider);
 
-        // Then: 【結果検証】: デフォルトテーマ（ライト）が返される
+        // Then: 結果検証: デフォルトテーマ（ライト）が返される
         expect(currentTheme, lightTheme);
 
         container.dispose();
@@ -238,18 +238,18 @@ void main() {
       /// 関連要件: NFR-301
       /// 検証内容: 不正な値が保存されていてもアプリが起動すること
       test('TC-073-010: 不正な保存値のフォールバック', () async {
-        // 【テスト目的】: 不正値でもアプリがクラッシュしないことを確認 🟡
-        // 🟡 黄信号: NFR-301「基本機能継続」から推測
+        // テスト目的: 不正値でもアプリがクラッシュしないことを確認
+        // 黄信号: NFR-301「基本機能継続」から推測
 
-        // Given: 【テストデータ準備】: 範囲外のindex値をSharedPreferencesに保存
+        // Given: テストデータ準備: 範囲外のindex値をSharedPreferencesに保存
         SharedPreferences.setMockInitialValues({
           'theme': 99, // 範囲外（AppTheme enum は 0-2）
         });
 
-        // When: 【実際の処理実行】: Provider初期化
+        // When: 実際の処理実行: Provider初期化
         final container = ProviderContainer();
 
-        // Then: 【結果検証】: エラーにならず、デフォルト値（ライト）が使用される
+        // Then: 結果検証: エラーにならず、デフォルト値（ライト）が使用される
         // RangeErrorが発生する可能性があるため、try-catchで確認
         try {
           await container.read(settingsNotifierProvider.future);
@@ -275,19 +275,19 @@ void main() {
       /// 関連要件: REQ-803
       /// 検証内容: enum最小値でも正常に動作すること
       test('TC-073-011: AppTheme enum の最小値（light = 0）', () async {
-        // 【テスト目的】: 境界値（最小）で正常動作することを確認 🔵
-        // 🔵 青信号: REQ-803 の3種類（最小）
+        // テスト目的: 境界値（最小）で正常動作することを確認
+        // 青信号: REQ-803 の3種類（最小）
 
-        // Given: 【テストデータ準備】: SharedPreferencesにindex=0を保存
+        // Given: テストデータ準備: SharedPreferencesにindex=0を保存
         SharedPreferences.setMockInitialValues({
           'theme': 0, // AppTheme.light.index
         });
 
-        // When: 【実際の処理実行】: Provider初期化
+        // When: 実際の処理実行: Provider初期化
         final container = ProviderContainer();
         await container.read(settingsNotifierProvider.future);
 
-        // Then: 【結果検証】: ライトテーマが正しく復元される
+        // Then: 結果検証: ライトテーマが正しく復元される
         final state = container.read(settingsNotifierProvider);
         expect(state.requireValue.theme, AppTheme.light);
         expect(AppTheme.light.index, 0);
@@ -301,19 +301,19 @@ void main() {
       /// 関連要件: REQ-803
       /// 検証内容: enum最大値でも正常に動作すること
       test('TC-073-012: AppTheme enum の最大値（highContrast = 2）', () async {
-        // 【テスト目的】: 境界値（最大）で正常動作することを確認 🔵
-        // 🔵 青信号: REQ-803 の3種類（最大）
+        // テスト目的: 境界値（最大）で正常動作することを確認
+        // 青信号: REQ-803 の3種類（最大）
 
-        // Given: 【テストデータ準備】: SharedPreferencesにindex=2を保存
+        // Given: テストデータ準備: SharedPreferencesにindex=2を保存
         SharedPreferences.setMockInitialValues({
           'theme': 2, // AppTheme.highContrast.index
         });
 
-        // When: 【実際の処理実行】: Provider初期化
+        // When: 実際の処理実行: Provider初期化
         final container = ProviderContainer();
         await container.read(settingsNotifierProvider.future);
 
-        // Then: 【結果検証】: 高コントラストテーマが正しく復元される
+        // Then: 結果検証: 高コントラストテーマが正しく復元される
         final state = container.read(settingsNotifierProvider);
         expect(state.requireValue.theme, AppTheme.highContrast);
         expect(AppTheme.highContrast.index, 2);
@@ -327,20 +327,20 @@ void main() {
       /// 関連要件: REQ-5006
       /// 検証内容: WCAG 2.1 AAレベル（4.5:1以上）のコントラスト比を確保
       test('TC-073-013: 高コントラストモードのコントラスト比検証', () {
-        // 【テスト目的】: WCAG 2.1 AAレベル準拠を確認 🟡
-        // 🟡 黄信号: REQ-5006「WCAG 2.1 AAレベル」
+        // テスト目的: WCAG 2.1 AAレベル準拠を確認
+        // 黄信号: REQ-5006「WCAG 2.1 AAレベル」
 
-        // Given: 【テストデータ準備】: 高コントラストモードの色定義
+        // Given: テストデータ準備: 高コントラストモードの色定義
         const backgroundColor = AppColors.backgroundHighContrast; // #FFFFFF
         const textColor = AppColors.onBackgroundHighContrast; // #000000
 
-        // When: 【実際の処理実行】: コントラスト比を計算
+        // When: 実際の処理実行: コントラスト比を計算
         // コントラスト比の計算式: (L1 + 0.05) / (L2 + 0.05)
         // L1 = 白 (1.0), L2 = 黒 (0.0)
         // 白と黒のコントラスト比は 21:1
         final ratio = contrastRatio(backgroundColor, textColor);
 
-        // Then: 【結果検証】: コントラスト比が4.5:1以上であること
+        // Then: 結果検証: コントラスト比が4.5:1以上であること
         expect(
           ratio,
           greaterThanOrEqualTo(4.5),
@@ -362,9 +362,9 @@ void main() {
     group('テーマ連続切り替えテスト', () {
       /// テーマを連続して切り替えても正常動作すること
       test('テーマを連続切り替えしても正常動作する', () async {
-        // 【テスト目的】: 連続操作でも状態が一貫することを確認
+        // テスト目的: 連続操作でも状態が一貫することを確認
 
-        // Given: 【テストデータ準備】: ProviderContainer作成
+        // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
         await container.read(settingsNotifierProvider.future);
         final notifier = container.read(settingsNotifierProvider.notifier);

@@ -47,7 +47,7 @@ class TTSServiceState {
   ///
   /// 指定されたフィールドのみを更新した新しい状態を返す。
   ///
-  /// 【エラーの扱い】: `errorMessage` を省略した場合は現在のエラーを保持する。
+  /// エラーの扱い: `errorMessage` を省略した場合は現在のエラーを保持する。
   /// 明示的に消したい場合は `clearErrorMessage: true` を指定すること。
   /// AIConversionState.copyWith と同じ「clearXxxフラグ方式」に統一している。
   /// （以前は `errorMessage ?? this.errorMessage` のみで、一度設定された
@@ -112,7 +112,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
     // バックグラウンドでTTS初期化を開始（TASK-0090: TTS最適化）
     // build()完了後に非同期で初期化を実行することで、
     // 最初のspeak()呼び出し時の遅延を削減
-    // 【TTS-SPEED-RESTORE-FIX】: Futureを保持し、setSpeed()等から初期化完了を
+    // TTS-SPEED-RESTORE-FIX: Futureを保持し、setSpeed()等から初期化完了を
     // 待ち合わせられるようにする。初期化とsetSpeed()が並行して走ると、
     // 初期化側のsetSpeechRate呼び出しが後から実行されて直前に設定した速度を
     // 上書きしてしまう競合状態が起こり得るため。
@@ -131,21 +131,21 @@ class TTSNotifier extends Notifier<TTSServiceState> {
 
   /// バックグラウンド初期化のFuture
   ///
-  /// 【役割】: build()で開始した初期化処理の完了をsetSpeed()等から待ち合わせる
-  /// 【TTS-SPEED-RESTORE-FIX】: 初期化完了前にsetSpeed()が呼ばれても、
+  /// 役割: build()で開始した初期化処理の完了をsetSpeed()等から待ち合わせる
+  /// TTS-SPEED-RESTORE-FIX: 初期化完了前にsetSpeed()が呼ばれても、
   /// 初期化完了後に確実に指定した速度が適用されるようにする
   late Future<bool> _initFuture;
 
   /// SettingsNotifierに保存済みのTTS速度が既に読み込まれている場合、
   /// それを実際のTTSエンジンへ反映する
   ///
-  /// 【バグ修正の背景】: 従来はSettingsNotifierが復元した速度が状態にのみ
+  /// バグ修正の背景: 従来はSettingsNotifierが復元した速度が状態にのみ
   /// 反映され、TTSエンジン（flutter_tts）にはユーザーが設定画面で速度を
   /// 変更したときにしか反映されなかった。そのためアプリ再起動直後は
   /// 「設定画面には保存済みの速度が表示されているのに、実際の読み上げは
   /// 標準速度(1.0倍)のまま」という不整合が発生していた。
   ///
-  /// 【安全対策（重要）】: `ref.exists(settingsNotifierProvider)`で
+  /// 安全対策（重要）: `ref.exists(settingsNotifierProvider)`で
   /// SettingsNotifierが「既に他の場所で構築済み」の場合に限り読み取る
   /// （ここで新規に構築はしない）。もし無条件に
   /// `ref.read(settingsNotifierProvider.future)`を呼ぶと、TTSNotifierを
@@ -162,7 +162,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
   /// `ref.exists(settingsNotifierProvider)`はtrueとなり、保存済みの速度が
   /// 正しく反映される。
   ///
-  /// 【破棄安全性】: build()完了直後（バックグラウンドタスクが未実行のうち）に
+  /// 破棄安全性: build()完了直後（バックグラウンドタスクが未実行のうち）に
   /// ProviderContainerが破棄されるテストケース等では、このメソッドが実行される
   /// 時点で既にこのNotifier自身のrefが破棄済みになっていることがある。
   /// `ref.exists()`はrefが破棄済みだと例外を投げるため、まず`ref.mounted`
@@ -179,7 +179,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
       if (!ref.mounted) return;
       state = state.copyWith(currentSpeed: settings.ttsSpeed);
     } catch (e) {
-      // 【エラーハンドリング】: 設定読み込み・TTS反映に失敗しても、
+      // エラーハンドリング: 設定読み込み・TTS反映に失敗しても、
       // TTS自体の初期化結果には影響を与えない（NFR-301）
     }
   }
@@ -191,7 +191,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
 
   /// TTSServiceの現在値を状態へ反映する
   ///
-  /// 【エラーの扱い】: TTSServiceの`errorMessage`はエラー発生時にのみ代入され、
+  /// エラーの扱い: TTSServiceの`errorMessage`はエラー発生時にのみ代入され、
   /// 成功時にnullへ戻されることがない。そのため「サービスがエラー状態か」を
   /// 基準にし、エラーでなければ`clearErrorMessage`で明示的に消す。
   /// これにより、一度失敗した後に成功しても古いエラーメッセージが
@@ -209,7 +209,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
   ///
   /// OS標準TTSエンジンを初期化する。
   ///
-  /// 【TTS-SPEED-RESTORE-FIX】: build()で開始したバックグラウンド初期化
+  /// TTS-SPEED-RESTORE-FIX: build()で開始したバックグラウンド初期化
   /// （_initFuture、_service.initialize() + 保存済み速度の反映）をそのまま
   /// 待ち合わせる。以前は`_service.initialize()`を独立してもう一度呼んで
   /// いたため、(1) 初期化が二重に実行される、(2) このメソッドの完了後も
@@ -258,7 +258,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
   ///
   /// [speed] 読み上げ速度（slow/normal/fast）
   Future<void> setSpeed(TTSSpeed speed) async {
-    // 【競合防止】: バックグラウンド初期化が完了してから速度を適用する。
+    // 競合防止: バックグラウンド初期化が完了してから速度を適用する。
     // これにより、初期化のsetSpeechRate呼び出しが後から実行されて
     // 直前に適用した速度を上書きしてしまう競合状態を防ぐ（TTS-SPEED-RESTORE-FIX）。
     await _initFuture;

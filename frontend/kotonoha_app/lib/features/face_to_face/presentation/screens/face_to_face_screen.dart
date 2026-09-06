@@ -7,7 +7,7 @@
 /// REQ-503: 通常モードと対面表示モードをシンプルな操作で切り替え
 /// NFR-202: ボタン・タップ領域を視認性が高く押しやすいサイズ
 ///
-/// 【配線】: fix/improvement-p0-p2にてhome_screenのAppBarアクションから
+/// 配線: fix/improvement-p0-p2にてhome_screenのAppBarアクションから
 /// go_router経由でこの画面へ遷移するよう配線した（TASK-0052/0053）。
 /// 既存実装済みだった180度回転機能（RotationToggleButton/RotatedWrapper）を
 /// この画面に組み込み、help_screen.dartの「対面表示モード」説明

@@ -1,6 +1,6 @@
 /// 書き込み失敗が利用者に伝わるかの検証（ADR-005 / 台帳 L-13）
 ///
-/// 【何を守るテストか】: box が**開いていても**書き込みは失敗しうる
+/// 何を守るテストか: box が**開いていても**書き込みは失敗しうる
 /// （ディスクフル・権限・Web の quota 超過）。hive 2.2.3 の `_writeFrames` は
 /// 失敗時にトランザクションを取り消して再送出するだけで box を閉じないため、
 /// `Hive.isBoxOpen` は true のままになる。
@@ -9,7 +9,7 @@
 /// **保存に失敗しているのにバナーが出ない**——この製品で最悪の
 /// 「保存できたように見えて消える」が起きる。
 ///
-/// 【モックの置き場所】: Hive の `Box` は外部 SDK の境界なのでモックしてよい。
+/// モックの置き場所: Hive の `Box` は外部 SDK の境界なのでモックしてよい。
 /// repository・notifier・provider・ウィジェットはすべて実物を通し、
 /// 検証は描画されたバナーで行う。
 library;
@@ -41,7 +41,7 @@ void main() {
     registerFallbackValue(_FakeFavoriteItem());
   });
 
-  /// 【準備】: 3つの box はすべて開いている。お気に入りの書き込みだけが
+  /// 準備: 3つの box はすべて開いている。お気に入りの書き込みだけが
   /// ディスクフルで失敗する。
   ProviderContainer buildContainer(Box<FavoriteItem> favoriteBox) {
     final historyBox = _MockHistoryBox();
@@ -93,7 +93,7 @@ void main() {
       addTearDown(container.dispose);
 
       await pumpShell(tester, container);
-      // 【前提】: 書き込み前は警告が出ていない
+      // 前提: 書き込み前は警告が出ていない
       expect(find.textContaining('保存できません'), findsNothing);
 
       await container.read(favoriteProvider.notifier).addFavorite('みずをください');
@@ -126,7 +126,7 @@ void main() {
     });
 
     testWidgets('次の書き込みが成功したら警告は消える（自己回復）', (tester) async {
-      // 【なぜ】: ディスクフルは解消しうる。一度の失敗で恒久的に警告を出し
+      // なぜ: ディスクフルは解消しうる。一度の失敗で恒久的に警告を出し
       // 続けると、利用者は直っても分からない。
       final box = _MockFavoriteBox();
       when(() => box.values).thenReturn(<FavoriteItem>[]);

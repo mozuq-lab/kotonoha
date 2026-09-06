@@ -1,7 +1,7 @@
 /// History UI constants
 ///
 /// TASK-0061: 履歴一覧UI実装
-/// 【TDD Refactorフェーズ】: UI定数の集約
+/// TDD Refactorフェーズ: UI定数の集約
 library;
 
 /// 履歴画面UI定数クラス

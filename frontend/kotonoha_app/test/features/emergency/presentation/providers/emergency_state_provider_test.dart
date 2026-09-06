@@ -7,7 +7,7 @@
 /// - lib/features/emergency/presentation/providers/emergency_state_provider.dart
 /// - lib/features/emergency/domain/models/emergency_state.dart
 ///
-/// 【TDD Greenフェーズ】: プロバイダーが実装済み、テストが通るはず
+/// TDD Greenフェーズ: プロバイダーが実装済み、テストが通るはず
 library;
 
 import 'package:flutter/material.dart';

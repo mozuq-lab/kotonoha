@@ -114,7 +114,7 @@ class _StatusButtonState extends State<StatusButton> with DebounceMixin {
 
   /// テキスト色を取得
   ///
-  /// 【AA対応】: 背景はカテゴリ別の色（オレンジ／青／緑）なのに文字色を
+  /// AA対応: 背景はカテゴリ別の色（オレンジ／青／緑）なのに文字色を
   /// Colors.white 固定にしていたため、身体状態 2.16:1 / 要求 3.12:1 /
   /// 感情 2.78:1 といずれも WCAG AA(4.5:1) 未達だった。
   /// カテゴリ色は識別の手がかり（NFR-U003）なので変えず、実際の背景色の
@@ -161,7 +161,7 @@ class _StatusButtonState extends State<StatusButton> with DebounceMixin {
                     BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
             ),
-            // 【AA対応】: GridViewのセルがaspectRatio 1.0で子サイズを制約するため、
+            // AA対応: GridViewのセルがaspectRatio 1.0で子サイズを制約するため、
             // largeフォント時にラベルがoverflowしないようFittedBoxで縮小し、
             // それでも収まらない場合はellipsisで省略する。
             child: FittedBox(

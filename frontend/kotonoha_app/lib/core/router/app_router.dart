@@ -1,7 +1,7 @@
 /// Application routing configuration using go_router
 ///
 /// TASK-0015: go_routerナビゲーション設定・ルーティング実装
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

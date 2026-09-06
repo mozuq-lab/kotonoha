@@ -1,7 +1,7 @@
 /// E2Eテスト用ヘルパー関数
 ///
 /// TASK-0081: E2Eテスト環境構築
-/// 信頼性レベル: 🟡 黄信号（テスト戦略は要件定義書から推測）
+/// 信頼性レベル: 黄信号（テスト戦略は要件定義書から推測）
 ///
 /// E2Eテストで共通して使用するヘルパー関数を提供。
 library;
@@ -38,7 +38,7 @@ IntegrationTestWidgetsFlutterBinding initializeE2ETestBinding() {
 /// [completeTutorial]: true の場合、初回チュートリアルを完了済みにする
 ///   （デフォルト: true）。**チュートリアル自体を検証するテスト以外は既定のままにする。**
 ///
-/// 【チュートリアルを完了済みにする理由（Issue #84 の根本原因）】:
+/// チュートリアルを完了済みにする理由（Issue #84 の根本原因）:
 /// E2E はストレージが空の状態から始まるため初回起動扱いになり、
 /// `TutorialOverlay` が表示される。このオーバーレイは
 /// `Container(color: Colors.black54)` で画面全体を覆っており、
@@ -59,7 +59,7 @@ Future<void> pumpApp(
   bool clearData = true,
   bool completeTutorial = true,
 }) async {
-  // 【チュートリアルの抑止】: pumpWidget より前に行う。
+  // チュートリアルの抑止: pumpWidget より前に行う。
   // AppShell は最初のフレーム後に tutorialProvider.initialize() を呼び、
   // ここで読んだ値で表示要否が決まる。
   if (completeTutorial) {
@@ -88,7 +88,7 @@ Future<void> pumpApp(
 
 /// アプリを再起動した状態にする
 ///
-/// 【なぜ pumpApp の再呼び出しでは駄目か】: `pumpWidget` に同じ型のウィジェットを
+/// なぜ pumpApp の再呼び出しでは駄目か: `pumpWidget` に同じ型のウィジェットを
 /// 渡すと、Flutter は要素を**作り直さず更新する**。`ProviderScope` の要素が
 /// 生き続けるため Riverpod の `ProviderContainer` も維持され、その中の
 /// `GoRouter` も直前の画面のまま残る。つまり「再起動したつもり」で
@@ -122,7 +122,7 @@ Future<void> clearHistoryAndFavorites() async {
     final favoritesBox = Hive.box<FavoriteItem>('favorites');
     await favoritesBox.clear();
   }
-  // 【定型文も消す理由（Issue #84）】: 消さないと、削除を行うテストの結果が
+  // 定型文も消す理由（Issue #84）: 消さないと、削除を行うテストの結果が
   // **次のテストへ持ち越される**。同一ターゲット内では box が開いたままで、
   // `initializeDefaultPhrases()` は空のときしか投入しないため、
   // 一度削除された定型文は二度と戻らない。
@@ -157,7 +157,7 @@ Future<void> measurePerformance(
 
   final elapsed = stopwatch.elapsedMilliseconds;
 
-  // 【閾値で落とさない理由（2026-08-30 決定）】
+  // 閾値で落とさない理由（2026-08-30 決定）
   //
   // E2E が検証するのは「経路が繋がっていること」であって、値の実測ではない。
   //
@@ -287,11 +287,11 @@ Future<void> tapIconButton(
 /// [label]: Semanticsラベル
 /// 遅延生成リストの中から [finder] が指す要素を画面内へスクロールして出す
 ///
-/// 【なぜ必要か】: 定型文一覧は `ListView.builder` で、**画面外の要素は
+/// なぜ必要か: 定型文一覧は `ListView.builder` で、**画面外の要素は
 /// ウィジェットとして構築されない**。したがって `find.text` は 0 件を返し、
 /// 「表示されていない」ではなく「存在しない」ように見える。
 ///
-/// 【双方向に探す理由】: `scrollUntilVisible` は与えた delta の向きにしか
+/// 双方向に探す理由: `scrollUntilVisible` は与えた delta の向きにしか
 /// 動かない。下向きだけで探すと、**一度下へ行った後で上の要素へ戻れない**。
 /// 見つからないまま maxScrolls を使い切り `Bad state: No element` で落ちる
 /// ——「対象が存在しない」ように見えるが、実際はスクロール位置の問題である。
@@ -344,7 +344,7 @@ Future<void> scrollAndTap(WidgetTester tester, Finder finder) async {
 
 /// [phraseText] の行の中にある [icon] を指す finder
 ///
-/// 【なぜ行で絞るか】: 一覧には同じアイコンが定型文の数だけ並ぶ。
+/// なぜ行で絞るか: 一覧には同じアイコンが定型文の数だけ並ぶ。
 /// `find.byIcon(...).last` のような位置指定は使ってはいけない——
 /// `ensureVisible` でスクロールすると `ListView.builder` がさらに下の要素を
 /// 構築するため、**新しい `.last` はまた画面外になる**。追いかけても届かない。
@@ -376,7 +376,7 @@ Future<void> tapIconInPhraseRow(
 
 /// 確認ダイアログ内のボタンをタップする
 ///
-/// 【なぜ専用のヘルパーが要るか】: 画面本体にもクイック応答の「はい」「いいえ」が
+/// なぜ専用のヘルパーが要るか: 画面本体にもクイック応答の「はい」「いいえ」が
 /// 常時あるため、`tapButton(tester, 'はい')` は2件に一致して
 /// `findsOneWidget` で落ちる。ダイアログが「出ていない」ように見えるが、
 /// 実際は出ている——症状を誤読しやすい失敗の型である（Issue #84）。

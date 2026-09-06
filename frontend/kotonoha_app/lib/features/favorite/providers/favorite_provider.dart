@@ -1,7 +1,7 @@
-// 【Provider定義】: お気に入り管理プロバイダー
-// 【実装内容】: お気に入りのCRUD操作、並び替え機能を提供
-// 【設計根拠】: REQ-701, REQ-702, REQ-703, REQ-704（お気に入り機能）
-// 🔵 信頼性レベル: 青信号 - EARS要件定義書に基づく
+// Provider定義: お気に入り管理プロバイダー
+// 実装内容: お気に入りのCRUD操作、並び替え機能を提供
+// 設計根拠: REQ-701, REQ-702, REQ-703, REQ-704（お気に入り機能）
+// 信頼性レベル: 青信号 - EARS要件定義書に基づく
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
@@ -9,8 +9,8 @@ import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:uuid/uuid.dart';
 import '../domain/models/favorite.dart';
 
-/// 【状態クラス定義】: お気に入り一覧の状態
-/// 🔵 信頼性レベル: 青信号 - Riverpod標準パターン
+/// 状態クラス定義: お気に入り一覧の状態
+/// 信頼性レベル: 青信号 - Riverpod標準パターン
 class FavoriteState {
   /// お気に入り一覧
   final List<Favorite> favorites;
@@ -27,9 +27,9 @@ class FavoriteState {
     this.error,
   });
 
-  /// 【状態コピー】: 指定したフィールドのみを更新した新しい状態を返す
+  /// 状態コピー: 指定したフィールドのみを更新した新しい状態を返す
   ///
-  /// 【エラーの扱い】: `error` を省略した場合は現在のエラーを保持する。
+  /// エラーの扱い: `error` を省略した場合は現在のエラーを保持する。
   /// 明示的に消したい場合は `clearError: true` を指定すること。
   /// AIConversionState.copyWith と同じ「clearXxxフラグ方式」に統一している。
   FavoriteState copyWith({
@@ -46,14 +46,14 @@ class FavoriteState {
   }
 }
 
-/// 【Notifier定義】: お気に入り状態管理Notifier
-/// 【実装内容】: お気に入りのCRUD操作、並び替えを提供
-/// 🔵 信頼性レベル: 青信号 - REQ-701〜704に基づく
+/// Notifier定義: お気に入り状態管理Notifier
+/// 実装内容: お気に入りのCRUD操作、並び替えを提供
+/// 信頼性レベル: 青信号 - REQ-701〜704に基づく
 class FavoriteNotifier extends Notifier<FavoriteState> {
   @override
   FavoriteState build() {
-    // 【永続化配線】: Repositoryが利用可能（Boxオープン済み）の場合はHiveから初期化
-    // 【フォールバック】: repo==nilの場合は従来どおりインメモリ空状態
+    // 永続化配線: Repositoryが利用可能（Boxオープン済み）の場合はHiveから初期化
+    // フォールバック: repo==nilの場合は従来どおりインメモリ空状態
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo == null) return const FavoriteState();
     return FavoriteState(
@@ -64,16 +64,16 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
   /// UUID生成用インスタンス
   static const _uuid = Uuid();
 
-  /// 【Undo用】: 直近に個別削除したお気に入りを一時保持する
+  /// Undo用: 直近に個別削除したお気に入りを一時保持する
   ///
-  /// 【改善】: 個別削除は確認ダイアログを廃止し即削除としたため、
+  /// 改善: 個別削除は確認ダイアログを廃止し即削除としたため、
   /// 誤タップからの復元手段として「元に戻す」操作を提供する。
   Favorite? _lastDeletedFavorite;
 
-  /// 【Undo用】: 直近に全削除する前のお気に入り一覧を一時保持する
+  /// Undo用: 直近に全削除する前のお気に入り一覧を一時保持する
   List<Favorite>? _lastClearedFavorites;
 
-  /// 【変換ヘルパー】: Hiveモデル FavoriteItem → ドメイン Favorite
+  /// 変換ヘルパー: Hiveモデル FavoriteItem → ドメイン Favorite
   Favorite _toDomain(FavoriteItem item) => Favorite(
         id: item.id,
         content: item.content,
@@ -83,7 +83,7 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
         sourceId: item.sourceId,
       );
 
-  /// 【変換ヘルパー】: ドメイン Favorite → Hiveモデル FavoriteItem
+  /// 変換ヘルパー: ドメイン Favorite → Hiveモデル FavoriteItem
   FavoriteItem _toItem(Favorite f) => FavoriteItem(
         id: f.id,
         content: f.content,
@@ -93,9 +93,9 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
         sourceId: f.sourceId,
       );
 
-  /// 【メソッド定義】: お気に入りを追加する
-  /// 【実装内容】: テキストを受け取り、新しいお気に入りを追加
-  /// 🔵 信頼性レベル: 青信号 - REQ-701（お気に入り登録）
+  /// メソッド定義: お気に入りを追加する
+  /// 実装内容: テキストを受け取り、新しいお気に入りを追加
+  /// 信頼性レベル: 青信号 - REQ-701（お気に入り登録）
   Future<void> addFavorite(String content) async {
     // 空文字は追加しない
     if (content.isEmpty) return;
@@ -115,36 +115,36 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     final updatedFavorites = [...state.favorites, newFavorite];
     state = state.copyWith(favorites: updatedFavorites);
 
-    // 【永続化】: repoがあればHiveに保存
+    // 永続化: repoがあればHiveに保存
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
       await repo.save(_toItem(newFavorite));
     }
   }
 
-  /// 【メソッド定義】: お気に入りを削除する
-  /// 【実装内容】: 指定IDのお気に入りを削除
-  /// 🔵 信頼性レベル: 青信号 - REQ-703（お気に入り削除）
+  /// メソッド定義: お気に入りを削除する
+  /// 実装内容: 指定IDのお気に入りを削除
+  /// 信頼性レベル: 青信号 - REQ-703（お気に入り削除）
   Future<void> deleteFavorite(String id) async {
     final index = state.favorites.indexWhere((f) => f.id == id);
     if (index == -1) return;
 
-    // 【Undo用】: 復元できるよう削除対象を退避しておく
+    // Undo用: 復元できるよう削除対象を退避しておく
     _lastDeletedFavorite = state.favorites[index];
 
     final updatedFavorites = List<Favorite>.from(state.favorites);
     updatedFavorites.removeAt(index);
     state = state.copyWith(favorites: updatedFavorites);
 
-    // 【永続化】: repoがあればHiveから削除
+    // 永続化: repoがあればHiveから削除
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
       await repo.delete(id);
     }
   }
 
-  /// 【メソッド定義】: 直近に削除したお気に入りを復元する（Undo）
-  /// 🟡 信頼性レベル: 黄信号 - 誤操作防止のための改善（削除確認ダイアログ廃止に伴う代替手段）
+  /// メソッド定義: 直近に削除したお気に入りを復元する（Undo）
+  /// 信頼性レベル: 黄信号 - 誤操作防止のための改善（削除確認ダイアログ廃止に伴う代替手段）
   Future<void> restoreLastDeletedFavorite() async {
     final target = _lastDeletedFavorite;
     if (target == null) return;
@@ -160,9 +160,9 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     }
   }
 
-  /// 【メソッド定義】: お気に入りの並び順を変更する
-  /// 【実装内容】: 指定IDのお気に入りを新しい位置に移動
-  /// 🔵 信頼性レベル: 青信号 - REQ-704（お気に入りの並び替え）
+  /// メソッド定義: お気に入りの並び順を変更する
+  /// 実装内容: 指定IDのお気に入りを新しい位置に移動
+  /// 信頼性レベル: 青信号 - REQ-704（お気に入りの並び替え）
   Future<void> reorderFavorite(String id, int newOrder) async {
     final index = state.favorites.indexWhere((f) => f.id == id);
     if (index == -1) return;
@@ -183,7 +183,7 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
 
     state = state.copyWith(favorites: reorderedFavorites);
 
-    // 【永続化】: repoがあれば並び順を一括保存
+    // 永続化: repoがあれば並び順を一括保存
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
       for (final fav in reorderedFavorites) {
@@ -192,40 +192,40 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     }
   }
 
-  /// 【メソッド定義】: お気に入りを読み込む
-  /// 【実装内容】: ローカルストレージからお気に入りを読み込み
-  /// 🟡 信頼性レベル: 黄信号 - 将来的にHiveから読み込み
+  /// メソッド定義: お気に入りを読み込む
+  /// 実装内容: ローカルストレージからお気に入りを読み込み
+  /// 信頼性レベル: 黄信号 - 将来的にHiveから読み込み
   Future<void> loadFavorites() async {
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
-      // 【永続化】: Hiveからお気に入りを読み込み
+      // 永続化: Hiveからお気に入りを読み込み
       state = state.copyWith(
         favorites: repo.loadAllSortedSync().map(_toDomain).toList(),
         isLoading: false,
       );
       return;
     }
-    // 【フォールバック】: インメモリ管理のみ
+    // フォールバック: インメモリ管理のみ
     state = state.copyWith(isLoading: false);
   }
 
-  /// 【メソッド定義】: 全お気に入りをクリアする
-  /// 【実装内容】: 全てのお気に入りを削除
-  /// 🔵 信頼性レベル: 青信号 - REQ-703（お気に入り削除）
+  /// メソッド定義: 全お気に入りをクリアする
+  /// 実装内容: 全てのお気に入りを削除
+  /// 信頼性レベル: 青信号 - REQ-703（お気に入り削除）
   Future<void> clearAllFavorites() async {
-    // 【Undo用】: 復元できるよう削除前の一覧を退避しておく
+    // Undo用: 復元できるよう削除前の一覧を退避しておく
     _lastClearedFavorites = List<Favorite>.from(state.favorites);
 
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
-      // 【永続化】: Hiveの全お気に入りを削除
+      // 永続化: Hiveの全お気に入りを削除
       await repo.deleteAll();
     }
     state = state.copyWith(favorites: []);
   }
 
-  /// 【メソッド定義】: 直近の全削除を取り消し、お気に入りを復元する（Undo）
-  /// 🟡 信頼性レベル: 黄信号 - 誤操作防止のための改善
+  /// メソッド定義: 直近の全削除を取り消し、お気に入りを復元する（Undo）
+  /// 信頼性レベル: 黄信号 - 誤操作防止のための改善
   Future<void> restoreClearedFavorites() async {
     final cleared = _lastClearedFavorites;
     if (cleared == null || cleared.isEmpty) return;
@@ -241,99 +241,99 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     }
   }
 
-  /// 【メソッド定義】: 定型文由来のお気に入りを追加する
-  /// 【機能概要】: 定型文からお気に入りを追加する際、元データ情報を保持
-  /// 【実装方針】: sourceType='preset_phrase', sourceId=定型文IDを設定
-  /// 【テスト対応】: TC-SYNC-001, TC-SYNC-003, TC-SYNC-301
-  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件定義に基づく
+  /// メソッド定義: 定型文由来のお気に入りを追加する
+  /// 機能概要: 定型文からお気に入りを追加する際、元データ情報を保持
+  /// 実装方針: sourceType='preset_phrase', sourceId=定型文IDを設定
+  /// テスト対応: TC-SYNC-001, TC-SYNC-003, TC-SYNC-301
+  /// 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件定義に基づく
   Future<void> addFavoriteFromPresetPhrase(
       String content, String sourceId) async {
-    // 【入力値検証】: 空文字は追加しない
+    // 入力値検証: 空文字は追加しない
     if (content.isEmpty) return;
 
-    // 【重複チェック】: 同じsourceIdの定型文由来お気に入りが既に存在する場合は追加しない
-    // 【処理方針】: sourceIdで重複を判定（contentではなく）
+    // 重複チェック: 同じsourceIdの定型文由来お気に入りが既に存在する場合は追加しない
+    // 処理方針: sourceIdで重複を判定（contentではなく）
     final existsBySourceId = state.favorites.any((f) => f.sourceId == sourceId);
     if (existsBySourceId) return;
 
-    // 【Favorite作成】: 定型文由来のお気に入りを作成
+    // Favorite作成: 定型文由来のお気に入りを作成
     final now = DateTime.now();
     final newFavorite = Favorite(
       id: _uuid.v4(),
       content: content,
       createdAt: now,
       displayOrder: state.favorites.length,
-      sourceType: 'preset_phrase', // 【元データ種類】: 定型文由来を示す
-      sourceId: sourceId, // 【元データID】: 定型文のIDを保持
+      sourceType: 'preset_phrase', // 元データ種類: 定型文由来を示す
+      sourceId: sourceId, // 元データID: 定型文のIDを保持
     );
 
-    // 【状態更新】: Favoriteリストに追加
+    // 状態更新: Favoriteリストに追加
     final updatedFavorites = [...state.favorites, newFavorite];
     state = state.copyWith(favorites: updatedFavorites);
 
-    // 【永続化】: repoがあればHiveに保存（sourceType/sourceId含む）
+    // 永続化: repoがあればHiveに保存（sourceType/sourceId含む）
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
       await repo.save(_toItem(newFavorite));
     }
   }
 
-  /// 【メソッド定義】: 履歴由来のお気に入りを追加する
-  /// 【機能概要】: 履歴からお気に入りを追加する際、出所（履歴id）を記録する
-  /// 【重複判定】: content一致（sourceId一致ではない）
-  /// 【理由】: 履歴は同じ文言が何度でも生まれる（利用者が同じことを繰り返し発話する）。
+  /// メソッド定義: 履歴由来のお気に入りを追加する
+  /// 機能概要: 履歴からお気に入りを追加する際、出所（履歴id）を記録する
+  /// 重複判定: content一致（sourceId一致ではない）
+  /// 理由: 履歴は同じ文言が何度でも生まれる（利用者が同じことを繰り返し発話する）。
   /// sourceIdで判定すると同じ文言を発話するたびにお気に入りが増え、一覧に同一文言が
   /// 並んでしまう。既存の addFavorite(String content) と同じcontent重複判定を使い、
   /// sourceIdは出所の記録のためだけに持たせる（ADR-005 / Phase 3 WP-2 Stage 1）。
   Future<void> addFavoriteFromHistory(String content, String historyId) async {
-    // 【入力値検証】: 空文字は追加しない
+    // 入力値検証: 空文字は追加しない
     if (content.isEmpty) return;
 
-    // 【重複チェック】: addFavoriteと同じcontent一致で判定する
+    // 重複チェック: addFavoriteと同じcontent一致で判定する
     final exists = state.favorites.any((f) => f.content == content);
     if (exists) return;
 
-    // 【Favorite作成】: 履歴由来のお気に入りを作成
+    // Favorite作成: 履歴由来のお気に入りを作成
     final now = DateTime.now();
     final newFavorite = Favorite(
       id: _uuid.v4(),
       content: content,
       createdAt: now,
       displayOrder: state.favorites.length,
-      sourceType: 'history', // 【元データ種類】: 履歴由来を示す
-      sourceId: historyId, // 【元データID】: 履歴のIDを保持（重複判定には使わない）
+      sourceType: 'history', // 元データ種類: 履歴由来を示す
+      sourceId: historyId, // 元データID: 履歴のIDを保持（重複判定には使わない）
     );
 
-    // 【状態更新】: Favoriteリストに追加
+    // 状態更新: Favoriteリストに追加
     final updatedFavorites = [...state.favorites, newFavorite];
     state = state.copyWith(favorites: updatedFavorites);
 
-    // 【永続化】: repoがあればHiveに保存（sourceType/sourceId含む）
+    // 永続化: repoがあればHiveに保存（sourceType/sourceId含む）
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
       await repo.save(_toItem(newFavorite));
     }
   }
 
-  /// 【メソッド定義】: sourceIdに一致するお気に入りを削除する
-  /// 【機能概要】: 定型文のお気に入り解除時に対応するFavoriteを削除
-  /// 【実装方針】: sourceIdで検索して削除
-  /// 【テスト対応】: TC-SYNC-002, TC-SYNC-202, TC-SYNC-302, TC-SYNC-303
-  /// 🟡 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件定義に基づく
+  /// メソッド定義: sourceIdに一致するお気に入りを削除する
+  /// 機能概要: 定型文のお気に入り解除時に対応するFavoriteを削除
+  /// 実装方針: sourceIdで検索して削除
+  /// テスト対応: TC-SYNC-002, TC-SYNC-202, TC-SYNC-302, TC-SYNC-303
+  /// 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件定義に基づく
   Future<void> deleteFavoriteBySourceId(String sourceId) async {
-    // 【検索】: sourceIdに一致するFavoriteを検索
+    // 検索: sourceIdに一致するFavoriteを検索
     final index = state.favorites.indexWhere((f) => f.sourceId == sourceId);
 
-    // 【該当なし処理】: 一致するものがなければ何もしない（TC-SYNC-303）
+    // 該当なし処理: 一致するものがなければ何もしない（TC-SYNC-303）
     if (index == -1) return;
 
-    // 【削除処理】: 一致するFavoriteを削除
+    // 削除処理: 一致するFavoriteを削除
     final removed = state.favorites[index];
     final updatedFavorites = List<Favorite>.from(state.favorites);
     updatedFavorites.removeAt(index);
     state = state.copyWith(favorites: updatedFavorites);
 
-    // 【永続化】: repoがあればHiveから削除
+    // 永続化: repoがあればHiveから削除
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
       await repo.delete(removed.id);
@@ -341,8 +341,8 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
   }
 }
 
-/// 【Provider定義】: FavoriteNotifierのProvider
-/// 🔵 信頼性レベル: 青信号 - Riverpodパターンに基づく
+/// Provider定義: FavoriteNotifierのProvider
+/// 信頼性レベル: 青信号 - Riverpodパターンに基づく
 final favoriteProvider = NotifierProvider<FavoriteNotifier, FavoriteState>(
   FavoriteNotifier.new,
 );

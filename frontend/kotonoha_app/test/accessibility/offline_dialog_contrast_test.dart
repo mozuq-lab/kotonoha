@@ -1,19 +1,19 @@
 /// オフラインダイアログのコントラスト比回帰テスト
 ///
-/// 【テスト対象】:
+/// テスト対象:
 /// lib/features/network/presentation/widgets/network_aware_scaffold.dart の
 /// `showOfflineAIConversionDialog()`
-/// 【テスト目的】: 3テーマ（ライト／ダーク／高コントラスト）すべてで
+/// テスト目的: 3テーマ（ライト／ダーク／高コントラスト）すべてで
 /// WCAG 2.1 AA を満たし続けることを保証する。
 ///
-/// 【背景（実障害）】: このダイアログは背景色を自前で持たずテーマの surface に
+/// 背景（実障害）: このダイアログは背景色を自前で持たずテーマの surface に
 /// 載るのに、アイコン色を `Colors.grey[700]`(#616161) に固定していたため、
 /// ダークテーマの背景 (#1E1E1E) に対し 2.69:1 と非テキスト基準(3:1)未達だった。
 ///
-/// 【方針】: アプリ内の警告アイコン共通の `warningIconColor()`
+/// 方針: アプリ内の警告アイコン共通の `warningIconColor()`
 /// （lib/core/themes/theme_colors.dart）を再利用し、テーマの明暗に応じた色を使う。
 ///
-/// 🔵 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA）
+/// 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA）
 library;
 
 import 'package:flutter/material.dart';
@@ -120,7 +120,7 @@ void main() {
         );
       });
 
-      // 【この回帰テストの理由】: アイコンと本文は測っていたが、ユーザーが必ず押す
+      // この回帰テストの理由: アイコンと本文は測っていたが、ユーザーが必ず押す
       // 唯一の操作要素である「OK」は colorScheme.primary の既定のままAA未達だった
       // （ライト 2.87:1 / ダーク 3.62:1）。操作要素こそ最初に検証する。
       testWidgets('${entry.key}テーマでOKボタンの文字が 4.5:1 以上', (tester) async {

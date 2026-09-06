@@ -234,7 +234,7 @@ void main() {
         await notifier.setTTSSpeed(TTSSpeed.slow);
 
         // Then: SharedPreferencesに保存されている
-        // 【永続化形式】: theme/fontSizeはenum indexではなくenum name文字列で保存される
+        // 永続化形式: theme/fontSizeはenum indexではなくenum name文字列で保存される
         final prefs = await SharedPreferences.getInstance();
         expect(prefs.getString('theme'), AppTheme.dark.name);
         expect(prefs.getString('fontSize'), FontSize.large.name);
@@ -243,7 +243,7 @@ void main() {
 
       test('TC-080-012: アプリ再起動後も設定が維持される', () async {
         // Given: 設定を保存
-        // 【後方互換性】: theme/fontSizeは旧形式（enum index int）で保存されたデータでも
+        // 後方互換性: theme/fontSizeは旧形式（enum index int）で保存されたデータでも
         // 正しく復元できることを検証する（マイグレーション対応）
         SharedPreferences.setMockInitialValues({
           'theme': AppTheme.dark.index,

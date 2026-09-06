@@ -4,7 +4,7 @@
 ///
 /// 対象: lib/features/input_candidates/providers/input_candidates_provider.dart
 ///
-/// 【テスト方針】: HiveのBoxをオープンしないプレーンな[ProviderContainer]を
+/// テスト方針: HiveのBoxをオープンしないプレーンな[ProviderContainer]を
 /// 使用する。repository_providers.dart はBox未オープン時にnullを返す設計
 /// のため、historyProvider/favoriteProvider/presetPhraseNotifierProviderは
 /// いずれもインメモリ動作にフォールバックする（既存のwiring testと同じ手法）。

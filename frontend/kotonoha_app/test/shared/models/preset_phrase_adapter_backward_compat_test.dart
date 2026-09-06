@@ -2,7 +2,7 @@
 ///
 /// Phase 3 / WP-2 / Stage 3b: PresetPhrase.isFavorite（旧 field 3）を削除した。
 ///
-/// 【このテストが守っているもの】:
+/// このテストが守っているもの:
 /// 旧アダプタは 0:id / 1:content / 2:category / **3:isFavorite(bool)** /
 /// 4:displayOrder(int) / 5:createdAt / 6:updatedAt の7フィールドを書いていた。
 /// isFavorite を消したあとも、**残るフィールドの番号（4,5,6）を詰め直してはいけない。**
@@ -12,14 +12,14 @@
 /// **box を開けないまま null を返す**——利用者から見ると定型文が全消えし、
 /// アプリは無言でインメモリ動作を続ける。
 ///
-/// 【旧バイト列の作り方】: 実 box の境界で確かめるため、旧形式（7フィールド）を書く
+/// 旧バイト列の作り方: 実 box の境界で確かめるため、旧形式（7フィールド）を書く
 /// アダプタ `_LegacyPresetPhraseAdapter` を typeId 1 に登録して実際に Hive へ書き、
 /// box を閉じてから `Hive.registerAdapter(..., override: true)` で現行アダプタへ
 /// 差し替え、開き直して読む。`override` 引数は hive 2.2.3 の
 /// `TypeRegistryImpl.registerAdapter`（lib/src/registry/type_registry_impl.dart:78-119）
 /// に実在する。
 ///
-/// 【testWidgets を使わない理由】: 実 Hive のファイル I/O は FakeAsync と待ち合って
+/// testWidgets を使わない理由: 実 Hive のファイル I/O は FakeAsync と待ち合って
 /// ハングするため、素の test() で書いている。
 library;
 
@@ -30,7 +30,7 @@ import 'package:hive/hive.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
 
-/// 【テスト用フィクスチャ】: Stage 3b 以前の PresetPhraseAdapter の write 側
+/// テスト用フィクスチャ: Stage 3b 以前の PresetPhraseAdapter の write 側
 ///
 /// 端末に既に書かれている「旧形式のバイト列」を再現するためだけのもの。
 /// 現行実装のコピーではなく、**消えた過去の外部データ形式**を表している。
@@ -49,7 +49,7 @@ class _LegacyPresetPhraseAdapter extends TypeAdapter<PresetPhrase> {
 
   @override
   PresetPhrase read(BinaryReader reader) {
-    // 【意図的に未実装】: このアダプタは「旧バイト列を書く」ためだけに使う。
+    // 意図的に未実装: このアダプタは「旧バイト列を書く」ためだけに使う。
     // 読み出しは必ず現行アダプタで行うので、ここが呼ばれたらテストの前提が崩れている。
     throw UnimplementedError(
       '_LegacyPresetPhraseAdapter は書き込み専用のフィクスチャ',
@@ -112,7 +112,7 @@ void main() {
         updatedAt: DateTime(2026, 1, 2, 3, 4),
       );
       await box.put(legacyPhrase.id, legacyPhrase);
-      // 【ディスクへ確定】: 閉じてから開き直すことで、確実にバイト列から読ませる
+      // ディスクへ確定: 閉じてから開き直すことで、確実にバイト列から読ませる
       await box.close();
 
       // When: 現行アダプタ（isFavorite を持たない）へ差し替えて開き直す

@@ -1,9 +1,9 @@
 /// EmptyFavoriteWidget ウィジェット
 ///
 /// TASK-0064: お気に入り一覧UI実装
-/// 【TDD Greenフェーズ】: EmptyFavoriteWidgetウィジェット実装
+/// TDD Greenフェーズ: EmptyFavoriteWidgetウィジェット実装
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 /// 関連要件: FR-064-004, EDGE-064-004
 library;
 

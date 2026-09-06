@@ -5,7 +5,7 @@
 ///
 /// テスト対象: lib/features/emergency/presentation/screens/emergency_alert_screen.dart
 ///
-/// 【TDD Greenフェーズ】: ウィジェットが実装済み、テストが通るはず
+/// TDD Greenフェーズ: ウィジェットが実装済み、テストが通るはず
 library;
 
 import 'package:flutter/material.dart';

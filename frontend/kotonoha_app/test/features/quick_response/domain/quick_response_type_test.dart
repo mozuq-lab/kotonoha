@@ -5,7 +5,7 @@
 ///
 /// テスト対象: lib/features/quick_response/domain/quick_response_type.dart
 ///
-/// 【TDD Redフェーズ】: Enumが未実装のため、このテストは失敗する
+/// TDD Redフェーズ: Enumが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter_test/flutter_test.dart';

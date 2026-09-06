@@ -2,7 +2,7 @@
 ///
 /// TASK-0016: テーマ実装（ライト・ダーク・高コントラスト）
 /// 要件: REQ-803（テーマ設定）
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 ///
 /// ライトモード用のThemeData設定。
 /// - 明るい背景色と暗いテキスト色
@@ -55,7 +55,7 @@ final ThemeData lightTheme = ThemeData(
   ),
 
   // Elevated button theme
-  // 【AA対応】: 前景色を明示する。Material 3 の ElevatedButton は primary で
+  // AA対応: 前景色を明示する。Material 3 の ElevatedButton は primary で
   // 塗りつぶすのではなく、surfaceContainerLow の面に primary のラベルを載せる設計で、
   // TextButton と同じく「面に載る文字」になる。未指定だと AA 未達のため
   // 文字専用の AppColors.primaryTextLight を指定する。
@@ -84,8 +84,8 @@ final ThemeData lightTheme = ThemeData(
   ),
 
   // Text button theme
-  // 【AA対応】: ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため44pxを保証。
-  // 【AA対応】: 前景色を明示する。未指定だと Material 3 が colorScheme.primary を
+  // AA対応: ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため44pxを保証。
+  // AA対応: 前景色を明示する。未指定だと Material 3 が colorScheme.primary を
   // 使うが、primary は「塗り」用途の色で面に載る文字としては AA 未達のため、
   // 文字専用の AppColors.primaryTextLight を指定する。
   textButtonTheme: TextButtonThemeData(
@@ -99,7 +99,7 @@ final ThemeData lightTheme = ThemeData(
   ),
 
   // Outlined button theme
-  // 【AA対応】: TextButton と同じ理由で前景色を明示する。枠線の色は
+  // AA対応: TextButton と同じ理由で前景色を明示する。枠線の色は
   // 各利用側が用途に応じて指定するため、ここでは前景色とタップターゲットのみ揃える。
   outlinedButtonTheme: OutlinedButtonThemeData(
     style: OutlinedButton.styleFrom(

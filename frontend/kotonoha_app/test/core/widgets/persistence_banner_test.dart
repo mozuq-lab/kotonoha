@@ -1,6 +1,6 @@
 /// 永続化バナーのテスト（ADR-005 / Phase 3 WP-1）
 ///
-/// 【何を守るテストか】: 「保存できたように見えて消える」を防ぐ。
+/// 何を守るテストか: 「保存できたように見えて消える」を防ぐ。
 /// 利用者は発話で確認・訂正できず、データは端末内にしか無い。
 /// 検証は描画されたウィジェットで行い、状態クラスの戻り値では行わない。
 library;
@@ -92,7 +92,7 @@ void main() {
     });
 
     testWidgets('Unavailable でも「入力内容が消える」とは言わない', (tester) async {
-      // 【なぜ】: 下書き（入力バッファ）は Hive ではなく SharedPreferences に
+      // なぜ: 下書き（入力バッファ）は Hive ではなく SharedPreferences に
       // 保存され、AppLifecycleObserver が復元する。Hive が全滅しても入力内容は
       // 残るため、「入力内容は消えます」は誤報である。
       // 1文字に分単位かかる利用者に「急げ・アプリを閉じるな」という誤った行動を
@@ -115,7 +115,7 @@ void main() {
     });
 
     testWidgets('failedAreas が空でも警告が消えない（フェイルセーフ）', (tester) async {
-      // 【なぜ】: ADR-005 は「保存されないことは必ず伝える」と定めている。
+      // なぜ: ADR-005 は「保存されないことは必ず伝える」と定めている。
       // resolvePersistenceState は空集合の RecoverableFailure を作らないが、
       // コンストラクタは公開されており、型が空集合を禁じてもいない。
       // failure 状態で無音になる経路は、到達可能性に関わらず塞ぐ。
@@ -133,7 +133,7 @@ void main() {
     });
 
     testWidgets('保存できない警告が読み上げで二重にならない', (tester) async {
-      // 【なぜ】: Semantics(label:) の子に同じ文言の Text を置くと、
+      // なぜ: Semantics(label:) の子に同じ文言の Text を置くと、
       // ラベルが連結されて同一ノードに2回入り、読み上げが二重になる。
       final handle = tester.ensureSemantics();
       await _pumpBanner(tester, const PersistenceUnavailable());
@@ -154,7 +154,7 @@ void main() {
   });
 
   group('描画された背景が状態ごとの配色になっている', () {
-    // 【なぜ関数の戻り値では足りないか】: 配色関数だけを測っても、
+    // なぜ関数の戻り値では足りないか: 配色関数だけを測っても、
     // その色が実際にバナーへ塗られているかは分からない。Material の color を
     // 落としても・2状態の配色を入れ替えても、関数を測るテストは緑のまま通る
     // （レビューの mutation 実験で両方とも生き残った）。
@@ -207,10 +207,10 @@ void main() {
   });
 
   group('コントラスト比（WCAG 2.1 AA / REQ-5006）', () {
-    // 【なぜ測るか】: 色の妥当性をコメントで主張すると、テーマを足したときに
+    // なぜ測るか: 色の妥当性をコメントで主張すると、テーマを足したときに
     // 主張だけが残る。実際に計算して確かめる。
     //
-    // 【範囲の正確な記述】: Unavailable は colorScheme.error/onError なので
+    // 範囲の正確な記述: Unavailable は colorScheme.error/onError なので
     // テーマごとに値が変わり、3テーマそれぞれを測っている。
     // RecoverableFailure は AppColors の固定色でテーマに依存しないため、
     // ループしても同じ1組を測り直しているだけである（当初この節に

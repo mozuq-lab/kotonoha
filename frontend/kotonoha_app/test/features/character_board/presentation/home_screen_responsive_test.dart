@@ -69,7 +69,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // 【回帰確認】: 修正前は可視高さ(約313px)が固定セクションの必要高さ
+        // 回帰確認: 修正前は可視高さ(約313px)が固定セクションの必要高さ
         // (約352px)を下回り、RenderFlexオーバーフロー(黄黒ストライプ)が
         // 発生していた。2ペインレイアウトへの切替でこれを解消する。
         expect(tester.takeException(), isNull);

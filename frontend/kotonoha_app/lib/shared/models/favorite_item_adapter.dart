@@ -15,7 +15,7 @@ import 'package:kotonoha_app/shared/models/favorite_item.dart';
 /// - 4: sourceType (String?)
 /// - 5: sourceId (String?)
 ///
-/// 🔵 信頼性レベル: 青信号 - REQ-701、FR-065-001に基づく
+/// 信頼性レベル: 青信号 - REQ-701、FR-065-001に基づく
 class FavoriteItemAdapter extends TypeAdapter<FavoriteItem> {
   @override
   final int typeId = 2;

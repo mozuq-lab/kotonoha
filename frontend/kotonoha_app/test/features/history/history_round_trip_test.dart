@@ -3,13 +3,13 @@
 /// **UI → provider → repository → 実 Hive box → 再起動相当 → UI** を1本で通す。
 /// 層を飛ばして下だけを叩くテストは単体では合格にしない（是正計画 §Phase 3-3）。
 ///
-/// 【削除を選んだ理由】: B-2「操作の取り消し」「データ喪失」に直結する。
+/// 削除を選んだ理由: B-2「操作の取り消し」「データ喪失」に直結する。
 /// 発話で訂正できない利用者にとって、消したつもりが残る／残したつもりが消えるは
 /// どちらも重い。
 ///
-/// 【本番の登録経路を使う】: `registerPersistedTypeAdapters()`（台帳 L-31）。
+/// 本番の登録経路を使う: `registerPersistedTypeAdapters()`（台帳 L-31）。
 ///
-/// 【実 Hive × testWidgets の制約（2026-08-31 に実測）】:
+/// 実 Hive × testWidgets の制約（2026-08-31 に実測）:
 /// - 実 I/O を `testWidgets` 本体で await すると**`--timeout` も効かずハングする**
 ///   → seed は `setUp`（実 async ゾーン）で行う
 /// - UI 操作が始めた実 I/O も FakeAsync では完了しない
@@ -38,7 +38,7 @@ void main() {
   const deletedContent = 'みずをください';
 
   setUp(() async {
-    // 【外部 SDK の境界】: flutter_tts のチャンネルだけを止める。
+    // 外部 SDK の境界: flutter_tts のチャンネルだけを止める。
     // ttsProvider を差し替えると自分の provider を patch することになるので採らない。
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('flutter_tts'),
@@ -97,7 +97,7 @@ void main() {
     final deleteButtons = find.byIcon(Icons.delete);
     expect(deleteButtons, findsNWidgets(2), reason: '2件とも削除できること');
 
-    // 【どちらを消すか】: 対象のカードの中の削除ボタンに限定する。
+    // どちらを消すか: 対象のカードの中の削除ボタンに限定する。
     // 一覧の並び順に依存すると、並び替えの変更でテストの意味が変わる。
     final targetDelete = find.descendant(
       of: find.ancestor(

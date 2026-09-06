@@ -5,11 +5,11 @@
 ///
 /// 対象: EmptyFavoriteWidget（空状態表示ウィジェット）
 ///
-/// 【TDD Redフェーズ】: UIが未実装、テストが失敗するはず
+/// TDD Redフェーズ: UIが未実装、テストが失敗するはず
 ///
 /// 信頼性レベル凡例:
-/// - 🔵 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-/// - 🟡 黄信号: 要件定義書から妥当な推測によるテスト
+/// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
+/// - 黄信号: 要件定義書から妥当な推測によるテスト
 library;
 
 import 'package:flutter/material.dart';
@@ -22,7 +22,7 @@ void main() {
     // 3.1 正常系テスト
     // =========================================================================
     group('正常系テスト', () {
-      /// TC-064-034: 空状態メッセージが表示される 🔵
+      /// TC-064-034: 空状態メッセージが表示される
       testWidgets('TC-064-034: EmptyFavoriteWidgetが空状態メッセージを表示する',
           (WidgetTester tester) async {
         // When: EmptyFavoriteWidgetを表示する
@@ -42,7 +42,7 @@ void main() {
         );
       });
 
-      /// TC-064-035: 空状態アイコンが表示される 🟡
+      /// TC-064-035: 空状態アイコンが表示される
       testWidgets('TC-064-035: EmptyFavoriteWidgetにアイコンが表示される',
           (WidgetTester tester) async {
         // When: EmptyFavoriteWidgetを表示する
@@ -62,7 +62,7 @@ void main() {
         );
       });
 
-      /// TC-064-036: 使い方のヒントが表示される 🔵
+      /// TC-064-036: 使い方のヒントが表示される
       testWidgets('TC-064-036: EmptyFavoriteWidgetに使い方のヒントが表示される',
           (WidgetTester tester) async {
         // When: EmptyFavoriteWidgetを表示する

@@ -1,9 +1,9 @@
 /// AI変換例外クラス
 ///
 /// TASK-0067: AI変換APIクライアント実装
-/// 【TDD Redフェーズ】: スタブファイル
+/// TDD Redフェーズ: スタブファイル
 ///
-/// 信頼性レベル: 🔵 青信号（api-endpoints.mdベース）
+/// 信頼性レベル: 青信号（api-endpoints.mdベース）
 /// 関連要件: EDGE-001, EDGE-002
 library;
 

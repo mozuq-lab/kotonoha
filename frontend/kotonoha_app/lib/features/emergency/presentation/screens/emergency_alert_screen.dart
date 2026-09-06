@@ -124,7 +124,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
 
   /// 緊急メッセージのテキストスタイル
   ///
-  /// 【AA対応】: 以前は color: Colors.white を固定していたが、背景は
+  /// AA対応: 以前は color: Colors.white を固定していたが、背景は
   /// [EmergencyConfirmationDialog.getEmergencyColor] でテーマごとに変わるため、
   /// ダーク(#EF5350) 3.49:1 / 高コントラスト(#FF0000) 4.00:1 と
   /// WCAG AA(4.5:1)未達だった。色は build 時に背景から決めるため、
@@ -170,7 +170,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
     // テーマに応じた緊急色を取得
     final emergencyColor =
         EmergencyConfirmationDialog.getEmergencyColor(context);
-    // 【設計判断】: 緊急色は「目立たせる」ための色なので暗くしない。
+    // 設計判断: 緊急色は「目立たせる」ための色なので暗くしない。
     // 代わりに前景（文字・アイコン）を背景輝度から選び、赤を保ったまま
     // 3テーマすべてで基準を満たす（ライト 4.98:1 / ダーク 6.02:1 /
     // 高コントラスト 5.25:1）。

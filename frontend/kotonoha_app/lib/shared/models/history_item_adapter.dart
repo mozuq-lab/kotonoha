@@ -21,7 +21,7 @@ import 'package:kotonoha_app/shared/models/history_item.dart';
 /// 同じコードで読める。`writeByte` の総数だけ 5→4 にする。
 /// 根拠テスト: test/shared/models/history_item_adapter_backward_compat_test.dart
 ///
-/// 🔵 信頼性レベル: 青信号 - REQ-601、REQ-5003に基づく
+/// 信頼性レベル: 青信号 - REQ-601、REQ-5003に基づく
 class HistoryItemAdapter extends TypeAdapter<HistoryItem> {
   @override
   final int typeId = 0;
@@ -44,7 +44,7 @@ class HistoryItemAdapter extends TypeAdapter<HistoryItem> {
   @override
   void write(BinaryWriter writer, HistoryItem obj) {
     writer
-      // 【フィールド数】: 旧形式は5。isFavorite を書かなくなったので4。
+      // フィールド数: 旧形式は5。isFavorite を書かなくなったので4。
       // 番号（0,1,2,3）はそのまま。総数だけが減る。
       ..writeByte(4)
       ..writeByte(0)

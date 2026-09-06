@@ -5,7 +5,7 @@
 ///
 /// テスト対象: フォントサイズ設定がアプリ全体に正しく反映されること
 ///
-/// 【TDD Redフェーズ】: HomeScreenでのフォントサイズ反映を検証
+/// TDD Redフェーズ: HomeScreenでのフォントサイズ反映を検証
 library;
 
 import 'package:flutter/material.dart';
@@ -38,10 +38,10 @@ void main() {
       /// 検証内容: HomeScreen内のCharacterBoardWidgetに設定のフォントサイズが適用されること
       testWidgets('TC-INT-001: CharacterBoardWidgetにフォントサイズが渡される',
           (WidgetTester tester) async {
-        // 【テスト目的】: HomeScreenでフォントサイズ設定がCharacterBoardWidgetに反映されること 🔵
-        // 🔵 青信号: REQ-802「文字盤のフォントサイズを設定に追従させる」
+        // テスト目的: HomeScreenでフォントサイズ設定がCharacterBoardWidgetに反映されること
+        // 青信号: REQ-802「文字盤のフォントサイズを設定に追従させる」
 
-        // Given: 【テストデータ準備】: フォントサイズを「大」に設定
+        // Given: テストデータ準備: フォントサイズを「大」に設定
         final container = ProviderContainer(
           overrides: [
             settingsNotifierProvider.overrideWith(
@@ -63,7 +63,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: CharacterBoardWidgetにfontSize=largeが渡されている
+        // Then: 結果検証: CharacterBoardWidgetにfontSize=largeが渡されている
         final characterBoard = tester.widget<CharacterBoardWidget>(
           find.byType(CharacterBoardWidget),
         );
@@ -79,10 +79,10 @@ void main() {
       /// 検証内容: HomeScreen内のQuickResponseButtonsに設定のフォントサイズが適用されること
       testWidgets('TC-INT-002: QuickResponseButtonsにフォントサイズが渡される',
           (WidgetTester tester) async {
-        // 【テスト目的】: HomeScreenでフォントサイズ設定がQuickResponseButtonsに反映されること 🔵
-        // 🔵 青信号: REQ-802「ボタンラベルのフォントサイズを設定に追従させる」
+        // テスト目的: HomeScreenでフォントサイズ設定がQuickResponseButtonsに反映されること
+        // 青信号: REQ-802「ボタンラベルのフォントサイズを設定に追従させる」
 
-        // Given: 【テストデータ準備】: フォントサイズを「大」に設定
+        // Given: テストデータ準備: フォントサイズを「大」に設定
         final container = ProviderContainer(
           overrides: [
             settingsNotifierProvider.overrideWith(
@@ -104,7 +104,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: QuickResponseButtonsにfontSize=largeが渡されている
+        // Then: 結果検証: QuickResponseButtonsにfontSize=largeが渡されている
         final quickResponseButtons = tester.widget<QuickResponseButtons>(
           find.byType(QuickResponseButtons),
         );
@@ -118,13 +118,13 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: REQ-802
       /// 検証内容: HomeScreen内の入力表示エリアに設定のフォントサイズが適用されること
-      /// 【TDD Redフェーズ】: この機能は未実装のため、テストが失敗することを期待
+      /// TDD Redフェーズ: この機能は未実装のため、テストが失敗することを期待
       testWidgets('TC-INT-003: 入力欄のフォントサイズが設定に追従する',
           (WidgetTester tester) async {
-        // 【テスト目的】: 入力表示エリアのフォントサイズが設定に追従することを確認 🔵
-        // 🔵 青信号: REQ-802「入力欄のフォントサイズを設定に追従させる」
+        // テスト目的: 入力表示エリアのフォントサイズが設定に追従することを確認
+        // 青信号: REQ-802「入力欄のフォントサイズを設定に追従させる」
 
-        // Given: 【テストデータ準備】: フォントサイズを「大」に設定
+        // Given: テストデータ準備: フォントサイズを「大」に設定
         final container = ProviderContainer(
           overrides: [
             settingsNotifierProvider.overrideWith(
@@ -146,7 +146,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: 入力欄のフォントサイズがlargeサイズ（24px）であること
+        // Then: 結果検証: 入力欄のフォントサイズがlargeサイズ（24px）であること
         // 入力欄のプレースホルダーテキストを探す
         final inputText = tester.widget<Text>(
           find.text('入力してください...'),
@@ -168,9 +168,9 @@ void main() {
       /// 検証内容: フォントサイズ「小」でも正常に表示されること
       testWidgets('TC-INT-004: フォントサイズ「小」でのHomeScreen表示',
           (WidgetTester tester) async {
-        // 【テスト目的】: フォントサイズ「小」でも正常に表示されることを確認 🔵
+        // テスト目的: フォントサイズ「小」でも正常に表示されることを確認
 
-        // Given: 【テストデータ準備】: フォントサイズを「小」に設定
+        // Given: テストデータ準備: フォントサイズを「小」に設定
         final container = ProviderContainer(
           overrides: [
             settingsNotifierProvider.overrideWith(
@@ -192,7 +192,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: 各ウィジェットにfontSize=smallが渡されている
+        // Then: 結果検証: 各ウィジェットにfontSize=smallが渡されている
         final characterBoard = tester.widget<CharacterBoardWidget>(
           find.byType(CharacterBoardWidget),
         );
@@ -213,10 +213,10 @@ void main() {
       /// 検証内容: デフォルト設定（フォントサイズ「中」）で正常に表示されること
       testWidgets('TC-INT-005: デフォルトフォントサイズ（中）でのHomeScreen表示',
           (WidgetTester tester) async {
-        // 【テスト目的】: デフォルト設定で正常に表示されることを確認 🔵
-        // 🔵 青信号: REQ-804「標準フォントサイズを高齢者にも見やすいサイズに設定」
+        // テスト目的: デフォルト設定で正常に表示されることを確認
+        // 青信号: REQ-804「標準フォントサイズを高齢者にも見やすいサイズに設定」
 
-        // Given: 【テストデータ準備】: デフォルト設定
+        // Given: テストデータ準備: デフォルト設定
         await tester.pumpWidget(
           const ProviderScope(
             child: MaterialApp(
@@ -227,7 +227,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: 各ウィジェットにfontSize=medium（デフォルト）が渡されている
+        // Then: 結果検証: 各ウィジェットにfontSize=medium（デフォルト）が渡されている
         final characterBoard = tester.widget<CharacterBoardWidget>(
           find.byType(CharacterBoardWidget),
         );
@@ -251,10 +251,10 @@ void main() {
       /// 検証内容: 設定画面でフォントサイズを変更すると、Provider状態が即座に更新される
       testWidgets('TC-INT-006: 設定変更後のProvider状態更新',
           (WidgetTester tester) async {
-        // 【テスト目的】: 設定変更がProvider状態に即座に反映されることを確認 🔵
-        // 🔵 青信号: REQ-2007「フォントサイズ変更時に即座に変更」
+        // テスト目的: 設定変更がProvider状態に即座に反映されることを確認
+        // 青信号: REQ-2007「フォントサイズ変更時に即座に変更」
 
-        // Given: 【テストデータ準備】: ProviderContainer作成
+        // Given: テストデータ準備: ProviderContainer作成
         SharedPreferences.setMockInitialValues({});
         final container = ProviderContainer();
 
@@ -265,11 +265,11 @@ void main() {
         var state = container.read(settingsNotifierProvider);
         expect(state.requireValue.fontSize, FontSize.medium);
 
-        // When: 【実際の処理実行】: フォントサイズを「大」に変更
+        // When: 実際の処理実行: フォントサイズを「大」に変更
         final notifier = container.read(settingsNotifierProvider.notifier);
         await notifier.setFontSize(FontSize.large);
 
-        // Then: 【結果検証】: Provider状態が即座に更新される
+        // Then: 結果検証: Provider状態が即座に更新される
         state = container.read(settingsNotifierProvider);
         expect(state.requireValue.fontSize, FontSize.large);
 

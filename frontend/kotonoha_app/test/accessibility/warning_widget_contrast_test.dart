@@ -1,15 +1,15 @@
 /// 警告系ウィジェットのコントラスト比回帰テスト
 ///
-/// 【テスト対象】: OfflineIndicator / VolumeWarningWidget
-/// 【テスト目的】: 警告表示の前景色/背景色が WCAG 2.1 AA を満たし続けることを保証する
-/// 【背景】: これらは `Colors.orange.shade100` 背景に `Colors.orange`（約1.7:1）や
+/// テスト対象: OfflineIndicator / VolumeWarningWidget
+/// テスト目的: 警告表示の前景色/背景色が WCAG 2.1 AA を満たし続けることを保証する
+/// 背景: これらは `Colors.orange.shade100` 背景に `Colors.orange`（約1.7:1）や
 /// `orange.shade800/900`（約2.5〜3.0:1）を重ねており AA 未達だった。
 /// 色定数を戻した場合に検知できるよう、実際に描画された色から比を計算して検証する。
 ///
 /// エラーダイアログ側は error_dialog_contrast_test.dart が担当する。
 /// 計算ヘルパー自体の妥当性検証は high_contrast_theme_test.dart が担当する。
 ///
-/// 🔵 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA・4.5:1以上）
+/// 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA・4.5:1以上）
 library;
 
 import 'package:flutter/material.dart';
@@ -60,11 +60,11 @@ void main() {
       final bg = background(tester);
       final textColor = resolvedTextColor(tester, find.text('オフライン'));
 
-      // 【前提確認】: 半透明だとこの計算が実際の比を保証できない
+      // 前提確認: 半透明だとこの計算が実際の比を保証できない
       expectOpaque(bg, 'オフライン表示の背景色');
       expectOpaque(textColor, 'オフライン表示のテキスト色');
 
-      // 【結果検証】: AA基準（4.5:1）を満たすこと
+      // 結果検証: AA基準（4.5:1）を満たすこと
       final ratio = contrastRatio(textColor, bg);
       expect(
         ratio,

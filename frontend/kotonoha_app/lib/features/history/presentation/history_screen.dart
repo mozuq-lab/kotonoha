@@ -2,9 +2,9 @@
 ///
 /// TASK-0061: 履歴一覧UI実装
 /// TASK-0066: お気に入り追加・削除・並び替え機能
-/// 【TDD Refactorフェーズ】: 定数抽出・ダイアログ分離・アクセシビリティ改善
+/// TDD Refactorフェーズ: 定数抽出・ダイアログ分離・アクセシビリティ改善
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 /// 関連要件: FR-061-001〜015, AC-061-001〜008, REQ-701
 library;
 
@@ -50,7 +50,7 @@ class HistoryScreen extends ConsumerStatefulWidget {
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// 現在読み上げ中の履歴項目ID
   ///
-  /// 【バグ修正】: 以前はTTSのspeaking状態を全カードに一律で渡していたため、
+  /// バグ修正: 以前はTTSのspeaking状態を全カードに一律で渡していたため、
   /// 1件を読み上げ中に全カードが停止アイコンに変わっていた。読み上げ対象の
   /// 項目IDを保持し、その項目のみ読み上げ中表示にする。
   String? _speakingId;
@@ -61,7 +61,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final historyState = ref.watch(historyProvider);
     final histories = historyState.histories;
 
-    // 【星ボタン用】: お気に入り登録済みかどうかをcontent一致で判定する
+    // 星ボタン用: お気に入り登録済みかどうかをcontent一致で判定する
     // （既存のお気に入り重複判定ロジックと同様の方式）
     final favoriteContents =
         ref.watch(favoriteProvider).favorites.map((f) => f.content).toSet();
@@ -150,7 +150,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   /// 個別削除処理（確認なし・即削除 + Undo）
   ///
-  /// 【改善】: 確認ダイアログは「はい」誤タップ時に復元できず、
+  /// 改善: 確認ダイアログは「はい」誤タップ時に復元できず、
   /// タップ数も増えるため廃止した。即削除のうえ、SnackBarの
   /// 「元に戻す」操作（8秒間）で誤操作から復元できるようにする。
   void _deleteHistoryWithUndo(BuildContext context, History history) {
@@ -165,7 +165,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// 全削除確認ダイアログを表示
   ///
   /// FR-061-010: 全削除時に確認ダイアログを表示
-  /// 【改善】: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ、
+  /// 改善: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ、
   /// 実行後にUndo SnackBarを表示し誤操作から復元できるようにする。
   void _showDeleteAllDialog(BuildContext context) {
     showDialog<void>(
@@ -220,7 +220,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// お気に入りに追加
   ///
   /// REQ-701: お気に入り追加機能
-  /// 【出所記録】: 履歴由来であることを sourceType/sourceId として記録する
+  /// 出所記録: 履歴由来であることを sourceType/sourceId として記録する
   /// （Phase 3 / WP-2 / Stage 1）。重複判定は content 一致のまま変えない。
   void _addToFavorite(BuildContext context, String historyId, String content) {
     final favoriteState = ref.read(favoriteProvider);

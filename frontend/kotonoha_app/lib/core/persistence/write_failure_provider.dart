@@ -6,7 +6,7 @@ import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 
 /// 直近の書き込みが失敗している領域を保持する
 ///
-/// 【自己回復する理由】: ディスクフルは解消しうる。一度の失敗で恒久的に
+/// 自己回復する理由: ディスクフルは解消しうる。一度の失敗で恒久的に
 /// 警告を出し続けると、直っても利用者には分からない。
 /// 次の書き込みが成功した時点でその領域を外す。
 class WriteFailureNotifier extends Notifier<Set<PersistedArea>> {

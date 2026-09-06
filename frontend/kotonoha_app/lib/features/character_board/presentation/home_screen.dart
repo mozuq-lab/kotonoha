@@ -2,7 +2,7 @@
 ///
 /// TASK-0015: go_routerナビゲーション設定・ルーティング実装
 /// TASK-0060: Phase 3 統合テスト - ホーム画面統合
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 library;
 
 import 'package:flutter/material.dart';
@@ -62,7 +62,7 @@ class HomeScreen extends ConsumerWidget {
     final aiPoliteness = settings?.aiPoliteness ?? PolitenessLevel.normal;
     final simpleMode = settings?.simpleMode ?? false;
 
-    // 【音量ゼロ警告の配線】(EDGE-202): tts_button.dart自体は変更せず、
+    // 音量ゼロ警告の配線(EDGE-202): tts_button.dart自体は変更せず、
     // グローバルなttsProviderの状態遷移(非speaking -> speaking)を横断的に
     // 監視することで、どのボタン（クイック応答・状態ボタン・読み上げボタン等）
     // から読み上げが開始されても音量チェックが行われるようにする。
@@ -78,7 +78,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('kotonoha'),
-        // 【シンプルモード】: 文字盤を使わない大ボタン画面に切り替えている間は、
+        // シンプルモード: 文字盤を使わない大ボタン画面に切り替えている間は、
         // 認知負荷を下げるため他のナビゲーションアイコンは表示せず、
         // 通常モードへ戻すトグルアイコンのみを表示する。
         actions: simpleMode
@@ -127,7 +127,7 @@ class HomeScreen extends ConsumerWidget {
                   ? _buildSimpleModeContent(ref, fontSize: fontSize)
                   : LayoutBuilder(
                       builder: (context, constraints) {
-                        // 【レスポンシブ対応】: 可視高さ・幅に応じてレイアウトを切り替える。
+                        // レスポンシブ対応: 可視高さ・幅に応じてレイアウトを切り替える。
                         // - isCompactHeight: 主に横持ちスマホ（可視高さ< compactHeightThreshold）。
                         //   固定サイズのセクションを縦に積むと必要高さが可視高さを超え、
                         //   RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
@@ -209,7 +209,7 @@ class HomeScreen extends ConsumerWidget {
         ref.read(ttsProvider.notifier).speak(text);
       },
       onFavoriteTap: (favorite) {
-        // 【既存挙動に合わせる】: FavoritesScreenのお気に入りタップと同様、
+        // 既存挙動に合わせる: FavoritesScreenのお気に入りタップと同様、
         // 読み上げのみ行い、履歴への再保存は行わない。
         if (favorite.content.isEmpty) return;
         ref.read(ttsProvider.notifier).speak(favorite.content);
@@ -362,11 +362,11 @@ class HomeScreen extends ConsumerWidget {
 
   /// クイック応答ボタンセクションを構築する
   ///
-  /// 【バグ修正】: 従来はonResponse内でもTTS読み上げを行っていたため、
+  /// バグ修正: 従来はonResponse内でもTTS読み上げを行っていたため、
   /// onTTSSpeak（読み上げ実行）と合わせて1タップでspeak()が二重に
   /// 呼ばれていた。読み上げはonTTSSpeakのみに一本化し、onResponseは
   /// 履歴保存のみを担当するようにした。
-  /// 【バグ修正】: 履歴種類が誤ってHistoryType.manualInput（文字盤入力）に
+  /// バグ修正: 履歴種類が誤ってHistoryType.manualInput（文字盤入力）に
   /// なっていたため、大ボタン相当のHistoryType.quickButtonに修正した
   /// （履歴画面でのアイコン・スクリーンリーダー表示の誤りを解消）。
   Widget _buildQuickResponseSection(
@@ -465,7 +465,7 @@ class HomeScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
       ),
       constraints: BoxConstraints(minHeight: minHeight, maxHeight: maxHeight),
-      // 【アクセシビリティ対応】: liveRegionで入力中テキストの変化を
+      // アクセシビリティ対応: liveRegionで入力中テキストの変化を
       // スクリーンリーダーが自動読み上げできるようにする。
       child: Semantics(
         liveRegion: true,
@@ -508,7 +508,7 @@ class HomeScreen extends ConsumerWidget {
 
   /// コントロールボタン行（削除・全消去・読み上げ）を構築する
   ///
-  /// 【バグ修正】: コンパクト2ペインレイアウトの左ペイン（幅の狭いExpanded flex:2）
+  /// バグ修正: コンパクト2ペインレイアウトの左ペイン（幅の狭いExpanded flex:2）
   /// では、固定サイズのボタン群がRow(mainAxisAlignment.spaceBetween)の
   /// 幅を超えRenderFlexオーバーフローが発生していた。Wrapに変更することで、
   /// 幅に余裕がある場合は従来通り1行（spaceBetween相当）で表示しつつ、
@@ -528,7 +528,7 @@ class HomeScreen extends ConsumerWidget {
         spacing: AppSizes.paddingSmall,
         runSpacing: AppSizes.paddingSmall,
         children: [
-          // 【バグ修正】: 削除・全消去ボタン（各60px推奨サイズ）は、コンパクト
+          // バグ修正: 削除・全消去ボタン（各60px推奨サイズ）は、コンパクト
           // 2ペインレイアウトの左ペインのように2ボタン分の幅すら確保できない
           // 極端に狭い幅では、この内側グループ自体もWrapにしないと
           // オーバーフローする（外側WrapはRunをまたぐ折り返しのみ制御し、
@@ -631,7 +631,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       child: CharacterBoardWidget(
         onCharacterTap: (character) {
-          // 【濁点・半濁点キー対応】: 通常の文字追加ではなく、入力バッファ末尾の
+          // 濁点・半濁点キー対応: 通常の文字追加ではなく、入力バッファ末尾の
           // 文字を濁音/半濁音に変換する専用処理を呼び出す（3タップ問題の解消）。
           // 空白キーは全角スペース文字そのものが渡ってくるため、通常のaddCharacter
           // でそのまま追加できる。
@@ -651,7 +651,7 @@ class HomeScreen extends ConsumerWidget {
 
   /// 履歴に保存する
   ///
-  /// 【バグ修正】: 従来は常にHistoryType.manualInput固定で保存していたため、
+  /// バグ修正: 従来は常にHistoryType.manualInput固定で保存していたため、
   /// クイック応答・状態ボタン経由の履歴も「文字盤入力」として記録され、
   /// 履歴画面のアイコン・スクリーンリーダー読み上げが実態と異なっていた。
   /// 呼び出し元ごとに適切な[type]を指定できるようにした
@@ -766,7 +766,7 @@ class HomeScreen extends ConsumerWidget {
     String convertedText,
     PolitenessLevel politenessLevel,
   ) {
-    // 【注意】ダイアログのクローズはAIConversionResultDialog.show()内部で
+    // 注意ダイアログのクローズはAIConversionResultDialog.show()内部で
     // dialogContext（root Navigator）を使って行われるため、ここで
     // Navigator.of(context).pop()を呼んではならない。
     // 呼び出し元contextはShellRoute配下のbranch Navigatorに属し、popすると
@@ -822,7 +822,7 @@ class HomeScreen extends ConsumerWidget {
   /// FontSizeからフォントサイズ値を取得
   ///
   /// REQ-802: 入力欄のフォントサイズを設定に追従させる
-  /// 🔵 青信号: AppSizesの定義に基づく
+  /// 青信号: AppSizesの定義に基づく
   double _getFontSizeValue(FontSize fontSize) {
     switch (fontSize) {
       case FontSize.small:

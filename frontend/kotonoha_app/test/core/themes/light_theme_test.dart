@@ -4,7 +4,7 @@
 ///
 /// テスト対象: lib/core/themes/light_theme.dart (実装済み)
 ///
-/// 【TDD Redフェーズ】: テーマのプロパティを検証
+/// TDD Redフェーズ: テーマのプロパティを検証
 library;
 
 import 'package:flutter/material.dart';

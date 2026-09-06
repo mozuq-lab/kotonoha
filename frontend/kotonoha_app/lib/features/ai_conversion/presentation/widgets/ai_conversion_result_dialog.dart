@@ -2,7 +2,7 @@
 ///
 /// TASK-0069: AI変換結果表示・選択UI
 /// 要件: REQ-902（AI変換結果表示・採用選択）、REQ-904（再生成・元の文使用）
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 ///
 /// AI変換の結果を表示し、ユーザーが「採用」「再生成」「元の文を使う」
 /// の選択ができるダイアログ。
@@ -58,7 +58,7 @@ const double kResultAreaMaxHeight = 200.0;
 /// );
 /// ```
 ///
-/// 【重要】show()ヘルパー経由で表示した場合、ボタンタップ時にダイアログは
+/// 重要show()ヘルパー経由で表示した場合、ボタンタップ時にダイアログは
 /// show()内部で自動的に閉じられる（builderのdialogContextでpopする）。
 /// そのためコールバック側でNavigator.pop()を呼んではならない。
 /// showDialogはroot Navigatorにダイアログを積む一方、呼び出し元contextは
@@ -105,7 +105,7 @@ class AIConversionResultDialog extends StatefulWidget {
   ///
   /// barrierDismissible: false で誤操作防止（REQ-5002）
   ///
-  /// 【pop責任】このヘルパーはbuilderに渡されるdialogContext（root Navigator上）で
+  /// pop責任このヘルパーはbuilderに渡されるdialogContext（root Navigator上）で
   /// ダイアログ自身を閉じるため、コールバック側でNavigator.pop()を呼ぶ必要はない。
   /// 呼び出し元のcontextはgo_router ShellRoute配下のbranch Navigatorに属するため、
   /// そちらでpopするとダイアログではなく背後ページがpopされてしまう。
@@ -174,7 +174,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
 
   /// テーマに応じた変換結果ボックスの背景色を取得
   ///
-  /// 【AA対応】: 以前は `primary.withValues(alpha: 0.1〜0.3)` の半透明色を
+  /// AA対応: 以前は `primary.withValues(alpha: 0.1〜0.3)` の半透明色を
   /// 使っていたため、実際の色はダイアログ背景との合成結果に依存し、
   /// コントラスト比を計算・検証できなかった。合成後と同じ色を不透明な
   /// 定数として持つことで、見た目を変えずに検証可能にする。
@@ -191,7 +191,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
 
   /// テーマに応じた丁寧さタグの背景色を取得
   ///
-  /// 【変換結果ボックスと分けている理由】: 一時、タグの背景に
+  /// 変換結果ボックスと分けている理由: 一時、タグの背景に
   /// [_getResultBackgroundColor] を流用していたが、タグは元々
   /// 「primary を alpha 0.2 で重ねた色」であり、結果ボックス（ライトは alpha 0.1、
   /// 高コントラストは黄色）とは別の色だった。流用によってライトでは
@@ -199,7 +199,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   /// （淡黄）と**色相まで変わって**、黒白で構成された高コントラストテーマに
   /// 黄色が持ち込まれていた。元の見た目に戻す。
   ///
-  /// 【定数ではなく実行時合成にしている理由】: 合成後の色を定数で持つと、
+  /// 定数ではなく実行時合成にしている理由: 合成後の色を定数で持つと、
   /// 元になる surface や primary を変えたときに黙って食い違う（テストも同じ
   /// 定数を読み返すので気付けない）。[Color.alphaBlend] で実テーマから導出する。
   /// ダイアログの背景が `colorScheme.surface` と一致することは
@@ -213,7 +213,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
 
   /// テーマに応じた変換結果の枠線色を取得
   ///
-  /// 【AA対応】: 以前はテーマのプライマリ色をそのまま枠線に使っていたため、
+  /// AA対応: 以前はテーマのプライマリ色をそのまま枠線に使っていたため、
   /// ライトで 2.60:1（ボックス背景）／2.87:1（ダイアログ背景）と
   /// 非テキスト基準(3:1)未達だった。枠線は「隣接する色」の双方から
   /// 3:1 以上離す必要があるため、専用色を用意する。
@@ -236,7 +236,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final secondaryButtonColor = _getSecondaryButtonColor(theme);
-    // 【AA対応】: ボタン背景はテーマごとに変わるため文字色を固定せず、
+    // AA対応: ボタン背景はテーマごとに変わるため文字色を固定せず、
     // 実際の背景色の輝度から黒・白のうちコントラスト比が高い方を選ぶ。
     final secondaryTextColor = bestContrastingTextColor(secondaryButtonColor);
 
@@ -295,7 +295,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
 
   /// 元の文セクションを構築
   ///
-  /// 【AA対応】: ラベル文字色にColors.grey(#9E9E9E)を使用していたため、
+  /// AA対応: ラベル文字色にColors.grey(#9E9E9E)を使用していたため、
   /// 背景（白系サーフェス）との組み合わせで約2.8:1しかなくWCAG AA（4.5:1）未達だった。
   /// テーマのcolorScheme.onSurfaceは各テーマのサーフェス色との組み合わせで
   /// AAを大きく上回るよう定義済み（ライト/高コントラスト: 黒文字で約21:1、
@@ -392,7 +392,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
 
   /// 「採用」ボタンを構築
   ///
-  /// 【AA対応】: 従来は背景色（テーマのプライマリカラー）に関わらず
+  /// AA対応: 従来は背景色（テーマのプライマリカラー）に関わらず
   /// 文字色をColors.white固定にしていたため、ライトテーマの
   /// primaryLight(#2196F3)+白文字で約3.1:1しかなくWCAG AA（4.5:1）未達だった。
   /// 各テーマのcolorScheme.onPrimaryは背景（colorScheme.primary）との組み合わせで
@@ -442,7 +442,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
 
   /// 「元の文を使う」ボタンを構築
   ///
-  /// 【AA対応】: 枠線にテーマのプライマリ色をそのまま使っていたため、
+  /// AA対応: 枠線にテーマのプライマリ色をそのまま使っていたため、
   /// ライトテーマでダイアログ背景に対し 2.87:1 と非テキスト基準(3:1)未達
   /// だった。結果ボックスと同じ枠線色を使う。
   Widget _buildUseOriginalButton(ThemeData theme) {

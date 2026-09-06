@@ -1,9 +1,9 @@
 /// AI変換状態クラス
 ///
 /// TASK-0070: AI変換Provider・状態管理
-/// 【TDD Redフェーズ】: スタブファイル
+/// TDD Redフェーズ: スタブファイル
 ///
-/// 信頼性レベル: 🔵 青信号（interfaces.dartベース）
+/// 信頼性レベル: 青信号（interfaces.dartベース）
 /// 関連要件: REQ-901, REQ-902, REQ-903, REQ-904
 library;
 

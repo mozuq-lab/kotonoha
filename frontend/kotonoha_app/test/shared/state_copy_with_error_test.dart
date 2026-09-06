@@ -2,7 +2,7 @@
 ///
 /// 改善対応: copyWith のエラー引数パターンの統一
 ///
-/// 【背景】: 状態クラスごとに copyWith のエラー引数の扱いが3パターンに
+/// 背景: 状態クラスごとに copyWith のエラー引数の扱いが3パターンに
 /// 分かれており、いずれも意図しない挙動を生んでいた。
 ///
 /// - `error: error`（favorite / history / preset_phrase）
@@ -62,7 +62,7 @@ void main() {
   group('copyWith エラー引数の規約（clearXxx フラグ方式に統一）', () {
     group('FavoriteState', () {
       test('error を省略した場合はエラーを保持する', () {
-        // 【背景】: 旧実装（error: error）では、無関係なフィールドを更新しただけで
+        // 背景: 旧実装（error: error）では、無関係なフィールドを更新しただけで
         // エラーが消えてしまっていた
         const state = FavoriteState(error: '読み込みに失敗しました');
 
@@ -157,7 +157,7 @@ void main() {
       });
 
       test('clearErrorMessage: true でエラーを明示的にクリアできる', () {
-        // 【回帰】: 旧実装（errorMessage ?? this.errorMessage）では
+        // 回帰: 旧実装（errorMessage ?? this.errorMessage）では
         // 一度設定されたエラーを消す手段が存在しなかった
         final updated = errorState.copyWith(
           state: TTSState.idle,
@@ -224,7 +224,7 @@ void main() {
 
     tearDown(() => container.dispose());
 
-    /// 【回帰テスト】: エラー画面が恒久的に固着するシナリオ
+    /// 回帰テスト: エラー画面が恒久的に固着するシナリオ
     ///
     /// PresetPhraseScreen は state.error != null のときリスト全体を
     /// エラー表示へ差し替える。エラーを消すのは loadPhrases() /
@@ -287,7 +287,7 @@ void main() {
 
       final state = container.read(presetPhraseNotifierProvider);
       expect(state.error, isNull);
-      // 【設計変更】: Phase 3 / WP-2 / Stage 3b - お気に入りの正はfavoriteProvider
+      // 設計変更: Phase 3 / WP-2 / Stage 3b - お気に入りの正はfavoriteProvider
       // だけ（ADR-005）。切り替えが効いたことはそちらで確認する。
       expect(container.read(favoriteProvider).favorites.length, equals(1));
     });
@@ -444,7 +444,7 @@ void main() {
     tearDown(() => container.dispose());
 
     test('読み上げ失敗後に成功するとエラーメッセージが消える', () async {
-      // 【回帰】: 旧実装（errorMessage ?? this.errorMessage）では、
+      // 回帰: 旧実装（errorMessage ?? this.errorMessage）では、
       // TTSService 側の errorMessage が null に戻らないこともあり、
       // 一度出たエラーメッセージが状態に残り続けていた
       final notifier = container.read(ttsProvider.notifier);
@@ -479,7 +479,7 @@ void main() {
     });
 
     test('停止失敗時はエラーメッセージが状態へ反映される', () async {
-      // 【回帰】: 旧実装の stop() は copyWith(state: ...) だけで errorMessage を
+      // 回帰: 旧実装の stop() は copyWith(state: ...) だけで errorMessage を
       // 渡しておらず、停止失敗のメッセージが状態に反映されていなかった
       final notifier = container.read(ttsProvider.notifier);
 
@@ -496,7 +496,7 @@ void main() {
     });
 
     test('未初期化のまま speak() して初期化に失敗した場合もエラーメッセージが残る', () async {
-      // 【回帰】: TTSService.initialize() が state を error にしないと、
+      // 回帰: TTSService.initialize() が state を error にしないと、
       // _syncStateFromService() が「エラーなし」と誤判定して
       // 初期化失敗のメッセージを消してしまう
       when(() => mockFlutterTts.setLanguage(any()))

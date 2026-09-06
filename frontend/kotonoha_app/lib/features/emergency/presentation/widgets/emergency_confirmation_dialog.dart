@@ -3,7 +3,7 @@
 /// TASK-0045: 緊急ボタンUI実装
 /// TASK-0046: 緊急ボタン2段階確認実装（連続タップ防止機能追加）
 /// 要件: REQ-2004（確認ダイアログ表示）、REQ-2005（確認後の動作）
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 ///
 /// 緊急呼び出し確認ダイアログ。
 /// 緊急ボタンタップ後に表示され、2段階確認を実現する。
@@ -45,7 +45,7 @@ import 'package:kotonoha_app/core/utils/contrast.dart';
 class EmergencyConfirmationDialog extends StatefulWidget {
   /// 確認メッセージ
   ///
-  /// 【定数として公開する理由】: テストがこの文言をハードコードすると、
+  /// 定数として公開する理由: テストがこの文言をハードコードすると、
   /// 疑問符の全角・半角のような1文字の差で照合が外れ、しかも
   /// 「ダイアログが出ていない」という誤った症状に見える。実際にそれが起き、
   /// E2E の緊急ボタン7件が失敗していた（Issue #84）。
@@ -137,7 +137,7 @@ class _EmergencyConfirmationDialogState
     final confirmButtonColor =
         EmergencyConfirmationDialog.getEmergencyColor(context);
     final cancelButtonColor = _getCancelButtonColor(theme);
-    // 【AA対応】: ボタン背景はテーマごとに変わるため、文字色を固定せず
+    // AA対応: ボタン背景はテーマごとに変わるため、文字色を固定せず
     // 実際の背景色の輝度から黒・白のうちコントラスト比が高い方を選ぶ。
     final cancelButtonTextColor = bestContrastingTextColor(cancelButtonColor);
 
@@ -157,7 +157,7 @@ class _EmergencyConfirmationDialogState
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: AppSizes.paddingSmall),
-            // 【AA対応】: 補足文の色に Colors.grey(#9E9E9E) を固定していたため、
+            // AA対応: 補足文の色に Colors.grey(#9E9E9E) を固定していたため、
             // ダイアログ背景との組み合わせでライト 2.46:1 / 高コントラスト 2.68:1 と
             // WCAG AA(4.5:1)未達だった。テーマの onSurfaceVariant は各テーマの
             // サーフェス色に対しAAを満たすよう定義済みのため、これを使う。
@@ -219,7 +219,7 @@ class _EmergencyConfirmationDialogState
 
   /// 「はい」ボタンを構築
   ///
-  /// 【AA対応】: 背景は緊急色（テーマごとに変わる）なのに文字色を
+  /// AA対応: 背景は緊急色（テーマごとに変わる）なのに文字色を
   /// Colors.white 固定にしていたため、ダーク(#EF5350) 3.49:1 /
   /// 高コントラスト(#FF0000) 4.00:1 で WCAG AA(4.5:1) 未達だった。
   /// 緊急色は「目立たせる」ための色なので暗くはせず、

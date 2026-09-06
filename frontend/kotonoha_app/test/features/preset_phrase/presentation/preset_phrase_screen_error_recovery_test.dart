@@ -2,7 +2,7 @@
 ///
 /// 改善対応: copyWith のエラー引数パターン統一に伴う退行の修正
 ///
-/// 【背景】: `_buildBody()` は `state.error != null` のときリスト全体を
+/// 背景: `_buildBody()` は `state.error != null` のときリスト全体を
 /// 「エラーが発生しました: …」に差し替える。エラーを消す経路は
 ///
 /// - `loadPhrases()` … lib/ に呼び出し元が無い

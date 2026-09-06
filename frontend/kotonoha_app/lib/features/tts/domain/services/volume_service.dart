@@ -3,11 +3,11 @@
 /// TASK-0051: OS音量0の警告表示
 /// OS標準の音量取得機能との連携を提供
 ///
-/// 【機能概要】: OSの現在の音量を取得し、音量0（ミュート）かどうかを判定する機能
-/// 【設計方針】:
+/// 機能概要: OSの現在の音量を取得し、音量0（ミュート）かどうかを判定する機能
+/// 設計方針:
 /// - オフラインファースト: ローカルデバイスの音量情報のみを使用
 /// - エラー耐性: エラー時も基本機能は継続動作（NFR-301）
-/// 【保守性】: volume_controllerパッケージへの依存を一元管理
+/// 保守性: volume_controllerパッケージへの依存を一元管理
 library;
 
 import 'package:volume_controller/volume_controller.dart';
@@ -29,8 +29,8 @@ abstract class VolumeControllerInterface {
 
 /// 音量取得時の例外
 ///
-/// 【用途】: OS音量取得に失敗した場合にスローされる
-/// 【対応】: 呼び出し元でキャッチし、警告機能を無効化して読み上げを続行
+/// 用途: OS音量取得に失敗した場合にスローされる
+/// 対応: 呼び出し元でキャッチし、警告機能を無効化して読み上げを続行
 class VolumeServiceException implements Exception {
   VolumeServiceException(this.message);
 
@@ -45,25 +45,25 @@ class VolumeServiceException implements Exception {
 /// OS標準の音量取得機能を使用して、
 /// 現在の音量を取得し、音量0かどうかを判定する。
 ///
-/// 【主要機能】:
+/// 主要機能:
 /// - 現在のOS音量取得（0.0〜1.0）
 /// - 音量0判定（isVolumeZero）
 ///
-/// 【要件対応】:
+/// 要件対応:
 /// - EDGE-202: OSの音量が0の状態で読み上げを実行した場合の警告
 ///
-/// 【パフォーマンス要件】:
+/// パフォーマンス要件:
 /// - 音量チェック時間: 100ms以内
 ///
-/// 🔵 信頼性レベル: 高（要件定義書ベース）
+/// 信頼性レベル: 高（要件定義書ベース）
 class VolumeService {
   /// コンストラクタ
   ///
-  /// 【パラメータ】:
+  /// パラメータ:
   /// - [volumeController] VolumeControllerInterfaceインスタンス（テスト時はモックを注入）
   /// - [isSupported] 音量取得がサポートされているかどうか（Web環境ではfalse）
   ///
-  /// 【使用例】:
+  /// 使用例:
   /// ```dart
   /// // 本番環境
   /// final service = VolumeService();
@@ -81,7 +81,7 @@ class VolumeService {
 
   /// 音量取得がサポートされているかどうか
   ///
-  /// 【用途】: Web環境では音量取得APIが制限されるため、警告機能を無効化
+  /// 用途: Web環境では音量取得APIが制限されるため、警告機能を無効化
   final bool isSupported;
 
   /// 初期化済みかどうか
@@ -91,16 +91,16 @@ class VolumeService {
   ///
   /// OSの現在の音量を0.0〜1.0の範囲で取得する。
   ///
-  /// 【戻り値】:
+  /// 戻り値:
   /// - 0.0: ミュート（音量なし）
   /// - 0.5: 50%音量
   /// - 1.0: 最大音量
   ///
-  /// 【エラーハンドリング】:
+  /// エラーハンドリング:
   /// - 音量取得に失敗した場合: VolumeServiceExceptionをスロー
   ///
   /// 参照: volume-warning-requirements.md「出力値」セクション
-  /// 🔵 信頼性レベル: 高（要件定義書ベース）
+  /// 信頼性レベル: 高（要件定義書ベース）
   ///
   /// Throws:
   /// - [VolumeServiceException] 音量取得に失敗した場合
@@ -128,16 +128,16 @@ class VolumeService {
   ///
   /// OSの現在の音量が0（ミュート）かどうかを判定する。
   ///
-  /// 【戻り値】:
+  /// 戻り値:
   /// - true: 音量が0（ミュート）
   /// - false: 音量が0より大きい
   ///
-  /// 【特記事項】:
+  /// 特記事項:
   /// - Web環境（isSupported=false）では常にfalseを返す
   /// - エラー時は警告機能を無効化するためfalseを返す
   ///
   /// 参照: volume-warning-requirements.md「出力値」セクション
-  /// 🔵 信頼性レベル: 高（要件定義書ベース）
+  /// 信頼性レベル: 高（要件定義書ベース）
   Future<bool> isVolumeZero() async {
     if (!isSupported) {
       // Web環境などサポートされていない場合は警告を出さない

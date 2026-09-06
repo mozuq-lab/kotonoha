@@ -4,11 +4,11 @@
 /// （ADR-005「1概念1真実」）。定型文（PresetPhrase）は自分がお気に入りかを
 /// 知らなくなったので、**お気に入りの切り替えで定型文レコードは変わらない。**
 ///
-/// 【なぜ実 box で確かめるか】: 「定型文を書き換えない」は、状態オブジェクトの
+/// なぜ実 box で確かめるか: 「定型文を書き換えない」は、状態オブジェクトの
 /// 中身ではなくディスクに残った行で見ないと確かめたことにならない。box を
 /// 閉じて開き直し、バイト列から読んだ値を検証する。
 ///
-/// 【testWidgets を使わない理由】: 実 Hive のファイル I/O は FakeAsync と待ち合って
+/// testWidgets を使わない理由: 実 Hive のファイル I/O は FakeAsync と待ち合って
 /// ハングするため、素の test() で書いている。
 library;
 
@@ -27,7 +27,7 @@ void main() {
   group('toggleFavorite - 定型文レコードは書き換わらない', () {
     late Directory tempDir;
 
-    /// 【固定値】: DateTime.now() に依存させないため、時刻は定数で置く。
+    /// 固定値: DateTime.now() に依存させないため、時刻は定数で置く。
     /// 「更新日時が変わらない」を now() 同士の比較で見ると、
     /// 実行が速いときに偶然一致して通ってしまう。
     final createdAt = DateTime(2026, 1, 1, 9, 0);
@@ -48,7 +48,7 @@ void main() {
       final presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
       await Hive.openBox<FavoriteItem>('favorites');
 
-      // 【前提データ】: 固定の日時を持つ定型文を1件、直接 box に置く
+      // 前提データ: 固定の日時を持つ定型文を1件、直接 box に置く
       await presetBox.put(
         'phrase-001',
         PresetPhrase(
@@ -80,7 +80,7 @@ void main() {
           .read(presetPhraseNotifierProvider.notifier)
           .toggleFavorite('phrase-001');
 
-      // 【再読み込み】: box を閉じて開き直し、ディスクのバイト列から読む
+      // 再読み込み: box を閉じて開き直し、ディスクのバイト列から読む
       await Hive.box<PresetPhrase>('presetPhrases').close();
       final reopened = await Hive.openBox<PresetPhrase>('presetPhrases');
       final stored = reopened.get('phrase-001');

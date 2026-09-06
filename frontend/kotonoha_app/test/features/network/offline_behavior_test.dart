@@ -33,7 +33,7 @@ void main() {
       ///
       /// 優先度: P0（最優先）
       /// 関連要件: REQ-1001, REQ-1002
-      /// 信頼性レベル: 🔵 青信号
+      /// 信頼性レベル: 青信号
       test('TC-058-001: NetworkProviderがアプリ全体で利用可能', () {
         // Given: ProviderScopeでNetworkProviderを初期化
         // When: NetworkProviderにアクセス
@@ -48,7 +48,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1001, REQ-1002
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-002: NetworkStateがonline状態に遷移', () async {
         // Given: NetworkProviderが初期化されている
         final notifier = container.read(networkProvider.notifier);
@@ -70,7 +70,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1001, REQ-1002
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-003: NetworkStateがoffline状態に遷移', () async {
         // Given: NetworkProviderが初期化されている
         final notifier = container.read(networkProvider.notifier);
@@ -92,7 +92,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-004: ネットワーク状態変更時にUIがリビルドされる', () async {
         // Given: NetworkProviderを監視するリスナーを設定
         final notifier = container.read(networkProvider.notifier);
@@ -122,7 +122,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: NFR-303
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-005: 複数回のネットワーク切り替えが正常動作', () async {
         // Given: NetworkProviderが初期化されている
         final notifier = container.read(networkProvider.notifier);
@@ -143,7 +143,7 @@ void main() {
       ///
       /// 優先度: P1
       /// 関連要件: REQ-1002
-      /// 信頼性レベル: 🟡
+      /// 信頼性レベル:
       test('TC-058-006: NetworkState.checkingでAI変換が無効', () {
         // Given: NetworkProviderが初期化されたばかり（checking状態）
         final notifier = container.read(networkProvider.notifier);
@@ -159,7 +159,7 @@ void main() {
       ///
       /// 優先度: P1
       /// 関連要件: NFR-303
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-007: NetworkProviderのDispose処理が正常動作', () {
         // Given: NetworkProviderがProviderContainerに登録されている
         final testContainer = ProviderContainer();
@@ -183,7 +183,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1001, NFR-003
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       ///
       /// 注: このテストは実際のウィジェット実装後に動作します（TDD Red）
       test('TC-058-008: オフライン時も文字盤タップで文字入力可能（統合テスト）', () async {
@@ -203,7 +203,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1001, REQ-101
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-012: オフライン時も定型文一覧が表示される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -220,7 +220,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1001, REQ-401, NFR-001
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-023: オフライン時もTTS読み上げが1秒以内に開始される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -243,7 +243,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002, REQ-3004
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-026: オフライン時にAI変換ボタンがグレーアウト表示（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -261,7 +261,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002, REQ-3004
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-027: オフライン時にAI変換ボタンがタップ不可（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -279,7 +279,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-030: オンライン時にAI変換ボタンが有効化される', () async {
         // Given: NetworkStateがonline
         final notifier = container.read(networkProvider.notifier);
@@ -294,7 +294,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-031: ネットワーク状態切り替えでAI変換ボタンが動的に有効/無効化', () async {
         // Given: NetworkStateがonline
         final notifier = container.read(networkProvider.notifier);
@@ -326,7 +326,7 @@ void main() {
       ///
       /// 優先度: P1
       /// 関連要件: REQ-1001, REQ-5003, NFR-101
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-039: オフライン時も定型文がHiveに保存される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -343,7 +343,7 @@ void main() {
       ///
       /// 優先度: P1
       /// 関連要件: REQ-1001, NFR-101
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-040: オフライン時も設定がshared_preferencesに保存される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -366,7 +366,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: NFR-303
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-046: オフライン状態でもアプリがクラッシュしない', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -383,7 +383,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: NFR-303
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       test('TC-058-047: ネットワーク切り替えが連続5回以上でも正常動作', () async {
         // Given: NetworkProviderが初期化されている
         final notifier = container.read(networkProvider.notifier);
@@ -409,7 +409,7 @@ void main() {
       ///
       /// 優先度: P1
       /// 関連要件: REQ-1002
-      /// 信頼性レベル: 🟡
+      /// 信頼性レベル:
       test('TC-058-052: NetworkState.checking状態でAI変換ボタンが無効化', () async {
         // Given: アプリが起動したばかり（NetworkState.checking）
         final notifier = container.read(networkProvider.notifier);

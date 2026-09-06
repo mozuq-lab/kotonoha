@@ -5,15 +5,15 @@
 /// `isFavorite` のバグは Hive アダプタのテストが緑のまま生き残り、
 /// バグはその上の変換層にあった——それがこの形のテストを要求する理由である。
 ///
-/// 【本番の登録経路を使う】: アダプタ登録はテストで書き写さず
+/// 本番の登録経路を使う: アダプタ登録はテストで書き写さず
 /// `registerPersistedTypeAdapters()` を呼ぶ（台帳 L-31。本番にだけ足された
 /// 永続化面や、`ignoreTypeId` で差し替えられたアダプタを見逃さないため）。
 ///
-/// 【モックは外部 SDK の境界だけ】: TTS は `flutter_tts` の**プラットフォーム
+/// モックは外部 SDK の境界だけ: TTS は `flutter_tts` の**プラットフォーム
 /// チャンネル**で止める。`ttsProvider` を差し替えると自分の provider を patch する
 /// ことになるので採らない。Hive・repository・notifier・ウィジェットは全て実物。
 ///
-/// 【testWidgets と実 Hive】: `testWidgets` の FakeAsync は実ファイル I/O の完了を
+/// testWidgets と実 Hive: `testWidgets` の FakeAsync は実ファイル I/O の完了を
 /// 待てない（`verification-principles.md` §3）。実 I/O は `tester.runAsync()` の
 /// 中だけで行う。
 library;
@@ -41,7 +41,7 @@ void main() {
   const seedContent = 'みずをください';
   const seedHistoryId = 'h-1';
 
-  /// 【外部 SDK の境界】: flutter_tts のチャンネルを止める
+  /// 外部 SDK の境界: flutter_tts のチャンネルを止める
   /// （`flutter_tts-4.2.5/lib/flutter_tts.dart:330` の `MethodChannel('flutter_tts')`）
   void silenceTtsPlatformChannel() {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -56,14 +56,14 @@ void main() {
     tempDir = await Directory.systemTemp.createTemp('favorite_round_trip_');
     Hive.init(tempDir.path);
 
-    // 【本番と同じ登録経路】
+    // 本番と同じ登録経路
     registerPersistedTypeAdapters();
 
     await Hive.openBox<HistoryItem>(PersistedArea.history.boxName);
     await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
     await Hive.openBox<FavoriteItem>(PersistedArea.favorites.boxName);
 
-    // 【Given をここに置く理由】: 実 Hive の I/O は setUp（実 async ゾーン）で行う。
+    // Given をここに置く理由: 実 Hive の I/O は setUp（実 async ゾーン）で行う。
     // testWidgets の本体は FakeAsync なので、そこで実 I/O を await すると
     // **`--timeout` すら効かないまま無限にハングする**（2026-08-31 に実測して
     // 機序を確認した。`verification-principles.md` §3）。
@@ -101,7 +101,7 @@ void main() {
         reason: '実 box の履歴が UI に出ていること（往復の出発点）');
 
     // When: 星をタップする（UI → provider → repository → 実 box）
-    // 【runAsync の中でタップする理由】: タップの handler は呼び出し元のゾーンで動く。
+    // runAsync の中でタップする理由: タップの handler は呼び出し元のゾーンで動く。
     // FakeAsync の中でタップすると、handler が始めた実 Hive の書き込みが
     // FakeAsync のタイマー待ちのまま完了せず、その後の box.close() が
     // 書き込みロックを待って**デッドロックする**（2026-08-31 に実測）。

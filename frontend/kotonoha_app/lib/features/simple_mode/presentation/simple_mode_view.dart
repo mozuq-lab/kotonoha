@@ -17,7 +17,7 @@
 /// （HomeScreen）のコールバック経由で行うため、このウィジェット自体は
 /// Riverpodに依存しないStatelessWidgetとして実装する（テスト容易性向上）。
 ///
-/// 🟡 信頼性レベル: 黄信号 - 要件定義書にない新規機能のため妥当な推測
+/// 信頼性レベル: 黄信号 - 要件定義書にない新規機能のため妥当な推測
 library;
 
 import 'package:flutter/material.dart';
@@ -78,7 +78,7 @@ class SimpleModeView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 【誤操作防止】: スクロールしなくても常に到達できる位置に固定配置する。
+          // 誤操作防止: スクロールしなくても常に到達できる位置に固定配置する。
           _buildExitButton(),
           const SizedBox(height: AppSizes.paddingMedium),
           Expanded(

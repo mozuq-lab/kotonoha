@@ -31,7 +31,7 @@ extension PersistedAreaNames on PersistedArea {
   /// 文字列を複数箇所に書くと、片方だけ直したときに
   /// 「保存できていないのにバナーが出ない」形で食い違う。
   ///
-  /// 【注意】: Hive は box 名を小文字化して扱う（hive 2.2.3 `hive_impl.dart`)。
+  /// 注意: Hive は box 名を小文字化して扱う（hive 2.2.3 `hive_impl.dart`)。
   /// 大小文字だけが違う名前を足すと、別領域のつもりで同一 box になる。
   String get boxName => switch (this) {
         PersistedArea.history => 'history',
