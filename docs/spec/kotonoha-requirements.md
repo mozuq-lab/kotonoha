@@ -12,7 +12,7 @@
 
 - **ユーザストーリー**: [📖 kotonoha-user-stories.md](kotonoha-user-stories.md)
 - **受け入れ基準**: [✅ kotonoha-acceptance-criteria.md](kotonoha-acceptance-criteria.md)
-- **技術スタック**: [🔧 ../tech-stack.md](../tech-stack.md)
+- **技術スタック**: [🔧 ../../README.md](../../README.md)
 
 ## 機能要件（EARS記法）
 

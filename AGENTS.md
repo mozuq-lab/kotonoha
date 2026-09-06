@@ -72,7 +72,7 @@
 - **IaC**: AWS CDK 2.x (TypeScript)
 - **開発環境**: Docker + Docker Compose
 
-詳細な技術スタック、セットアップ手順、ディレクトリ構造については `docs/tech-stack.md` を参照してください。
+詳細な技術スタック、セットアップ手順、ディレクトリ構造については `README.md` を参照してください。
 
 ## アーキテクチャの重要な設計判断
 
@@ -120,7 +120,7 @@
 
 ```
 docs/
-├── tech-stack.md              # 技術スタック定義・セットアップ手順
+├── （tech-stack.md は廃止。技術スタック・セットアップ手順は README.md へ統合）
 ├── verification-principles.md # 検証と完了判定の原則（8周の失敗から抽出）
 ├── plans/                     # これから何をするか（完了したら破棄する）
 ├── adr/                       # アーキテクチャ決定（Phase 0 で作成）
@@ -135,7 +135,7 @@ docs/
 **コードと文書が食い違っていたら、コードが正である。** 文書側を直すか、
 直せないなら `docs/archive/` へ移すこと。
 
-backend/、frontend/、docker/などのコード構造については `docs/tech-stack.md` を参照してください。
+backend/、frontend/、docker/などのコード構造については `README.md` を参照してください。
 
 ## 開発コマンド
 
@@ -170,7 +170,7 @@ make check                # ruff + black + mypy --strict + lint-imports + script
 flutter test              # Frontend
 ```
 
-詳細なコマンド、セットアップ手順については `docs/tech-stack.md` を参照してください。
+詳細なコマンド、セットアップ手順については `README.md` を参照してください。
 
 ## テスト戦略
 
@@ -352,12 +352,12 @@ flutter test              # Frontend
 - 例: `Add Docker environment setup (TASK-0002)`
 - 変更履歴を細かく記録し、問題発生時のロールバックを容易にする
 
-Git ブランチ戦略等の詳細は `docs/tech-stack.md` を参照してください。
+Git ブランチ戦略等の詳細は `README.md` を参照してください。
 
 ## 参考資料
 
 ### プロジェクト内ドキュメント
-- **技術スタック・セットアップ**: `docs/tech-stack.md`
+- **技術スタック・セットアップ**: `README.md`
 - **要件定義書**: `docs/spec/kotonoha-requirements.md`
 - **アーキテクチャ設計**: `docs/design/kotonoha/architecture.md`
 - **データフロー図**: `docs/design/kotonoha/dataflow.md`
