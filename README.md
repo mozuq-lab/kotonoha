@@ -134,6 +134,8 @@ git diff --name-only origin/main...HEAD | scripts/adr-touch.sh          # 層 2 
 - コミットは既存に倣う: `docs` / `feat` / `fix` / `ci` / `chore` / `build` などの接頭辞 ＋ 日本語1行の
   件名。エージェントが書いた場合は末尾に `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`
 - 同時に開くブランチは**2本まで**（セキュリティ対応は1本）。寿命は原則1営業日
+- CIが緑の小さい独立差分は、大きな作業の完了を待たずに先へマージする
+- `main` は日次で push して「正」を1つに保つ
 - 1つの変更の上限は**400行 / 12ファイル**（`git diff --stat` で判定。超えるなら分割）
 - **マージの引き金は完了条件であって「レビュー指摘ゼロ」ではない**
 - 指摘のトリアージ（定義の正は `docs/verification-principles.md`「トリアージ」節）:
