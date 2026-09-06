@@ -1,7 +1,14 @@
 """ADR-003 の完了条件: 例外境界ごとに canary を注入し、stdout / stderr / HTTP ボディに現れないことを観測する。
 
 境界: (1) プロバイダ SDK の HTTP 応答、(2) 入力検証、(3) 想定外例外、(4) 設定の失敗。
-観測面 × 発火経路の表を、テストで1セルずつ埋める（verification-principles）。
+観測面 × 発火経路の表を、テストで1セルずつ埋める。
+
+実測で確認した前提（経緯は docs/archive/verification-principles.md §3）:
+- 漏えいシンクは stdout / stderr / HTTP レスポンスボディ / ログの4種類。
+  4つ目（アプリが外部へ能動的に返す面）を忘れやすい。
+- SecretStr は repr と str を隠すだけで、.get_secret_value() の戻り値・
+  例外メッセージ・ログの %r は守らない（pydantic 2.12.5）。
+- 例外連鎖（raise ... from exc）は __cause__ に元の例外を運び、traceback 出力に本文が出る。
 """
 
 from __future__ import annotations

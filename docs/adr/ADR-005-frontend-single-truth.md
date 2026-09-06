@@ -36,7 +36,7 @@ Hive が開けないと黙ってインメモリで動き続けた（`frontend/ko
 ## 限界
 
 永続フィールドを伴わない「UI ロジックだけの重複」は許可リストで捕まえられない。ロジックの `frontend/kotonoha_app/lib/features/favorite/` と UI の `frontend/kotonoha_app/lib/features/favorites/` の分裂は現存する（L-67、Phase 5 で統合）。
-許可リスト検査が守るのは起動時の共有登録経路だけで、共有関数を経由しない直接の `Hive.registerAdapter` / `Hive.openBox` は守れない。Dart には「この API を他所で呼ばせない」構造が無く、開かれている box を列挙する公開 API も Hive に無い。**自作の検出器は作らない**（`docs/verification-principles.md`「P1 の処方箋」／ADR-008）。受け皿は AGENTS.md「負債を作る行為には理由が要る」節と層 1・3・5。
+許可リスト検査が守るのは起動時の共有登録経路だけで、共有関数を経由しない直接の `Hive.registerAdapter` / `Hive.openBox` は守れない。Dart には「この API を他所で呼ばせない」構造が無く、開かれている box を列挙する公開 API も Hive に無い。**自作の検出器は作らない**（AGENTS.md 規律 8 ／ADR-008）。受け皿は AGENTS.md「負債を作る行為には理由が要る」節と層 1・3・5。
 「トップレベル可変変数の禁止」は analyzer では実現できない（`avoid_top_level_mutable_variables` も `avoid_global_state` も Dart に存在しない。`undefined_lint`、2026-08-31 実測）。記録して受け入れた。
 **却下理由と実装が矛盾している（未解決）**: 案 2 の却下理由は「項目の削除・保持上限と独立に生きるべき」だが、`deletePhrase()` は `deleteFavoriteBySourceId()` を呼び、定型文を消すとお気に入りも消える。`TC-SYNC-202`（要件定義 3.2「孤立データ防止」由来）が**それを正解として固定している**ため、全テスト緑はこの不適合を反証しない（L-39）。2026-08-30 の対応は振る舞いを変えず、削除確認ダイアログに「お気に入りからも削除されます」を出すだけ（登録済みのときだけ）。解くには本 ADR か要件定義 3.2 の改訂が要る。
 

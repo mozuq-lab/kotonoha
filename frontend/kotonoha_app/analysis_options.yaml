@@ -16,9 +16,10 @@ linter:
     #
     # **追加の基準**: 「守る対象のリスクが文書に名指しされていること」＋
     # 「analyzer が権威であること」の両方。無料だからという理由では足さない
-    # （`docs/verification-principles.md` P1 の処方箋）。
+    # （AGENTS.md 規律 8: 検査を作る前に、構造で表現不可能にできないか／既存の権威の
+    # 出力を消費できないかを問い、どちらも無ければ記録して受け入れる）。
     #
-    # 【実測の範囲】: 導入時点の違反は **lib / test / integration_test の全体で0件**
+    # 実測の範囲: 導入時点の違反は **lib / test / integration_test の全体で0件**
     # （2026-08-31、`fvm flutter analyze`（パス引数なし）で実測。exit 0）。
     # **測る範囲はゲートの範囲と一致させること。** CI（.github/workflows/flutter.yml）も
     # pre-commit（.pre-commit-config.yaml、`pass_filenames: false`）も
@@ -43,14 +44,14 @@ linter:
     - close_sinks
 
     # -----------------------------------------------------------------------
-    # 【記録】「トップレベル可変変数の禁止」は入れられない（2026-08-31 実測）
+    # 記録「トップレベル可変変数の禁止」は入れられない（2026-08-31 実測）
     #
     # 是正計画 §Phase 3 は analyzer ルールとして「トップレベル可変変数の禁止」を
     # 挙げているが、**Dart の analyzer にそのルールは存在しない**
     # （`avoid_top_level_mutable_variables` / `avoid_global_state` はどちらも
     # `undefined_lint`。`dart analyze analysis_options.yaml` で確認）。
     #
-    # `verification-principles.md` の P1 の処方箋に従い、**自作の検出器は作らない。**
+    # AGENTS.md 規律 8 に従い、**自作の検出器は作らない。**
     # 1) 構造で表現不可能にできない（Dart はトップレベル var を禁止できない）
     # 2) 消費できる権威の出力が無い
     # 3) → 記録して受け入れる
@@ -75,7 +76,7 @@ analyzer:
   errors:
     invalid_annotation_target: ignore
 
-    # 【昇格の理由】: lint の既定は info で、CI の `flutter analyze --no-fatal-infos`
+    # 昇格の理由: lint の既定は info で、CI の `flutter analyze --no-fatal-infos`
     # では exit 0 になる（2026-08-31 実測）。**info のままでは CI を落とせず、
     # 「検査が存在するだけで一度も発火しない」形になる**（ADR-008 の失敗の中身）。
     # 上で追加した4つは「破ったら止める」ために入れたので warning へ昇格する。

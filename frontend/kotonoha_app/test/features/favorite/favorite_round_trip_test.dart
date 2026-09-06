@@ -14,7 +14,8 @@
 /// ことになるので採らない。Hive・repository・notifier・ウィジェットは全て実物。
 ///
 /// testWidgets と実 Hive: `testWidgets` の FakeAsync は実ファイル I/O の完了を
-/// 待てない（`verification-principles.md` §3）。実 I/O は `tester.runAsync()` の
+/// 待てない（実 I/O の完了は OS スレッド経由で実イベントループへ返る。経緯は
+/// `docs/archive/verification-principles.md` §3）。実 I/O は `tester.runAsync()` の
 /// 中だけで行う。
 library;
 
@@ -65,8 +66,9 @@ void main() {
 
     // Given をここに置く理由: 実 Hive の I/O は setUp（実 async ゾーン）で行う。
     // testWidgets の本体は FakeAsync なので、そこで実 I/O を await すると
-    // **`--timeout` すら効かないまま無限にハングする**（2026-08-31 に実測して
-    // 機序を確認した。`verification-principles.md` §3）。
+    // **`--timeout` すら効かないまま無限にハングする**（タイムアウトも FakeAsync の
+    // 時計で駆動されるため期限が来ない。2026-08-31 に実測して機序を確認した。
+    // `docs/archive/verification-principles.md` §3）。
     await Hive.box<HistoryItem>(PersistedArea.history.boxName).put(
       seedHistoryId,
       HistoryItem(
