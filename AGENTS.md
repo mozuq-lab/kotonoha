@@ -72,7 +72,7 @@
 - **IaC**: AWS CDK 2.x (TypeScript)
 - **開発環境**: Docker + Docker Compose
 
-詳細な技術スタック、セットアップ手順、ディレクトリ構造については `docs/tech-stack.md` を参照してください。
+詳細な技術スタック、セットアップ手順、ディレクトリ構造については `README.md` を参照してください。
 
 ## アーキテクチャの重要な設計判断
 
@@ -80,15 +80,16 @@
 
 | ADR | 決めたこと | 却下した案 | 関わる行為 | 検査 |
 |---|---|---|---|---|
-| ADR-001 | backend はステートレス。サーバー側にユーザー状態を持たない | DB で履歴・ログを保存 | 依存, 永続化, 公開ルート | backend/scripts/gates.sh（DB ディレクトリと依存の不在） |
-| ADR-002 | レート制限は単一インスタンス前提・プロセス内メモリ（`memory://`）。総費用の上限はプロバイダの支出上限 | Redis 等の共有ストレージ（URI が秘密を運ぶ。8 周の原因） | 依存, 設定キー, 外部送信先 | 起動ガード（worker>1 で失敗）。デプロイ側契約は未検査 |
-| ADR-003 | エラーは型（ErrorCode + SafeError）。自由文字列をログ・応答に載せない | 例外メッセージの秘匿関数 | 公開ルート, 外部送信先 | backend/scripts/gates.sh（str(exc) 等 0 件）、canary 全シンク検査、mypy |
-| ADR-004 | 設定は不変。Application Factory。import 時に資源を作らない | モジュールレベルの app / client | 設定キー, 可変グローバル | 起動 smoke（import 副作用ゼロ）、frozen 設定 |
+| ADR-001 | backend はステートレス。サーバー側にユーザー状態を持たない | DB で履歴・ログを保存 | 依存, 永続化, 公開ルート | 卒業（2026-09-06）: backend/scripts/gates.sh（DB ディレクトリと依存の不在） |
+| ADR-002 | レート制限は単一インスタンス前提・プロセス内メモリ（`limits` の `MemoryStorage`）。XFF は `backend/app/ratelimit.py` の 1 箇所、`TRUSTED_PROXY_COUNT` は実段数。総費用の上限はプロバイダの支出上限 | Redis 等の共有ストレージ（URI が秘密を運ぶ。8 周の原因） | 依存, 設定キー, 外部送信先 | 起動ガード（worker>1 で失敗）。デプロイ側契約は未検査 |
+| ADR-003 | エラーは型（ErrorCode + SafeError）。自由文字列をログ・応答に載せない | 例外メッセージの秘匿関数 | 公開ルート, 外部送信先 | 卒業（2026-09-06）: backend/scripts/gates.sh（str(exc) 等 0 件）、canary 全シンク検査、mypy |
+| ADR-004 | 設定は不変。Application Factory。import 時に資源を作らない | モジュールレベルの app / client | 設定キー, 可変グローバル | 卒業（2026-09-06）: 起動 smoke（import 副作用ゼロ）、frozen 設定 |
 | ADR-005 | frontend は 1 概念 1 真実（お気に入りの正は `favoriteProvider`。履歴・定型文のモデルに `isFavorite` を持たせない）。永続化の失敗は利用者に伝える | 各モデルに isFavorite フィールド | 永続化 | Hive スキーマ許可リスト検査（一部） |
-| ADR-006 | レイヤ依存は import-linter で強制 | 規約だけで守る | 依存 | lint-imports（CI） |
+| ADR-006 | レイヤ依存は import-linter で強制 | 規約だけで守る | 依存 | 卒業（2026-09-06）: lint-imports（CI） |
 | ADR-007 | リリース基準: ストア本公開、初回は AI 変換抜き可、クラッシュ報告のみ。条件を足すには改訂が要る | 日付を置く、β 配布 | 権限, 外部送信先 | 無し（リリースまで生きる） |
-| ADR-008 | 負債ゲートを機械では作らない。**同種の仕組みを作る前に必読** | 許可リスト方式のゲート（3 周・4,600 行で収束せず） | 依存, 永続化, 設定キー, 可変グローバル, 公開ルート, 外部送信先, 権限 | 無し（却下の記録） |
+| ADR-008 | 負債ゲートを機械では作らない。**同種の仕組みを作る前に必読** | 許可リスト方式のゲート（3 周・4,600 行で収束せず） | 依存, 永続化, 設定キー, 可変グローバル, 公開ルート, 外部送信先, 権限 | 卒業（2026-09-06）: 無し（却下の記録） |
 | ADR-009 | クラッシュ報告はストア標準に依拠し、アプリからは何も送らない | Crashlytics、Sentry、自前送信先、オプトイン | 依存, 外部送信先, 権限 | 無し（送信経路が存在しないこと自体が担保） |
+| ADR-010 | 文書は 5 種類。核 `AGENTS.md` は 120 行、ADR は 60 行・未卒業 5 本、台帳は `docs/ledger.md` 1 本 | GitHub Issue 台帳、引き金型の降格規則、OpenSpec の恒久化、1 ADR 1 ディレクトリの照合 | （行為に現れない。層 3 と棚卸し） | `scripts/inventory.sh` の数字（層 5） |
 
 **パスに現れない再提案（同じ概念を UI ロジックだけで 2 つ目に実装する等）は、この表でも `scripts/adr-touch.sh` でも拾えない。**
 月 1 の棚卸し（`inventory` スキル）が受け皿。
@@ -119,7 +120,7 @@
 
 ```
 docs/
-├── tech-stack.md              # 技術スタック定義・セットアップ手順
+├── （tech-stack.md は廃止。技術スタック・セットアップ手順は README.md へ統合）
 ├── verification-principles.md # 検証と完了判定の原則（8周の失敗から抽出）
 ├── plans/                     # これから何をするか（完了したら破棄する）
 ├── adr/                       # アーキテクチャ決定（Phase 0 で作成）
@@ -134,7 +135,7 @@ docs/
 **コードと文書が食い違っていたら、コードが正である。** 文書側を直すか、
 直せないなら `docs/archive/` へ移すこと。
 
-backend/、frontend/、docker/などのコード構造については `docs/tech-stack.md` を参照してください。
+backend/、frontend/、docker/などのコード構造については `README.md` を参照してください。
 
 ## 開発コマンド
 
@@ -169,7 +170,7 @@ make check                # ruff + black + mypy --strict + lint-imports + script
 flutter test              # Frontend
 ```
 
-詳細なコマンド、セットアップ手順については `docs/tech-stack.md` を参照してください。
+詳細なコマンド、セットアップ手順については `README.md` を参照してください。
 
 ## テスト戦略
 
@@ -269,7 +270,7 @@ flutter test              # Frontend
 
 1. **索引の未卒業の行ごとに「この変更はこの決定に触れるか」を yes/no で書く**（5 行以下。PR 本文に残す）。
    yes の行だけ本文（`docs/adr/`）を読む。どの行にも当たらなければ、その領域の決定は存在しない——
-   実装ではなく決定から始めるかを問う。2026-09 時点は索引 9 行すべて未卒業。卒業判定は Phase 5
+   実装ではなく決定から始めるかを問う。未卒業は 002・005・007・009・010 の 5 行。卒業済みの本文は `docs/archive/adr/`
 2. **影響範囲を出す**（道具は未割当。触るファイルを列挙して数える）。「そもそも必要か」を
    ここで問う。8周のレビュー往復は、この工程が無かったために起きた
 3. 大きな決定を伴うなら、実装の前に ADR を1本作る（道具は未割当。`docs/adr/` の形式に手で従う）
@@ -351,12 +352,12 @@ flutter test              # Frontend
 - 例: `Add Docker environment setup (TASK-0002)`
 - 変更履歴を細かく記録し、問題発生時のロールバックを容易にする
 
-Git ブランチ戦略等の詳細は `docs/tech-stack.md` を参照してください。
+Git ブランチ戦略等の詳細は `README.md` を参照してください。
 
 ## 参考資料
 
 ### プロジェクト内ドキュメント
-- **技術スタック・セットアップ**: `docs/tech-stack.md`
+- **技術スタック・セットアップ**: `README.md`
 - **要件定義書**: `docs/spec/kotonoha-requirements.md`
 - **アーキテクチャ設計**: `docs/design/kotonoha/architecture.md`
 - **データフロー図**: `docs/design/kotonoha/dataflow.md`

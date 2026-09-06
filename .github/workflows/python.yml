@@ -17,7 +17,7 @@ env:
   # 表示用。実際のゲートは backend/pyproject.toml の
   # [tool.coverage.report] fail_under が担う（pytest-cov が自動採用）。
   # 値を変える場合は pyproject.toml 側を変更し、ここは表示を合わせること。
-  # CLAUDE.md / docs/tech-stack.md の「全体80%以上」とも揃えている。
+  # AGENTS.md / README.md の「全体80%以上」とも揃えている。
   COVERAGE_THRESHOLD: 80
 
 jobs:

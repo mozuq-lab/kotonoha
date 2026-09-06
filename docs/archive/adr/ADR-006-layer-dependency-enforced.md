@@ -1,3 +1,5 @@
+> 卒業済み（2026-09-06）。守る検査: lint-imports（backend/pyproject.toml [tool.importlinter]、CI python.yml）。索引は AGENTS.md。この本文は更新しない。
+
 # ADR-006: レイヤ依存は import-linter で強制する
 
 状態: **承認済み（2026-08-29、署名: mozuq。2系統レビュー反映済み）** ／ 日付: 2026-08-29
