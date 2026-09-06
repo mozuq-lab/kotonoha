@@ -48,7 +48,7 @@
 | 設計 | 境界（seam）の位置とモックの置き場を決める | `mattpocock-skills:codebase-design` |
 | 設計 | データの状態遷移を洗い出す | **未割当**（tsumiki:dcs:state-transition-analysis は 2026-09 の棚卸しで無効と確認。目的は残す） |
 | 設計 | ドメイン語彙を整理する | `mattpocock-skills:domain-modeling` |
-| 実装 | 仕様を delta で積む | OpenSpec（`openspec/specs/` のみ恒久） |
+| 実装 | 仕様を delta で積む | OpenSpec（使い捨て。`openspec/changes/` に作り追跡しない。ADR-010） |
 | 実装 | **OpenSpec 管理外**のフェーズ単位の大改修を、タスク分解して subagent で実行する | `superpowers:subagent-driven-development`（5条件つき: task分解入力・拘束の受け渡し・2系統はマージ境界・記録の台帳昇格・**OpenSpec change の実装は `openspec-apply` が担い併用しない**。詳細は是正計画 §5） |
 | 検証 | セキュリティを**反証可能な形で**検査する | **未割当**（tsumiki:ipa-security-check は 2026-09-05 に使わないと決定。目的は残す。旧台帳 #85 L-54） |
 | 検証 | 仕様と実装の乖離を出す | **未割当**（tsumiki:rev-requirements / rev-specs は 2026-09 の棚卸しで無効と確認。目的は残す。**逆生成物を正本にしない**） |
@@ -124,9 +124,7 @@ docs/
 ├── verification-principles.md # 検証と完了判定の原則（8周の失敗から抽出）
 ├── plans/                     # これから何をするか（完了したら破棄する）
 ├── adr/                       # アーキテクチャ決定（Phase 0 で作成）
-├── spec/                      # 要件定義（EARS記法）
-├── design/kotonoha/           # 技術設計
-├── articles/                  # 経緯の記事
+├── spec/                      # 要件定義（EARS記法。kotonoha-requirements.md 1 本が正本）
 └── archive/                   # 歴史記録。更新しない。現在の仕様として読まないこと
     ├── implements/            # Tsumiki の TDD 実行記録 299ファイル
     └── tasks/                 # フェーズ計画 6ファイル
@@ -188,7 +186,7 @@ flutter test              # Frontend
 | | A. 仕様テスト | B. リスクテスト |
 |---|---|---|
 | 問い | 要件を満たしているか | **壊れやすい所が壊れていないか** |
-| 出所 | 受入基準・`openspec/specs/` | **下の3つの源** |
+| 出所 | `docs/spec/kotonoha-requirements.md` | **下の3つの源** |
 | 書き方 | **TDD**（赤 → 緑 → リファクタ） | TDD にならない。観点をリスト化して当てる |
 
 **B の出発点は3つ。過去事例だけだと、それ自体が「事例の列挙」になる。**
@@ -262,7 +260,7 @@ flutter test              # Frontend
 - iOS: 14.0以上、Android: 10以上、Web: Chrome/Safari/Edge最新版
 - 推奨デバイス: 9.7インチ以上のタブレット
 
-詳細は `docs/design/kotonoha/architecture.md` を参照してください。
+詳細は `docs/spec/kotonoha-requirements.md`（NFR-401・NFR-402）を参照してください。
 
 ## 開発ワークフロー
 
@@ -359,9 +357,8 @@ Git ブランチ戦略等の詳細は `README.md` を参照してください。
 ### プロジェクト内ドキュメント
 - **技術スタック・セットアップ**: `README.md`
 - **要件定義書**: `docs/spec/kotonoha-requirements.md`
-- **アーキテクチャ設計**: `docs/design/kotonoha/architecture.md`
-- **データフロー図**: `docs/design/kotonoha/dataflow.md`
-- **API仕様**: `docs/design/kotonoha/api-endpoints.md`
+- **アーキテクチャ・構成**: `README.md`（構成）／`docs/adr/`（決定）
+- **API仕様**: `backend/tests/contract/openapi_baseline.json`（起動中は http://localhost:8000/docs）
 - **今後の対応計画**: `docs/plans/2026-08-29-architecture-remediation.md`
 - **検証と完了判定の原則**: `docs/verification-principles.md`
 - **Tsumiki Manual**（個別スキルの仕様）: https://github.com/classmethod/tsumiki/blob/main/MANUAL.md

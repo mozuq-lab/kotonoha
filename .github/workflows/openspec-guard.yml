@@ -1,6 +1,6 @@
 # `openspec/changes/` 配下に追跡ファイルを置かせない。
 #
-# 恒久成果物は `openspec/specs/` のみとする（是正計画 §5「OpenSpec を使う条件」条件1）。
+# 恒久成果物は置かない（ADR-010: OpenSpec は使い捨て）。
 # OpenSpec の archive はツール上「`changes/archive/` への保存」であって削除ではないため、
 # ここで追跡を禁止して初めて「捨てる」が実行可能になる。曖昧にすると、Tsumiki が生んだ
 # 299ファイルの工程記録が名前を変えて再生産される。
@@ -31,7 +31,7 @@ jobs:
           tracked=$(git ls-files -- openspec/changes)
           if [ -n "$tracked" ]; then
             echo "$tracked" | while read -r f; do
-              echo "::error file=${f}::openspec/changes/ 配下は追跡しない。恒久成果物は openspec/specs/ のみ"
+              echo "::error file=${f}::openspec/changes/ 配下は追跡しない。恒久成果物は置かない（ADR-010: OpenSpec は使い捨て）"
             done
             exit 1
           fi

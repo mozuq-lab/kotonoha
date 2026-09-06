@@ -5,13 +5,13 @@
 読むのは必要なときだけ（核には数えない）。#85（この台帳の PR のマージ後に閉鎖）から仕分けて作った。
 
 ## 未対応
-- [ ] L-04 `docs/design/kotonoha/api-endpoints.md:381` が NFR-101 をレート制限の根拠として誤引用 — 正本は ADR-002。Phase 5 の正本整理で解消
-- [ ] L-08 `lib/features/README.md` が例示するディレクトリが実在しない — Phase 5 の文書整理で解消
+- [x] L-04 `docs/design/kotonoha/api-endpoints.md:381` が NFR-101 をレート制限の根拠として誤引用 — 正本は ADR-002。正本でなくなった（倉庫へ移動、PR #114）
+- [x] L-08 `lib/features/README.md` が例示するディレクトリが実在しない — 正本でなくなった（倉庫へ移動、PR #114）
 - [ ] L-25 `frontend/kotonoha_app/integration_test/device_test/`（実機QA手順、1,773行）が一度も実行されていない — ADR-007 のストア提出前に必要
-- [ ] L-43 `docs/design/kotonoha/interfaces.dart`・`database-schema.sql` が `isFavorite`/`is_favorite` を残しコードと食い違う — Phase 5 の文書整理で解消
+- [x] L-43 `docs/design/kotonoha/interfaces.dart`・`database-schema.sql` が `isFavorite`/`is_favorite` を残しコードと食い違う — 正本でなくなった（倉庫へ移動、PR #114）
 - [ ] L-51 サポート連絡先が `support@kotonoha-app.example.com` のまま（RFC 2606 の予約ドメイン） — docs/support.md, docs/privacy-policy.md。ADR-007 条件 4
 - [ ] L-52 Android のアップロード鍵が無い（AAB・mapping・シンボルは #97 で解決済み） — .github/workflows/release.yml。開発者登録後
-- [ ] L-53 `docs/design/kotonoha/api-endpoints.md` の成功応答の形が実装（フラット形）と食い違う — Phase 5 で OpenAPI を正本にして整理
+- [x] L-53 `docs/design/kotonoha/api-endpoints.md` の成功応答の形が実装（フラット形）と食い違う — 正本でなくなった（倉庫へ移動、PR #114。API の正本は backend/tests/contract/openapi_baseline.json）
 - [ ] L-55 AI 変換の平均応答時間（3秒以内）が未測定 — ADR-002 のプロバイダ支出上限設定と同日に実測（backend 公開の前提）
 - [x] L-56 誤仕様固定テスト検出スキルと mutmut 導入・kill rate 記録 — Phase 4 の完了条件（mutmut 3.7.0 で kill rate 85.9%、#106。検出は棚卸しスキルの観点 4 に吸収）
 - [ ] L-57 Android 12 以上の実機で、自動バックアップにアプリデータが載らないことを確認 — #99
@@ -25,7 +25,9 @@
 - [ ] L-68 要件 ID 107 件のうち 14 件が、テストにも openspec にも 1 度も現れない（追跡性の穴。挙動は別 ID で試験済みのものを含む） — docs/spec/kotonoha-requirements.md（一覧は棚卸し 2026-09 の PR 本文）
 - [ ] L-69 `expect(widget.runtimeType.toString(), equals('CharacterBoardWidget'))` はクラス名を固定するだけで挙動を検査しない — frontend/kotonoha_app/test/widgets/character_board_optimization_test.dart:389（棚卸し 2026-09、観点 4）
 - [ ] L-71 道具名 `openspec-apply` / `openspec-archive` が実在しない（実名は `openspec-apply-change` / `openspec-archive-change`） — AGENTS.md:52、docs/plans/2026-08-29-architecture-remediation.md:316-317（棚卸し 2026-09、観点 3）
-- [ ] L-72 `openspec/config.yaml` の context が実態と食い違う（backend が SQLAlchemy/PostgreSQL のまま＝同じファイルの ADR-001 要約と矛盾／Flutter 3.41.5＝CI は 3.38.1／ADR-009 が要約一覧に無い） — openspec/config.yaml:14,16,37（棚卸し 2026-09、観点 2）
+- [x] L-72 `openspec/config.yaml` の context が実態と食い違う（backend が SQLAlchemy/PostgreSQL のまま＝同じファイルの ADR-001 要約と矛盾／Flutter 3.41.5＝CI は 3.38.1／ADR-009 が要約一覧に無い） — openspec/config.yaml:14,16,37（棚卸し 2026-09、観点 2）。直した（PR #114）
+- [ ] L-73 入力欄の 1000 文字上限に警告表示が無く、超過分を黙って捨てる（EDGE-101 の未達） — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:65,89（PR #114 の突き合わせ）
+- [ ] L-74 フォントサイズ設定が home_screen 配下にしか届かず、定型文一覧が追従しない（REQ-802・REQ-2007 の未達） — frontend/kotonoha_app/lib/features/preset_phrase/presentation/widgets/phrase_list_item.dart:98、frontend/kotonoha_app/lib/app.dart:47-56（PR #114 の突き合わせ）
 
 ## 判断待ち
 - [ ] L-39 ADR-005 の却下理由と連鎖削除の矛盾 — docs/adr/ADR-005。Phase 5 の後に扱う
