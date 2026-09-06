@@ -24,7 +24,7 @@
 - [ ] L-67 お気に入りが `frontend/kotonoha_app/lib/features/favorite/`（ロジック）と `frontend/kotonoha_app/lib/features/favorites/`（UI）の 2 ディレクトリに分かれたまま — ADR-005（L-46 で棚卸しへ送付。棚卸し 2026-09 で現存を確認、Phase 5 で統合）
 - [ ] L-68 要件 ID 107 件のうち 14 件が、テストにも openspec にも 1 度も現れない（追跡性の穴。挙動は別 ID で試験済みのものを含む） — docs/spec/kotonoha-requirements.md（一覧は棚卸し 2026-09 の PR 本文）
 - [ ] L-69 `expect(widget.runtimeType.toString(), equals('CharacterBoardWidget'))` はクラス名を固定するだけで挙動を検査しない — frontend/kotonoha_app/test/widgets/character_board_optimization_test.dart:389（棚卸し 2026-09、観点 4）
-- [x] L-71 道具名 `openspec-apply` / `openspec-archive` が実在しない（実名は `openspec-apply-change` / `openspec-archive-change`） — AGENTS.md:52、docs/plans/2026-08-29-architecture-remediation.md:316-317（棚卸し 2026-09、観点 3）。AGENTS.md の書き直しで解消（本 PR）。親計画の該当行は Task 8 で倉庫へ
+- [x] L-71 道具名 `openspec-apply` / `openspec-archive` が実在しない（実名は `openspec-apply-change` / `openspec-archive-change`） — AGENTS.md:52、docs/plans/2026-08-29-architecture-remediation.md:316-317（棚卸し 2026-09、観点 3）。AGENTS.md の書き直しで解消（PR #116）。親計画の該当行は Task 8 で倉庫へ
 - [x] L-72 `openspec/config.yaml` の context が実態と食い違う（backend が SQLAlchemy/PostgreSQL のまま＝同じファイルの ADR-001 要約と矛盾／Flutter 3.41.5＝CI は 3.38.1／ADR-009 が要約一覧に無い） — openspec/config.yaml:14,16,37（棚卸し 2026-09、観点 2）。直した（PR #114）
 - [ ] L-73 入力欄の 1000 文字上限に警告表示が無く、超過分を黙って捨てる（EDGE-101 の未達） — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:65,89（PR #114 の突き合わせ）
 - [ ] L-74 フォントサイズ設定が home_screen 配下にしか届かず、定型文一覧が追従しない（REQ-802・REQ-2007 の未達） — frontend/kotonoha_app/lib/features/preset_phrase/presentation/widgets/phrase_list_item.dart:98、frontend/kotonoha_app/lib/app.dart:47-56（PR #114 の突き合わせ）
