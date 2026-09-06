@@ -49,7 +49,7 @@ E. 端末内に貯めて、利用者が任意で共有する（オプトイン�
 ## 検査
 
 (i) 層 2 — 依存・外部送信先（`scripts/adr-touch.sh` が `pubspec.yaml` を拾って索引行を貼る）。
-`pubspec.yaml` に crashlytics / sentry / firebase 系の依存が入っていないことは月 1 の棚卸しの目視で見る。**機械のゲートは作らない**（ADR-008／`docs/verification-principles.md`「P1 の処方箋」）。受け皿は AGENTS.md「負債を作る行為には理由が要る」節（依存の追加・外部送信先の追加）と、層 1・層 3・層 5。ADR-001（ユーザー由来の内容を載せない）は送信経路が無いので破られる面が存在しない。
+`pubspec.yaml` に crashlytics / sentry / firebase 系の依存が入っていないことは月 1 の棚卸しの目視で見る。**機械のゲートは作らない**（ADR-008／AGENTS.md 規律 8）。受け皿は AGENTS.md 規律 8（依存の追加・外部送信先の追加）と、層 1・層 3・層 5。ADR-001（ユーザー由来の内容を載せない）は送信経路が無いので破られる面が存在しない。
 
 ## 再訪条件
 

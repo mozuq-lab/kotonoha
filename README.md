@@ -138,7 +138,7 @@ git diff --name-only origin/main...HEAD | scripts/adr-touch.sh          # 層 2 
 - `main` は日次で push して「正」を1つに保つ
 - 1つの変更の上限は**400行 / 12ファイル**（`git diff --stat` で判定。超えるなら分割）
 - **マージの引き金は完了条件であって「レビュー指摘ゼロ」ではない**
-- 指摘のトリアージ（定義の正は `docs/verification-principles.md`「トリアージ」節）:
+- 指摘のトリアージ（定義の正は `AGENTS.md` 規律 7）:
   P0（到達経路を示せる、かつ実際に赤を見せた）はその場で直す。P1 / P2 は台帳（`docs/ledger.md`）へ
 - PR本文には、着手前の索引チェック（未卒業ADRの各行に対する yes/no）と完了条件を書く
 

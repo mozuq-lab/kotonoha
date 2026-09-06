@@ -15,7 +15,7 @@
 /// `initHive()` 全体は `Hive.initFlutter()`（path_provider プラグイン）を通るため
 /// テストから呼べないので、**登録の段だけを本番と共有する**形にしてある。
 ///
-/// **なぜ自作の検出器ではないのか（ADR-008 / `verification-principles.md` P1 の処方箋）**:
+/// **なぜ自作の検出器ではないのか（ADR-008 / AGENTS.md 規律 8）**:
 /// 3つの検査はいずれも**権威の出力を消費する**だけで、権威を再実装していない。
 ///
 /// | 検査 | 権威 | 消費するもの |
@@ -37,8 +37,11 @@
 /// **根拠となる ADR をコミットメッセージに引用する**（AGENTS.md「負債を作る行為には
 /// 理由が要る」— 永続化面の追加）。番号を詰め直していないかを必ず確認すること。
 ///
-/// **`testWidgets` を使わない理由**: 実 Hive を触るテストは FakeAsync と待ち合って
-/// ハングする（`verification-principles.md` §3）。素の `test()` で書いている。
+/// **`testWidgets` を使わない理由**: `testWidgets` の本体は FakeAsync のスコープで動くが、
+/// Hive の実ファイル I/O は OS スレッド経由で実イベントループへ返るため、互いに待ち合って
+/// **ハングする**（`--timeout` すら効かない。FakeAsync の時計が止まっているため。2026-08-30 /
+/// 08-31 実測。経緯は `docs/archive/verification-principles.md` §3）。脱出には
+/// `tester.runAsync()` が要る。ここは実 box を触るので素の `test()` で書いている。
 library;
 
 import 'dart:convert';
