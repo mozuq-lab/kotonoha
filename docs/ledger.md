@@ -15,19 +15,19 @@
 - [ ] L-55 AI 変換の平均応答時間（3秒以内）が未測定 — ADR-002 のプロバイダ支出上限設定と同日に実測（backend 公開の前提）
 - [ ] L-57 Android 12 以上の実機で、自動バックアップにアプリデータが載らないことを確認 — #99
 - [ ] L-13 box が開いたまま書き込み失敗を検出しない（ディスクフル） — hive 2.2.3 `box_impl.dart:82`。ADR-005（永続化の失敗は利用者に伝える）の穴。EDGE-003（容量不足の警告）の未達（PR #114 の突き合わせ）
-- [ ] L-59 `exc.errors(include_input=False, ...)` から `include_input=False` を落とす mutant が生存 — ValidationError の入力値が `ConfigError` へ漏れないことを検査するテストが無い（ADR-003） — backend/app/config.py:161（mutmut 生存。L-56 の続き）
-- [ ] L-60 `SafeError.__init__` の `super().__init__(code.value)` を `None` にする mutant が生存 — 基底 `SafeError` の文字列表現が `ErrorCode` を保持することを検査するテストが無い — backend/app/errors.py:108（mutmut 生存。L-56 の続き）
-- [ ] L-61 `RateLimiter.__init__` の `RateLimitItemPerSecond(times, seconds)` の `seconds` を `None` にする mutant が生存 — 設定した秒数がレート制限ウィンドウ長に反映されることを検査するテストが無い — backend/app/ratelimit.py:42（mutmut 生存。L-56 の続き）
+- [ ] L-59 `exc.errors(include_input=False, ...)` から `include_input=False` を落とす mutant が生存 — ValidationError の入力値が `ConfigError` へ漏れないことを検査するテストが無い（ADR-003） — backend/app/config.py:161（mutmut 生存。#106 の測定の残り）
+- [ ] L-60 `SafeError.__init__` の `super().__init__(code.value)` を `None` にする mutant が生存 — 基底 `SafeError` の文字列表現が `ErrorCode` を保持することを検査するテストが無い — backend/app/errors.py:108（mutmut 生存。#106 の測定の残り）
+- [ ] L-61 `RateLimiter.__init__` の `RateLimitItemPerSecond(times, seconds)` の `seconds` を `None` にする mutant が生存 — 設定した秒数がレート制限ウィンドウ長に反映されることを検査するテストが無い — backend/app/ratelimit.py:42（mutmut 生存。#106 の測定の残り）
 - [ ] L-65 mutmut の対象テストは pyproject の 4 ファイル指定で固定されており、テストを増やしても走らない（kill rate が理由なく下がる）。`also_copy` で app/ 全体を写して指定を無くせるか試す — backend/pyproject.toml [tool.mutmut]
 - [ ] L-66 `LogLevel` が lib 内で参照ゼロ（`logger_test.dart:248` が enum の値の並びだけを固定している） — frontend/kotonoha_app/lib/core/utils/logger.dart:10（棚卸し 2026-09、観点 1・4）
-- [ ] L-67 お気に入りが `frontend/kotonoha_app/lib/features/favorite/`（ロジック）と `frontend/kotonoha_app/lib/features/favorites/`（UI）の 2 ディレクトリに分かれたまま — ADR-005（L-46 で棚卸しへ送付。棚卸し 2026-09 で現存を確認、Phase 5（文書）の後）
+- [ ] L-67 お気に入りが `frontend/kotonoha_app/lib/features/favorite/`（ロジック）と `frontend/kotonoha_app/lib/features/favorites/`（UI）の 2 ディレクトリに分かれたまま — ADR-005（棚卸し 2026-09 で現存を確認、Phase 5（文書）の後）
 - [ ] L-68 要件 ID 107 件のうち 14 件が、テストにも openspec にも 1 度も現れない（追跡性の穴。挙動は別 ID で試験済みのものを含む） — docs/spec/kotonoha-requirements.md（一覧は棚卸し 2026-09 の PR 本文）
 - [ ] L-69 `expect(widget.runtimeType.toString(), equals('CharacterBoardWidget'))` はクラス名を固定するだけで挙動を検査しない — frontend/kotonoha_app/test/widgets/character_board_optimization_test.dart:389（棚卸し 2026-09、観点 4）
 - [x] L-71 道具名 `openspec-apply` / `openspec-archive` が実在しない（実名は `openspec-apply-change` / `openspec-archive-change`） — AGENTS.md:52、docs/archive/plans/2026-08-29-architecture-remediation.md:316-317（棚卸し 2026-09、観点 3）。AGENTS.md の書き直しで解消（PR #116）。親計画は Task 8 で倉庫へ移動
 - [x] L-72 `openspec/config.yaml` の context が実態と食い違う（backend が SQLAlchemy/PostgreSQL のまま＝同じファイルの ADR-001 要約と矛盾／Flutter 3.41.5＝CI は 3.38.1／ADR-009 が要約一覧に無い） — openspec/config.yaml:14,16,37（棚卸し 2026-09、観点 2）。直した（PR #114）
 - [ ] L-73 入力欄の 1000 文字上限に警告表示が無く、超過分を黙って捨てる（EDGE-101 の未達） — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:65,89（PR #114 の突き合わせ）
 - [ ] L-74 フォントサイズ設定が home_screen 配下にしか届かず、定型文一覧が追従しない（REQ-802・REQ-2007 の未達） — frontend/kotonoha_app/lib/features/preset_phrase/presentation/widgets/phrase_list_item.dart:98、frontend/kotonoha_app/lib/app.dart:47-56（PR #114 の突き合わせ）
-- [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として docs 直下に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
+- [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
 - [ ] L-76 NFR-502（backend の重要なビジネスロジック・API エンドポイントで 90% 以上のカバレッジ）が未測定。CI の `fail_under` は全体閾値（NFR-501） — docs/spec/kotonoha-requirements.md:166（L-55 と同形）
 - [ ] L-77 `showOfflineAIConversionDialog`（frontend/kotonoha_app/lib/features/network/presentation/widgets/network_aware_scaffold.dart:115）と `TextInputField`（frontend/kotonoha_app/lib/shared/widgets/text_input_field.dart:29）は lib からの呼び出しゼロで、テストだけが呼ぶ — PR #114 の突き合わせ（棚卸し観点 1）
 - [ ] L-78 README.md:82 の `curl -s localhost:8000/api/v1/health` は、localhost が ::1 に解決される環境で timeout する（uvicorn は 127.0.0.1 で待つ）。127.0.0.1 に直すか注記する — Task 6 の実測（2026-09-06）
@@ -36,12 +36,13 @@
 - [ ] L-39 ADR-005 の却下理由と連鎖削除の矛盾 — docs/adr/ADR-005。Phase 5 の後に扱う
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002
 - [x] L-64 Phase 5 の完了条件「実在しないパス参照 0 件」は README の Swagger URL（/docs）や ADR-007 のアプリ route 名が数に入るため到達不能。核＋台帳に絞るか観測値扱いにする（除外規則は足さない） — Phase 5 計画書 A5（破棄済み）。観測値にすると決定（2026-09-06、ADR-010 の限界）
-- [ ] L-70 道具表の 4 目的（影響範囲・ADR の引き出し・状態遷移・仕様乖離の逆生成）が未割当になった。tsumiki を有効に戻すか、別の道具を割り当てるか — AGENTS.md道具表（棚卸し 2026-09 で降ろした）
+- [ ] L-70 道具表の 4 目的（影響範囲・ADR の引き出し・状態遷移・仕様乖離の逆生成）が未割当になった。tsumiki を有効に戻すか、別の道具を割り当てるか — AGENTS.md 道具表（棚卸し 2026-09 で降ろした）
 - [ ] L-79 Stop フック `.claude/hooks/activity-value-check.sh` は廃棄条件「発火ゼロで 1 か月」に 2026-09-30 で到達する（2026-08-30 設置、痕跡なし）。到達していれば削除するか、条件を書き直すか — AGENTS.md 規律 9
 - [ ] L-80 `frontend/kotonoha_app/pubspec.lock` は Flutter 3.41.5 で解決したまま。`.fvmrc`／CI の 3.38.1 で `flutter pub get` すると `characters` が 1.4.1→1.4.0 に下がり `js` 0.7.2 が加わる。lock を 3.38.1 で作り直すか SDK を上げるか（依存の決定、規律 8） — Task 4 の実測（2026-09-06）
 - [ ] L-81 `backend/tests/contract/openapi_baseline.json` は正規化ダンプで、単体では現行 API の形しか示さない（enum の値や説明文を含まない）。ADR-010:28 と AGENTS.md 文書節が「API の正本」と呼ぶ記述の限界。呼び方を変えるか、ダンプに補うか — ADR-010「限界」
+- [ ] L-82 ADR-007 条件 1 の括弧書き 4 項目が定義か要約か（限界節に「まだ決めていない」と明記） — docs/adr/ADR-007-release-criteria.md:47
 
 ## 計測（棚卸しの記録。最新の 1 回だけ残す）
 | 日付 | 核 | 未卒業 ADR | 台帳 未対応/対応済/却下 | 出力ゼロの仕組み | 実在しないパス参照 | kill rate |
 |---|---|---|---|---|---|---|
-| 2026-09-06（Phase 5 完了） | AGENTS.md 81 行（上限 120） | 5 本（上限 5）。60 行超 0 本 | 26 / 7 / 0 | release.yml（tag 契機で正常）、Stop フック痕跡なし（2026-08-30 設置、廃棄条件の 1 か月は未到達。2026-09-30 に到達、L-79） | 11 件（真に壊れた参照 0 件。ルート名・`.env` ひな形・pre-commit のフック・台帳の解決済み参照・OpenSpec の意図的不在） | 85.9%（158/184。2026-09-05 の測定を再利用、対象コードは無変更。test_sinks.py の差分は docstring のみ） |
+| 2026-09-06（Phase 5 完了・レビュー修正込み） | AGENTS.md 81 行（上限 120） | 5 本（上限 5）。60 行超 0 本 | 27 / 7 / 0 | release.yml（tag 契機で正常）、Stop フック痕跡なし（2026-08-30 設置、廃棄条件の 1 か月は未到達。2026-09-30 に到達、L-79） | 11 件（真に壊れた参照 0 件。ルート名・`.env` ひな形・pre-commit のフック・台帳の解決済み参照・不在の記述・OpenSpec の意図的不在） | 85.9%（158/184。2026-09-05 の測定を再利用、対象コードは無変更。test_sinks.py の差分は docstring のみ） |
