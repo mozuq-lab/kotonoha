@@ -1,3 +1,5 @@
+> 卒業済み（2026-09-06）。守る検査: backend/scripts/gates.sh の grep、backend/tests/test_sinks.py（canary 全シンク）、mypy --strict。索引は AGENTS.md。この本文は更新しない。
+
 # ADR-003: エラーは型で表現する。自由文字列をログ・レスポンスに載せない
 
 状態: **承認済み（2026-08-29、署名: mozuq。2系統レビュー反映済み）** ／ 日付: 2026-08-29

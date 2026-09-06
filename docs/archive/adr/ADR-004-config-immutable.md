@@ -1,3 +1,5 @@
+> 卒業済み（2026-09-06）。守る検査: backend/tests/test_startup.py（起動 smoke・import 副作用）、backend/tests/test_config.py（frozen 設定）。索引は AGENTS.md。この本文は更新しない。
+
 # ADR-004: 設定は不変。Application Factory で組み立て、グローバルに置かない
 
 状態: **承認済み（2026-08-29、署名: mozuq。2系統レビュー反映済み）** ／ 日付: 2026-08-29
