@@ -81,7 +81,7 @@
 | ADR | 決めたこと | 却下した案 | 関わる行為 | 検査 |
 |---|---|---|---|---|
 | ADR-001 | backend はステートレス。サーバー側にユーザー状態を持たない | DB で履歴・ログを保存 | 依存, 永続化, 公開ルート | 卒業（2026-09-06）: backend/scripts/gates.sh（DB ディレクトリと依存の不在） |
-| ADR-002 | レート制限は単一インスタンス前提・プロセス内メモリ（`limits` の `MemoryStorage`）。XFF は `app/ratelimit.py` の 1 箇所、`TRUSTED_PROXY_COUNT` は実段数。総費用の上限はプロバイダの支出上限 | Redis 等の共有ストレージ（URI が秘密を運ぶ。8 周の原因） | 依存, 設定キー, 外部送信先 | 起動ガード（worker>1 で失敗）。デプロイ側契約は未検査 |
+| ADR-002 | レート制限は単一インスタンス前提・プロセス内メモリ（`limits` の `MemoryStorage`）。XFF は `backend/app/ratelimit.py` の 1 箇所、`TRUSTED_PROXY_COUNT` は実段数。総費用の上限はプロバイダの支出上限 | Redis 等の共有ストレージ（URI が秘密を運ぶ。8 周の原因） | 依存, 設定キー, 外部送信先 | 起動ガード（worker>1 で失敗）。デプロイ側契約は未検査 |
 | ADR-003 | エラーは型（ErrorCode + SafeError）。自由文字列をログ・応答に載せない | 例外メッセージの秘匿関数 | 公開ルート, 外部送信先 | 卒業（2026-09-06）: backend/scripts/gates.sh（str(exc) 等 0 件）、canary 全シンク検査、mypy |
 | ADR-004 | 設定は不変。Application Factory。import 時に資源を作らない | モジュールレベルの app / client | 設定キー, 可変グローバル | 卒業（2026-09-06）: 起動 smoke（import 副作用ゼロ）、frozen 設定 |
 | ADR-005 | frontend は 1 概念 1 真実（お気に入りの正は `favoriteProvider`。履歴・定型文のモデルに `isFavorite` を持たせない）。永続化の失敗は利用者に伝える | 各モデルに isFavorite フィールド | 永続化 | Hive スキーマ許可リスト検査（一部） |
