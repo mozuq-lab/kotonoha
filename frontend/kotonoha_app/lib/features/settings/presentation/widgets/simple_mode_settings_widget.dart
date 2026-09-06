@@ -2,7 +2,7 @@
 ///
 /// fix/improvement-p0-p2: シンプルモード（疲労時・症状進行時の簡易画面）
 ///
-/// 信頼性レベル: 🟡 黄信号（要件定義書にない新規機能のため妥当な推測）
+/// 信頼性レベル: 黄信号（要件定義書にない新規機能のため妥当な推測）
 ///
 /// シンプルモードのON/OFFを切り替えるスイッチ。
 /// ONにすると、ホーム画面が文字盤なしの大ボタン画面に切り替わる。
@@ -40,7 +40,7 @@ class SimpleModeSettingsWidget extends ConsumerWidget {
               '大ボタン画面に切り替えます。疲れているときにおすすめです。',
             ),
             value: settings.simpleMode,
-            // 【AA対応】: SwitchListTileのタップ領域は行全体のため
+            // AA対応: SwitchListTileのタップ領域は行全体のため
             // 44px以上のタップターゲットは自動的に確保される。
             onChanged: (enabled) {
               ref

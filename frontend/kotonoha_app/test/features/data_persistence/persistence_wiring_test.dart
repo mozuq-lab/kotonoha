@@ -32,7 +32,7 @@ void main() {
     late Directory tempDir;
 
     setUp(() async {
-      // 【テスト前準備】: 一時ディレクトリでHiveを初期化し、本番と同じ名前の
+      // テスト前準備: 一時ディレクトリでHiveを初期化し、本番と同じ名前の
       // ボックスをオープンする（Providerが 'history'/'favorites'/'presetPhrases'
       // を参照するため）。
       await Hive.close();
@@ -55,7 +55,7 @@ void main() {
     });
 
     tearDown(() async {
-      // 【テスト後処理】: 全ボックスをクローズし、ディスクから削除
+      // テスト後処理: 全ボックスをクローズし、ディスクから削除
       await Hive.deleteBoxFromDisk('history');
       await Hive.deleteBoxFromDisk('presetPhrases');
       await Hive.deleteBoxFromDisk('favorites');
@@ -76,7 +76,7 @@ void main() {
           .addHistory('ありがとう', HistoryType.aiConverted);
       container1.dispose();
 
-      // 【再起動相当】: 同じBoxを使う新しいコンテナで初期化
+      // 再起動相当: 同じBoxを使う新しいコンテナで初期化
       final container2 = ProviderContainer();
       final state = container2.read(historyProvider);
       container2.dispose();
@@ -151,7 +151,7 @@ void main() {
       await presetNotifier.toggleFavorite(phraseId);
       container1.dispose();
 
-      // 【再起動相当】: 新しいコンテナでFavoriteを確認
+      // 再起動相当: 新しいコンテナでFavoriteを確認
       final container2 = ProviderContainer();
       final favState = container2.read(favoriteProvider);
       container2.dispose();
@@ -235,7 +235,7 @@ void main() {
 
   group('永続化配線 - Hive未初期化環境（nullフォールバック）', () {
     setUp(() async {
-      // 【前提】: 全ボックスを閉じてオープンされていない状態にする
+      // 前提: 全ボックスを閉じてオープンされていない状態にする
       await Hive.close();
     });
 

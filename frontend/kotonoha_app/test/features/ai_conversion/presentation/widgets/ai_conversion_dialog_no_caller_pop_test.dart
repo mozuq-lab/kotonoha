@@ -1,9 +1,9 @@
 /// home_screen: AI変換結果ダイアログ表示メソッド内でのpop禁止を保証する回帰テスト
 ///
-/// 【テスト目的】: `_showConversionResult` の中でNavigatorのpopが行われていないことを
+/// テスト目的: `_showConversionResult` の中でNavigatorのpopが行われていないことを
 /// 保証する
 ///
-/// 【背景（実障害）】:
+/// 背景（実障害）:
 /// showDialogはroot Navigatorにダイアログを積む一方、呼び出し元contextは
 /// go_routerのShellRoute配下branch Navigatorに属する。呼び出し元contextで
 /// popすると、ダイアログではなく背後のページがpopされ、
@@ -11,7 +11,7 @@
 /// ダイアログのクローズは AIConversionResultDialog.show() 内部の
 /// dialogContext が担当するため、このメソッドはpopしてはならない。
 ///
-/// 【検査方針】:
+/// 検査方針:
 /// analyzer でDartの構文木を解析し、`_showConversionResult` の本体に
 /// pop / popUntil / maybePop の呼び出しが一切現れないことを検証する。
 ///
@@ -23,7 +23,7 @@
 /// 構文木を使うため、コメント・文字列リテラル・文字列補間・波括弧の対応は
 /// パーサが正しく扱う。自前の字句解析は不要。
 ///
-/// 【このテストの限界】:
+/// このテストの限界:
 /// - 静的解析であり実行時の挙動は検証しない
 ///   （実挙動は ai_conversion_result_dialog_shell_route_test.dart が担当）
 /// - コールバック本体を別メソッドへ切り出し、そのメソッド内でpopする形は
@@ -32,7 +32,7 @@
 ///   `nav.pop.call()`、`(nav.pop)()`。いずれも旧実装でも検出できておらず実害はない
 /// - `_showConversionResult` を改名・移動した場合は健全性チェックで明示的に落ちる
 ///
-/// 🔵 信頼性レベル: 青信号 - P0障害（ShellRoute配下でのダイアログpop）の回帰防止
+/// 信頼性レベル: 青信号 - P0障害（ShellRoute配下でのダイアログpop）の回帰防止
 library;
 
 import 'dart:io';
@@ -111,14 +111,14 @@ void main() {
 
       final body = finder.found.single.body;
 
-      // 【健全性】: 検査対象が期待どおりのメソッドであること
+      // 健全性: 検査対象が期待どおりのメソッドであること
       final source = body.toSource();
       expect(source, contains('AIConversionResultDialog.show'));
       expect(source, contains('onAdopt'));
       expect(source, contains('onRegenerate'));
       expect(source, contains('onUseOriginal'));
 
-      // 【結果検証】: このメソッドはダイアログを閉じる責務を持たない
+      // 結果検証: このメソッドはダイアログを閉じる責務を持たない
       final collector = _PopCallCollector();
       body.accept(collector);
       expect(
@@ -133,7 +133,7 @@ void main() {
     });
 
     test('検出ロジックがあらゆる記法のpopを拾える', () {
-      // 【テスト自体の妥当性】: 常に空を返すだけの空テストでないことを保証する
+      // テスト自体の妥当性: 常に空を返すだけの空テストでないことを保証する
       const snippet = '''
 class Sample {
   void a(BuildContext context) => Navigator.pop(context);

@@ -5,7 +5,7 @@
 ///
 /// テスト対象: lib/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart
 ///
-/// 【TDD Redフェーズ】: ウィジェットが未実装のため、このテストは失敗する
+/// TDD Redフェーズ: ウィジェットが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';
@@ -1113,7 +1113,7 @@ void main() {
       /// 優先度: P0（必須）
       /// 関連要件: AC-013, EDGE-003
       /// 検証内容: ダイアログ閉じ前の連続タップでもコールバックが1回のみ呼ばれる
-      /// 【TDD Red】: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
+      /// TDD Red: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
       testWidgets('TC-046-021: 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）',
           (tester) async {
         // Arrange
@@ -1164,7 +1164,7 @@ void main() {
       ///
       /// 優先度: P0（必須）
       /// 関連要件: AC-014, EDGE-004
-      /// 【TDD Red】: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
+      /// TDD Red: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
       testWidgets('TC-046-022: 「いいえ」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）',
           (tester) async {
         // Arrange

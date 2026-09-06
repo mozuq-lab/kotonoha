@@ -5,7 +5,7 @@
 /// テストフレームワーク: flutter_test
 /// 対象: SettingsScreen（設定画面）
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 library;
 
 import 'package:flutter/material.dart';

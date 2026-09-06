@@ -1,9 +1,9 @@
 /// ヘルプ画面ウィジェットテスト
 ///
 /// TASK-0075: ヘルプ画面・初回チュートリアル実装
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース REQ-3001, NFR-205）
+/// 信頼性レベル: 青信号（要件定義書ベース REQ-3001, NFR-205）
 ///
-/// 【変更履歴】: fix/improvement-p0-p2にてHelpScreenをConsumerWidget化し
+/// 変更履歴: fix/improvement-p0-p2にてHelpScreenをConsumerWidget化し
 /// 「チュートリアルをもう一度見る」導線を追加したため、全テストで
 /// ProviderScopeを配線するよう更新した（tutorialProviderの参照に必要）。
 library;

@@ -5,7 +5,7 @@
 ///
 /// テスト対象: lib/shared/widgets/large_button.dart (未実装)
 ///
-/// 【TDD Redフェーズ】: ウィジェットが未実装のため、このテストは失敗する
+/// TDD Redフェーズ: ウィジェットが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';

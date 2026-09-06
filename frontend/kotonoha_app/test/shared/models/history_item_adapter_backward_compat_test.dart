@@ -2,7 +2,7 @@
 ///
 /// Phase 3 / WP-2 / Stage 4: HistoryItem.isFavorite（旧 field 4）を削除した。
 ///
-/// 【このテストが守っているもの】:
+/// このテストが守っているもの:
 /// 旧アダプタは 0:id / 1:content / 2:createdAt / 3:type / **4:isFavorite(bool)** の
 /// 5フィールドを書いていた。isFavorite を消したあとも、**残るフィールドの番号
 /// （0,1,2,3）を詰め直してはいけない。** isFavorite は最終フィールドなので後続の
@@ -10,13 +10,13 @@
 /// 5→4 に変える。旧バイト列は自己記述的（フィールド番号をキーにした map）なので、
 /// 新アダプタは fields[4] を読まないだけで、0〜3 はそのまま同じコードで読める。
 ///
-/// 【旧バイト列の作り方】: 実 box の境界で確かめるため、旧形式（5フィールド）を書く
+/// 旧バイト列の作り方: 実 box の境界で確かめるため、旧形式（5フィールド）を書く
 /// アダプタ `_LegacyHistoryItemAdapter` を typeId 0 に登録して実際に Hive へ書き、
 /// box を閉じてから `Hive.registerAdapter(..., override: true)` で現行アダプタへ
 /// 差し替え、開き直して読む。手本は
 /// test/shared/models/preset_phrase_adapter_backward_compat_test.dart（Stage 3b）。
 ///
-/// 【testWidgets を使わない理由】: 実 Hive のファイル I/O は FakeAsync と待ち合って
+/// testWidgets を使わない理由: 実 Hive のファイル I/O は FakeAsync と待ち合って
 /// ハングするため、素の test() で書いている。
 library;
 
@@ -27,7 +27,7 @@ import 'package:hive/hive.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/history_item_adapter.dart';
 
-/// 【テスト用フィクスチャ】: Stage 4 以前の HistoryItemAdapter の write 側
+/// テスト用フィクスチャ: Stage 4 以前の HistoryItemAdapter の write 側
 ///
 /// 端末に既に書かれている「旧形式のバイト列」を再現するためだけのもの。
 /// 現行実装のコピーではなく、**消えた過去の外部データ形式**を表している。
@@ -44,7 +44,7 @@ class _LegacyHistoryItemAdapter extends TypeAdapter<HistoryItem> {
 
   @override
   HistoryItem read(BinaryReader reader) {
-    // 【意図的に未実装】: このアダプタは「旧バイト列を書く」ためだけに使う。
+    // 意図的に未実装: このアダプタは「旧バイト列を書く」ためだけに使う。
     // 読み出しは必ず現行アダプタで行うので、ここが呼ばれたらテストの前提が崩れている。
     throw UnimplementedError(
       '_LegacyHistoryItemAdapter は書き込み専用のフィクスチャ',
@@ -101,7 +101,7 @@ void main() {
         type: 'manualInput',
       );
       await box.put(legacyItem.id, legacyItem);
-      // 【ディスクへ確定】: 閉じてから開き直すことで、確実にバイト列から読ませる
+      // ディスクへ確定: 閉じてから開き直すことで、確実にバイト列から読ませる
       await box.close();
 
       // When: 現行アダプタ（isFavorite を持たない）へ差し替えて開き直す

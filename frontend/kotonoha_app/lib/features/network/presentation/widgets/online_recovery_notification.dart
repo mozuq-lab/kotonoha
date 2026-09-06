@@ -2,7 +2,7 @@
 ///
 /// TASK-0077: オフライン時UI表示・AI変換無効化
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 /// 関連要件:
 /// - EDGE-001: ネットワーク復帰時の通知
 /// - NFR-203: ユーザー操作を妨げない通知
@@ -73,7 +73,7 @@ class _OnlineRecoveryNotificationState
       children: [
         // オンライン復帰通知
         if (_showNotification)
-          // 【Material で包む理由】: この通知は AppShell に置かれ、各画面の
+          // Material で包む理由: この通知は AppShell に置かれ、各画面の
           // Scaffold より外側にある。Material 祖先が無い位置の Text は
           // WidgetsApp の既定スタイル（monospace・weight 900・黄色の二重下線）を
           // 継承するため、style を部分指定しただけでは装飾が残る。
@@ -82,7 +82,7 @@ class _OnlineRecoveryNotificationState
             label: 'オンラインに戻りました。AI変換が利用可能です。',
             excludeSemantics: true,
             child: Material(
-              // 【AA対応】: green[900] on green[100] でコントラスト比 約5.9:1。
+              // AA対応: green[900] on green[100] でコントラスト比 約5.9:1。
               // 旧 green[800] on green[300] は約3.0:1でAA不足だった。
               color: Colors.green[100],
               child: Container(

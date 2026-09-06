@@ -2,7 +2,7 @@
 ///
 /// TASK-0075: ヘルプ画面・初回チュートリアル実装
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 /// 関連要件:
 /// - REQ-3001: 初回起動時の簡易チュートリアル/ヘルプ画面表示
 /// - NFR-205: ガイド付きアクセス/画面ピン留めの設定方法説明
@@ -46,7 +46,7 @@ class HelpScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 【基本操作セクション】
+            // 基本操作セクション
             const HelpSectionWidget(
               title: '基本操作',
               icon: Icons.touch_app,
@@ -72,7 +72,7 @@ class HelpScreen extends ConsumerWidget {
               ],
             ),
 
-            // 【緊急ボタンセクション】
+            // 緊急ボタンセクション
             const HelpSectionWidget(
               title: '緊急ボタン',
               icon: Icons.warning_amber,
@@ -87,7 +87,7 @@ class HelpScreen extends ConsumerWidget {
               ],
             ),
 
-            // 【便利な機能セクション】
+            // 便利な機能セクション
             const HelpSectionWidget(
               title: '便利な機能',
               icon: Icons.lightbulb_outline,
@@ -115,7 +115,7 @@ class HelpScreen extends ConsumerWidget {
               ],
             ),
 
-            // 【誤操作防止設定セクション】: NFR-205
+            // 誤操作防止設定セクション: NFR-205
             const HelpSectionWidget(
               title: '誤操作防止の設定',
               icon: Icons.security,
@@ -140,7 +140,7 @@ class HelpScreen extends ConsumerWidget {
               ],
             ),
 
-            // 【設定セクション】
+            // 設定セクション
             const HelpSectionWidget(
               title: '設定について',
               icon: Icons.settings,
@@ -160,7 +160,7 @@ class HelpScreen extends ConsumerWidget {
               ],
             ),
 
-            // 【チュートリアルセクション】: REQ-3001
+            // チュートリアルセクション: REQ-3001
             // 初回起動時に表示されるチュートリアルを、いつでも再度見られる導線。
             HelpSectionWidget(
               title: 'チュートリアル',

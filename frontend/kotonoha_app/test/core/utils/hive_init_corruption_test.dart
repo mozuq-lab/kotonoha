@@ -19,9 +19,9 @@
 // 対象: Hive初期化処理（Box破損時の復旧、openBoxWithRecovery）
 //
 // 信頼性レベル凡例:
-// - 🔵 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-// - 🟡 黄信号: 要件定義書から妥当な推測によるテスト
-// - 🔴 赤信号: 要件定義書にない推測によるテスト
+// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
+// - 黄信号: 要件定義書から妥当な推測によるテスト
+// - 赤信号: 要件定義書にない推測によるテスト
 
 import 'dart:async';
 import 'dart:io';
@@ -32,9 +32,9 @@ import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
 
-/// 【テストヘルパー】: Hiveパッケージ内部の既知の非同期リークを吸収して[body]を実行する
+/// テストヘルパー: Hiveパッケージ内部の既知の非同期リークを吸収して[body]を実行する
 ///
-/// 【背景】: hive 2.2.3では、`Hive.openBox()`が失敗すると内部の
+/// 背景: hive 2.2.3では、`Hive.openBox()`が失敗すると内部の
 /// `HiveImpl._openBox`が`_openingBoxes`用の`Completer`へ
 /// `completer.completeError(error, stackTrace)`を呼ぶ。このCompleterの
 /// Futureは（同名Boxを並行してオープンする別呼び出しがない限り）誰にも
@@ -46,7 +46,7 @@ import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
 /// 戻り値・例外送出の有無だけを検証できるようにする。
 Future<T> runGuardingHiveOpenLeak<T>(Future<T> Function() body) async {
   final completer = Completer<T>();
-  // 【unawaited の理由】: この Future は意図的に await しない。完了は completer で
+  // unawaited の理由: この Future は意図的に await しない。完了は completer で
   // 受け取る。`unawaited_futures`（analysis_options.yaml）に対して「書き忘れではなく
   // 意図的な fire-and-forget である」ことを明示する。
   unawaited(runZonedGuarded(() async {
@@ -82,9 +82,9 @@ void main() {
     });
 
     test('TC-059-006: Hive Boxが破損した際、Hive自身の自動復旧で正常に開かれる（正常系）', () async {
-      // 【テスト目的】: Hive Boxが破損した際に自動復旧処理が正常に動作することを検証
-      // 【信頼性レベル】: 🟡 黄信号 - NFR-304に基づく
-      // 【補足】: Hiveはデフォルト（crashRecovery: true）で内部的にフレーム単位の
+      // テスト目的: Hive Boxが破損した際に自動復旧処理が正常に動作することを検証
+      // 信頼性レベル: 黄信号 - NFR-304に基づく
+      // 補足: Hiveはデフォルト（crashRecovery: true）で内部的にフレーム単位の
       // 自動復旧を行うため、多くの破損はopenBoxWithRecovery()のcatch節に
       // 到達する前にHive自身が吸収する。本テストはその経路を確認する。
 
@@ -117,10 +117,10 @@ void main() {
 
     test('TC-059-006-破損系: openBoxWithRecovery()は破損データを削除前にバックアップしてから復旧する',
         () async {
-      // 【テスト目的】: openBoxWithRecovery()のcatch節（バックアップ→delete→再オープン）が
+      // テスト目的: openBoxWithRecovery()のcatch節（バックアップ→delete→再オープン）が
       // 実際に動作することを検証する
-      // 【信頼性レベル】: 🔵 青信号 - hive_init.dartのopenBoxWithRecovery実装に基づく
-      // 【工夫】: crashRecovery: falseを指定してHive自身の自動復旧を無効化し、
+      // 信頼性レベル: 青信号 - hive_init.dartのopenBoxWithRecovery実装に基づく
+      // 工夫: crashRecovery: falseを指定してHive自身の自動復旧を無効化し、
       // 破損時に必ずHiveErrorがスローされる状況を作ることで、
       // openBoxWithRecovery()自身のバックアップ→delete→再オープンの
       // フォールバック経路を確実に検証する。
@@ -138,7 +138,7 @@ void main() {
       // 内部でHiveErrorがスローされ、openBoxWithRecovery()のcatch節
       // （バックアップ→deleteBoxFromDisk→再openBox）が実行される
       //
-      // 【既知の制約】: crashRecovery: falseで意図的に例外を発生させると、
+      // 既知の制約: crashRecovery: falseで意図的に例外を発生させると、
       // Hiveパッケージ内部の既知の非同期リーク（runGuardingHiveOpenLeakの
       // ドキュメント参照）が発生するため、テストヘルパーで吸収する。
       final recovered = await runGuardingHiveOpenLeak(
@@ -155,7 +155,7 @@ void main() {
       expect(Hive.isBoxOpen('presetPhrases'), true, reason: '復旧後Boxがオープンされている');
       expect(recovered!.isEmpty, true, reason: '復旧後のBoxは空の状態（破損データは失われる）');
 
-      // 【バックアップ検証】: 削除前に破損ファイルが<boxName>.hive.corrupt.bakとして
+      // バックアップ検証: 削除前に破損ファイルが<boxName>.hive.corrupt.bakとして
       // 退避されていること、かつその内容が削除前の（破損した）データと一致すること
       final backupFile = File('${tempDir.path}/presetphrases.hive.corrupt.bak');
       expect(backupFile.existsSync(), isTrue, reason: '削除前に破損ファイルがバックアップされる');
@@ -167,11 +167,11 @@ void main() {
     });
 
     test('TC-059-006-環境エラー系: 権限エラー等の非破損エラーではBoxファイルを削除せずnullを返す', () async {
-      // 【テスト目的】: ディスクフル・権限エラー等、データ自体は壊れていない
+      // テスト目的: ディスクフル・権限エラー等、データ自体は壊れていない
       // 環境起因の失敗では、openBoxWithRecovery()がBoxファイルを削除せず、
       // 例外も再送出せずnullを返すことを検証する（Codexレビュー指摘 P1）
-      // 【信頼性レベル】: 🔵 青信号 - Codexレビュー指摘（P1）に基づく
-      // 【工夫】:
+      // 信頼性レベル: 青信号 - Codexレビュー指摘（P1）に基づく
+      // 工夫:
       //   1. 有効なデータを含むBoxを作成してクローズする
       //      （close()時にHiveが.lockファイルを削除するため、再オープン時には
       //      毎回.lockファイルの新規作成＝ディレクトリの書き込み権限が必要になる）
@@ -224,7 +224,7 @@ void main() {
       expect(thrown, isNull, reason: '環境起因のエラーでも例外は送出されない');
       expect(result, isNull, reason: '再オープンできないため結果はnull（インメモリフォールバック）');
 
-      // 【最重要】: 環境起因のエラーではBoxファイルが削除されず、
+      // 最重要: 環境起因のエラーではBoxファイルが削除されず、
       // 中身も変化しないこと（データが無言で失われないこと）
       expect(boxFile.existsSync(), isTrue,
           reason: '環境起因のエラーではBoxファイルを削除してはならない');
@@ -234,8 +234,8 @@ void main() {
     });
 
     test('TC-059-006-補足: Box破損時のエラーログ記録', () async {
-      // 【テスト目的】: Box破損時にエラーログが記録されることを検証
-      // 【信頼性レベル】: 🟡 黄信号 - NFR-304に基づく
+      // テスト目的: Box破損時にエラーログが記録されることを検証
+      // 信頼性レベル: 黄信号 - NFR-304に基づく
 
       var box = await Hive.openBox<PresetPhrase>('test_log_presetPhrases');
       await box.close();
@@ -259,8 +259,8 @@ void main() {
     });
 
     test('TC-059-006-境界値: 複数のBox破損時の復旧', () async {
-      // 【テスト目的】: 複数のBoxが同時に破損した場合の復旧処理を検証
-      // 【信頼性レベル】: 🟡 黄信号 - NFR-304に基づく
+      // テスト目的: 複数のBoxが同時に破損した場合の復旧処理を検証
+      // 信頼性レベル: 黄信号 - NFR-304に基づく
 
       var presetBox = await Hive.openBox<PresetPhrase>('multi_presetPhrases');
       var historyBox = await Hive.openBox('multi_history'); // 型なしBox

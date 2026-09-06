@@ -1,11 +1,11 @@
 /// ボタン（TextButton / OutlinedButton / ElevatedButton）前景色のコントラスト比回帰テスト
 ///
-/// 【テスト対象】: lib/core/themes/{light,dark,high_contrast}_theme.dart
-/// 【テスト目的】: ダイアログ等に置かれる TextButton / OutlinedButton /
+/// テスト対象: lib/core/themes/{light,dark,high_contrast}_theme.dart
+/// テスト目的: ダイアログ等に置かれる TextButton / OutlinedButton /
 /// ElevatedButton のラベルが、3テーマすべてで WCAG 2.1 AA（4.5:1）を
 /// 満たすことを保証する。
 ///
-/// 【背景（実障害）】: Material 3 は TextButton / OutlinedButton / ElevatedButton の
+/// 背景（実障害）: Material 3 は TextButton / OutlinedButton / ElevatedButton の
 /// 既定の前景色に `colorScheme.primary` を使う（ElevatedButton は primary で
 /// 塗りつぶすのではなく、surfaceContainerLow の面に primary のラベルを載せる設計）。
 /// primary は「塗り」用途で選ばれた色であり、面に載る文字としては検証されて
@@ -16,11 +16,11 @@
 /// 「キャンセル」、オフラインダイアログの「OK」が同じ理由で未達になっており、
 /// 個別ダイアログを1つずつ直しても新しいダイアログで再発する。
 ///
-/// 【方針】: テーマ層で textButtonTheme / outlinedButtonTheme /
+/// 方針: テーマ層で textButtonTheme / outlinedButtonTheme /
 /// elevatedButtonTheme の foregroundColor を明示し、「塗りとしての primary」と
 /// 「面に載る文字としての primary」を別トークンに分離する。
 ///
-/// 🔵 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA・4.5:1以上）
+/// 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA・4.5:1以上）
 library;
 
 import 'package:flutter/material.dart';
@@ -155,7 +155,7 @@ void main() {
             tester, entry.key, '枠線ボタン', _dialogBackground(tester), 'ダイアログ背景');
       });
 
-      // 【ElevatedButton も必要な理由】: Material 3 の ElevatedButton は primary で
+      // ElevatedButton も必要な理由: Material 3 の ElevatedButton は primary で
       // 塗りつぶすのではなく、surfaceContainerLow の面に primary のラベルを載せる。
       // つまり TextButton と同じ「面に載る文字」であり、同じ理由で AA 未達になる。
       // 「同意して利用」「保存」「再試行」など主要操作がこの型で、副次操作の

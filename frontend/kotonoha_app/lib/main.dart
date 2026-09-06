@@ -2,7 +2,7 @@
 ///
 /// TASK-0015: go_routerナビゲーション設定・ルーティング実装
 /// TASK-0059: Hive初期化失敗時もアプリ起動を継続させる最終フォールバック
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 library;
 
 import 'package:flutter/material.dart';
@@ -26,7 +26,7 @@ void main() async {
 
   // Hive初期化: TypeAdapter登録とボックスオープン
   //
-  // 【最終フォールバック】: hive_init.dart側で各Boxのオープンは個別に復旧を試みるが、
+  // 最終フォールバック: hive_init.dart側で各Boxのオープンは個別に復旧を試みるが、
   // Hive.initFlutter()自体の失敗など、万一initHive()全体が例外を送出した場合でも
   // アプリがrunAppへ到達できるようにtry/catchで保護する。
   // Hiveが利用不可でもrepository_providersのnullフォールバックにより

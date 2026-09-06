@@ -11,7 +11,7 @@
 /// 2. 緊急機能の全画面配線（F3 / REQ-301, REQ-302, REQ-304）
 ///    - 右下に緊急ボタンを常時表示（REQ-301）。
 ///    - 緊急状態（alertActive）の時に緊急アラート画面を最前面に重ねる（REQ-304）。
-///    - 【重なり対策】: 緊急ボタンは画面本体に「重ねる」のではなく、画面端に
+///    - 重なり対策: 緊急ボタンは画面本体に「重ねる」のではなく、画面端に
 ///      専用の帯（緊急ボタンバー）としてレイアウト領域を確保して配置する。
 ///      縦向きは画面下部の横帯、横向きは画面右端の縦帯（サイドレール）。
 ///      詳細は [_AppShellState._buildEmergencyButtonBar] を参照。
@@ -36,7 +36,7 @@
 ///      常にTutorialOverlayより手前に表示され、チュートリアル表示中も
 ///      操作をブロックされない（REQ-301, REQ-302）。
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 library;
 
 import 'dart:math' as math;
@@ -145,7 +145,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   /// VolumeService経由でOS音量が0かどうかを判定し、
   /// 音量0の場合は警告メッセージをEmergencyAlertScreenへ渡すために状態を更新する。
   ///
-  /// 【エラーハンドリング】:
+  /// エラーハンドリング:
   /// VolumeService側で例外は握りつぶされ isVolumeZero() は false を返す設計だが、
   /// 万が一の例外発生時も緊急フロー自体を止めないよう、ここでも防御的に捕捉する。
   Future<void> _checkVolumeWarning() async {
@@ -189,7 +189,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     // オフライン時も常時バナーを表示し（REQ-1002）、
     // オンライン復帰時は一時的な復帰通知を重ねる（EDGE-001）。
     //
-    // 【並び】: 永続化バナーをオフラインバナーより上に置く。オフラインは
+    // 並び: 永続化バナーをオフラインバナーより上に置く。オフラインは
     // AI変換が使えないだけで基本機能は動くが、保存できない状態は
     // 入力内容そのものが失われるため、先に目に入るべきである。
     final screenContent = OnlineRecoveryNotification(
@@ -206,7 +206,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     // 重ねる（TASK-0075 / REQ-3001）。完了・スキップ操作でcompleteTutorial()を
     // 呼び、以降の起動では再表示されないようにする。
     //
-    // 【安全性（重要）】: TutorialOverlayは半透明の黒背景で覆う不透明な
+    // 安全性（重要）: TutorialOverlayは半透明の黒背景で覆う不透明な
     // Containerを最前面に描画するため、これで緊急ボタンまで覆ってしまうと
     // チュートリアル表示中は緊急ボタンがタップ不能になる。緊急機能は
     // いかなる状況でもブロックしてはならない（REQ-301, REQ-302）ため、
@@ -222,7 +222,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           )
         : screenContent;
 
-    // 【向きによる配置切替】: 緊急ボタンバーは縦向きなら画面下部の横帯、
+    // 向きによる配置切替: 緊急ボタンバーは縦向きなら画面下部の横帯、
     // 横向きなら画面右端の縦帯（サイドレール）としてレイアウト領域を確保する。
     // 横向きで縦方向に92pxを使うと文字盤の可視行数が大きく減り、推奨端末の
     // タブレット横持ち（1024x768）ではスクロール不要だった文字盤にスクロールが
@@ -291,7 +291,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     // 消費する。取り除かないと画面本体のSafeAreaとバーのSafeAreaで二重に
     // 余白が入り、無駄に縦幅を失う。
     //
-    // 【キーボード表示時の補正】: removePaddingはpaddingしか消さないため、
+    // キーボード表示時の補正: removePaddingはpaddingしか消さないため、
     // 補正しないと画面本体は「バーの分だけ短い箱」からさらにキーボード全高を
     // 引くことになり、キーボード上端との間にバー1本分（92px）の空白帯が
     // できる。バーはキーボードの裏に完全に隠れるので、その分を差し引いた
@@ -307,7 +307,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   /// 緊急ボタンバーを構築する（REQ-301, REQ-302 / TASK-0045 FR-005, FR-006）
   ///
-  /// 【この構成にした理由（重なり不具合の修正）】:
+  /// この構成にした理由（重なり不具合の修正）:
   /// 以前は緊急ボタンをStackで画面本体の上に「重ねて」いたため、画面右下
   /// （右16〜76px / 下16〜76px）のタップが常に緊急ボタンへ吸収されていた。
   /// 文字盤（CharacterBoardWidget）のグリッドは画面端まで伸びてスクロール

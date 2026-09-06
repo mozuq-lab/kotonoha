@@ -5,7 +5,7 @@
 /// テスト対象: lib/features/settings/providers/settings_provider.dart
 ///   `_restoreEnumWithMigration`（fontSize/themeの永続化フォーマット統一）
 ///
-/// 【背景】: fontSize/themeは従来SharedPreferencesに `setInt(key, enum.index)` の形式
+/// 背景: fontSize/themeは従来SharedPreferencesに `setInt(key, enum.index)` の形式
 /// （enum indexのint値）で保存されていた。これはenumの並び替え・要素追加が起きると
 /// 既存ユーザーの設定値が別の値に化ける危険がある（実際にTTSSpeedへ`verySlow`が
 /// 追加された前歴がある）。本テストは、
@@ -16,8 +16,8 @@
 /// を網羅的に検証する。
 ///
 /// 信頼性レベル凡例:
-/// - 🔵 青信号: 要件定義書・既存実装の挙動に基づく確実なテスト
-/// - 🟡 黄信号: 要件定義書から妥当な推測によるテスト
+/// - 青信号: 要件定義書・既存実装の挙動に基づく確実なテスト
+/// - 黄信号: 要件定義書から妥当な推測によるテスト
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -42,7 +42,7 @@ void main() {
           'String形式で再保存される',
           () async {
             // Given: 旧形式（enum index int）で保存された状態を再現
-            // 🔵 青信号: 実際に運用されていた旧フォーマット
+            // 青信号: 実際に運用されていた旧フォーマット
             SharedPreferences.setMockInitialValues({
               'fontSize': fontSize.index,
             });
@@ -130,7 +130,7 @@ void main() {
 
     group('異常系・境界値', () {
       test('fontSize: 範囲外の旧形式int値はデフォルト値（medium）にフォールバックする', () async {
-        // 🟡 黄信号: NFR-301（基本機能継続）から妥当な推測
+        // 黄信号: NFR-301（基本機能継続）から妥当な推測
         SharedPreferences.setMockInitialValues({
           'fontSize': 999, // FontSize.values の範囲外
         });

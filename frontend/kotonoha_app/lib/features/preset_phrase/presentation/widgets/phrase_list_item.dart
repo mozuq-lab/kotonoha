@@ -17,20 +17,20 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
 
-/// 【機能概要】: 定型文アイテムウィジェット
-/// 【実装方針】: ListTileベースで44px以上のタップターゲットを確保
-/// 【テスト対応】: TC-040-011〜TC-040-016, TC-040-033〜TC-040-035
-/// 🔵 信頼性レベル: 青信号 - REQ-101、REQ-105、REQ-5001に基づく
+/// 機能概要: 定型文アイテムウィジェット
+/// 実装方針: ListTileベースで44px以上のタップターゲットを確保
+/// テスト対応: TC-040-011〜TC-040-016, TC-040-033〜TC-040-035
+/// 信頼性レベル: 青信号 - REQ-101、REQ-105、REQ-5001に基づく
 ///
 /// 個別の定型文をリストアイテムとして表示する。
 /// タップ時にonTapコールバックを発火する。
 class PhraseListItem extends StatelessWidget {
-  /// 【パラメータ定義】: 表示する定型文
-  /// 🔵 信頼性レベル: 青信号 - 要件定義に基づく
+  /// パラメータ定義: 表示する定型文
+  /// 信頼性レベル: 青信号 - 要件定義に基づく
   final PresetPhrase phrase;
 
-  /// 【パラメータ定義】: お気に入り状態（表示用）
-  /// 【設計変更】: Phase 3 / WP-2 / Stage 3a - お気に入りの正はfavoriteProvider
+  /// パラメータ定義: お気に入り状態（表示用）
+  /// 設計変更: Phase 3 / WP-2 / Stage 3a - お気に入りの正はfavoriteProvider
   /// （ADR-005）。このウィジェットは単一のphraseしか扱わないため、
   /// 集合ではなく判定済みのbool値を上位から受け取る。
   /// 上位は favoritePresetIds.contains(phrase.id) を渡すこと。
@@ -38,20 +38,20 @@ class PhraseListItem extends StatelessWidget {
   /// 自分では知らない。）
   final bool isFavorite;
 
-  /// 【パラメータ定義】: タップ時のコールバック
-  /// 🔵 信頼性レベル: 青信号 - AC-004に基づく
+  /// パラメータ定義: タップ時のコールバック
+  /// 信頼性レベル: 青信号 - AC-004に基づく
   final VoidCallback? onTap;
 
-  /// 【パラメータ定義】: お気に入り切り替え時のコールバック
-  /// 🟡 信頼性レベル: 黄信号 - REQ-105から推測
+  /// パラメータ定義: お気に入り切り替え時のコールバック
+  /// 信頼性レベル: 黄信号 - REQ-105から推測
   final VoidCallback? onFavoriteToggle;
 
-  /// 【パラメータ定義】: 編集時のコールバック
-  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  /// パラメータ定義: 編集時のコールバック
+  /// 信頼性レベル: 青信号 - REQ-104に基づく
   final VoidCallback? onEdit;
 
-  /// 【パラメータ定義】: 削除時のコールバック
-  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  /// パラメータ定義: 削除時のコールバック
+  /// 信頼性レベル: 青信号 - REQ-104に基づく
   final VoidCallback? onDelete;
 
   /// PhraseListItemを作成する
@@ -69,8 +69,8 @@ class PhraseListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // 【Semantics設定】: スクリーンリーダー対応
-    // 🟡 信頼性レベル: 黄信号 - アクセシビリティ要件から推測
+    // Semantics設定: スクリーンリーダー対応
+    // 信頼性レベル: 黄信号 - アクセシビリティ要件から推測
     return Semantics(
       label: phrase.content,
       button: true,
@@ -79,8 +79,8 @@ class PhraseListItem extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Container(
-            // 【サイズ制約】: 最小44px、推奨60pxのタップターゲット
-            // 🔵 信頼性レベル: 青信号 - REQ-5001、NFR-202に基づく
+            // サイズ制約: 最小44px、推奨60pxのタップターゲット
+            // 信頼性レベル: 青信号 - REQ-5001、NFR-202に基づく
             constraints: const BoxConstraints(
               minHeight: AppSizes.recommendedTapTarget,
             ),
@@ -90,22 +90,22 @@ class PhraseListItem extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // 【メインコンテンツ】: 定型文テキスト
-                // 🔵 信頼性レベル: 青信号 - REQ-101に基づく
+                // メインコンテンツ: 定型文テキスト
+                // 信頼性レベル: 青信号 - REQ-101に基づく
                 Expanded(
                   child: Text(
                     phrase.content,
                     style: theme.textTheme.bodyLarge,
-                    // 【テキストオーバーフロー】: 長いテキストは省略
-                    // 🟡 信頼性レベル: 黄信号 - UI品質のための推測
+                    // テキストオーバーフロー: 長いテキストは省略
+                    // 信頼性レベル: 黄信号 - UI品質のための推測
                     overflow: TextOverflow.ellipsis,
                     maxLines: 2,
                   ),
                 ),
-                // 【お気に入りアイコン】: お気に入り状態を表示・切り替え
-                // 【設計変更】: Phase 3 / WP-2 / Stage 3a - 上位から渡された
+                // お気に入りアイコン: お気に入り状態を表示・切り替え
+                // 設計変更: Phase 3 / WP-2 / Stage 3a - 上位から渡された
                 // isFavorite（favoriteProviderが正）で判定する
-                // 🟡 信頼性レベル: 黄信号 - REQ-105から推測
+                // 信頼性レベル: 黄信号 - REQ-105から推測
                 IconButton(
                   icon: Icon(
                     isFavorite ? Icons.star : Icons.star_border,
@@ -116,11 +116,11 @@ class PhraseListItem extends StatelessWidget {
                   onPressed: onFavoriteToggle,
                   tooltip: isFavorite ? 'お気に入りから削除' : 'お気に入りに追加',
                 ),
-                // 【入力欄へボタン】: REQ-102対応。タップ=即時読み上げのみだった
+                // 入力欄へボタン: REQ-102対応。タップ=即時読み上げのみだった
                 // 定型文を、入力欄に入れて編集・AI変換する動線として追加する。
                 SendToInputButton(text: phrase.content),
-                // 【編集アイコン】: 定型文を編集
-                // 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+                // 編集アイコン: 定型文を編集
+                // 信頼性レベル: 青信号 - REQ-104に基づく
                 if (onEdit != null)
                   IconButton(
                     icon: Icon(
@@ -130,8 +130,8 @@ class PhraseListItem extends StatelessWidget {
                     onPressed: onEdit,
                     tooltip: '編集',
                   ),
-                // 【削除アイコン】: 定型文を削除
-                // 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+                // 削除アイコン: 定型文を削除
+                // 信頼性レベル: 青信号 - REQ-104に基づく
                 if (onDelete != null)
                   IconButton(
                     icon: Icon(

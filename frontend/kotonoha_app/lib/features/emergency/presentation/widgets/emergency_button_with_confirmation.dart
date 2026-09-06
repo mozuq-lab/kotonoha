@@ -2,7 +2,7 @@
 ///
 /// TASK-0045: 緊急ボタンUI実装
 /// 要件: REQ-301（緊急ボタン常時表示）、REQ-302（2段階確認）、REQ-5002（誤操作防止）
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 ///
 /// 確認ダイアログ付き緊急ボタンウィジェット。
 /// 既存のEmergencyButton（TASK-0017）を拡張し、確認ダイアログ連携、
@@ -16,7 +16,7 @@ import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_c
 
 /// 緊急ボタンのアクセシブルラベル。
 ///
-/// 【定数にしている理由】: 全消去ボタンの clearAllButtonSemanticsLabel と対。破壊的操作の
+/// 定数にしている理由: 全消去ボタンの clearAllButtonSemanticsLabel と対。破壊的操作の
 /// 全消去ボタンと緊急ボタンはどちらも赤系の塗りボタンとして同じ画面に並ぶため、
 /// 色以外の識別手段（ラベル・形状）が実際の安全弁になる。
 const String emergencyButtonSemanticsLabel = '緊急呼び出しボタン';
@@ -113,7 +113,7 @@ class EmergencyButtonWithConfirmation extends StatelessWidget {
     final backgroundColor = EmergencyConfirmationDialog.getEmergencyColor(
       context,
     );
-    // 【AA対応】: 背景は緊急色（テーマごとに変わる）なのにアイコン色を
+    // AA対応: 背景は緊急色（テーマごとに変わる）なのにアイコン色を
     // Colors.white 固定にしていたため、ダーク(#EF5350) 3.49:1 /
     // 高コントラスト(#FF0000) 4.00:1 だった。非テキスト基準(3:1)は
     // 満たすものの、このボタンは全画面に常時表示される最重要操作であり

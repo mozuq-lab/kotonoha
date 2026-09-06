@@ -17,16 +17,16 @@ import 'package:kotonoha_app/features/preset_phrase/domain/phrase_constants.dart
 import 'package:kotonoha_app/features/preset_phrase/domain/preset_phrase_validator.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_form_content.dart';
 
-/// 【機能概要】: 定型文追加ダイアログ
-/// 【実装方針】: AlertDialogベースでPhraseFormContentを使用
-/// 【テスト対応】: TC-041-011〜TC-041-021
-/// 🔵 信頼性レベル: 青信号 - CRUD-001, CRUD-002に基づく
+/// 機能概要: 定型文追加ダイアログ
+/// 実装方針: AlertDialogベースでPhraseFormContentを使用
+/// テスト対応: TC-041-011〜TC-041-021
+/// 信頼性レベル: 青信号 - CRUD-001, CRUD-002に基づく
 ///
 /// 新しい定型文を追加するためのダイアログ。
 /// 内容入力、カテゴリ選択、保存・キャンセル機能を提供。
 class PhraseAddDialog extends StatefulWidget {
-  /// 【パラメータ定義】: 保存時のコールバック
-  /// 🔵 信頼性レベル: 青信号 - UC-001に基づく
+  /// パラメータ定義: 保存時のコールバック
+  /// 信頼性レベル: 青信号 - UC-001に基づく
   final void Function(String content, String category)? onSave;
 
   /// PhraseAddDialogを作成する
@@ -50,9 +50,9 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     super.dispose();
   }
 
-  /// 【メソッド】: 保存ボタン押下時の処理
-  /// 【実装内容】: バリデーション実行後、コールバック発火
-  /// 🔵 信頼性レベル: 青信号 - CRUD-105に基づく
+  /// メソッド: 保存ボタン押下時の処理
+  /// 実装内容: バリデーション実行後、コールバック発火
+  /// 信頼性レベル: 青信号 - CRUD-105に基づく
   void _onSave() {
     final validationError = PresetPhraseValidator.validateContent(
       _contentController.text,
@@ -69,23 +69,23 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     Navigator.of(context).pop();
   }
 
-  /// 【メソッド】: キャンセルボタン押下時の処理
-  /// 🔵 信頼性レベル: 青信号 - UI操作
+  /// メソッド: キャンセルボタン押下時の処理
+  /// 信頼性レベル: 青信号 - UI操作
   void _onCancel() {
     Navigator.of(context).pop();
   }
 
-  /// 【メソッド】: テキスト変更時の処理
-  /// 【実装内容】: エラーメッセージをクリアしてUIを更新
-  /// 🔵 信頼性レベル: 青信号 - UI更新
+  /// メソッド: テキスト変更時の処理
+  /// 実装内容: エラーメッセージをクリアしてUIを更新
+  /// 信頼性レベル: 青信号 - UI更新
   void _onTextChanged() {
     setState(() {
       _errorMessage = null;
     });
   }
 
-  /// 【メソッド】: カテゴリ変更時の処理
-  /// 🔵 信頼性レベル: 青信号 - CRUD-002に基づく
+  /// メソッド: カテゴリ変更時の処理
+  /// 信頼性レベル: 青信号 - CRUD-002に基づく
   void _onCategoryChanged(String category) {
     setState(() {
       _selectedCategory = category;
@@ -107,8 +107,8 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
         ),
       ),
       actions: [
-        // 【キャンセルボタン】: ダイアログを閉じる
-        // 🔵 信頼性レベル: 青信号 - CRUD-203に基づくタップターゲットサイズ
+        // キャンセルボタン: ダイアログを閉じる
+        // 信頼性レベル: 青信号 - CRUD-203に基づくタップターゲットサイズ
         TextButton(
           onPressed: _onCancel,
           style: TextButton.styleFrom(
@@ -116,8 +116,8 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
           ),
           child: const Text('キャンセル'),
         ),
-        // 【保存ボタン】: バリデーション後に保存
-        // 🔵 信頼性レベル: 青信号 - CRUD-203に基づくタップターゲットサイズ
+        // 保存ボタン: バリデーション後に保存
+        // 信頼性レベル: 青信号 - CRUD-203に基づくタップターゲットサイズ
         ElevatedButton(
           onPressed: _onSave,
           style: ElevatedButton.styleFrom(

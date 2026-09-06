@@ -4,7 +4,7 @@
 ///
 /// テスト対象: lib/core/themes/high_contrast_theme.dart (実装済み)
 ///
-/// 【TDD Redフェーズ】: テーマのプロパティとWCAG準拠を検証
+/// TDD Redフェーズ: テーマのプロパティとWCAG準拠を検証
 library;
 
 import 'package:flutter/material.dart';

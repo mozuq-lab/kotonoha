@@ -1,7 +1,7 @@
 /// チュートリアル状態管理プロバイダーテスト
 ///
 /// TASK-0075: ヘルプ画面・初回チュートリアル実装
-/// 信頼性レベル: 🟡 黄信号（REQ-3001から推測）
+/// 信頼性レベル: 黄信号（REQ-3001から推測）
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

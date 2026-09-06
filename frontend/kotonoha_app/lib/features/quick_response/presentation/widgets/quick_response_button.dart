@@ -2,7 +2,7 @@
 ///
 /// TASK-0043: 「はい」「いいえ」「わからない」大ボタン実装
 /// 要件: FR-001（大ボタン表示）、FR-003（サイズ保証）、FR-101（TTS読み上げ）
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 ///
 /// クイック応答用の大ボタンウィジェット。
 /// タップ時にTTS読み上げを実行し、アクセシビリティ要件を満たす。
@@ -159,7 +159,7 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
 
   /// テキスト色を取得
   ///
-  /// 【AA対応】: 以前は `Colors.white` 固定だった。既定パレットは暗色なので
+  /// AA対応: 以前は `Colors.white` 固定だった。既定パレットは暗色なので
   /// 既定の見た目では問題にならないが、[QuickResponseButton.backgroundColor] は
   /// public なパラメータであり、明るい色を渡されると白文字が載って AA 未達になる。
   /// 双子ウィジェットの StatusButton から取り除いたのと同じ危険なので、
@@ -208,7 +208,7 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
                     BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
             ),
-            // 【スマホ幅対応】: 「わからない」等ラベルが長い場合、狭い幅
+            // スマホ幅対応: 「わからない」等ラベルが長い場合、狭い幅
             // （スマホ幅でExpanded/Padding経由で圧縮される）で折り返し・
             // クリップが発生しないよう、FittedBox(scaleDown)+maxLines:1で
             // 縮小表示する。status_button.dartの対策と同方式。

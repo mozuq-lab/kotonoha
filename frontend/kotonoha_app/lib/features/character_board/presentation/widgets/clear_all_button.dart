@@ -19,7 +19,7 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/clear
 
 /// 全消去ボタンのアクセシブルラベル。
 ///
-/// 【定数にしている理由】: 破壊的操作の全消去ボタンと、同じ画面に常時並ぶ
+/// 定数にしている理由: 破壊的操作の全消去ボタンと、同じ画面に常時並ぶ
 /// 緊急ボタンは、どちらも赤系の塗りボタンになる。両者を輝度比で十分に離すことは
 /// WCAG AA の要件と数学的に両立しないため（test/accessibility/
 /// theme_error_color_contrast_test.dart の考察を参照）、実際の識別は

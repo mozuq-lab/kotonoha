@@ -2,7 +2,7 @@
 ///
 /// TASK-0037: 五十音文字盤UI実装
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 /// 関連要件: REQ-001, REQ-002, REQ-5001, NFR-003, NFR-202
 library;
 
@@ -124,7 +124,7 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
         final columnsCount = (availableWidth / (buttonSize + spacing)).floor();
         final columns = columnsCount.clamp(5, 10);
 
-        // 【fit-to-height対応】: 列数だけでなく行数・可視高さも考慮してセルの
+        // fit-to-height対応: 列数だけでなく行数・可視高さも考慮してセルの
         // 高さを決定する。スマホ縦持ちのように高さが乏しい画面では、幅基準の
         // 正方形セル（childAspectRatio: 1.0固定）だと1画面に収まらず大量の
         // スクロールが発生するため、「幅基準セル」と「高さ基準セル」のうち

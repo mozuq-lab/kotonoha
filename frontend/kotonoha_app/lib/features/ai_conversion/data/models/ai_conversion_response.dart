@@ -2,7 +2,7 @@
 ///
 /// TASK-0067: AI変換APIクライアント実装
 ///
-/// 信頼性レベル: 🔵 青信号（api-endpoints.mdベース）
+/// 信頼性レベル: 青信号（api-endpoints.mdベース）
 /// 関連要件: REQ-901, REQ-902
 library;
 

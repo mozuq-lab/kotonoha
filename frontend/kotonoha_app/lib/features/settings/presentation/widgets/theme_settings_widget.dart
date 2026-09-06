@@ -2,7 +2,7 @@
 ///
 /// TASK-0071: 設定画面UI実装
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 /// 関連要件: REQ-803, REQ-2008
 library;
 
@@ -50,7 +50,7 @@ class ThemeSettingsWidget extends ConsumerWidget {
             const Text('テーマ'),
             const SizedBox(height: 8),
             SegmentedButton<AppTheme>(
-              // 【AA対応】: デフォルト高さ約40pxを44px以上に拡張（タップターゲット要件）。
+              // AA対応: デフォルト高さ約40pxを44px以上に拡張（タップターゲット要件）。
               style: SegmentedButton.styleFrom(
                 minimumSize: const Size(0, 44),
               ),

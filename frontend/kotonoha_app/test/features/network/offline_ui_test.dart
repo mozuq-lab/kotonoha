@@ -24,7 +24,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002, EDGE-001
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       ///
       /// 注: このテストは実際のインジケーターウィジェット実装後に動作します
       testWidgets('TC-058-032: オフライン時に「オフライン」インジケーターが表示される',
@@ -73,7 +73,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       testWidgets('TC-058-033: オフライン時に「基本機能のみ利用可能」メッセージが表示される',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -117,7 +117,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       testWidgets('TC-058-034: オンライン時にオフラインインジケーターが非表示',
           (WidgetTester tester) async {
         // Given: NetworkStateがonlineのProviderContainer
@@ -161,7 +161,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: NFR-203
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       testWidgets('TC-058-035: オフライン通知がユーザー操作を妨げない',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -235,7 +235,7 @@ void main() {
       ///
       /// 優先度: P1
       /// 関連要件: EDGE-001
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       ///
       /// 注: このテストは実際の通知ウィジェット実装後に動作します
       testWidgets('TC-058-036: オンライン復帰時に「オンラインに戻りました」通知が表示される',
@@ -274,7 +274,7 @@ void main() {
       ///
       /// 優先度: P1
       /// 関連要件: EDGE-001
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       testWidgets('TC-058-037: オンライン復帰時に「AI変換が利用可能です」メッセージが表示される',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -311,7 +311,7 @@ void main() {
       ///
       /// 優先度: P1
       /// 関連要件: NFR-203
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       testWidgets('TC-058-038: オンライン復帰通知がユーザー操作を妨げない',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -366,7 +366,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002, REQ-3004
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       ///
       /// 注: このテストは実際のAI変換ボタンウィジェット実装後に動作します
       testWidgets('TC-058-AI-001: オフライン時にAI変換ボタンの視覚的無効化（カスタムテスト）',
@@ -424,7 +424,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       testWidgets('TC-058-AI-002: オンライン時にAI変換ボタンの視覚的有効化（カスタムテスト）',
           (WidgetTester tester) async {
         // Given: NetworkStateがonlineのProviderContainer
@@ -476,7 +476,7 @@ void main() {
       ///
       /// 優先度: P0
       /// 関連要件: REQ-1002
-      /// 信頼性レベル: 🔵
+      /// 信頼性レベル:
       testWidgets('TC-058-AI-003: ネットワーク状態変更でボタンが動的に更新（カスタムテスト）',
           (WidgetTester tester) async {
         // Given: NetworkStateがonlineのProviderContainer

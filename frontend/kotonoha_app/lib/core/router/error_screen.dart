@@ -1,7 +1,7 @@
 /// Error screen widget for navigation errors
 ///
 /// TASK-0015: go_routerナビゲーション設定・ルーティング実装
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 library;
 
 import 'package:flutter/material.dart';

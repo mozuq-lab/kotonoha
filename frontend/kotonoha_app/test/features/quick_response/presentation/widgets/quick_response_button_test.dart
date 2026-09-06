@@ -5,7 +5,7 @@
 ///
 /// テスト対象: lib/features/quick_response/presentation/widgets/quick_response_button.dart
 ///
-/// 【TDD Redフェーズ】: ウィジェットが未実装のため、このテストは失敗する
+/// TDD Redフェーズ: ウィジェットが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';

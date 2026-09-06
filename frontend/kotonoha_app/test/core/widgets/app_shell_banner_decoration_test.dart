@@ -1,12 +1,12 @@
 /// AppShell 上のバナー文字にデバッグ用装飾が残っていないかの検証
 ///
-/// 【背景】: AppShell のバナーは各画面の Scaffold より外側にあり、
+/// 背景: AppShell のバナーは各画面の Scaffold より外側にあり、
 /// Material 祖先を持たない。この位置の Text は WidgetsApp の既定スタイル
 /// （赤文字＋黄色の二重下線）を継承するため、`style` を部分指定しただけでは
 /// `decoration` が残り、利用者に下線付きの文字が見える。
 /// Phase 3 WP-1 で実機（Chrome）の目視から発見した。
 ///
-/// 【なぜ AppShell 経由で描くか】: バナー単体を `Scaffold` の中に置いて
+/// なぜ AppShell 経由で描くか: バナー単体を `Scaffold` の中に置いて
 /// 描くと Material 祖先ができてしまい、この不具合は再現しない。
 library;
 
@@ -37,7 +37,7 @@ class _ControllableNetworkNotifier extends NetworkNotifier {
 /// [finder] が指すウィジェットのセマンティクスラベルに、[phrase] が
 /// 何回現れるかを数える
 ///
-/// 【なぜ数えるか】: `Semantics(label:)` の子に同じ文言の `Text` を置くと
+/// なぜ数えるか: `Semantics(label:)` の子に同じ文言の `Text` を置くと
 /// ラベルが連結され、スクリーンリーダーが同じ文を2回読む。
 /// 「Semantics が在ること」を見るだけのテストでは、この退行を検出できない。
 ///
@@ -85,7 +85,7 @@ void main() {
   });
 
   testWidgets('オンライン復帰通知の文字に下線が付かない', (tester) async {
-    // 【なぜ3本目も見るか】: AppShell の Column に載るバナーは
+    // なぜ3本目も見るか: AppShell の Column に載るバナーは
     // PersistenceBanner / OfflineBanner / OnlineRecoveryNotification の3本。
     // どれも Scaffold の外側にあり、同じ条件で下線を継承する。
     final container = ProviderContainer(

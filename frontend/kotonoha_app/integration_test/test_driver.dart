@@ -1,6 +1,6 @@
 /// E2E テスト用バインディング初期化ヘルパー（実機・シミュレーター向け）
 ///
-/// 【注意】このファイルは `flutter drive --driver=` に渡すドライバーではない。
+/// 注意このファイルは `flutter drive --driver=` に渡すドライバーではない。
 /// web向けのドライバーは `test_driver/integration_test.dart`（パッケージルート直下）
 /// にあり、そちらは `integrationDriver()` を呼ぶ。
 /// 本ファイルはアプリ側VMで実行される `ensureInitialized()` のみを持つ。

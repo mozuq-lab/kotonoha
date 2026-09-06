@@ -16,7 +16,7 @@ import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 /// - 5: createdAt (DateTime)
 /// - 6: updatedAt (DateTime)
 ///
-/// 【フィールド番号を詰めないこと】: 端末には field 3 に bool を持つ旧バイト列が
+/// フィールド番号を詰めないこと: 端末には field 3 に bool を持つ旧バイト列が
 /// 既に書かれている。4,5,6 を 3,4,5 に詰めると、旧レコードで displayOrder が
 /// bool を受け取って TypeError になる。この例外は
 /// `openBoxWithRecovery`（lib/core/utils/hive_init.dart）の `_isCorruptionError`
@@ -28,7 +28,7 @@ import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 /// 旧レコードも新レコードも同じコードで読める。
 /// 根拠テスト: test/shared/models/preset_phrase_adapter_backward_compat_test.dart
 ///
-/// 🔵 信頼性レベル: 青信号 - REQ-104、REQ-5003に基づく
+/// 信頼性レベル: 青信号 - REQ-104、REQ-5003に基づく
 class PresetPhraseAdapter extends TypeAdapter<PresetPhrase> {
   @override
   final int typeId = 1;
@@ -53,7 +53,7 @@ class PresetPhraseAdapter extends TypeAdapter<PresetPhrase> {
   @override
   void write(BinaryWriter writer, PresetPhrase obj) {
     writer
-      // 【フィールド数】: 旧形式は7。isFavorite を書かなくなったので6。
+      // フィールド数: 旧形式は7。isFavorite を書かなくなったので6。
       // 番号（4,5,6）はそのまま。総数だけが減る。
       ..writeByte(6)
       ..writeByte(0)

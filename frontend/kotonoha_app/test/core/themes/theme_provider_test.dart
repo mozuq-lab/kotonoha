@@ -4,7 +4,7 @@
 ///
 /// テスト対象: lib/core/themes/theme_provider.dart (未実装)
 ///
-/// 【TDD Redフェーズ】: theme_provider.dartは未実装のため、
+/// TDD Redフェーズ: theme_provider.dartは未実装のため、
 /// このテストは失敗する想定です。
 library;
 

@@ -40,7 +40,7 @@ void main() {
       expect(state.failedAreas, isNot(contains(PersistedArea.favorites)));
     });
 
-    // 【補足】: Hive の初期化自体（initFlutter）が失敗した場合も
+    // 補足: Hive の初期化自体（initFlutter）が失敗した場合も
     // 「開いている box が無い」としてこのケースに合流する。初期化の成否を
     // 別の引数で受け取ると同じ事実の出所が2つになるため、そうしていない。
     test('全area失敗ならUnavailable', () {

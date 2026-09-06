@@ -5,7 +5,7 @@
 ///
 /// テスト対象: lib/features/emergency/domain/services/emergency_audio_service.dart
 ///
-/// 【TDD Greenフェーズ】: サービスクラスが実装済み、テストが通るはず
+/// TDD Greenフェーズ: サービスクラスが実装済み、テストが通るはず
 library;
 
 import 'package:audioplayers/audioplayers.dart';

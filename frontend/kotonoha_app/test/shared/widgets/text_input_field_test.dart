@@ -5,7 +5,7 @@
 ///
 /// テスト対象: lib/shared/widgets/text_input_field.dart (未実装)
 ///
-/// 【TDD Redフェーズ】: ウィジェットが未実装のため、このテストは失敗する
+/// TDD Redフェーズ: ウィジェットが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';

@@ -140,7 +140,7 @@ void main() {
     late List<TypeAdapter<dynamic>> registered;
 
     setUp(() {
-      // 【権威をまっさらにする】: 既定アダプタも消えるが、この検査は
+      // 権威をまっさらにする: 既定アダプタも消えるが、この検査は
       // エンコードを行わないので影響しない（hive 2.2.3 `HiveInterface.resetAdapters`）。
       //
       // **このファイルに「実 box へ書く」テストを足さないこと。**
@@ -149,7 +149,7 @@ void main() {
       // 実書き込みは `HiveError: Cannot write, unknown type: DateTime` で落ちる。
       Hive.resetAdapters();
 
-      // 【本番と同じ関数を呼ぶ】: 検査 A も B も、この1回の呼び出しの結果だけを見る。
+      // 本番と同じ関数を呼ぶ: 検査 A も B も、この1回の呼び出しの結果だけを見る。
       registered = <TypeAdapter<dynamic>>[];
       registerPersistedTypeAdapters(onRegistered: registered.add);
     });
@@ -169,7 +169,7 @@ void main() {
       });
 
       test('本番が登録するアダプタの typeId 列が、重複なく許可リストと一致する', () {
-        // 【集合ではなく列で比べる理由】: 集合だと同じアダプタを2回登録する
+        // 集合ではなく列で比べる理由: 集合だと同じアダプタを2回登録する
         // 変更が素通りする。順序と重複まで固定する。
         expect(
           registered.map((adapter) => adapter.typeId).toList(),
@@ -183,7 +183,7 @@ void main() {
     // -----------------------------------------------------------------------
     group('B. 永続フィールドの形が変わっていない', () {
       test('検査対象のアダプタ集合が、本番の登録経路と一致する', () {
-        // 【これが A と B をつなぐ】: 許可リスト B に載っていないアダプタが
+        // これが A と B をつなぐ: 許可リスト B に載っていないアダプタが
         // 本番で登録されていたら赤にする。これが無いと、typeId だけ許可リストに
         // 足した4つ目のアダプタが恒久的に無検査になる。
         expect(
@@ -206,7 +206,7 @@ void main() {
           );
 
           final recorder = _RecordingBinaryWriter();
-          // 【権威】: テストで new し直さず、**本番の登録経路が返した実体**に書かせる。
+          // 権威: テストで new し直さず、**本番の登録経路が返した実体**に書かせる。
           adapter.write(recorder, fixture!);
 
           expect(
@@ -326,7 +326,7 @@ class _RecordingBinaryWriter implements BinaryWriter {
   void writeMap(Map<dynamic, dynamic> map, {bool writeLength = true}) =>
       calls.add('map');
 
-  // 【ignore の理由】: hive 2.2.3 の `HiveList` は experimental 指定だが、
+  // ignore の理由: hive 2.2.3 の `HiveList` は experimental 指定だが、
   // `BinaryWriter` を implements する以上このメソッドの実装は省けない。
   // 本アプリは HiveList を使っていないので、記録するだけで呼ばれることはない。
   @override

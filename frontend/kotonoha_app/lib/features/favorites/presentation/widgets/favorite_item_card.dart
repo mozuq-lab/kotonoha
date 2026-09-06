@@ -2,9 +2,9 @@
 ///
 /// TASK-0064: お気に入り一覧UI実装
 /// TASK-0066: お気に入り追加・削除・並び替え機能
-/// 【TDD Refactorフェーズ】: FavoriteItemCardウィジェット実装
+/// TDD Refactorフェーズ: FavoriteItemCardウィジェット実装
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 /// 関連要件: FR-064-002, FR-064-003, NFR-064-005, REQ-704
 library;
 
@@ -103,7 +103,7 @@ class FavoriteItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // 【入力欄へボタン】: お気に入りの内容を入力欄に入れて編集する動線（REQ-102）
+                // 入力欄へボタン: お気に入りの内容を入力欄に入れて編集する動線（REQ-102）
                 SendToInputButton(text: favorite.content),
                 // 削除ボタン
                 IconButton(

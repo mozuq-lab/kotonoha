@@ -7,7 +7,7 @@
 /// - lib/core/themes/dark_theme.dart
 /// - lib/core/themes/high_contrast_theme.dart
 ///
-/// 【TDD Redフェーズ】: 全テーマ共通のアクセシビリティ要件を検証
+/// TDD Redフェーズ: 全テーマ共通のアクセシビリティ要件を検証
 library;
 
 import 'package:flutter_test/flutter_test.dart';

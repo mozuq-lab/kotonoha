@@ -5,7 +5,7 @@
 ///
 /// テスト対象: テーマ設定がアプリ全体に正しく反映されること
 ///
-/// 【TDD Redフェーズ】: HomeScreenでのテーマ反映を検証
+/// TDD Redフェーズ: HomeScreenでのテーマ反映を検証
 library;
 
 import 'package:flutter/material.dart';
@@ -40,10 +40,10 @@ void main() {
       /// 検証内容: ライトテーマでHomeScreenが正常に表示されること
       testWidgets('TC-INT-THEME-001: ライトテーマでHomeScreenが正常表示される',
           (WidgetTester tester) async {
-        // 【テスト目的】: ライトテーマでHomeScreenが表示されることを確認 🔵
-        // 🔵 青信号: REQ-803「ライトモード」
+        // テスト目的: ライトテーマでHomeScreenが表示されることを確認
+        // 青信号: REQ-803「ライトモード」
 
-        // Given: 【テストデータ準備】: ライトテーマを設定
+        // Given: テストデータ準備: ライトテーマを設定
         final container = ProviderContainer(
           overrides: [
             settingsNotifierProvider.overrideWith(
@@ -66,7 +66,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: HomeScreenが表示されている
+        // Then: 結果検証: HomeScreenが表示されている
         expect(find.byType(HomeScreen), findsOneWidget);
         expect(find.text('kotonoha'), findsOneWidget);
 
@@ -80,10 +80,10 @@ void main() {
       /// 検証内容: ダークテーマでHomeScreenが正常に表示されること
       testWidgets('TC-INT-THEME-002: ダークテーマでHomeScreenが正常表示される',
           (WidgetTester tester) async {
-        // 【テスト目的】: ダークテーマでHomeScreenが表示されることを確認 🔵
-        // 🔵 青信号: REQ-803「ダークモード」
+        // テスト目的: ダークテーマでHomeScreenが表示されることを確認
+        // 青信号: REQ-803「ダークモード」
 
-        // Given: 【テストデータ準備】: ダークテーマを設定
+        // Given: テストデータ準備: ダークテーマを設定
         final container = ProviderContainer(
           overrides: [
             settingsNotifierProvider.overrideWith(
@@ -106,7 +106,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: HomeScreenが表示されている
+        // Then: 結果検証: HomeScreenが表示されている
         expect(find.byType(HomeScreen), findsOneWidget);
         expect(find.text('kotonoha'), findsOneWidget);
 
@@ -120,10 +120,10 @@ void main() {
       /// 検証内容: 高コントラストテーマでHomeScreenが正常に表示されること
       testWidgets('TC-INT-THEME-003: 高コントラストテーマでHomeScreenが正常表示される',
           (WidgetTester tester) async {
-        // 【テスト目的】: 高コントラストテーマでHomeScreenが表示されることを確認 🔵
-        // 🔵 青信号: REQ-803「高コントラストモード」、REQ-5006「WCAG準拠」
+        // テスト目的: 高コントラストテーマでHomeScreenが表示されることを確認
+        // 青信号: REQ-803「高コントラストモード」、REQ-5006「WCAG準拠」
 
-        // Given: 【テストデータ準備】: 高コントラストテーマを設定
+        // Given: テストデータ準備: 高コントラストテーマを設定
         final container = ProviderContainer(
           overrides: [
             settingsNotifierProvider.overrideWith(
@@ -146,7 +146,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: HomeScreenが表示されている
+        // Then: 結果検証: HomeScreenが表示されている
         expect(find.byType(HomeScreen), findsOneWidget);
         expect(find.text('kotonoha'), findsOneWidget);
 
@@ -160,10 +160,10 @@ void main() {
       /// 検証内容: currentThemeProviderの値に基づいてテーマが適用されること
       testWidgets('TC-INT-THEME-004: currentThemeProviderと連携したテーマ表示',
           (WidgetTester tester) async {
-        // 【テスト目的】: Provider経由でテーマが正しく適用されることを確認 🔵
-        // 🔵 青信号: REQ-2008「テーマ変更時に即座に変更」
+        // テスト目的: Provider経由でテーマが正しく適用されることを確認
+        // 青信号: REQ-2008「テーマ変更時に即座に変更」
 
-        // Given: 【テストデータ準備】: ダークテーマを設定したProvider
+        // Given: テストデータ準備: ダークテーマを設定したProvider
         final container = ProviderContainer(
           overrides: [
             settingsNotifierProvider.overrideWith(
@@ -193,7 +193,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: HomeScreenが表示されている
+        // Then: 結果検証: HomeScreenが表示されている
         expect(find.byType(HomeScreen), findsOneWidget);
 
         container.dispose();
@@ -206,10 +206,10 @@ void main() {
       /// 検証内容: デフォルト設定でHomeScreenが正常に表示されること
       testWidgets('TC-INT-THEME-005: デフォルトテーマ（ライト）でのHomeScreen表示',
           (WidgetTester tester) async {
-        // 【テスト目的】: デフォルト設定でHomeScreenが表示されることを確認 🔵
-        // 🔵 青信号: REQ-803（デフォルトはライト）
+        // テスト目的: デフォルト設定でHomeScreenが表示されることを確認
+        // 青信号: REQ-803（デフォルトはライト）
 
-        // Given: 【テストデータ準備】: デフォルト設定
+        // Given: テストデータ準備: デフォルト設定
         await tester.pumpWidget(
           ProviderScope(
             child: Builder(
@@ -224,7 +224,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Then: 【結果検証】: HomeScreenが表示されている
+        // Then: 結果検証: HomeScreenが表示されている
         expect(find.byType(HomeScreen), findsOneWidget);
         expect(find.text('kotonoha'), findsOneWidget);
       });
@@ -240,10 +240,10 @@ void main() {
       /// 関連要件: REQ-2008
       /// 検証内容: 設定画面でテーマを変更すると、Provider状態が即座に更新される
       test('TC-INT-THEME-006: 設定変更後のProvider状態更新', () async {
-        // 【テスト目的】: 設定変更がProvider状態に即座に反映されることを確認 🔵
-        // 🔵 青信号: REQ-2008「テーマ変更時に即座に変更」
+        // テスト目的: 設定変更がProvider状態に即座に反映されることを確認
+        // 青信号: REQ-2008「テーマ変更時に即座に変更」
 
-        // Given: 【テストデータ準備】: ProviderContainer作成
+        // Given: テストデータ準備: ProviderContainer作成
         SharedPreferences.setMockInitialValues({});
         final container = ProviderContainer();
 
@@ -258,11 +258,11 @@ void main() {
         var currentTheme = container.read(currentThemeProvider);
         expect(currentTheme, lightTheme);
 
-        // When: 【実際の処理実行】: テーマを「ダーク」に変更
+        // When: 実際の処理実行: テーマを「ダーク」に変更
         final notifier = container.read(settingsNotifierProvider.notifier);
         await notifier.setTheme(AppTheme.dark);
 
-        // Then: 【結果検証】: Provider状態が即座に更新される
+        // Then: 結果検証: Provider状態が即座に更新される
         state = container.read(settingsNotifierProvider);
         expect(state.requireValue.theme, AppTheme.dark);
 
@@ -284,8 +284,8 @@ void main() {
       /// 関連要件: REQ-5006
       /// 検証内容: 高コントラストテーマの背景色が正しく設定されていること
       test('TC-INT-THEME-007: 高コントラストテーマの背景色検証', () {
-        // 【テスト目的】: 高コントラストテーマの背景色が白であることを確認 🟡
-        // 🟡 黄信号: REQ-5006「WCAG 2.1 AAレベル」
+        // テスト目的: 高コントラストテーマの背景色が白であることを確認
+        // 黄信号: REQ-5006「WCAG 2.1 AAレベル」
 
         // Given/When: 高コントラストテーマの背景色を取得
         final backgroundColor = highContrastTheme.scaffoldBackgroundColor;
@@ -301,8 +301,8 @@ void main() {
       /// 関連要件: REQ-5006
       /// 検証内容: 高コントラストテーマのテキスト色が正しく設定されていること
       test('TC-INT-THEME-008: 高コントラストテーマのテキスト色検証', () {
-        // 【テスト目的】: 高コントラストテーマのテキスト色が黒であることを確認 🟡
-        // 🟡 黄信号: REQ-5006「WCAG 2.1 AAレベル」
+        // テスト目的: 高コントラストテーマのテキスト色が黒であることを確認
+        // 黄信号: REQ-5006「WCAG 2.1 AAレベル」
 
         // Given/When: 高コントラストテーマのテキスト色を取得
         final textColor = highContrastTheme.colorScheme.onSurface;
@@ -318,8 +318,8 @@ void main() {
       /// 関連要件: REQ-5006
       /// 検証内容: 高コントラストテーマで要素の境界が明確であること
       test('TC-INT-THEME-009: 高コントラストテーマの境界線検証', () {
-        // 【テスト目的】: 高コントラストテーマで境界線が2px以上であることを確認 🟡
-        // 🟡 黄信号: REQ-5006「WCAG準拠」
+        // テスト目的: 高コントラストテーマで境界線が2px以上であることを確認
+        // 黄信号: REQ-5006「WCAG準拠」
 
         // Given/When: 高コントラストテーマのボタンスタイルを取得
         final buttonStyle = highContrastTheme.elevatedButtonTheme.style;

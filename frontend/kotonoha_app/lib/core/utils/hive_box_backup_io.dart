@@ -1,4 +1,4 @@
-/// 【Box破損バックアップ: dart:io実装】
+/// Box破損バックアップ: dart:io実装
 ///
 /// [dart.library.io]が利用可能な環境（iOS/Android/デスクトップ、および
 /// `flutter test`実行時のDart VM）向けの実装。
@@ -7,10 +7,10 @@
 /// 退避する。バックアップに失敗した場合はfalseを返し、呼び出し元
 /// （openBoxWithRecovery）にデータ保全を優先させる（＝削除を中止する）。
 ///
-/// 🔵 信頼性レベル: 青信号 - Codexレビュー指摘（P1: Hive復旧処理が非破損エラーでも
+/// 信頼性レベル: 青信号 - Codexレビュー指摘（P1: Hive復旧処理が非破損エラーでも
 /// データを削除する問題）への対応
 ///
-/// 【Codexレビュー追加指摘（P1）】: HiveはBox名を内部で小文字化してから
+/// Codexレビュー追加指摘（P1）: HiveはBox名を内部で小文字化してから
 /// ファイル名を組み立てる（hive 2.2.3 `hive_impl.dart`の`_openBox`内
 /// `name = name.toLowerCase();`、および`backend/vm/backend_manager.dart`の
 /// `findHiveFileAndCleanUp`内`'$path$_delimiter$name.hive'`で確認済み）。
@@ -39,7 +39,7 @@ import 'dart:io';
 /// （macOS等の大小文字非区別環境でのテスト実行では、パス構築が誤っていても
 /// 偶然ファイルが見つかってテストが green になってしまい、回帰を検出できないため）。
 ///
-/// 🔵 信頼性レベル: 青信号 - hive 2.2.3のソースコードで確認済み
+/// 信頼性レベル: 青信号 - hive 2.2.3のソースコードで確認済み
 String resolveBoxFilePath(String hivePath, String boxName) {
   return '$hivePath/${boxName.toLowerCase()}.hive';
 }
@@ -79,19 +79,19 @@ Future<bool> backupCorruptBoxFile(String? hivePath, String boxName) async {
   try {
     final sourceFile = File(resolveBoxFilePath(hivePath, boxName));
     if (!await sourceFile.exists()) {
-      // 【退避不要】: Hiveと同じ小文字化規則で解決した実ファイルが存在しない
+      // 退避不要: Hiveと同じ小文字化規則で解決した実ファイルが存在しない
       // 場合、これから削除しても失われるデータはない
       return true;
     }
 
     final backupFile = File(resolveBoxBackupFilePath(hivePath, boxName));
     if (await backupFile.exists()) {
-      // 【既存バックアップの上書き】: 前回の破損バックアップは上書きしてよい
+      // 既存バックアップの上書き: 前回の破損バックアップは上書きしてよい
       await backupFile.delete();
     }
     await sourceFile.copy(backupFile.path);
 
-    // 【バックアップ検証】: コピー後にバックアップファイルの存在と
+    // バックアップ検証: コピー後にバックアップファイルの存在と
     // 元ファイルと同一バイト長であることを検証してから成功とみなす。
     // 検証に失敗した場合、バックアップが不完全な可能性があるため、
     // 呼び出し元でデータ保全を優先（削除を中止）させるためfalseを返す。
@@ -105,7 +105,7 @@ Future<bool> backupCorruptBoxFile(String? hivePath, String boxName) async {
     }
     return true;
   } catch (_) {
-    // 【バックアップ失敗】: ディスクフル等でコピー自体に失敗した場合、
+    // バックアップ失敗: ディスクフル等でコピー自体に失敗した場合、
     // 呼び出し元でデータ保全を優先（削除を中止）させるためfalseを返す
     return false;
   }

@@ -1,6 +1,6 @@
 /// 永続化の失敗が利用者に届くかの検証（ADR-005 / Phase 3 WP-1）
 ///
-/// 【なぜ AppShell ごと描画するか】: PersistenceBanner 単体を叩くテストは、
+/// なぜ AppShell ごと描画するか: PersistenceBanner 単体を叩くテストは、
 /// AppShell への配線が外れても緑のままになる。「保存できたように見えて消える」
 /// を防げているかは、実際に画面へ出るかどうかでしか確かめられない。
 /// 検証は最も外側の境界で行う（docs/verification-principles.md）。
@@ -57,7 +57,7 @@ void main() {
     });
 
     testWidgets('バナーの文字にデバッグ用の下線が付かない', (tester) async {
-      // 【なぜ必要か】: AppShell のバナーは各画面の Scaffold より外側にあり、
+      // なぜ必要か: AppShell のバナーは各画面の Scaffold より外側にあり、
       // Material 祖先を持たない。この位置の Text は WidgetsApp の既定
       // スタイル（赤文字＋黄色の二重下線）を継承するため、style を
       // 部分指定するだけでは decoration が残る。実機（Chrome）で

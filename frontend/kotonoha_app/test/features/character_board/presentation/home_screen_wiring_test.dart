@@ -161,7 +161,7 @@ void main() {
       await tester.tap(find.text('はい'));
       await tester.pumpAndSettle();
 
-      // 【バグ修正確認】: 従来はonTTSSpeakとonResponse双方でspeak()が
+      // バグ修正確認: 従来はonTTSSpeakとonResponse双方でspeak()が
       // 呼ばれ二重に読み上げられていた。1回のみ呼ばれることを確認する。
       verify(() => mockFlutterTts.speak('はい')).called(1);
 

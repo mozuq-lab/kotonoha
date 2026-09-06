@@ -14,42 +14,42 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_list_item.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
-/// 【機能概要】: カテゴリセクションウィジェット
-/// 【実装方針】: ヘッダー + アイテムリストの縦並びレイアウト
-/// 【テスト対応】: TC-040-017〜TC-040-021
-/// 🔵 信頼性レベル: 青信号 - REQ-106に基づく
+/// 機能概要: カテゴリセクションウィジェット
+/// 実装方針: ヘッダー + アイテムリストの縦並びレイアウト
+/// テスト対応: TC-040-017〜TC-040-021
+/// 信頼性レベル: 青信号 - REQ-106に基づく
 ///
 /// カテゴリヘッダーと、そのカテゴリに属する定型文リストを表示する。
 class PhraseCategorySection extends StatelessWidget {
-  /// 【パラメータ定義】: カテゴリ識別子（'daily', 'health', 'other'）
-  /// 🔵 信頼性レベル: 青信号 - REQ-106に基づく
+  /// パラメータ定義: カテゴリ識別子（'daily', 'health', 'other'）
+  /// 信頼性レベル: 青信号 - REQ-106に基づく
   final String category;
 
-  /// 【パラメータ定義】: このカテゴリに属する定型文リスト
-  /// 🔵 信頼性レベル: 青信号 - 要件定義に基づく
+  /// パラメータ定義: このカテゴリに属する定型文リスト
+  /// 信頼性レベル: 青信号 - 要件定義に基づく
   final List<PresetPhrase> phrases;
 
-  /// 【パラメータ定義】: 定型文由来のお気に入りのid集合
-  /// 【設計変更】: Phase 3 / WP-2 / Stage 3a - お気に入りの正はfavoriteProvider
+  /// パラメータ定義: 定型文由来のお気に入りのid集合
+  /// 設計変更: Phase 3 / WP-2 / Stage 3a - お気に入りの正はfavoriteProvider
   /// （ADR-005）。sourceType == 'preset_phrase' で絞ったsourceIdの集合を
   /// 上位（PhraseListWidget）から受け取り、PhraseListItemへ判定済みのbool
   /// として渡す。
   final Set<String> favoritePresetIds;
 
-  /// 【パラメータ定義】: 定型文タップ時のコールバック
-  /// 🔵 信頼性レベル: 青信号 - AC-004に基づく
+  /// パラメータ定義: 定型文タップ時のコールバック
+  /// 信頼性レベル: 青信号 - AC-004に基づく
   final void Function(PresetPhrase)? onPhraseSelected;
 
-  /// 【パラメータ定義】: お気に入り切り替え時のコールバック
-  /// 🟡 信頼性レベル: 黄信号 - REQ-105から推測
+  /// パラメータ定義: お気に入り切り替え時のコールバック
+  /// 信頼性レベル: 黄信号 - REQ-105から推測
   final void Function(PresetPhrase)? onFavoriteToggle;
 
-  /// 【パラメータ定義】: 編集時のコールバック
-  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  /// パラメータ定義: 編集時のコールバック
+  /// 信頼性レベル: 青信号 - REQ-104に基づく
   final void Function(PresetPhrase)? onEdit;
 
-  /// 【パラメータ定義】: 削除時のコールバック
-  /// 🔵 信頼性レベル: 青信号 - REQ-104に基づく
+  /// パラメータ定義: 削除時のコールバック
+  /// 信頼性レベル: 青信号 - REQ-104に基づく
   final void Function(PresetPhrase)? onDelete;
 
   /// PhraseCategorySectionを作成する
@@ -64,10 +64,10 @@ class PhraseCategorySection extends StatelessWidget {
     this.onDelete,
   });
 
-  /// 【機能概要】: カテゴリ識別子を日本語表示名に変換
-  /// 【実装方針】: switchで3カテゴリをマッピング
-  /// 【テスト対応】: TC-040-018, TC-040-019, TC-040-020
-  /// 🔵 信頼性レベル: 青信号 - REQ-106「日常」「体調」「その他」
+  /// 機能概要: カテゴリ識別子を日本語表示名に変換
+  /// 実装方針: switchで3カテゴリをマッピング
+  /// テスト対応: TC-040-018, TC-040-019, TC-040-020
+  /// 信頼性レベル: 青信号 - REQ-106「日常」「体調」「その他」
   static String getCategoryDisplayName(String category) {
     switch (category) {
       case 'daily':
@@ -86,13 +86,13 @@ class PhraseCategorySection extends StatelessWidget {
     final theme = Theme.of(context);
     final displayName = getCategoryDisplayName(category);
 
-    // 【レイアウト実装】: ヘッダー + アイテムリストの縦並び
-    // 🔵 信頼性レベル: 青信号 - REQ-106に基づく
+    // レイアウト実装: ヘッダー + アイテムリストの縦並び
+    // 信頼性レベル: 青信号 - REQ-106に基づく
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 【カテゴリヘッダー】: カテゴリ名を表示
-        // 🔵 信頼性レベル: 青信号 - TC-040-017の要件
+        // カテゴリヘッダー: カテゴリ名を表示
+        // 信頼性レベル: 青信号 - TC-040-017の要件
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSizes.paddingMedium,
@@ -106,8 +106,8 @@ class PhraseCategorySection extends StatelessWidget {
             ),
           ),
         ),
-        // 【定型文リスト】: カテゴリ内の定型文を表示
-        // 🔵 信頼性レベル: 青信号 - TC-040-021の要件
+        // 定型文リスト: カテゴリ内の定型文を表示
+        // 信頼性レベル: 青信号 - TC-040-021の要件
         ...phrases.map(
           (phrase) => PhraseListItem(
             phrase: phrase,

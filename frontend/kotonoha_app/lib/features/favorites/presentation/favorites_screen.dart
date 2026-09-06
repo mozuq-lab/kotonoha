@@ -2,9 +2,9 @@
 ///
 /// TASK-0064: お気に入り一覧UI実装
 /// TASK-0066: お気に入り追加・削除・並び替え機能
-/// 【TDD Greenフェーズ】: FavoritesScreen本実装
+/// TDD Greenフェーズ: FavoritesScreen本実装
 ///
-/// 信頼性レベル: 🔵 青信号（要件定義書ベース）
+/// 信頼性レベル: 青信号（要件定義書ベース）
 /// 関連要件: FR-064-001〜015, AC-064-001〜008, REQ-703, REQ-704, REQ-2002
 library;
 
@@ -151,7 +151,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
   /// 並び替え用アイテムを構築
   ///
-  /// 【アクセシビリティ対応】: ドラッグ操作だけでなく、タップのみで並べ替えられる
+  /// アクセシビリティ対応: ドラッグ操作だけでなく、タップのみで並べ替えられる
   /// よう「上へ移動」「下へ移動」ボタンを提供する（スワイプ/ドラッグ非依存）。
   Widget _buildReorderableItem(Favorite favorite, int index, int total) {
     final isFirst = index == 0;
@@ -176,7 +176,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 【タップ代替】: 上へ移動ボタン（先頭では無効）
+            // タップ代替: 上へ移動ボタン（先頭では無効）
             Semantics(
               button: true,
               label: '${favorite.content}を上へ移動',
@@ -187,7 +187,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                 tooltip: '上へ移動',
               ),
             ),
-            // 【タップ代替】: 下へ移動ボタン（末尾では無効）
+            // タップ代替: 下へ移動ボタン（末尾では無効）
             Semantics(
               button: true,
               label: '${favorite.content}を下へ移動',
@@ -248,7 +248,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   /// 個別削除確認ダイアログを表示
   ///
   /// REQ-704 / REQ-2002: お気に入り削除時は確認ダイアログを表示しなければ
-  /// ならない（🔵 要件定義書ベース）。「削除」タップで確認後に削除を実行し、
+  /// ならない（ 要件定義書ベース）。「削除」タップで確認後に削除を実行し、
   /// 追加の安全策としてUndo SnackBarも表示する（確認ダイアログ＋Undoの
   /// 二段構え）。
   void _showDeleteDialog(BuildContext context, String id) {
@@ -286,7 +286,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   /// 全削除確認ダイアログを表示
   ///
   /// FR-064-010: 全削除時に確認ダイアログを表示
-  /// 【改善】: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ、
+  /// 改善: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ、
   /// 実行後にUndo SnackBarを表示し誤操作から復元できるようにする。
   void _showDeleteAllDialog(BuildContext context) {
     showDialog<void>(

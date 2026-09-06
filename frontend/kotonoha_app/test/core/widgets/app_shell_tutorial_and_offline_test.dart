@@ -187,7 +187,7 @@ void main() {
   });
 
   group('AppShell 緊急ボタンとチュートリアルの共存（安全要件）', () {
-    // 【回帰テスト】: TutorialOverlayは半透明の不透明なContainerを最前面に
+    // 回帰テスト: TutorialOverlayは半透明の不透明なContainerを最前面に
     // 描画するため、Stack内でAppShellの`content`全体（緊急ボタンを含む）を
     // ラップすると、初回起動時のチュートリアル表示中は緊急ボタンがその下に
     // 隠れてタップ不能になってしまう。緊急機能はいかなる状況でも

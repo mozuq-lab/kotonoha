@@ -5,11 +5,11 @@
 ///
 /// 対象: HistoryItemCard（履歴項目カードウィジェット）
 ///
-/// 【TDD Redフェーズ】: UIが未実装、テストが失敗するはず
+/// TDD Redフェーズ: UIが未実装、テストが失敗するはず
 ///
 /// 信頼性レベル凡例:
-/// - 🔵 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-/// - 🟡 黄信号: 要件定義書から妥当な推測によるテスト
+/// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
+/// - 黄信号: 要件定義書から妥当な推測によるテスト
 library;
 
 import 'package:flutter/material.dart';
@@ -24,7 +24,7 @@ void main() {
     // 2.1 正常系テスト
     // =========================================================================
     group('正常系テスト', () {
-      /// TC-061-023: 履歴項目カードが正しく表示される 🔵
+      /// TC-061-023: 履歴項目カードが正しく表示される
       testWidgets('TC-061-023: HistoryItemCardが履歴内容を正しく表示する',
           (WidgetTester tester) async {
         // Given: 履歴データを作成する
@@ -58,7 +58,7 @@ void main() {
         expect(find.byIcon(Icons.keyboard), findsOneWidget);
       });
 
-      /// TC-061-024: タップ時にコールバックが発火する 🔵
+      /// TC-061-024: タップ時にコールバックが発火する
       testWidgets('TC-061-024: HistoryItemCardタップでonTapコールバックが発火する',
           (WidgetTester tester) async {
         // Given: 履歴データとコールバック関数を準備する
@@ -91,7 +91,7 @@ void main() {
         expect(tapCalled, isTrue);
       });
 
-      /// TC-061-025: 削除ボタンが表示される 🔵
+      /// TC-061-025: 削除ボタンが表示される
       testWidgets('TC-061-025: HistoryItemCardに削除ボタンが表示される',
           (WidgetTester tester) async {
         // Given: 履歴データを作成する
@@ -118,7 +118,7 @@ void main() {
         expect(find.byIcon(Icons.delete), findsOneWidget);
       });
 
-      /// TC-061-026: 削除ボタンタップでコールバックが発火する 🔵
+      /// TC-061-026: 削除ボタンタップでコールバックが発火する
       testWidgets('TC-061-026: 削除ボタンタップでonDeleteコールバックが発火する',
           (WidgetTester tester) async {
         // Given: 履歴データと削除コールバック関数を準備する
@@ -156,7 +156,7 @@ void main() {
     // 2.2 種類別アイコンテスト
     // =========================================================================
     group('種類別アイコンテスト', () {
-      /// TC-061-028: 文字盤入力アイコンが表示される 🟡
+      /// TC-061-028: 文字盤入力アイコンが表示される
       testWidgets('TC-061-028: 文字盤入力の履歴にキーボードアイコンが表示される',
           (WidgetTester tester) async {
         final testHistory = History(
@@ -181,7 +181,7 @@ void main() {
         expect(find.byIcon(Icons.keyboard), findsOneWidget);
       });
 
-      /// TC-061-029: 定型文アイコンが表示される 🟡
+      /// TC-061-029: 定型文アイコンが表示される
       testWidgets('TC-061-029: 定型文の履歴にリストアイコンが表示される',
           (WidgetTester tester) async {
         final testHistory = History(
@@ -206,7 +206,7 @@ void main() {
         expect(find.byIcon(Icons.list), findsOneWidget);
       });
 
-      /// TC-061-030: AI変換アイコンが表示される 🟡
+      /// TC-061-030: AI変換アイコンが表示される
       testWidgets('TC-061-030: AI変換結果の履歴にAIアイコンが表示される',
           (WidgetTester tester) async {
         final testHistory = History(
@@ -231,7 +231,7 @@ void main() {
         expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
       });
 
-      /// TC-061-031: 大ボタンアイコンが表示される 🟡
+      /// TC-061-031: 大ボタンアイコンが表示される
       testWidgets('TC-061-031: 大ボタンの履歴にボタンアイコンが表示される',
           (WidgetTester tester) async {
         final testHistory = History(
@@ -382,7 +382,7 @@ void main() {
     // 2.3 サイズ・アクセシビリティテスト
     // =========================================================================
     group('サイズ・アクセシビリティテスト', () {
-      /// TC-061-032: カードの最小高さが44px以上 🔵
+      /// TC-061-032: カードの最小高さが44px以上
       testWidgets('TC-061-032: HistoryItemCardの最小高さが44px以上',
           (WidgetTester tester) async {
         // Given: 短いテキストの履歴を作成する

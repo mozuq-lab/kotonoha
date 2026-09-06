@@ -1,7 +1,7 @@
 /// Favorite UI constants
 ///
 /// TASK-0064: お気に入り一覧UI実装
-/// 【TDD Greenフェーズ】: UI定数の集約
+/// TDD Greenフェーズ: UI定数の集約
 library;
 
 /// お気に入り画面UI定数クラス
