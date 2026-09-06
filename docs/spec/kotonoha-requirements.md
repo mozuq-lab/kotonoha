@@ -14,6 +14,7 @@
 - API の形: `backend/tests/contract/openapi_baseline.json`（起動中は http://localhost:8000/docs。値域は持たないので enum はコードを読む）
 - 開発者向け: `README.md`
 - 利用者・審査者向け: `docs/privacy-policy.md`、`docs/support.md`
+- 各要件の出典表記 `mvp-requirements-original.md`・`tech-stack.md` は倉庫にある（`docs/archive/spec/`、`docs/archive/`。更新しない）
 
 ## 機能要件（EARS記法）
 
