@@ -1,54 +1,13 @@
 schema: spec-driven
 
-# この context は artifact を作るとき AI に渡される。
-# **ADR の要約を置く場所**（是正計画 §5「OpenSpec を使う条件」条件3）。
-# AGENTS.md の「押し出し」チャネルと同じ役割で、決定を実装の入口へ届ける。
-# **要約であって決定ではない。** 却下案と理由は docs/adr/ にしかない。
 context: |
-  kotonoha（ことのは） — 文字盤コミュニケーション支援アプリ。
-  発話困難な方が「できるだけ少ない操作で、自分の言いたいことを、適切な丁寧さで、
-  安全に伝えられる」ことを目的としたタブレット向けアプリ。
-  対象は脳梗塞・ALS・筋疾患などで発話が困難だが、タップ操作がある程度可能な方。
-
-  技術スタック:
-    frontend  Flutter 3.41.5（fvm 経由）/ Riverpod 3.x / Hive 2.2.3 / go_router
-              TypeAdapter は手書き（hive_generator は使っていない）
-    backend   FastAPI 0.124 / SQLAlchemy 2.x / PostgreSQL 15+
-    IaC       AWS CDK 2.x (TypeScript)
-
-  設計の前提:
-    - オフラインファースト。基本機能（文字盤・定型文・履歴・お気に入り・TTS）は
-      すべてオフラインで動く。AI 変換のみオンライン必須
-    - ユーザーデータは端末内のみ（Hive）。クラウド同期なし・単一端末完結
-    - 性能: TTS 開始 1秒以内 / 文字盤タップ応答 100ms 以内 / AI 変換 平均3秒以内
-    - アクセシビリティ: タップターゲット最小 44px（推奨 60px）、
-      フォント3段階、テーマ3種（高コントラストは WCAG 2.1 AA 相当）
-
-  アーキテクチャ決定（ADR の1行要約。**全文と却下案は docs/adr/ にある**）:
-    ADR-001 backend はステートレス。サーバー側にユーザー状態を持たない
-    ADR-002 レート制限は単一インスタンス前提・memory://。守るのは単一送信元の burst 抑制
-    ADR-003 エラーは型（ErrorCode + SafeError）。自由文字列をログ・レスポンスに載せない
-    ADR-004 設定は不変。Application Factory で組み立て、import 時に資源を作らない
-    ADR-005 frontend は1概念1真実（お気に入りの正は favoriteProvider）。
-            永続化の失敗は利用者に伝える。射影は用途ごとに決めてよい
-    ADR-006 レイヤ依存は import-linter で強制する
-    ADR-007 リリース基準: ストア本公開・初回は AI 変換抜き可・クラッシュ報告のみ。
-            日付は置かない。**条件を足すには ADR 改訂が要る**
-    ADR-008 負債ゲートを機械では作らない（3周・約4,600行かけて収束せず却下）。
-            **同種の仕組みを作る前に必読**
-
-  検査を新しく作るときの規律（docs/verification-principles.md「P1 の処方箋」）:
-    1. 構造を変えて危険を表現不可能にできないか
-    2. 既存の権威（パーサ・型検査・リンタ）の出力を消費できないか
-    3. どちらも無ければ記録して受け入れる。**自作の検出器は選択肢に入れない**
-
-  テストの規律:
-    - 修正の前にテストを書き、赤を確認してから直す
-    - モックは外部 SDK / ネットワーク境界にのみ置く。自分の関数を patch しない
-    - 完全一致アサーションを書かない（永続化スキーマの凍結など、
-      完全一致が仕様である場合はその理由を書く）
-    - 検証は最も外側の境界（描画されたウィジェット・実際の Hive box・
-      プロセスの stdout）で行う
+  kotonoha（ことのは） — 文字盤コミュニケーション支援アプリ。発話が困難な人が、少ない操作で、適切な丁寧さで、
+  安全に伝える。利用者は発話で訂正できず、データは端末内（Hive）にしか無い。
+  技術スタック: frontend Flutter 3.38.1（fvm）/ Riverpod 3.x / Hive 2.2.3（TypeAdapter は手書き）/ go_router。
+  backend FastAPI 0.124 / Python 3.12。ステートレス（DB 無し）。レート制限は limits の MemoryStorage（単一インスタンス）。IaC は未着手。
+  決定は AGENTS.md の ADR 索引を読む（ここに写さない。却下案と理由は docs/adr/ にしかない）。
+  OpenSpec は使い捨て（ADR-010）。change 一式は openspec/changes/ に作り追跡しない。残す仕様はテストか
+  docs/spec/kotonoha-requirements.md へ移してから捨てる。テストの規律は AGENTS.md の規律 5・6、検査を作る前の規律は規律 8。
 
 # Project context (optional)
 # This is shown to AI when creating artifacts.
