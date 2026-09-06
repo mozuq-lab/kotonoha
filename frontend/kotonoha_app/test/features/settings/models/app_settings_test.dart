@@ -69,10 +69,8 @@ void main() {
         // Then: 結果検証: ttsSpeedが変更され、他のフィールドが保持されていることを確認
         // 期待値確認: 不変オブジェクトパターンの正しい実装を保証
         // 品質保証: 設定の一部のみを変更する際に、他の設定が意図せず変更されないことを確認
-        expect(
-            updated.ttsSpeed, TTSSpeed.slow); // 確認内容: ttsSpeedが変更されたことを確認
-        expect(
-            updated.fontSize, FontSize.large); // 確認内容: fontSizeが保持されたことを確認
+        expect(updated.ttsSpeed, TTSSpeed.slow); // 確認内容: ttsSpeedが変更されたことを確認
+        expect(updated.fontSize, FontSize.large); // 確認内容: fontSizeが保持されたことを確認
         expect(updated.theme, AppTheme.dark); // 確認内容: themeが保持されたことを確認
         expect(identical(original, updated),
             isFalse); // 確認内容: 新しいインスタンスが生成されたことを確認
@@ -100,8 +98,7 @@ void main() {
         // Then: 結果検証: ttsSpeedが文字列形式で含まれていることを確認
         // 期待値確認: shared_preferencesへの保存前に、AppSettingsが正しくJSON形式に変換されることを確認
         // 品質保証: 永続化データの形式が仕様通りであることを保証
-        expect(
-            json['tts_speed'], 'fast'); // 確認内容: ttsSpeedが'fast'に変換されたことを確認
+        expect(json['tts_speed'], 'fast'); // 確認内容: ttsSpeedが'fast'に変換されたことを確認
       });
 
       /// TC-049-004: AppSettings.fromJson()でttsSpeedがデシリアライズされる
@@ -130,10 +127,10 @@ void main() {
         // Then: 結果検証: ttsSpeedが正しく復元されたことを確認
         // 期待値確認: アプリ再起動時に、保存されたTTS速度が正しく復元されることを確認
         // 品質保証: データの永続化・復元サイクルが正しく機能することを保証
-        expect(settings.ttsSpeed,
-            TTSSpeed.slow); // 確認内容: ttsSpeedがslowに復元されたことを確認
-        expect(settings.fontSize,
-            FontSize.large); // 確認内容: fontSizeも正しく復元されたことを確認
+        expect(
+            settings.ttsSpeed, TTSSpeed.slow); // 確認内容: ttsSpeedがslowに復元されたことを確認
+        expect(
+            settings.fontSize, FontSize.large); // 確認内容: fontSizeも正しく復元されたことを確認
         expect(settings.theme, AppTheme.dark); // 確認内容: themeも正しく復元されたことを確認
       });
     });
@@ -229,8 +226,7 @@ void main() {
         // 品質保証: 設定の一部のみを変更する際に、他の設定が意図せず変更されないことを確認
         expect(updated.ttsSpeed,
             TTSSpeed.verySlow); // 確認内容: ttsSpeedがverySlowに変更されたことを確認
-        expect(
-            updated.fontSize, FontSize.large); // 確認内容: fontSizeが保持されたことを確認
+        expect(updated.fontSize, FontSize.large); // 確認内容: fontSizeが保持されたことを確認
         expect(updated.theme, AppTheme.dark); // 確認内容: themeが保持されたことを確認
       });
     });
@@ -292,8 +288,8 @@ void main() {
           'theme': 'light',
         };
         final slowSettings = AppSettings.fromJson(slowJson);
-        expect(slowSettings.ttsSpeed,
-            TTSSpeed.slow); // 確認内容: slowが正しく復元されることを確認
+        expect(
+            slowSettings.ttsSpeed, TTSSpeed.slow); // 確認内容: slowが正しく復元されることを確認
 
         // normal: 既存の「普通」設定
         final normalJson = {
@@ -312,8 +308,8 @@ void main() {
           'theme': 'light',
         };
         final fastSettings = AppSettings.fromJson(fastJson);
-        expect(fastSettings.ttsSpeed,
-            TTSSpeed.fast); // 確認内容: fastが正しく復元されることを確認
+        expect(
+            fastSettings.ttsSpeed, TTSSpeed.fast); // 確認内容: fastが正しく復元されることを確認
 
         // 確認ポイント: ユーザーの既存設定が保持される
         // 確認ポイント: 既存ユーザーへの影響を最小化

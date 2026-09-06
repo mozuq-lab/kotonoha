@@ -93,8 +93,7 @@ void main() {
       );
 
       // 結果検証: すべての定型文が表示されることを確認
-      expect(
-          find.text('おはようございます'), findsOneWidget); // 確認内容: 日常カテゴリの定型文が表示
+      expect(find.text('おはようございます'), findsOneWidget); // 確認内容: 日常カテゴリの定型文が表示
       expect(find.text('体調が悪いです'), findsOneWidget); // 確認内容: 体調カテゴリの定型文が表示
       expect(find.text('お願いします'), findsOneWidget); // 確認内容: その他カテゴリの定型文が表示
     });
@@ -132,8 +131,7 @@ void main() {
       );
 
       // 結果検証: お気に入りセクションが表示されることを確認
-      expect(
-          find.text('お気に入り'), findsOneWidget); // 確認内容: お気に入りセクションヘッダーが表示
+      expect(find.text('お気に入り'), findsOneWidget); // 確認内容: お気に入りセクションヘッダーが表示
 
       // 結果検証: お気に入り定型文が表示されることを確認
       expect(find.text('お気に入り定型文1'), findsOneWidget); // 確認内容: お気に入り1が表示
@@ -234,8 +232,7 @@ void main() {
       // 結果検証: コールバックが正しく呼び出されたことを確認
       expect(callCount, equals(1)); // 確認内容: コールバックが1回呼び出された
       expect(selectedPhrase?.id, equals('1')); // 確認内容: 正しい定型文が渡された
-      expect(
-          selectedPhrase?.content, equals('タップテスト')); // 確認内容: contentが一致
+      expect(selectedPhrase?.content, equals('タップテスト')); // 確認内容: contentが一致
     });
 
     // =========================================================================
@@ -267,8 +264,7 @@ void main() {
       );
 
       // 結果検証: ListViewが使用されていることを確認
-      expect(
-          find.byType(ListView), findsOneWidget); // 確認内容: ListViewが使用されている
+      expect(find.byType(ListView), findsOneWidget); // 確認内容: ListViewが使用されている
     });
   });
 
@@ -482,8 +478,7 @@ void main() {
       );
 
       // 結果検証: ウィジェットがエラーなく描画されることを確認
-      expect(find.byType(PhraseListWidget),
-          findsOneWidget); // 確認内容: ライトテーマで描画
+      expect(find.byType(PhraseListWidget), findsOneWidget); // 確認内容: ライトテーマで描画
       expect(find.text('ライトテーマテスト'), findsOneWidget); // 確認内容: テキスト表示
     });
 
@@ -516,8 +511,7 @@ void main() {
       );
 
       // 結果検証: ウィジェットがエラーなく描画されることを確認
-      expect(find.byType(PhraseListWidget),
-          findsOneWidget); // 確認内容: ダークテーマで描画
+      expect(find.byType(PhraseListWidget), findsOneWidget); // 確認内容: ダークテーマで描画
       expect(find.text('ダークテーマテスト'), findsOneWidget); // 確認内容: テキスト表示
     });
 
@@ -550,8 +544,7 @@ void main() {
       );
 
       // 結果検証: ウィジェットがエラーなく描画されることを確認
-      expect(find.byType(PhraseListWidget),
-          findsOneWidget); // 確認内容: 高コントラストで描画
+      expect(find.byType(PhraseListWidget), findsOneWidget); // 確認内容: 高コントラストで描画
       expect(find.text('高コントラストテスト'), findsOneWidget); // 確認内容: テキスト表示
     });
   });

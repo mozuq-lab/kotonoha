@@ -196,8 +196,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // 結果検証: カテゴリが更新されていることを確認
-      expect(savedPhrase?.category,
-          equals('health')); // 確認内容: コールバックのcategory引数
+      expect(
+          savedPhrase?.category, equals('health')); // 確認内容: コールバックのcategory引数
     });
 
     // =========================================================================
@@ -259,10 +259,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // 結果検証: updatedAtが更新されていることを確認
-      expect(savedPhrase?.updatedAt.isAfter(oldDate),
-          isTrue); // 確認内容: updatedAtの値
-      expect(savedPhrase?.createdAt,
-          equals(oldDate)); // 確認内容: createdAtは変更されない
+      expect(
+          savedPhrase?.updatedAt.isAfter(oldDate), isTrue); // 確認内容: updatedAtの値
+      expect(savedPhrase?.createdAt, equals(oldDate)); // 確認内容: createdAtは変更されない
     });
   });
 
@@ -371,8 +370,7 @@ void main() {
 
       // 結果検証: コールバックが呼び出されていないことを確認
       expect(saveCallbackCalled, isFalse); // 確認内容: コールバック未発火
-      expect(find.byType(PhraseEditDialog),
-          findsNothing); // 確認内容: ダイアログが閉じている
+      expect(find.byType(PhraseEditDialog), findsNothing); // 確認内容: ダイアログが閉じている
     });
   });
 }

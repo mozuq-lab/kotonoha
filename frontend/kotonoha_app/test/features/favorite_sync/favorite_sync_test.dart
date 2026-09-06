@@ -63,8 +63,8 @@ void main() {
       final phraseId = presetState.phrases.first.id;
       // 設計変更: Phase 3 / WP-2 / Stage 3b - お気に入りの正は favoriteProvider
       // だけ（ADR-005）。初期状態は「お気に入りが0件」で確認する。
-      expect(container.read(favoriteProvider).favorites,
-          isEmpty); // 確認内容: 初期状態確認
+      expect(
+          container.read(favoriteProvider).favorites, isEmpty); // 確認内容: 初期状態確認
 
       // 実際の処理実行: toggleFavorite()でお気に入りに追加
       // 処理内容: 定型文のお気に入りを切り替え
@@ -73,8 +73,8 @@ void main() {
       // 結果検証: お気に入りの正に、この定型文由来の1件が入ること
       // 期待値確認: REQ-701「定型文をお気に入りとして登録」の実現
       final favoriteState = container.read(favoriteProvider);
-      expect(favoriteState.favorites.length,
-          equals(1)); // 確認内容: Favoriteに追加されている
+      expect(
+          favoriteState.favorites.length, equals(1)); // 確認内容: Favoriteに追加されている
       expect(favoriteState.favorites.first.content,
           equals(content)); // 確認内容: 同じcontentが登録
       expect(favoriteState.favorites.first.sourceId,
@@ -105,8 +105,7 @@ void main() {
 
       // 連動でFavoriteにも追加されていることを確認
       var favoriteState = container.read(favoriteProvider);
-      expect(favoriteState.favorites.length,
-          equals(1)); // 確認内容: Favoriteに追加済み
+      expect(favoriteState.favorites.length, equals(1)); // 確認内容: Favoriteに追加済み
       expect(favoriteState.favorites.first.sourceId,
           equals(phraseId)); // 確認内容: この定型文由来である
 
@@ -116,14 +115,13 @@ void main() {
 
       // 結果検証: 定型文自体は残っていること（お気に入り解除は削除ではない）
       final updatedPresetState = container.read(presetPhraseNotifierProvider);
-      expect(
-          updatedPresetState.phrases.length, equals(1)); // 確認内容: 定型文は消えない
+      expect(updatedPresetState.phrases.length, equals(1)); // 確認内容: 定型文は消えない
 
       // 結果検証: Favoriteからも削除されること
       // 期待値確認: UX一貫性のため、解除時も連動が必要
       favoriteState = container.read(favoriteProvider);
-      expect(favoriteState.favorites.length,
-          equals(0)); // 確認内容: Favoriteから削除されている
+      expect(
+          favoriteState.favorites.length, equals(0)); // 確認内容: Favoriteから削除されている
     });
 
     // =========================================================================
@@ -153,8 +151,7 @@ void main() {
       final favorite = favoriteState.favorites.first;
 
       // NOTE: sourceType, sourceIdフィールドの追加が必要（Greenフェーズで実装）
-      expect(favorite.sourceType,
-          equals('preset_phrase')); // 確認内容: sourceType
+      expect(favorite.sourceType, equals('preset_phrase')); // 確認内容: sourceType
       expect(favorite.sourceId, equals(phraseId)); // 確認内容: sourceId
     });
 
@@ -342,8 +339,7 @@ void main() {
 
       // Favoriteに追加されていることを確認
       var favoriteState = container.read(favoriteProvider);
-      expect(
-          favoriteState.favorites.length, equals(1)); // 確認内容: Favorite追加済み
+      expect(favoriteState.favorites.length, equals(1)); // 確認内容: Favorite追加済み
 
       // 実際の処理実行: 定型文を削除
       await presetPhraseNotifier.deletePhrase(phraseId);
@@ -355,8 +351,7 @@ void main() {
       // 結果検証: Favoriteからも削除されていること
       // 期待値確認: 孤立データを防止するための連動削除
       favoriteState = container.read(favoriteProvider);
-      expect(
-          favoriteState.favorites.length, equals(0)); // 確認内容: Favoriteも削除
+      expect(favoriteState.favorites.length, equals(0)); // 確認内容: Favoriteも削除
     });
 
     // =========================================================================
@@ -424,8 +419,7 @@ void main() {
 
       // 結果検証: sourceType, sourceIdが正しく設定されていること
       final favorite = favoriteState.favorites.first;
-      expect(favorite.sourceType,
-          equals('preset_phrase')); // 確認内容: sourceType
+      expect(favorite.sourceType, equals('preset_phrase')); // 確認内容: sourceType
       expect(favorite.sourceId, equals(sourceId)); // 確認内容: sourceId
       expect(favorite.content, equals(content)); // 確認内容: content
     });

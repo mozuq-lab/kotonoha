@@ -219,8 +219,8 @@ void main() {
 
         // Then: 結果検証: 状態オブジェクトが取得できることを確認
         // 期待値確認: 状態オブジェクトがTTSServiceState型である
-        expect(state,
-            isA<TTSServiceState>()); // 確認内容: 状態がTTSServiceState型であることを確認
+        expect(
+            state, isA<TTSServiceState>()); // 確認内容: 状態がTTSServiceState型であることを確認
         expect(state.state, TTSState.idle); // 確認内容: 初期状態がidleであることを確認
       });
 

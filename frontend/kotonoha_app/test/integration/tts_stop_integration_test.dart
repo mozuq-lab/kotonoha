@@ -85,10 +85,8 @@ void main() {
         // 期待値確認: 冪等性が確保されている
         // 品質保証: アプリはクラッシュしない
         final state = container.read(ttsProvider).state;
-        expect(
-            state,
-            anyOf(TTSState.idle,
-                TTSState.stopped)); // 確認内容: エラーなく状態が維持されることを確認
+        expect(state,
+            anyOf(TTSState.idle, TTSState.stopped)); // 確認内容: エラーなく状態が維持されることを確認
 
         container.dispose();
       });
@@ -172,11 +170,8 @@ void main() {
         final state = container.read(ttsProvider).state;
         expect(
             state,
-            anyOf(
-                TTSState.error,
-                TTSState.stopped,
-                TTSState
-                    .idle)); // 確認内容: 状態がerror/stopped/idleのいずれかであることを確認
+            anyOf(TTSState.error, TTSState.stopped,
+                TTSState.idle)); // 確認内容: 状態がerror/stopped/idleのいずれかであることを確認
 
         container.dispose();
       });
@@ -224,8 +219,7 @@ void main() {
             anyOf(TTSState.stopped, TTSState.idle)); // 確認内容: 正常に停止されたことを確認
 
         // stop()が呼ばれたことを確認
-        verify(() => mockFlutterTts.stop())
-            .called(1); // 確認内容: stop()が呼ばれたことを確認
+        verify(() => mockFlutterTts.stop()).called(1); // 確認内容: stop()が呼ばれたことを確認
 
         container.dispose();
       });
@@ -268,8 +262,7 @@ void main() {
         // 品質保証: 極端な条件下でも安定動作
         expect(container.read(ttsProvider).state,
             TTSState.stopped); // 確認内容: 状態がstoppedになったことを確認
-        verify(() => mockFlutterTts.stop())
-            .called(1); // 確認内容: stop()が呼ばれたことを確認
+        verify(() => mockFlutterTts.stop()).called(1); // 確認内容: stop()が呼ばれたことを確認
 
         container.dispose();
       });
@@ -381,8 +374,7 @@ void main() {
         // Then: 結果検証: TTSService.stop()が呼ばれたことを確認
         // 期待値確認: UI→ロジックの連携確認
         // 品質保証: 各レイヤーが正しく連携すること
-        verify(() => mockFlutterTts.stop())
-            .called(1); // 確認内容: stop()が呼ばれたことを確認
+        verify(() => mockFlutterTts.stop()).called(1); // 確認内容: stop()が呼ばれたことを確認
 
         container.dispose();
       });

@@ -145,8 +145,8 @@ void main() {
 
       // 検証項目: フォントサイズがlargeに変更されていること
       // 青信号: REQ-801の3段階選択要件に基づく
-      expect(settings.fontSize,
-          FontSize.large); // 確認内容: 最大フォントサイズに正しく更新されていることを確認
+      expect(
+          settings.fontSize, FontSize.large); // 確認内容: 最大フォントサイズに正しく更新されていることを確認
 
       // 検証項目: SharedPreferencesに保存されていること
       // 永続化形式: enum indexではなくenum name文字列で保存される

@@ -53,8 +53,7 @@ void main() {
       final state = container.read(presetPhraseNotifierProvider);
       expect(state.phrases.length, equals(1)); // 確認内容: 状態の変化
       expect(state.phrases.first.content, equals(content)); // 確認内容: 内容が正しい
-      expect(state.phrases.first.category,
-          equals(category)); // 確認内容: カテゴリが正しい
+      expect(state.phrases.first.category, equals(category)); // 確認内容: カテゴリが正しい
     });
 
     // =========================================================================
@@ -226,8 +225,7 @@ void main() {
 
       // 結果検証: 削除されていることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(
-          updatedState.phrases.length, equals(0)); // 確認内容: 状態から削除されていること
+      expect(updatedState.phrases.length, equals(0)); // 確認内容: 状態から削除されていること
     });
   });
 
@@ -260,8 +258,8 @@ void main() {
       // 結果検証: お気に入りの正に、この定型文由来の1件が入る
       final favorites = container.read(favoriteProvider).favorites;
       expect(favorites.length, equals(1)); // 確認内容: 1件登録された
-      expect(favorites.first.sourceType,
-          equals('preset_phrase')); // 確認内容: 定型文由来
+      expect(
+          favorites.first.sourceType, equals('preset_phrase')); // 確認内容: 定型文由来
       expect(favorites.first.sourceId, equals(existingId)); // 確認内容: どの定型文か
       expect(favorites.first.content, equals('お気に入りテスト'));
     });
@@ -292,8 +290,8 @@ void main() {
       await notifier.toggleFavorite(existingId);
 
       // 結果検証: お気に入りの正から消えていること
-      expect(container.read(favoriteProvider).favorites,
-          isEmpty); // 確認内容: 解除された
+      expect(
+          container.read(favoriteProvider).favorites, isEmpty); // 確認内容: 解除された
       // 確認内容: 定型文そのものは残っている（解除は削除ではない）
       expect(container.read(presetPhraseNotifierProvider).phrases.length,
           equals(1));
@@ -384,8 +382,7 @@ void main() {
 
       // 結果検証: 50個以上の定型文があることを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(
-          state.phrases.length, greaterThanOrEqualTo(50)); // 確認内容: REQ-107
+      expect(state.phrases.length, greaterThanOrEqualTo(50)); // 確認内容: REQ-107
       expect(state.phrases.length, lessThanOrEqualTo(100)); // 確認内容: 100個以下
     });
 

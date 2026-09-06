@@ -56,10 +56,8 @@ void main() {
 
         // SharedPreferencesに保存されていること
         final prefs = await SharedPreferences.getInstance();
-        expect(
-            prefs.getString('tts_speed'),
-            TTSSpeed
-                .slow.name); // 確認内容: SharedPreferencesに"slow"が保存されていること
+        expect(prefs.getString('tts_speed'),
+            TTSSpeed.slow.name); // 確認内容: SharedPreferencesに"slow"が保存されていること
 
         container.dispose();
       });
@@ -116,10 +114,8 @@ void main() {
 
         // SharedPreferencesに保存されていること
         final prefs = await SharedPreferences.getInstance();
-        expect(
-            prefs.getString('tts_speed'),
-            TTSSpeed
-                .fast.name); // 確認内容: SharedPreferencesに"fast"が保存されていること
+        expect(prefs.getString('tts_speed'),
+            TTSSpeed.fast.name); // 確認内容: SharedPreferencesに"fast"が保存されていること
 
         container.dispose();
       });
@@ -146,17 +142,15 @@ void main() {
 
         // Then: 結果検証: AI丁寧さレベルがcasualに更新されている
         final state = container.read(settingsNotifierProvider);
-        expect(
-            state.requireValue.aiPoliteness,
-            PolitenessLevel
-                .casual); // 確認内容: stateのaiPolitenessがcasualであること
+        expect(state.requireValue.aiPoliteness,
+            PolitenessLevel.casual); // 確認内容: stateのaiPolitenessがcasualであること
 
         // SharedPreferencesに保存されていること
         final prefs = await SharedPreferences.getInstance();
         expect(
             prefs.getString('ai_politeness'),
-            PolitenessLevel.casual
-                .name); // 確認内容: SharedPreferencesに"casual"が保存されていること
+            PolitenessLevel
+                .casual.name); // 確認内容: SharedPreferencesに"casual"が保存されていること
 
         container.dispose();
       });
@@ -208,17 +202,15 @@ void main() {
 
         // Then: 結果検証: AI丁寧さレベルがpoliteに更新されていること
         final state = container.read(settingsNotifierProvider);
-        expect(
-            state.requireValue.aiPoliteness,
-            PolitenessLevel
-                .polite); // 確認内容: stateのaiPolitenessがpoliteであること
+        expect(state.requireValue.aiPoliteness,
+            PolitenessLevel.polite); // 確認内容: stateのaiPolitenessがpoliteであること
 
         // SharedPreferencesに保存されていること
         final prefs = await SharedPreferences.getInstance();
         expect(
             prefs.getString('ai_politeness'),
-            PolitenessLevel.polite
-                .name); // 確認内容: SharedPreferencesに"polite"が保存されていること
+            PolitenessLevel
+                .polite.name); // 確認内容: SharedPreferencesに"polite"が保存されていること
 
         container.dispose();
       });
@@ -300,8 +292,7 @@ void main() {
         final settings = await container.read(settingsNotifierProvider.future);
 
         // Then: 結果検証: TTS速度「fast」が正しく復元されたことを確認
-        expect(
-            settings.ttsSpeed, TTSSpeed.fast); // 確認内容: 保存されたTTS速度が復元されること
+        expect(settings.ttsSpeed, TTSSpeed.fast); // 確認内容: 保存されたTTS速度が復元されること
 
         container.dispose();
       });
@@ -363,16 +354,14 @@ void main() {
         final settings = await container2.read(settingsNotifierProvider.future);
 
         // Then: 結果検証: すべての設定が正しく復元されること
-        expect(settings.ttsSpeed,
-            TTSSpeed.slow); // 確認内容: TTS速度がslowとして復元されること
+        expect(settings.ttsSpeed, TTSSpeed.slow); // 確認内容: TTS速度がslowとして復元されること
         expect(settings.aiPoliteness,
             PolitenessLevel.casual); // 確認内容: AI丁寧さレベルがcasualとして復元されること
 
         // 他の設定（fontSize, theme）も影響を受けないこと
         expect(settings.fontSize,
             FontSize.medium); // 確認内容: フォントサイズがデフォルト値（medium）のまま
-        expect(
-            settings.theme, AppTheme.light); // 確認内容: テーマがデフォルト値（light）のまま
+        expect(settings.theme, AppTheme.light); // 確認内容: テーマがデフォルト値（light）のまま
 
         container2.dispose();
       });
@@ -440,10 +429,8 @@ void main() {
           final settings =
               await container.read(settingsNotifierProvider.future);
           // 不正値の場合はデフォルト値が使用されるべき
-          expect(
-              settings.aiPoliteness,
-              PolitenessLevel
-                  .normal); // 確認内容: 不正値でデフォルト値（normal）にフォールバックすること
+          expect(settings.aiPoliteness,
+              PolitenessLevel.normal); // 確認内容: 不正値でデフォルト値（normal）にフォールバックすること
         } catch (e) {
           // エラーが発生した場合はテスト失敗
           fail('不正値でアプリがクラッシュしました: $e');
@@ -482,8 +469,7 @@ void main() {
 
           // stateが更新されていることを確認
           final state = container.read(settingsNotifierProvider);
-          expect(state.requireValue.ttsSpeed,
-              speed); // 確認内容: 各TTS速度が正しく設定されること
+          expect(state.requireValue.ttsSpeed, speed); // 確認内容: 各TTS速度が正しく設定されること
 
           // SharedPreferencesに保存されていることを確認
           final prefs = await SharedPreferences.getInstance();
@@ -552,8 +538,8 @@ void main() {
         // When: 実際の処理実行: slow → normal → fast → slow の順に変更
         await notifier.setTTSSpeed(TTSSpeed.slow);
         var state = container.read(settingsNotifierProvider);
-        expect(state.requireValue.ttsSpeed,
-            TTSSpeed.slow); // 確認内容: slowが設定されていること
+        expect(
+            state.requireValue.ttsSpeed, TTSSpeed.slow); // 確認内容: slowが設定されていること
 
         await notifier.setTTSSpeed(TTSSpeed.normal);
         state = container.read(settingsNotifierProvider);
@@ -562,8 +548,8 @@ void main() {
 
         await notifier.setTTSSpeed(TTSSpeed.fast);
         state = container.read(settingsNotifierProvider);
-        expect(state.requireValue.ttsSpeed,
-            TTSSpeed.fast); // 確認内容: fastが設定されていること
+        expect(
+            state.requireValue.ttsSpeed, TTSSpeed.fast); // 確認内容: fastが設定されていること
 
         await notifier.setTTSSpeed(TTSSpeed.slow);
         state = container.read(settingsNotifierProvider);
@@ -574,10 +560,8 @@ void main() {
 
         // SharedPreferencesにも最終値が保存されていること
         final prefs = await SharedPreferences.getInstance();
-        expect(
-            prefs.getString('tts_speed'),
-            TTSSpeed
-                .slow.name); // 確認内容: SharedPreferencesに最終値（slow）が保存されていること
+        expect(prefs.getString('tts_speed'),
+            TTSSpeed.slow.name); // 確認内容: SharedPreferencesに最終値（slow）が保存されていること
 
         container.dispose();
       });
@@ -627,8 +611,8 @@ void main() {
         final prefs = await SharedPreferences.getInstance();
         expect(
             prefs.getString('ai_politeness'),
-            PolitenessLevel.casual
-                .name); // 確認内容: SharedPreferencesに最終値（casual）が保存されていること
+            PolitenessLevel
+                .casual.name); // 確認内容: SharedPreferencesに最終値（casual）が保存されていること
 
         container.dispose();
       });
@@ -670,11 +654,10 @@ void main() {
         final settings = await container2.read(settingsNotifierProvider.future);
 
         // Then: 結果検証: すべての設定が正しく復元されること
-        expect(settings.fontSize,
-            FontSize.large); // 確認内容: フォントサイズがlargeとして復元されること
+        expect(
+            settings.fontSize, FontSize.large); // 確認内容: フォントサイズがlargeとして復元されること
         expect(settings.theme, AppTheme.dark); // 確認内容: テーマがdarkとして復元されること
-        expect(settings.ttsSpeed,
-            TTSSpeed.fast); // 確認内容: TTS速度がfastとして復元されること
+        expect(settings.ttsSpeed, TTSSpeed.fast); // 確認内容: TTS速度がfastとして復元されること
         expect(settings.aiPoliteness,
             PolitenessLevel.polite); // 確認内容: AI丁寧さレベルがpoliteとして復元されること
 

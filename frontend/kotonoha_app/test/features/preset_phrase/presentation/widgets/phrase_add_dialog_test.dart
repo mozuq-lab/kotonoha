@@ -292,11 +292,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // 結果検証: エラーメッセージが表示されることを確認
-      expect(
-          find.text('定型文を入力してください'), findsOneWidget); // 確認内容: エラーメッセージの存在
+      expect(find.text('定型文を入力してください'), findsOneWidget); // 確認内容: エラーメッセージの存在
       // ダイアログがまだ表示されていることを確認
-      expect(
-          find.byType(PhraseAddDialog), findsOneWidget); // 確認内容: ダイアログ状態
+      expect(find.byType(PhraseAddDialog), findsOneWidget); // 確認内容: ダイアログ状態
     });
 
     // =========================================================================
@@ -395,8 +393,7 @@ void main() {
       final counterWidget = tester.widget<Text>(counterFinder);
       final errorColor =
           Theme.of(tester.element(counterFinder)).colorScheme.error;
-      expect(
-          counterWidget.style?.color, equals(errorColor)); // 確認内容: テキストの色
+      expect(counterWidget.style?.color, equals(errorColor)); // 確認内容: テキストの色
     });
   });
 

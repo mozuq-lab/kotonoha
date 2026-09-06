@@ -92,19 +92,16 @@ void main() {
         // 品質保証: ユーザーが速度を選択できることを保証
 
         // 検証項目: 「読み上げ速度」ラベルが表示されていること
-        expect(find.text('読み上げ速度'),
-            findsOneWidget); // 確認内容: セクションラベルが表示されていることを確認
+        expect(
+            find.text('読み上げ速度'), findsOneWidget); // 確認内容: セクションラベルが表示されていることを確認
 
         // 検証項目: 4つの選択肢（とても遅い/遅い/普通/速い）が表示されていること
         expect(find.text('とても遅い'),
             findsOneWidget); // 確認内容: 「とても遅い」選択肢が表示されていることを確認
-        expect(
-            find.text('遅い'), findsOneWidget); // 確認内容: 「遅い」選択肢が表示されていることを確認
+        expect(find.text('遅い'), findsOneWidget); // 確認内容: 「遅い」選択肢が表示されていることを確認
         // Note: 「普通」はAI丁寧さレベル設定にも存在するため、findsWidgetsで検証
-        expect(
-            find.text('普通'), findsWidgets); // 確認内容: 「普通」選択肢が表示されていることを確認
-        expect(
-            find.text('速い'), findsOneWidget); // 確認内容: 「速い」選択肢が表示されていることを確認
+        expect(find.text('普通'), findsWidgets); // 確認内容: 「普通」選択肢が表示されていることを確認
+        expect(find.text('速い'), findsOneWidget); // 確認内容: 「速い」選択肢が表示されていることを確認
 
         // 確認ポイント: すべての選択肢が表示されている
         // 確認ポイント: アクセシビリティを考慮した表示（最小タップサイズ44px以上）
@@ -293,8 +290,8 @@ void main() {
 
         // 検証項目: AppSettings.ttsSpeedがslowに更新されたこと
         final state = container.read(settingsNotifierProvider);
-        expect(state.requireValue.ttsSpeed,
-            TTSSpeed.slow); // 確認内容: 状態が更新されたことを確認
+        expect(
+            state.requireValue.ttsSpeed, TTSSpeed.slow); // 確認内容: 状態が更新されたことを確認
 
         // 検証項目: UIが更新され、「遅い」が選択状態になること
         // Note: 実装により検証方法が異なるため、ウィジェットの種類に応じて適切な検証を行う

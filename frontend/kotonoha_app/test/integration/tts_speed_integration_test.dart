@@ -319,8 +319,7 @@ void main() {
           // 復元を確認
           final restoredSettings =
               await container.read(settingsNotifierProvider.future);
-          expect(restoredSettings.ttsSpeed,
-              speed); // 確認内容: 再起動後に正しく復元されたことを確認
+          expect(restoredSettings.ttsSpeed, speed); // 確認内容: 再起動後に正しく復元されたことを確認
 
           container.dispose();
         }

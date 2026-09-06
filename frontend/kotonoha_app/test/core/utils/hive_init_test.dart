@@ -72,8 +72,7 @@ void main() {
 
       // 検証項目: historyボックスがオープンされていること
       // 青信号: REQ-601（履歴自動保存）の基盤
-      expect(
-          Hive.isBoxOpen('history'), true); // 確認内容: historyボックスが正常にオープンされている
+      expect(Hive.isBoxOpen('history'), true); // 確認内容: historyボックスが正常にオープンされている
 
       // 検証項目: presetPhrasesボックスがオープンされていること
       // 青信号: REQ-104（定型文機能）の基盤

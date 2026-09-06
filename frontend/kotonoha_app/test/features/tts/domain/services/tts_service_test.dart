@@ -112,10 +112,9 @@ void main() {
         // Then: 結果検証: setSpeechRate(1.3)が維持され、1.0への上書きが発生しないことを確認
         verify(() => mockFlutterTts.setSpeechRate(1.3))
             .called(1); // 確認内容: 速度が上書きされず維持されたことを確認
-        verifyNever(() => mockFlutterTts
-            .setSpeechRate(1.0)); // 確認内容: 標準速度への上書きが発生していないことを確認
-        expect(service.currentSpeed,
-            TTSSpeed.fast); // 確認内容: 内部状態も維持されていることを確認
+        verifyNever(() =>
+            mockFlutterTts.setSpeechRate(1.0)); // 確認内容: 標準速度への上書きが発生していないことを確認
+        expect(service.currentSpeed, TTSSpeed.fast); // 確認内容: 内部状態も維持されていることを確認
       });
 
       /// TC-048-002: テキストを渡すと読み上げが開始される
@@ -142,8 +141,7 @@ void main() {
         // 期待値確認: speak('こんにちは')が1回呼ばれ、状態がspeakingになる
         verify(() => mockFlutterTts.speak(testText))
             .called(1); // 確認内容: 指定したテキストで読み上げが開始されたことを確認
-        expect(service.state,
-            TTSState.speaking); // 確認内容: 状態がspeakingになったことを確認
+        expect(service.state, TTSState.speaking); // 確認内容: 状態がspeakingになったことを確認
       });
 
       /// TC-048-003: 空文字列の読み上げ試行時は何もしない
@@ -167,8 +165,8 @@ void main() {
 
         // Then: 結果検証: flutter_ttsのspeak()が呼ばれないことを確認
         // 期待値確認: speak()が呼ばれず、状態がidleのまま
-        verifyNever(() =>
-            mockFlutterTts.speak(any())); // 確認内容: speak()が呼ばれていないことを確認
+        verifyNever(
+            () => mockFlutterTts.speak(any())); // 確認内容: speak()が呼ばれていないことを確認
         expect(service.state, TTSState.idle); // 確認内容: 状態がidleのままであることを確認
       });
 
@@ -194,10 +192,8 @@ void main() {
 
         // Then: 結果検証: flutter_ttsのstop()が呼ばれることを確認
         // 期待値確認: stop()が1回呼ばれ、状態がstoppedになる
-        verify(() => mockFlutterTts.stop())
-            .called(1); // 確認内容: stop()が呼ばれたことを確認
-        expect(
-            service.state, TTSState.stopped); // 確認内容: 状態がstoppedになったことを確認
+        verify(() => mockFlutterTts.stop()).called(1); // 確認内容: stop()が呼ばれたことを確認
+        expect(service.state, TTSState.stopped); // 確認内容: 状態がstoppedになったことを確認
       });
 
       /// TC-048-005: 読み上げ速度を「遅い」に設定できる
@@ -223,8 +219,7 @@ void main() {
         // 期待値確認: setSpeechRate(0.7)が呼ばれ、currentSpeedがslowになる
         verify(() => mockFlutterTts.setSpeechRate(0.7))
             .called(1); // 確認内容: 速度0.7が設定されたことを確認
-        expect(service.currentSpeed,
-            TTSSpeed.slow); // 確認内容: 内部状態がslowになったことを確認
+        expect(service.currentSpeed, TTSSpeed.slow); // 確認内容: 内部状態がslowになったことを確認
       });
 
       /// TC-048-006: 読み上げ速度を「普通」に設定できる
@@ -280,8 +275,7 @@ void main() {
         // 期待値確認: setSpeechRate(1.3)が呼ばれ、currentSpeedがfastになる
         verify(() => mockFlutterTts.setSpeechRate(1.3))
             .called(1); // 確認内容: 速度1.3が設定されたことを確認
-        expect(service.currentSpeed,
-            TTSSpeed.fast); // 確認内容: 内部状態がfastになったことを確認
+        expect(service.currentSpeed, TTSSpeed.fast); // 確認内容: 内部状態がfastになったことを確認
       });
 
       /// TTC-VS-002: 読み上げ速度を「とても遅い」に設定できる
@@ -334,16 +328,15 @@ void main() {
         await service.speak('テスト');
 
         // Then: 結果検証: 読み上げ開始直後の状態を確認
-        expect(service.state,
-            TTSState.speaking); // 確認内容: 状態がspeakingになったことを確認
+        expect(service.state, TTSState.speaking); // 確認内容: 状態がspeakingになったことを確認
 
         // When: 実際の処理実行: 読み上げ完了をシミュレート
         // 処理内容: 完了コールバックを発火
         await service.onComplete();
 
         // Then: 結果検証: 完了後の状態を確認
-        expect(service.state,
-            TTSState.completed); // 確認内容: 状態がcompletedになったことを確認
+        expect(
+            service.state, TTSState.completed); // 確認内容: 状態がcompletedになったことを確認
       });
 
       /// TC-048-009: 読み上げ完了後にidleに戻る
@@ -367,8 +360,8 @@ void main() {
         await service.onComplete();
 
         // Then: 結果検証: 完了時にcompletedになることを確認
-        expect(service.state,
-            TTSState.completed); // 確認内容: 一時的にcompletedになることを確認
+        expect(
+            service.state, TTSState.completed); // 確認内容: 一時的にcompletedになることを確認
 
         // When: 実際の処理実行: 時間経過をシミュレート
         // 処理内容: 自動的にidleに戻るのを待つ
@@ -439,8 +432,7 @@ void main() {
         // Then: 結果検証: 初期化が失敗することを確認
         // 期待値確認: falseが返され、エラーメッセージが設定される
         expect(result, isFalse); // 確認内容: 初期化が失敗したことを確認
-        expect(
-            service.errorMessage, isNotNull); // 確認内容: エラーメッセージが設定されたことを確認
+        expect(service.errorMessage, isNotNull); // 確認内容: エラーメッセージが設定されたことを確認
         expect(service.errorMessage,
             contains('初期化')); // 確認内容: エラーメッセージに「初期化」が含まれることを確認
       });
@@ -468,8 +460,7 @@ void main() {
         // Then: 結果検証: 状態がerrorになることを確認
         // 期待値確認: 状態がerrorになり、エラーメッセージが設定される
         expect(service.state, TTSState.error); // 確認内容: 状態がerrorになったことを確認
-        expect(
-            service.errorMessage, isNotNull); // 確認内容: エラーメッセージが設定されたことを確認
+        expect(service.errorMessage, isNotNull); // 確認内容: エラーメッセージが設定されたことを確認
         expect(service.errorMessage,
             contains('読み上げ')); // 確認内容: エラーメッセージに「読み上げ」が含まれることを確認
       });
@@ -492,8 +483,7 @@ void main() {
         // 処理内容: idle状態でstop()を呼び出す
         // Then: 結果検証: エラーが発生しないことを確認
         // 期待値確認: 例外がスローされず、状態がidleのまま
-        expect(
-            () => service.stop(), returnsNormally); // 確認内容: エラーが発生しないことを確認
+        expect(() => service.stop(), returnsNormally); // 確認内容: エラーが発生しないことを確認
         expect(service.state, TTSState.idle); // 確認内容: 状態がidleのままであることを確認
       });
 
@@ -549,8 +539,7 @@ void main() {
         // 期待値確認: speak('あ')が呼ばれ、状態がspeakingになる
         verify(() => mockFlutterTts.speak(testText))
             .called(1); // 確認内容: 1文字でも読み上げが開始されたことを確認
-        expect(service.state,
-            TTSState.speaking); // 確認内容: 状態がspeakingになったことを確認
+        expect(service.state, TTSState.speaking); // 確認内容: 状態がspeakingになったことを確認
       });
     });
   });

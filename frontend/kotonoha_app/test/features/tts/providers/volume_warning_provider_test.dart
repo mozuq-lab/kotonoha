@@ -68,8 +68,8 @@ void main() {
         final state = container.read(volumeWarningProvider);
 
         // Then: 結果検証: showWarningがfalseであることを確認
-        expect(state.showWarning,
-            isFalse); // 確認内容: 初期状態でshowWarningがfalseであることを確認
+        expect(
+            state.showWarning, isFalse); // 確認内容: 初期状態でshowWarningがfalseであることを確認
       });
 
       /// TC-051-006: 音量0でcheckVolumeを呼ぶとshowWarningがtrueになる

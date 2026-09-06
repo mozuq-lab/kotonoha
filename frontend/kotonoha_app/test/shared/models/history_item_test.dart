@@ -187,8 +187,7 @@ void main() {
       await historyBox.put(item.id, item);
 
       // 削除前の確認
-      expect(
-          historyBox.get('uuid-001'), isNotNull); // 確認内容: 削除前にデータが存在することを確認
+      expect(historyBox.get('uuid-001'), isNotNull); // 確認内容: 削除前にデータが存在することを確認
 
       // When（実行フェーズ）
       // 実際の処理実行: historyBox.delete()で削除

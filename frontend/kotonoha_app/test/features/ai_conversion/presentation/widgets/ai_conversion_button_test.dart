@@ -61,8 +61,8 @@ void main() {
         // Then: 結果検証: 「AI変換」ボタンが表示されていることを確認
         // 期待値確認: REQ-901「AI変換機能」に基づく
         // 品質保証: ユーザーがAI変換を開始できることを保証
-        expect(find.text('AI変換'),
-            findsOneWidget); // 確認内容: 「AI変換」ラベルが表示されていることを確認
+        expect(
+            find.text('AI変換'), findsOneWidget); // 確認内容: 「AI変換」ラベルが表示されていることを確認
 
         container.dispose();
       });
@@ -97,8 +97,7 @@ void main() {
         // Then: 結果検証: 3段階の丁寧さレベルが表示されていることを確認
         // 期待値確認: REQ-903「丁寧さレベル3段階」に基づく
         // 品質保証: ユーザーが丁寧さレベルを認識できることを保証
-        expect(find.text('カジュアル'),
-            findsOneWidget); // 確認内容: カジュアルオプションが表示されている
+        expect(find.text('カジュアル'), findsOneWidget); // 確認内容: カジュアルオプションが表示されている
         expect(find.text('普通'), findsOneWidget); // 確認内容: 普通オプションが表示されている
         expect(find.text('丁寧'), findsOneWidget); // 確認内容: 丁寧オプションが表示されている
       });
@@ -261,8 +260,8 @@ void main() {
 
         // Then: 結果検証: 変換結果テキストが表示されていることを確認
         // 期待値確認: REQ-902「変換結果の自動表示」に基づく
-        expect(find.text(convertedText),
-            findsOneWidget); // 確認内容: 変換結果テキストが表示されている
+        expect(
+            find.text(convertedText), findsOneWidget); // 確認内容: 変換結果テキストが表示されている
 
         container.dispose();
       });
@@ -452,8 +451,7 @@ void main() {
         // 期待値確認: REQ-5002から推測
         final button =
             tester.widget<ElevatedButton>(find.byType(ElevatedButton));
-        expect(
-            button.onPressed, isNull); // 確認内容: onPressedがnull（無効状態）でタップ無視
+        expect(button.onPressed, isNull); // 確認内容: onPressedがnull（無効状態）でタップ無視
       });
 
       /// TC-068-011: ネットワーク状態変化でボタン状態が更新される
@@ -554,8 +552,7 @@ void main() {
         // 期待値確認: API仕様の最小文字数2文字
         final button =
             tester.widget<ElevatedButton>(find.byType(ElevatedButton));
-        expect(
-            button.onPressed, isNotNull); // 確認内容: onPressedがnon-null（有効状態）
+        expect(button.onPressed, isNotNull); // 確認内容: onPressedがnon-null（有効状態）
 
         container.dispose();
       });
@@ -597,8 +594,7 @@ void main() {
 
         // Then: 結果検証: ボタンサイズが44px以上であることを確認
         final buttonBox = tester.getRect(find.byType(ElevatedButton));
-        expect(buttonBox.height,
-            greaterThanOrEqualTo(44.0)); // 確認内容: 高さが44px以上
+        expect(buttonBox.height, greaterThanOrEqualTo(44.0)); // 確認内容: 高さが44px以上
 
         container.dispose();
       });

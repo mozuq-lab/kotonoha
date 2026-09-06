@@ -61,8 +61,7 @@ void main() {
         // 品質保証: enum拡張の完全性確認
 
         // verySlow: 0.5倍速（新規追加）
-        expect(
-            TTSSpeed.verySlow.value, 0.5); // 確認内容: verySlowの値が0.5であることを確認
+        expect(TTSSpeed.verySlow.value, 0.5); // 確認内容: verySlowの値が0.5であることを確認
 
         // slow: 0.7倍速（既存）
         expect(TTSSpeed.slow.value, 0.7); // 確認内容: slowの値が0.7であることを確認
@@ -124,8 +123,7 @@ void main() {
           // iOS範囲内（0.0〜1.0）- verySlow(0.5), slow(0.7), normal(1.0)はiOS範囲内
           // fast(1.3)はiOS範囲外だが、flutter_ttsが自動で調整する
           expect(value >= 0.0, isTrue,
-              reason:
-                  '${speed.name}の値($value)が最小値0.0以上であること'); // 確認内容: 最小値以上
+              reason: '${speed.name}の値($value)が最小値0.0以上であること'); // 確認内容: 最小値以上
 
           // Android範囲内（0.0〜2.0）
           expect(value <= 2.0, isTrue,

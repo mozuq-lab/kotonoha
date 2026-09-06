@@ -206,8 +206,7 @@ void main() {
       await repository.delete('delete-test');
 
       // Then（検証フェーズ）
-      expect(
-          await repository.getById('delete-test'), isNull); // 確認内容: 削除されている
+      expect(await repository.getById('delete-test'), isNull); // 確認内容: 削除されている
     });
 
     // =========================================================================
@@ -647,8 +646,7 @@ void main() {
 
       // Then（検証フェーズ）
       expect(histories.length, 50);
-      expect(
-          stopwatch.elapsedMilliseconds, lessThan(1000)); // 確認内容: 1秒以内に読み込み
+      expect(stopwatch.elapsedMilliseconds, lessThan(1000)); // 確認内容: 1秒以内に読み込み
     });
   });
 

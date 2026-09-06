@@ -253,8 +253,7 @@ void main() {
       await presetBox.put(preset.id, preset);
 
       // 削除前の確認
-      expect(
-          presetBox.get('preset-001'), isNotNull); // 確認内容: 削除前にデータが存在することを確認
+      expect(presetBox.get('preset-001'), isNotNull); // 確認内容: 削除前にデータが存在することを確認
 
       // When（実行フェーズ）
       // 実際の処理実行: presetBox.delete()で削除

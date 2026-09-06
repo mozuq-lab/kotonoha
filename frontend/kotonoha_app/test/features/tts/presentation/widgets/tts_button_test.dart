@@ -98,8 +98,8 @@ void main() {
         // Then: 結果検証: 「読み上げ」ボタンが表示されていることを確認
         // 期待値確認: REQ-402「読み上げボタンを明確に表示」に基づく
         // 品質保証: ユーザーが読み上げを開始できることを保証
-        expect(find.text('読み上げ'),
-            findsOneWidget); // 確認内容: 「読み上げ」ラベルが表示されていることを確認
+        expect(
+            find.text('読み上げ'), findsOneWidget); // 確認内容: 「読み上げ」ラベルが表示されていることを確認
 
         container.dispose();
       });
@@ -149,8 +149,7 @@ void main() {
         // Then: 結果検証: 「停止」ボタンが表示されていることを確認
         // 期待値確認: REQ-3003「読み上げ実行中状態では停止ボタンとして表示」に基づく
         // 品質保証: ユーザーが読み上げを中断できることを保証
-        expect(
-            find.text('停止'), findsOneWidget); // 確認内容: 「停止」ラベルが表示されていることを確認
+        expect(find.text('停止'), findsOneWidget); // 確認内容: 「停止」ラベルが表示されていることを確認
 
         container.dispose();
       });
@@ -194,8 +193,8 @@ void main() {
         // Then: 結果検証: idle状態（完了後）で「読み上げ」ボタンが表示されていることを確認
         // 期待値確認: 完了後に再び読み上げ可能な状態になること
         // 品質保証: 再度読み上げが可能なことを保証
-        expect(find.text('読み上げ'),
-            findsOneWidget); // 確認内容: 「読み上げ」ラベルが表示されていることを確認
+        expect(
+            find.text('読み上げ'), findsOneWidget); // 確認内容: 「読み上げ」ラベルが表示されていることを確認
 
         container.dispose();
       });
@@ -292,8 +291,7 @@ void main() {
         // 期待値確認: アクセシビリティ対応
         // 品質保証: スクリーンリーダーが適切に読み上げられること
         final semantics = tester.getSemantics(find.byType(TTSButton));
-        expect(semantics.label,
-            isNotEmpty); // 確認内容: Semanticsラベルが設定されていることを確認
+        expect(semantics.label, isNotEmpty); // 確認内容: Semanticsラベルが設定されていることを確認
 
         container.dispose();
       });
@@ -413,8 +411,7 @@ void main() {
         // Then: 結果検証: TTS停止が呼ばれたことを確認
         // 期待値確認: REQ-403「読み上げ中の停止・中断機能」に基づく
         // 品質保証: 読み上げが即座に停止すること
-        verify(() => mockFlutterTts.stop())
-            .called(1); // 確認内容: stop()が呼ばれたことを確認
+        verify(() => mockFlutterTts.stop()).called(1); // 確認内容: stop()が呼ばれたことを確認
         expect(container.read(ttsProvider).state,
             TTSState.stopped); // 確認内容: 状態がstoppedになったことを確認
 

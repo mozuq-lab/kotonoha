@@ -165,8 +165,7 @@ void main() {
         // Then: 結果検証: 速度が「速い」に復元されたことを確認
         // 期待値確認: REQ-5003（設定永続化）に基づく
         // 品質保証: アプリ再起動後も設定が失われないことを確認
-        expect(settings.ttsSpeed,
-            TTSSpeed.fast); // 確認内容: 保存された速度が正しく復元されたことを確認
+        expect(settings.ttsSpeed, TTSSpeed.fast); // 確認内容: 保存された速度が正しく復元されたことを確認
       });
 
       /// TTS-SPEED-RESTORE-FIX: アプリ再起動後、保存された速度が実際のTTSエンジンに反映される
@@ -231,8 +230,8 @@ void main() {
         // 期待値確認: setSpeechRate(1.0)への上書きが発生せず、最終的な速度が
         // fast(1.3)であること
         expect(settings.ttsSpeed, TTSSpeed.fast);
-        verify(() => mockFlutterTts.setSpeechRate(1.3)).called(
-            greaterThanOrEqualTo(1)); // 確認内容: 保存済み速度がTTSエンジンに反映されたこと
+        verify(() => mockFlutterTts.setSpeechRate(1.3))
+            .called(greaterThanOrEqualTo(1)); // 確認内容: 保存済み速度がTTSエンジンに反映されたこと
         expect(
           service.currentSpeed,
           TTSSpeed.fast,
@@ -336,8 +335,8 @@ void main() {
         final state = container.read(settingsNotifierProvider);
         final settings = state.requireValue;
 
-        expect(settings.ttsSpeed,
-            TTSSpeed.fast); // 確認内容: 状態更新は成功していることを確認（楽観的更新）
+        expect(
+            settings.ttsSpeed, TTSSpeed.fast); // 確認内容: 状態更新は成功していることを確認（楽観的更新）
       });
 
       /// TC-049-013: TTS初期化前に速度を設定してもエラーにならない
