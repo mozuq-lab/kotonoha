@@ -10,7 +10,7 @@ library;
 /// 永続化の対象領域
 ///
 /// Hive の box に1対1で対応する。box を増やすときはここにも追加すること
-/// （AGENTS.md「負債を作る行為には理由が要る」— 永続化面の追加）。
+/// （AGENTS.md 規律 8 — 永続化面の追加）。
 enum PersistedArea {
   /// 発話履歴（box: history）
   history,
