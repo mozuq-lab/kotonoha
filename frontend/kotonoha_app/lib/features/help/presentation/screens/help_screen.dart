@@ -1,11 +1,6 @@
 /// ヘルプ画面ウィジェット
-///
-/// TASK-0075: ヘルプ画面・初回チュートリアル実装
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件:
-/// - REQ-3001: 初回起動時の簡易チュートリアル/ヘルプ画面表示
-/// - NFR-205: ガイド付きアクセス/画面ピン留めの設定方法説明
+/// 初回起動時の簡易チュートリアル/ヘルプ画面表示
+/// ガイド付きアクセス/画面ピン留めの設定方法説明
 library;
 
 import 'package:flutter/material.dart';
@@ -16,21 +11,18 @@ import 'package:kotonoha_app/features/help/providers/tutorial_provider.dart';
 import '../widgets/help_section_widget.dart';
 
 /// ヘルプ画面ウィジェット
-///
 /// アプリケーションの使い方を説明するヘルプ画面。
 /// 基本操作、機能説明、誤操作防止設定の説明を提供する。
-///
-/// 実装機能:
-/// - 基本操作の説明（文字盤、定型文、TTS）
-/// - 緊急ボタンの使い方
-/// - iOS/Androidの誤操作防止設定方法（NFR-205）
-/// - チュートリアルの再表示導線（fix/improvement-p0-p2で配線）
-///
-/// 実装要件:
-/// - FR-003: ルートパス「/help」でこの画面を表示
-/// - FR-005: ConsumerWidget、constコンストラクタ、keyパラメータ
-/// - NFR-205: ガイド付きアクセス/画面ピン留め設定説明
-/// - REQ-3001: 初回チュートリアルをいつでも再表示できる導線
+/// 実装機能
+/// 基本操作の説明（文字盤、定型文、TTS）
+/// 緊急ボタンの使い方
+/// iOS/Androidの誤操作防止設定方法
+/// チュートリアルの再表示導線（fix/improvement-p0-p2で配線）
+/// 実装要件
+/// ルートパス「/help」でこの画面を表示
+/// ConsumerWidget、constコンストラクタ、keyパラメータ
+/// ガイド付きアクセス/画面ピン留め設定説明
+/// 初回チュートリアルをいつでも再表示できる導線
 class HelpScreen extends ConsumerWidget {
   /// ヘルプ画面を作成する。
   const HelpScreen({super.key});
@@ -115,7 +107,7 @@ class HelpScreen extends ConsumerWidget {
               ],
             ),
 
-            // 誤操作防止設定セクション: NFR-205
+            // 誤操作防止設定セクション
             const HelpSectionWidget(
               title: '誤操作防止の設定',
               icon: Icons.security,
@@ -160,7 +152,7 @@ class HelpScreen extends ConsumerWidget {
               ],
             ),
 
-            // チュートリアルセクション: REQ-3001
+            // チュートリアルセクション
             // 初回起動時に表示されるチュートリアルを、いつでも再度見られる導線。
             HelpSectionWidget(
               title: 'チュートリアル',
@@ -188,7 +180,6 @@ class HelpScreen extends ConsumerWidget {
   }
 
   /// チュートリアルを未完了状態に戻し、ホーム画面へ戻って再表示させる。
-  ///
   /// チュートリアル表示自体はAppShellがtutorialProviderの状態を監視して
   /// 行うため、ここではリセットして前の画面（多くの場合ホーム画面）へ
   /// 戻るだけでよい。
@@ -201,7 +192,6 @@ class HelpScreen extends ConsumerWidget {
 }
 
 /// ヘルプ項目ウィジェット
-///
 /// タイトルと説明文を表示するシンプルなヘルプ項目。
 class _HelpItem extends StatelessWidget {
   /// タイトル

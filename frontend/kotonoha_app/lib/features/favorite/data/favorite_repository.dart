@@ -5,21 +5,17 @@ import 'package:kotonoha_app/shared/models/favorite_item.dart';
 /// Repository定義: お気に入りのHive永続化を担当するRepository
 /// 実装内容: FavoriteItem のCRUD操作をHive Boxに委譲
 /// 設計根拠: Repositoryパターンによりデータアクセス層を抽象化
-/// 信頼性レベル: 青信号 - architecture.mdのローカルストレージ設計に基づく
-///
-/// TDD Greenフェーズ: テストを通す実装
-/// 主要機能:
-/// - loadAll(): 全お気に入りをdisplayOrder昇順で取得
-/// - save(): お気に入りを保存
-/// - getById(): IDでお気に入りを取得（存在しない場合はnull）
-/// - delete(): お気に入りを削除（存在しないIDでも例外なし）
-/// - deleteAll(): 全お気に入りを削除
-/// - updateDisplayOrder(): 並び順を単一更新
-/// - reorderFavorites(): 並び順を一括更新
+/// 主要機能
+/// loadAll: 全お気に入りをdisplayOrder昇順で取得
+/// save: お気に入りを保存
+/// getById: IDでお気に入りを取得（存在しない場合はnull）
+/// delete: お気に入りを削除（存在しないIDでも例外なし）
+/// deleteAll: 全お気に入りを削除
+/// updateDisplayOrder: 並び順を単一更新
+/// reorderFavorites: 並び順を一括更新
 class FavoriteRepository {
   /// フィールド定義: Hive Box（お気に入り保存用）
   /// 実装内容: コンストラクタで注入されたBoxを保持
-  /// 信頼性レベル: 青信号 - TASK-0054で初期化済み
   final PersistedBox<FavoriteItem> _box;
 
   /// コンストラクタ: Repository生成
@@ -37,21 +33,18 @@ class FavoriteRepository {
   /// 実装内容: Hive Boxから全データを取得し、displayOrderの昇順でソート
   /// 戻り値: `Future<List<FavoriteItem>>`（displayOrder昇順）
   /// 二次ソート: displayOrder同値の場合、createdAtの降順（新しい順）
-  /// 信頼性レベル: 青信号 - REQ-701, FR-065-002, AC-065-004
   Future<List<FavoriteItem>> loadAll() async {
     return _getSortedFavorites();
   }
 
   /// メソッド定義: 全お気に入りを同期的に読み込み（displayOrder昇順）
-  /// 実装内容: build()等の同期コンテキストから利用するためのバージョン
+  /// 実装内容: build等の同期コンテキストから利用するためのバージョン
   /// 戻り値: `List<FavoriteItem>`（displayOrder昇順）
-  /// 信頼性レベル: 青信号 - Notifier.build()での初期化に使用
   List<FavoriteItem> loadAllSortedSync() => _getSortedFavorites();
 
   /// メソッド定義: お気に入りを保存
   /// 実装内容: IDをキーとしてHive Boxに保存
   /// 引数: favorite - 保存するお気に入り
-  /// 信頼性レベル: 青信号 - REQ-701, FR-065-002
   Future<void> save(FavoriteItem favorite) async {
     await _box.put(favorite.id, favorite);
   }
@@ -60,7 +53,6 @@ class FavoriteRepository {
   /// 実装内容: IDをキーとしてHive Boxから取得
   /// 引数: id - 取得するお気に入りのID
   /// 戻り値: FavoriteItem?（存在しない場合はnull）
-  /// 信頼性レベル: 青信号 - FR-065-002, AC-065-012
   Future<FavoriteItem?> getById(String id) async {
     return _box.get(id);
   }
@@ -68,25 +60,22 @@ class FavoriteRepository {
   /// メソッド定義: お気に入りを削除
   /// 実装内容: IDをキーとしてHive Boxから削除
   /// 引数: id - 削除するお気に入りのID
-  /// エッジケース: 存在しないIDでも例外を投げない（EDGE-065-002）
-  /// 信頼性レベル: 青信号 - REQ-704, FR-065-002, AC-065-011
+  /// エッジケース: 存在しないIDでも例外を投げない
   Future<void> delete(String id) async {
     await _box.delete(id);
   }
 
   /// メソッド定義: 全お気に入りを削除
   /// 実装内容: Hive Boxの全データをクリア
-  /// 信頼性レベル: 青信号 - REQ-704, FR-065-002, AC-065-003
   Future<void> deleteAll() async {
     await _box.clear();
   }
 
   /// メソッド定義: 並び順を単一更新
   /// 実装内容: 特定のお気に入りのdisplayOrderを更新
-  /// 引数:
-  ///   - id: 更新するお気に入りのID
-  ///   - newOrder: 新しいdisplayOrder値
-  /// 信頼性レベル: 青信号 - REQ-703, FR-065-003, AC-065-005
+  /// 引数
+  /// id: 更新するお気に入りのID
+  /// newOrder: 新しいdisplayOrder値
   Future<void> updateDisplayOrder(String id, int newOrder) async {
     final favorite = await getById(id);
     if (favorite != null) {
@@ -98,7 +87,6 @@ class FavoriteRepository {
   /// メソッド定義: 並び順を一括更新
   /// 実装内容: 複数のお気に入りのdisplayOrderを一括更新
   /// 引数: orderedIds - 新しい順序でのIDリスト
-  /// 信頼性レベル: 青信号 - REQ-703, FR-065-003, AC-065-006
   Future<void> reorderFavorites(List<String> orderedIds) async {
     for (int i = 0; i < orderedIds.length; i++) {
       final id = orderedIds[i];
@@ -110,7 +98,6 @@ class FavoriteRepository {
   /// 実装内容: Hive Boxから全データを取得し、displayOrderの昇順でソート
   /// 二次ソート: displayOrder同値の場合、createdAtの降順（新しい順）
   /// 戻り値: `List<FavoriteItem>`（displayOrder昇順）
-  /// 信頼性レベル: 青信号 - FR-065-003, EDGE-065-005
   List<FavoriteItem> _getSortedFavorites() {
     final favorites = _box.values.toList();
     // displayOrderの昇順でソート、同値の場合はcreatedAtの降順（新しい順）

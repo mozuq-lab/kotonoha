@@ -1,11 +1,4 @@
 /// FavoriteItemCard ウィジェット
-///
-/// TASK-0064: お気に入り一覧UI実装
-/// TASK-0066: お気に入り追加・削除・並び替え機能
-/// TDD Refactorフェーズ: FavoriteItemCardウィジェット実装
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件: FR-064-002, FR-064-003, NFR-064-005, REQ-704
 library;
 
 import 'package:flutter/material.dart';
@@ -15,17 +8,14 @@ import '../constants/favorite_ui_constants.dart';
 import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
 
 /// お気に入り項目カードウィジェット
-///
 /// 各お気に入り項目を表示するカード形式のウィジェット。
-///
-/// 表示内容:
-/// - お気に入りテキスト
-/// - 作成日時（MM/DD HH:mm形式）
-/// - 削除ボタン
-///
-/// アクセシビリティ要件:
-/// - タップターゲット最小44px以上
-/// - スクリーンリーダー対応（Semantics）
+/// 表示内容
+/// お気に入りテキスト
+/// 作成日時（MM/DD HH:mm形式）
+/// 削除ボタン
+/// アクセシビリティ要件
+/// タップターゲット最小44px以上
+/// スクリーンリーダー対応（Semantics）
 class FavoriteItemCard extends StatelessWidget {
   /// コンストラクタ
   const FavoriteItemCard({
@@ -103,7 +93,7 @@ class FavoriteItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // 入力欄へボタン: お気に入りの内容を入力欄に入れて編集する動線（REQ-102）
+                // 入力欄へボタン: お気に入りの内容を入力欄に入れて編集する動線
                 SendToInputButton(text: favorite.content),
                 // 削除ボタン
                 IconButton(
@@ -124,8 +114,7 @@ class FavoriteItemCard extends StatelessWidget {
   }
 
   /// 日時を「MM/DD HH:mm」形式にフォーマット
-  ///
-  /// NFR-064-006: 日時フォーマット要件
+  /// 日時フォーマット要件
   String _formatDateTime(DateTime dateTime) {
     return _dateFormatter.format(dateTime);
   }

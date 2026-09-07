@@ -1,11 +1,4 @@
 /// Favorites screen widget
-///
-/// TASK-0064: お気に入り一覧UI実装
-/// TASK-0066: お気に入り追加・削除・並び替え機能
-/// TDD Greenフェーズ: FavoritesScreen本実装
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件: FR-064-001〜015, AC-064-001〜008, REQ-703, REQ-704, REQ-2002
 library;
 
 import 'package:flutter/material.dart';
@@ -20,25 +13,22 @@ import 'constants/favorite_ui_constants.dart';
 import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 
 /// お気に入り画面ウィジェット
-///
 /// お気に入り登録したテキストを表示・管理する画面。
-///
-/// 機能:
-/// - お気に入り一覧表示（displayOrder昇順）
-/// - お気に入りタップで再読み上げ
-/// - 個別削除機能（確認ダイアログ＋Undo）
-/// - 全削除機能（確認ダイアログ＋Undo）
-/// - 空状態表示
-/// - 並び替え機能（REQ-703）
-///
-/// 実装要件:
-/// - FR-064-001: お気に入りをdisplayOrder昇順に表示
-/// - FR-064-006: タップで再読み上げ
-/// - FR-064-007〜010: 削除機能（個別・全削除）
-/// - NFR-064-001: 100件を1秒以内に表示
-/// - NFR-064-005: タップターゲット44px以上
-/// - REQ-703: 並び替え機能
-/// - REQ-704 / REQ-2002: 個別削除時の確認ダイアログ表示
+/// 機能
+/// お気に入り一覧表示（displayOrder昇順）
+/// お気に入りタップで再読み上げ
+/// 個別削除機能（確認ダイアログ＋Undo）
+/// 全削除機能（確認ダイアログ＋Undo）
+/// 空状態表示
+/// 並び替え機能
+/// 実装要件
+/// お気に入りをdisplayOrder昇順に表示
+/// タップで再読み上げ
+/// 010: 削除機能（個別・全削除）
+/// 100件を1秒以内に表示
+/// タップターゲット44px以上
+/// 並び替え機能
+/// 個別削除時の確認ダイアログ表示
 class FavoritesScreen extends ConsumerStatefulWidget {
   /// お気に入り画面を作成する。
   const FavoritesScreen({super.key});
@@ -57,7 +47,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     final favoriteState = ref.watch(favoriteProvider);
     final favorites = favoriteState.favorites;
 
-    // displayOrder昇順にソート（FR-064-001, FR-064-011）
+    // displayOrder昇順にソート
     final sortedFavorites = List<Favorite>.from(favorites)
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
@@ -150,7 +140,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   }
 
   /// 並び替え用アイテムを構築
-  ///
   /// アクセシビリティ対応: ドラッグ操作だけでなく、タップのみで並べ替えられる
   /// よう「上へ移動」「下へ移動」ボタンを提供する（スワイプ/ドラッグ非依存）。
   Widget _buildReorderableItem(Favorite favorite, int index, int total) {
@@ -232,9 +221,8 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   }
 
   /// お気に入り項目タップ時の処理
-  ///
-  /// FR-064-006: お気に入り項目をタップすると再読み上げを実行
-  /// FR-064-013: 空文字列の読み上げを防止
+  /// お気に入り項目をタップすると再読み上げを実行
+  /// 空文字列の読み上げを防止
   void _onFavoriteTap(String content) {
     // 空文字列の場合は読み上げを実行しない
     if (content.isEmpty) {
@@ -246,15 +234,13 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   }
 
   /// 個別削除確認ダイアログを表示
-  ///
-  /// REQ-704 / REQ-2002: お気に入り削除時は確認ダイアログを表示しなければ
-  /// ならない（ 要件定義書ベース）。「削除」タップで確認後に削除を実行し、
+  /// お気に入り削除時は確認ダイアログを表示しなければ
   /// 追加の安全策としてUndo SnackBarも表示する（確認ダイアログ＋Undoの
   /// 二段構え）。
   void _showDeleteDialog(BuildContext context, String id) {
     showDialog<void>(
       context: context,
-      barrierDismissible: false, // REQ-5002: 誤操作防止
+      barrierDismissible: false, // 誤操作防止
       builder: (BuildContext dialogContext) {
         return _ConfirmDialog(
           title: FavoriteUIConstants.confirmDialogTitle,
@@ -270,7 +256,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   }
 
   /// 個別削除処理（確認ダイアログの「削除」タップ後に実行）+ Undo
-  ///
   /// 確認ダイアログ通過後に削除を実行し、さらにSnackBarの「元に戻す」
   /// 操作（8秒間）でも復元できるようにする（誤操作からの二重の安全策）。
   void _deleteFavoriteWithUndo(BuildContext context, String id) {
@@ -284,14 +269,13 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   }
 
   /// 全削除確認ダイアログを表示
-  ///
-  /// FR-064-010: 全削除時に確認ダイアログを表示
-  /// 改善: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ、
+  /// 全削除時に確認ダイアログを表示
+  /// 改善: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ
   /// 実行後にUndo SnackBarを表示し誤操作から復元できるようにする。
   void _showDeleteAllDialog(BuildContext context) {
     showDialog<void>(
       context: context,
-      barrierDismissible: false, // FR-064-010: 誤操作防止
+      barrierDismissible: false, // 誤操作防止
       builder: (BuildContext dialogContext) {
         return _ConfirmDialog(
           title: FavoriteUIConstants.confirmDialogTitle,
@@ -314,7 +298,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 }
 
 /// 確認ダイアログウィジェット（内部使用）
-///
 /// 重複コード削減のため、共通の確認ダイアログを定義。
 class _ConfirmDialog extends StatelessWidget {
   const _ConfirmDialog({
