@@ -1,20 +1,13 @@
 /// 緊急画面ウィジェット
-///
-/// TASK-0047: 緊急音・画面赤表示実装
-/// 関連要件: REQ-304（画面赤表示）、FR-004〜FR-008
-/// 信頼性レベル: 青信号（要件定義書ベース）
-///
 /// 緊急呼び出し中に表示されるフルスクリーンオーバーレイ。
 /// 赤い背景、「緊急呼び出し中」メッセージ、リセットボタンを表示。
-///
 /// ## 使用例
-///
 /// ```dart
-/// // 緊急状態の時にオーバーレイとして表示
+/// 緊急状態の時にオーバーレイとして表示
 /// if (emergencyState == EmergencyStateEnum.alertActive) {
-///   EmergencyAlertScreen(
-///     onReset: () => ref.read(emergencyStateProvider.notifier).resetEmergency(),
-///   );
+/// EmergencyAlertScreen(
+/// onReset:  => ref.read(emergencyStateProvider.notifier).resetEmergency
+/// );
 /// }
 /// ```
 library;
@@ -24,12 +17,9 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 
-// =============================================================================
 // 定数定義
-// =============================================================================
 
 /// 緊急画面のUI定数
-///
 /// 緊急画面のサイズ・スタイル設定を一元管理。
 /// 将来的にAppSizesへの統合を検討。
 abstract class _EmergencyAlertConstants {
@@ -59,34 +49,30 @@ abstract class _EmergencyAlertConstants {
 }
 
 /// 緊急画面ウィジェット
-///
 /// 緊急呼び出し中に表示されるフルスクリーンオーバーレイ。
-///
-/// デザイン仕様:
-/// - 背景: 赤色（全画面）
-/// - アイコン: 背景の赤に対し最良のコントラストとなる色（80px以上）
-/// - メッセージ: 「緊急呼び出し中」（同上）
-/// - リセットボタン: 白背景・黒文字
-/// - オプション: 警告メッセージ（マナーモード時など）
-///
-/// アクセシビリティ:
-/// - Semantics「緊急呼び出し中」を設定
-/// - リセットボタンは44x44px以上
-/// - タップのみで操作完結
-///
-/// 使用例:
+/// デザイン仕様
+/// 背景: 赤色（全画面）
+/// アイコン: 背景の赤に対し最良のコントラストとなる色（80px以上）
+/// メッセージ: 「緊急呼び出し中」（同上）
+/// リセットボタン: 白背景・黒文字
+/// オプション: 警告メッセージ（マナーモード時など）
+/// アクセシビリティ
+/// Semantics「緊急呼び出し中」を設定
+/// リセットボタンは44x44px以上
+/// タップのみで操作完結
+/// 使用例
 /// ```dart
-/// // オーバーレイとして表示
+/// オーバーレイとして表示
 /// Stack(
-///   children: [
-///     // 通常の画面コンテンツ
-///     NormalScreen(),
-///     // 緊急画面（alertActive時のみ表示）
-///     if (state == EmergencyStateEnum.alertActive)
-///       EmergencyAlertScreen(
-///         onReset: () => notifier.resetEmergency(),
-///       ),
-///   ],
+/// children: [
+/// 通常の画面コンテンツ
+/// NormalScreen
+/// 緊急画面（alertActive時のみ表示）
+/// if (state == EmergencyStateEnum.alertActive)
+/// EmergencyAlertScreen(
+/// onReset:  => notifier.resetEmergency
+/// )
+/// ]
 /// )
 /// ```
 class EmergencyAlertScreen extends StatefulWidget {
@@ -94,13 +80,11 @@ class EmergencyAlertScreen extends StatefulWidget {
   final VoidCallback onReset;
 
   /// 警告メッセージ（オプション）
-  ///
   /// マナーモード時や音量ゼロ時に表示する警告。
   /// 例: 「マナーモードのため音が鳴りません」
   final String? warningMessage;
 
   /// EmergencyAlertScreen を作成する
-  ///
   /// [onReset] - リセットボタンタップ時のコールバック（必須）
   /// [warningMessage] - 警告メッセージ（オプション）
   const EmergencyAlertScreen({
@@ -118,16 +102,13 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   /// 処理中フラグ（連続タップ防止用）
   bool _isProcessing = false;
 
-  // ---------------------------------------------------------------------------
   // 定数（TextStyleはconst化のためstaticで定義）
-  // ---------------------------------------------------------------------------
 
   /// 緊急メッセージのテキストスタイル
-  ///
   /// AA対応: 以前は color: Colors.white を固定していたが、背景は
-  /// [EmergencyConfirmationDialog.getEmergencyColor] でテーマごとに変わるため、
+  /// [EmergencyConfirmationDialog.getEmergencyColor] でテーマごとに変わるため
   /// ダーク(#EF5350) 3.49:1 / 高コントラスト(#FF0000) 4.00:1 と
-  /// WCAG AA(4.5:1)未達だった。色は build 時に背景から決めるため、
+  /// WCAG AA(4.5:1)未達だった。色は build 時に背景から決めるため
   /// ここでは指定しない。
   static const TextStyle _messageTextStyle = TextStyle(
     fontSize: _EmergencyAlertConstants.messageFontSize,
@@ -147,12 +128,9 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
     fontWeight: FontWeight.bold,
   );
 
-  // ---------------------------------------------------------------------------
   // イベントハンドラ
-  // ---------------------------------------------------------------------------
 
   /// リセットボタンタップ処理（連続タップ防止付き）
-  ///
   /// 連続タップを防止するため、一度タップされると
   /// [_isProcessing]フラグがtrueになり、以降のタップは無視される。
   void _handleReset() {
@@ -161,9 +139,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
     widget.onReset();
   }
 
-  // ---------------------------------------------------------------------------
   // ビルドメソッド
-  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +148,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
         EmergencyConfirmationDialog.getEmergencyColor(context);
     // 設計判断: 緊急色は「目立たせる」ための色なので暗くしない。
     // 代わりに前景（文字・アイコン）を背景輝度から選び、赤を保ったまま
-    // 3テーマすべてで基準を満たす（ライト 4.98:1 / ダーク 6.02:1 /
+    // 3テーマすべてで基準を満たす（ライト 4.98:1 / ダーク 6.02:1
     // 高コントラスト 5.25:1）。
     final foregroundColor = bestContrastingTextColor(emergencyColor);
 
@@ -210,12 +186,9 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // プライベートウィジェット構築メソッド
-  // ---------------------------------------------------------------------------
 
   /// 警告アイコンを構築
-  ///
   /// 赤い背景に映える色（[foregroundColor]）の警告アイコン。
   /// サイズは80px以上（アクセシビリティ要件）。
   Widget _buildWarningIcon(Color foregroundColor) {
@@ -227,9 +200,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   }
 
   /// 緊急メッセージを構築
-  ///
   /// 「緊急呼び出し中」のメインメッセージを [foregroundColor] で表示。
-  ///
   /// Semantics(liveRegion: true)を設定し、スクリーンリーダーが
   /// 緊急状態への遷移を即座にアナウンスできるようにする。
   Widget _buildEmergencyMessage(Color foregroundColor) {
@@ -243,7 +214,6 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   }
 
   /// 警告メッセージを構築（マナーモード時など）
-  ///
   /// 音が鳴らない状況（マナーモード、音量ゼロなど）で
   /// ユーザーに視覚的なフィードバックを提供。
   Widget _buildWarningMessage() {
@@ -265,11 +235,10 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   }
 
   /// リセットボタンを構築
-  ///
   /// 緊急状態を解除するためのボタン。
-  /// - 白背景・黒文字で視認性を確保
-  /// - 最小タップターゲット44x44px以上（アクセシビリティ要件）
-  /// - 連続タップ防止機能付き
+  /// 白背景・黒文字で視認性を確保
+  /// 最小タップターゲット44x44px以上（アクセシビリティ要件）
+  /// 連続タップ防止機能付き
   Widget _buildResetButton() {
     return Semantics(
       label: _EmergencyAlertConstants.semanticsLabelResetButton,

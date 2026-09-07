@@ -1,29 +1,23 @@
 /// 対面表示テキスト表示ウィジェット
-///
-/// TASK-0052: 対面表示モード（拡大表示）実装
-/// REQ-501: テキストを画面中央に大きく表示する拡大表示モード
+/// テキストを画面中央に大きく表示する拡大表示モード
 library;
 
 import 'package:flutter/material.dart';
 
 /// 対面表示用のテキスト表示ウィジェット
-///
 /// テキストを画面中央に大きく表示する。
-/// 対面の相手がメッセージを読み取りやすいよう、
+/// 対面の相手がメッセージを読み取りやすいよう
 /// 大きなフォントサイズでシンプルに表示する。
-///
-/// REQ-501: テキストを画面中央に大きく表示
+/// テキストを画面中央に大きく表示
 class FaceToFaceTextDisplay extends StatelessWidget {
   /// 表示するテキスト
   final String text;
 
   /// フォントサイズ（オプション）
-  ///
   /// 指定しない場合はデフォルトの大きなフォントサイズ（32px以上）を使用
   final double? fontSize;
 
   /// FaceToFaceTextDisplayを作成
-  ///
   /// [text] 表示するテキスト
   /// [fontSize] フォントサイズ（オプション、デフォルト: 36px）
   const FaceToFaceTextDisplay({
