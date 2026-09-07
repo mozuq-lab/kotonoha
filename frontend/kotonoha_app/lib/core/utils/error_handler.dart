@@ -1,5 +1,4 @@
 /// Error handling utility
-///
 /// Provides centralized error handling with user-friendly messages
 /// and logging integration.
 library;
@@ -8,7 +7,6 @@ import 'package:kotonoha_app/core/utils/exceptions.dart';
 import 'package:kotonoha_app/core/utils/logger.dart';
 
 /// Error handler class
-///
 /// Provides static methods for handling errors consistently
 /// throughout the application.
 class ErrorHandler {
@@ -29,7 +27,6 @@ class ErrorHandler {
   static const String _genericErrorMessage = '予期しないエラーが発生しました。';
 
   /// Handles an error by logging it and returning a user-friendly message
-  ///
   /// This method will log the error using AppLogger and return
   /// an appropriate Japanese message for display to the user.
   static String handleError(Object? error, {StackTrace? stackTrace}) {
@@ -46,7 +43,6 @@ class ErrorHandler {
   }
 
   /// Gets a user-friendly error message for the given error
-  ///
   /// Returns a Japanese message appropriate for displaying to users.
   static String getUserMessage(Object? error) => switch (error) {
         NetworkException() => _networkErrorMessage,
@@ -57,8 +53,7 @@ class ErrorHandler {
       };
 
   /// Checks if the error is retryable
-  ///
-  /// Returns true for network, timeout, and AI conversion errors,
+  /// Returns true for network, timeout, and AI conversion errors
   /// false for validation and other errors.
   static bool isRetryable(Object? error) => switch (error) {
         // Network/timeout/AI errors are retryable
@@ -72,7 +67,6 @@ class ErrorHandler {
       };
 
   /// Gets SnackBar display data for an error
-  ///
   /// Returns a map with 'message' and optional 'actionLabel' keys.
   static Map<String, String> getSnackBarData(Object? error) {
     final message = getUserMessage(error);
