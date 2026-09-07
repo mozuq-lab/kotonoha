@@ -1,4 +1,4 @@
-"""旧・新の正規化 OpenAPI diff が、廃止リストを除いて空であること（完了条件）。identity は (パス, メソッド)。"""
+"""正規化した OpenAPI が、明示した廃止・変更以外は基準と一致すること。identity は (パス, メソッド)。"""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from tests.contract.dump_openapi import Normalized, normalize_openapi
 
 BASELINE = Path(__file__).with_name("openapi_baseline.json")
 
-# 廃止リスト（計画書「廃止リスト」と1対1）。新実装にだけ適用する。
+# 廃止・変更した契約。旧実装との比較では元の基準を使う。
 REMOVED_OPERATIONS: frozenset[str] = frozenset({"GET /", "GET /health"})
 CHANGED_OPERATIONS: dict[str, dict[str, Any]] = {
     "GET /api/v1/health": {

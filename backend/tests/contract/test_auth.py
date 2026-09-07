@@ -1,4 +1,4 @@
-"""X-API-Key 認証。Issue #86 B-3-3（非ASCII → 401）・B-3-4（全キー走査）。"""
+"""X-API-Key 認証。非ASCII入力への401応答と全キー走査。"""
 
 from __future__ import annotations
 

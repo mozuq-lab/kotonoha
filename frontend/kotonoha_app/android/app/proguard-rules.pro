@@ -1,5 +1,5 @@
 # kotonoha ProGuard rules
-# NFR-401: Android 10+ support
+# Android 10+ support
 
 # Google Play Core - Deferred Components (not used, suppress R8 warnings)
 -dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication

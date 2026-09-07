@@ -1,4 +1,4 @@
-"""IP ごとの burst 抑制（ADR-002）。B-3-8 / B-3-9（XFF の扱い）を含む。"""
+"""IP ごとの burst 抑制（ADR-002）。XFF の扱いを含む。"""
 
 from __future__ import annotations
 
@@ -68,7 +68,7 @@ def test_different_sources_are_independent(
 def test_rightmost_trusted_hop_is_used_not_leftmost(
     client: TestClient, provider_http: respx.MockRouter
 ) -> None:
-    """B-3-9: 左端（クライアントが自由に書ける値）を信じない。TRUSTED_PROXY_COUNT=1 なら右端。"""
+    """左端（クライアントが自由に書ける値）を信じない。TRUSTED_PROXY_COUNT=1 なら右端。"""
     trusted = fresh_ip()
     first = client.post(CONVERT, json=BODY, headers=_headers(f"{fresh_ip()}, {trusted}"))
     second = client.post(CONVERT, json=BODY, headers=_headers(f"{fresh_ip()}, {trusted}"))
@@ -78,7 +78,7 @@ def test_rightmost_trusted_hop_is_used_not_leftmost(
 def test_missing_forwarded_for_falls_back_to_peer_address(
     client: TestClient, provider_http: respx.MockRouter
 ) -> None:
-    """B-3-9: チェーンが段数に満たなければ XFF を採用せず接続元へ（フェイルクローズ）。"""
+    """チェーンが段数に満たなければ XFF を採用せず接続元へ（フェイルクローズ）。"""
     no_xff = {"X-API-Key": "contract-key-A"}
     first = client.post(CONVERT, json=BODY, headers=no_xff)
     second = client.post(CONVERT, json=BODY, headers=no_xff)

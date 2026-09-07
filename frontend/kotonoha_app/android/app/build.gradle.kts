@@ -7,9 +7,6 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// kotonoha Android build configuration (NFR-401)
-// Requires Android 10 (API 29) or higher
-
 android {
     namespace = "com.kotonoha.kotonoha_app"
     compileSdk = flutter.compileSdkVersion
@@ -26,7 +23,7 @@ android {
 
     defaultConfig {
         applicationId = "com.kotonoha.kotonoha_app"
-        // NFR-401: Android 10 (API 29) or higher required
+        // Android 10 以上に対応する。
         minSdk = 29
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -37,12 +34,8 @@ android {
     }
 
     signingConfigs {
-        // Release signing configuration
-        // In production, use keystore from environment variables or GitHub Secrets
         create("release") {
-            // These values should be set via environment variables or local.properties
-            // For CI/CD: use GitHub Secrets
-            // For local development: use key.properties file
+            // CI・ローカルともに、用意された key.properties から署名設定を読む。
             val keystorePropertiesFile = rootProject.file("key.properties")
             if (keystorePropertiesFile.exists()) {
                 val keystoreProperties = Properties()
@@ -86,7 +79,6 @@ android {
     productFlavors {
         create("production") {
             dimension = "distribution"
-            // Production configuration
         }
         create("internal") {
             dimension = "distribution"
@@ -95,7 +87,6 @@ android {
         }
     }
 
-    // Lint options
     lint {
         disable += listOf("InvalidPackage")
         checkReleaseBuilds = true

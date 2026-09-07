@@ -85,7 +85,7 @@ def test_times_greater_than_one() -> None:
 
 
 def test_multiple_xff_header_lines_do_not_bypass_rate_limit() -> None:
-    """C-1: 同名ヘッダーが複数行だと ``.get()`` は先頭の1本しか見ないため、攻撃者が
+    """同名ヘッダーが複数行だと ``.get()`` は先頭の1本しか見ないため、攻撃者が
     先頭行に任意文字列を置くと毎回別バケットになってしまう（RFC 9110 §5.2: 複数行は
     カンマ結合と等価）。"""
     client = _client(RateLimiter(times=1, seconds=60, trusted_proxy_count=1))

@@ -33,6 +33,7 @@
 - [ ] L-78 README.md:82 の `curl -s localhost:8000/api/v1/health` は、localhost が ::1 に解決される環境で timeout する（uvicorn は 127.0.0.1 で待つ）。127.0.0.1 に直すか注記する — Task 6 の実測（2026-09-06）
 
 ## 判断待ち
+- [ ] L-83 SharedPreferences の設定保存失敗を利用者へ通知する扱いが未実装。`setFontSize` 等は例外を捕捉して UI 状態を保持するだけで、通知しない（ソース確認。失敗注入は未実行）。コメントの「将来実装」から移記し、対応方法は別途判断する — frontend/kotonoha_app/lib/features/settings/providers/settings_provider.dart:130、ADR-005
 - [ ] L-39 ADR-005 の却下理由と連鎖削除の矛盾 — docs/adr/ADR-005。Phase 5 の後に扱う
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002
 - [x] L-64 Phase 5 の完了条件「実在しないパス参照 0 件」は README の Swagger URL（/docs）や ADR-007 のアプリ route 名が数に入るため到達不能。核＋台帳に絞るか観測値扱いにする（除外規則は足さない） — Phase 5 計画書 A5（破棄済み）。観測値にすると決定（2026-09-06、ADR-010 の限界）
