@@ -1,11 +1,4 @@
 /// EmergencyAlertScreen テスト
-///
-/// TASK-0047: 緊急音・画面赤表示実装
-/// テストケース: TC-047-013〜TC-047-032, TC-047-054〜TC-047-066
-///
-/// テスト対象: lib/features/emergency/presentation/screens/emergency_alert_screen.dart
-///
-/// TDD Greenフェーズ: ウィジェットが実装済み、テストが通るはず
 library;
 
 import 'package:flutter/material.dart';
@@ -18,14 +11,9 @@ import 'package:kotonoha_app/features/emergency/presentation/screens/emergency_a
 
 void main() {
   group('EmergencyAlertScreen', () {
-    // =========================================================================
     // 2.1 基本表示テスト
-    // =========================================================================
     group('基本表示テスト', () {
-      /// TC-047-013: 緊急画面が表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-304
+      /// 緊急画面が表示される
       testWidgets('TC-047-013: 緊急画面が表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -40,11 +28,7 @@ void main() {
         expect(find.byType(EmergencyAlertScreen), findsOneWidget);
       });
 
-      /// TC-047-014: 画面全体が赤色で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-004, REQ-304
-      /// 検証内容: 背景色がColors.redまたはAppColors.emergencyである
+      /// 画面全体が赤色で表示される
       testWidgets('TC-047-014: 画面全体が赤色で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -68,10 +52,7 @@ void main() {
         expect(materialFinder, findsOneWidget);
       });
 
-      /// TC-047-015: 緊急メッセージ「緊急呼び出し中」が表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-008
+      /// 緊急メッセージ「緊急呼び出し中」が表示される
       testWidgets('TC-047-015: 緊急メッセージ「緊急呼び出し中」が表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -86,10 +67,7 @@ void main() {
         expect(find.text('緊急呼び出し中'), findsOneWidget);
       });
 
-      /// TC-047-016: 警告アイコン（warning）が表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-U001
+      /// 警告アイコン（warning）が表示される
       testWidgets('TC-047-016: 警告アイコンが表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -108,10 +86,7 @@ void main() {
         );
       });
 
-      /// TC-047-017: 警告アイコンが白色で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-U001
+      /// 警告アイコンが白色で表示される
       testWidgets('TC-047-017: 警告アイコンが白色で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -132,10 +107,7 @@ void main() {
         expect(iconFinder, findsOneWidget);
       });
 
-      /// TC-047-018: 警告アイコンが大きく表示される（80px以上）
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-U001
+      /// 警告アイコンが大きく表示される（80px以上）
       testWidgets('TC-047-018: 警告アイコンが大きく表示される（80px以上）', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -157,14 +129,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.2 オーバーレイ表示テスト
-    // =========================================================================
     group('オーバーレイ表示テスト', () {
-      /// TC-047-019: 緊急画面が画面全体を覆う
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-005
+      /// 緊急画面が画面全体を覆う
       testWidgets('TC-047-019: 緊急画面が画面全体を覆う', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -180,15 +147,13 @@ void main() {
           ),
         );
 
-        // Assert - SizedBox.expand()またはPositioned.fillで全画面表示
+        // Assert - SizedBox.expandまたはPositioned.fillで全画面表示
         final screenSize = tester.getSize(find.byType(EmergencyAlertScreen));
         expect(screenSize.width, greaterThan(0));
         expect(screenSize.height, greaterThan(0));
       });
 
-      /// TC-047-020: 緊急画面がSafeAreaを使用している
-      ///
-      /// 優先度: P1（高優先度）
+      /// 緊急画面がSafeAreaを使用している
       testWidgets('TC-047-020: 緊急画面がSafeAreaを使用している', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -209,10 +174,7 @@ void main() {
         );
       });
 
-      /// TC-047-021: 緊急画面がリセットボタンを含む
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-006
+      /// 緊急画面がリセットボタンを含む
       testWidgets('TC-047-021: 緊急画面がリセットボタンを含む', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -228,14 +190,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.3 テーマ対応テスト
-    // =========================================================================
     group('テーマ対応テスト', () {
-      /// TC-047-022: 緊急画面の赤色が全テーマで統一
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-T001
+      /// 緊急画面の赤色が全テーマで統一
       testWidgets('TC-047-022: ライトモードで赤色が表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -251,10 +208,7 @@ void main() {
         expect(find.byType(EmergencyAlertScreen), findsOneWidget);
       });
 
-      /// TC-047-023: ダークモードでも赤色が維持される
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-T001
+      /// ダークモードでも赤色が維持される
       testWidgets('TC-047-023: ダークモードでも赤色が維持される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -270,10 +224,7 @@ void main() {
         expect(find.byType(EmergencyAlertScreen), findsOneWidget);
       });
 
-      /// TC-047-024: 高コントラストモードでも赤色が維持される
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-T001
+      /// 高コントラストモードでも赤色が維持される
       testWidgets('TC-047-024: 高コントラストモードでも赤色が維持される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -290,14 +241,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 3.1 リセットボタン表示テスト
-    // =========================================================================
     group('リセットボタン表示テスト', () {
-      /// TC-047-025: リセットボタンが表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-006
+      /// リセットボタンが表示される
       testWidgets('TC-047-025: リセットボタンが表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -312,10 +258,7 @@ void main() {
         expect(find.text('リセット'), findsOneWidget);
       });
 
-      /// TC-047-026: リセットボタンが白背景で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-T002
+      /// リセットボタンが白背景で表示される
       testWidgets('TC-047-026: リセットボタンが白背景で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -334,10 +277,7 @@ void main() {
         expect(buttonFinder, findsOneWidget);
       });
 
-      /// TC-047-027: リセットボタンが黒文字で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-T002
+      /// リセットボタンが黒文字で表示される
       testWidgets('TC-047-027: リセットボタンが黒文字で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -353,10 +293,7 @@ void main() {
         expect(textFinder, findsOneWidget);
       });
 
-      /// TC-047-028: リセットボタンの最小幅が80px以上
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-U004
+      /// リセットボタンの最小幅が80px以上
       testWidgets('TC-047-028: リセットボタンの最小幅が80px以上', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -379,14 +316,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 3.2 リセットボタンインタラクションテスト
-    // =========================================================================
     group('リセットボタンインタラクションテスト', () {
-      /// TC-047-030: リセットボタンタップでonResetが呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-102
+      /// リセットボタンタップでonResetが呼ばれる
       testWidgets('TC-047-030: リセットボタンタップでonResetが呼ばれる', (tester) async {
         // Arrange
         bool resetCalled = false;
@@ -412,10 +344,7 @@ void main() {
         expect(resetCalled, isTrue);
       });
 
-      /// TC-047-032: リセットボタンがタップ操作のみで完結
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-202
+      /// リセットボタンがタップ操作のみで完結
       testWidgets('TC-047-032: リセットボタンがタップ操作のみで完結', (tester) async {
         // Arrange
         bool resetCalled = false;
@@ -442,14 +371,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 6.1 パフォーマンステスト
-    // =========================================================================
     group('パフォーマンステスト', () {
-      /// TC-047-055: 赤画面表示まで300ms以内
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-P002
+      /// 赤画面表示まで300ms以内
       testWidgets('TC-047-055: 赤画面表示まで300ms以内', (tester) async {
         // Arrange
         final stopwatch = Stopwatch();
@@ -485,10 +409,7 @@ void main() {
         expect(stopwatch.elapsedMilliseconds, lessThanOrEqualTo(300));
       });
 
-      /// TC-047-056: リセットから音停止・画面復帰まで300ms以内
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-P003
+      /// リセットから音停止・画面復帰まで300ms以内
       testWidgets('TC-047-056: リセットから画面復帰まで300ms以内', (tester) async {
         // Arrange
         final stopwatch = Stopwatch();
@@ -518,14 +439,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 7.1 アクセシビリティテスト
-    // =========================================================================
     group('アクセシビリティテスト', () {
-      /// TC-047-060: 緊急画面にSemantics「緊急呼び出し中」が設定
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-A001
+      /// 緊急画面にSemantics「緊急呼び出し中」が設定
       testWidgets('TC-047-060: 緊急画面にSemantics「緊急呼び出し中」が設定', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -547,10 +463,7 @@ void main() {
       });
 
       /// 緊急メッセージにliveRegionが設定され、スクリーンリーダーに
-      /// 緊急状態への遷移が即座にアナウンスされる（EDGE-203関連の補完対応）
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-A001
+      /// 緊急状態への遷移が即座にアナウンスされる（関連の補完対応）
       testWidgets('緊急メッセージにSemantics(liveRegion: true)が設定されている',
           (tester) async {
         // Arrange & Act
@@ -577,10 +490,7 @@ void main() {
         );
       });
 
-      /// TC-047-061: リセットボタンにSemantics「緊急呼び出しを解除」が設定
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-A002
+      /// リセットボタンにSemantics「緊急呼び出しを解除」が設定
       testWidgets('TC-047-061: リセットボタンにSemantics情報が設定', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -601,10 +511,7 @@ void main() {
         expect(semanticsFinder, findsOneWidget);
       });
 
-      /// TC-047-063: リセットボタンが44x44px以上
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-203, NFR-A002
+      /// リセットボタンが44x44px以上
       testWidgets('TC-047-063: リセットボタンが44x44px以上', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -628,10 +535,7 @@ void main() {
         }
       });
 
-      /// TC-047-065: 視覚的警告（赤画面）が提供される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-A003
+      /// 視覚的警告（赤画面）が提供される
       testWidgets('TC-047-065: 視覚的警告（赤画面）が提供される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -647,9 +551,7 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 警告メッセージ表示テスト
-    // =========================================================================
     group('警告メッセージ表示テスト', () {
       /// 警告メッセージが設定されている場合に表示される
       testWidgets('警告メッセージが設定されている場合に表示される', (tester) async {
@@ -688,14 +590,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // エッジケーステスト
-    // =========================================================================
     group('エッジケーステスト', () {
-      /// TC-047-072: リセットボタン連続タップで1回だけ処理される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: EDGE-006
+      /// リセットボタン連続タップで1回だけ処理される
       testWidgets('TC-047-072: リセットボタン連続タップで1回だけ処理される', (tester) async {
         // Arrange
         int resetCount = 0;

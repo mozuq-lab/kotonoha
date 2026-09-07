@@ -1,13 +1,4 @@
 /// EmergencyStateNotifier テスト
-///
-/// TASK-0047: 緊急音・画面赤表示実装
-/// テストケース: TC-047-042〜TC-047-053, TC-047-067〜TC-047-071, TC-047-086〜TC-047-094
-///
-/// テスト対象:
-/// - lib/features/emergency/presentation/providers/emergency_state_provider.dart
-/// - lib/features/emergency/domain/models/emergency_state.dart
-///
-/// TDD Greenフェーズ: プロバイダーが実装済み、テストが通るはず
 library;
 
 import 'package:flutter/material.dart';
@@ -44,14 +35,9 @@ void main() {
       container.dispose();
     });
 
-    // =========================================================================
     // 5.1 EmergencyStateNotifier基本テスト
-    // =========================================================================
     group('EmergencyStateNotifier基本テスト', () {
-      /// TC-047-042: 初期状態がnormalである
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: 状態管理
+      /// 初期状態がnormalである
       test('TC-047-042: 初期状態がnormalである', () {
         // Act
         final state = container.read(emergencyStateProvider);
@@ -60,10 +46,7 @@ void main() {
         expect(state, equals(EmergencyStateEnum.normal));
       });
 
-      /// TC-047-043: startEmergencyで状態がalertActiveになる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
+      /// startEmergencyで状態がalertActiveになる
       test('TC-047-043: startEmergencyで状態がalertActiveになる', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -78,10 +61,7 @@ void main() {
         );
       });
 
-      /// TC-047-044: resetEmergencyで状態がnormalに戻る
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-102
+      /// resetEmergencyで状態がnormalに戻る
       test('TC-047-044: resetEmergencyで状態がnormalに戻る', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -97,10 +77,7 @@ void main() {
         );
       });
 
-      /// TC-047-045: startEmergencyで緊急音が再生される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001
+      /// startEmergencyで緊急音が再生される
       test('TC-047-045: startEmergencyで緊急音が再生される', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -112,10 +89,7 @@ void main() {
         verify(() => mockAudioService.startEmergencySound()).called(1);
       });
 
-      /// TC-047-046: resetEmergencyで緊急音が停止される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-007
+      /// resetEmergencyで緊急音が停止される
       test('TC-047-046: resetEmergencyで緊急音が停止される', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -129,13 +103,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 5.2 Riverpod連携テスト
-    // =========================================================================
     group('Riverpod連携テスト', () {
-      /// TC-047-047: Providerから状態を取得できる
-      ///
-      /// 優先度: P0（必須）
+      /// Providerから状態を取得できる
       test('TC-047-047: Providerから状態を取得できる', () {
         // Act
         final state = container.read(emergencyStateProvider);
@@ -144,9 +114,7 @@ void main() {
         expect(state, equals(EmergencyStateEnum.normal));
       });
 
-      /// TC-047-048: 状態変更がUIに反映される
-      ///
-      /// 優先度: P0（必須）
+      /// 状態変更がUIに反映される
       testWidgets('TC-047-048: 状態変更がUIに反映される', (tester) async {
         // Arrange
         await tester.pumpWidget(
@@ -169,9 +137,7 @@ void main() {
         expect(find.text('State: normal'), findsOneWidget);
       });
 
-      /// TC-047-049: refを使用して状態を変更できる
-      ///
-      /// 優先度: P0（必須）
+      /// refを使用して状態を変更できる
       test('TC-047-049: refを使用して状態を変更できる', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -187,13 +153,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 5.3 状態遷移テスト
-    // =========================================================================
     group('状態遷移テスト', () {
-      /// TC-047-050: normal → alertActive遷移が正常
-      ///
-      /// 優先度: P0（必須）
+      /// normal → alertActive遷移が正常
       test('TC-047-050: normal → alertActive遷移が正常', () async {
         // Arrange
         expect(
@@ -213,9 +175,7 @@ void main() {
         );
       });
 
-      /// TC-047-051: alertActive → normal遷移が正常
-      ///
-      /// 優先度: P0（必須）
+      /// alertActive → normal遷移が正常
       test('TC-047-051: alertActive → normal遷移が正常', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -235,9 +195,7 @@ void main() {
         );
       });
 
-      /// TC-047-052: 既にalertActiveの時にstartEmergencyしても問題ない
-      ///
-      /// 優先度: P1（高優先度）
+      /// 既にalertActiveの時にstartEmergencyしても問題ない
       test('TC-047-052: 既にalertActiveの時にstartEmergencyしても問題ない', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -250,9 +208,7 @@ void main() {
         );
       });
 
-      /// TC-047-053: 既にnormalの時にresetEmergencyしても問題ない
-      ///
-      /// 優先度: P1（高優先度）
+      /// 既にnormalの時にresetEmergencyしても問題ない
       test('TC-047-053: 既にnormalの時にresetEmergencyしても問題ない', () async {
         // Arrange
         expect(
@@ -270,14 +226,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 8.1 既存コンポーネント連携テスト
-    // =========================================================================
     group('既存コンポーネント連携テスト', () {
-      /// TC-047-067: 確認ダイアログで「はい」タップ後に緊急処理が開始される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-2005
+      /// 確認ダイアログで「はい」タップ後に緊急処理が開始される
       testWidgets('TC-047-067: 確認後に緊急処理が開始される', (tester) async {
         // Arrange
         await tester.pumpWidget(
@@ -320,9 +271,7 @@ void main() {
         expect(find.text('State: alertActive'), findsOneWidget);
       });
 
-      /// TC-047-069: EmergencyStateEnumが正しく使用される
-      ///
-      /// 優先度: P0（必須）
+      /// EmergencyStateEnumが正しく使用される
       test('TC-047-069: EmergencyStateEnumが正しく使用される', () {
         // Assert - Enumの値が正しいことを確認
         expect(EmergencyStateEnum.values.length,
@@ -332,9 +281,7 @@ void main() {
             contains(EmergencyStateEnum.alertActive));
       });
 
-      /// TC-047-070: 状態がalertActiveの時に緊急画面が表示される
-      ///
-      /// 優先度: P0（必須）
+      /// 状態がalertActiveの時に緊急画面が表示される
       testWidgets('TC-047-070: 状態がalertActiveの時に緊急画面が表示される', (tester) async {
         // Arrange
         await tester.pumpWidget(
@@ -379,9 +326,7 @@ void main() {
         expect(find.text('緊急画面表示中'), findsOneWidget);
       });
 
-      /// TC-047-071: 状態がnormalの時に緊急画面が非表示
-      ///
-      /// 優先度: P0（必須）
+      /// 状態がnormalの時に緊急画面が非表示
       testWidgets('TC-047-071: 状態がnormalの時に緊急画面が非表示', (tester) async {
         // Arrange
         await tester.pumpWidget(
@@ -406,14 +351,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 10. 統合テスト
-    // =========================================================================
     group('統合テスト', () {
-      /// TC-047-086: 緊急音再生と画面赤表示が同時に開始される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
+      /// 緊急音再生と画面赤表示が同時に開始される
       test('TC-047-086: 緊急音再生と画面赤表示が同時に開始される', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -429,10 +369,7 @@ void main() {
         );
       });
 
-      /// TC-047-087: リセットで音停止と画面解除が同時に行われる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-102
+      /// リセットで音停止と画面解除が同時に行われる
       test('TC-047-087: リセットで音停止と画面解除が同時に行われる', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -449,10 +386,7 @@ void main() {
         );
       });
 
-      /// TC-047-088: 2段階確認→緊急処理→リセットの一連フローが正常動作
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-302, REQ-2005
+      /// 2段階確認→緊急処理→リセットの一連フローが正常動作
       test('TC-047-088: 2段階確認→緊急処理→リセットの一連フローが正常動作', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -484,9 +418,7 @@ void main() {
         verify(() => mockAudioService.stopEmergencySound()).called(1);
       });
 
-      /// TC-047-092: 状態とUIが常に同期している
-      ///
-      /// 優先度: P0（必須）
+      /// 状態とUIが常に同期している
       testWidgets('TC-047-092: 状態とUIが常に同期している', (tester) async {
         // Arrange
         await tester.pumpWidget(
@@ -532,9 +464,7 @@ void main() {
         expect(find.text('緊急表示中'), findsOneWidget);
       });
 
-      /// TC-047-093: 状態とAudioServiceが常に同期している
-      ///
-      /// 優先度: P0（必須）
+      /// 状態とAudioServiceが常に同期している
       test('TC-047-093: 状態とAudioServiceが常に同期している', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
@@ -548,9 +478,7 @@ void main() {
         verify(() => mockAudioService.stopEmergencySound()).called(1);
       });
 
-      /// TC-047-094: エラー発生後も状態が一貫している
-      ///
-      /// 優先度: P1（高優先度）
+      /// エラー発生後も状態が一貫している
       test('TC-047-094: エラー発生後も状態が一貫している', () async {
         // Arrange - AudioServiceがエラーをスロー
         when(() => mockAudioService.startEmergencySound())
@@ -569,14 +497,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // パフォーマンステスト
-    // =========================================================================
     group('パフォーマンステスト', () {
-      /// TC-047-054: 緊急音再生開始まで500ms以内
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-P001
+      /// 緊急音再生開始まで500ms以内
       test('TC-047-054: 緊急音再生開始まで500ms以内', () async {
         // Arrange
         final notifier = container.read(emergencyStateProvider.notifier);
