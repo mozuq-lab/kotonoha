@@ -183,7 +183,7 @@ def create_app(
         openapi_url="/openapi.json" if cfg.docs_enabled else None,
         lifespan=lifespan,
     )
-    app.add_middleware(ExceptionBoundaryMiddleware)  # CORS の内側・router の外側（I-1）
+    app.add_middleware(ExceptionBoundaryMiddleware)  # CORS の内側・router の外側
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(cfg.cors_origins()),

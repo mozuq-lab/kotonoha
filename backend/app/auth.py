@@ -1,4 +1,4 @@
-"""端末 API キー認証（Issue #86 A / B-3-3 / B-3-4）。"""
+"""端末 API キー認証。"""
 
 from __future__ import annotations
 

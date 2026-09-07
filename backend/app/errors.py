@@ -128,7 +128,7 @@ ConfigProblem = tuple[str, str]
 
 
 class ConfigError(SafeError):
-    """設定の組み立てに失敗した。全違反を一度に持つ（1件目で止まらない。Issue #86 B-3-6）。"""
+    """設定の組み立てに失敗した。全違反を一度に持つ（1件目で止まらない）。"""
 
     def __init__(self, problems: tuple[ConfigProblem, ...]) -> None:
         super().__init__(ErrorCode.CONFIG_INVALID)

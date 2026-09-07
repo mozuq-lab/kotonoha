@@ -21,7 +21,7 @@ from app.errors import RateLimitExceeded
 def client_identifier(
     *, forwarded_for: str | None, client_host: str | None, trusted_proxy_count: int
 ) -> str:
-    """B-3-8 / B-3-9: 信頼する段数分のチェーンが無ければ
+    """信頼する段数分のチェーンが無ければ
     XFF を採用せず接続元へ（フェイルクローズ）。
 
     過大設定に注意: ``trusted_proxy_count`` に実構成より大きい値を設定すると、
@@ -46,7 +46,7 @@ class RateLimiter:
         self._trusted_proxy_count = trusted_proxy_count
 
     async def hit(self, namespace: str, request: Request) -> None:
-        # C-1: 同名ヘッダーが複数行だと .get() は先頭の1本しか返さない。RFC 9110 §5.2 では
+        # 同名ヘッダーが複数行だと .get() は先頭の1本しか返さない。RFC 9110 §5.2 では
         # 複数行はカンマ結合と等価なので、全行を結合してから client_identifier に渡す
         # （先頭行に攻撃者が任意文字列を置いて毎回別バケットにするのを防ぐ）。
         identifier = client_identifier(

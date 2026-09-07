@@ -24,8 +24,7 @@ ProviderName = Literal["anthropic", "openai"]
 
 API_PREFIX: Final = "/api/v1"
 
-# 旧 backend にあり、決定1・2で消えたキー。.env に残っていても起動を止めず
-# 警告だけ出す（Issue #86 B-3-7）。
+# 廃止した設定キーが残っていても起動を止めず、警告だけ出す。
 REMOVED_SETTINGS: Final[frozenset[str]] = frozenset(
     {
         "POSTGRES_USER",
@@ -78,7 +77,7 @@ class RuntimeConfig(BaseSettings):
     RATE_LIMIT_SECONDS: int = Field(default=10, ge=1)
     TRUSTED_PROXY_COUNT: int = Field(default=0, ge=0)
 
-    # AI プロバイダ（サーバーが存在する唯一の理由）
+    # AI プロバイダ
     DEFAULT_AI_PROVIDER: ProviderName = "anthropic"
     ANTHROPIC_API_KEY: SecretStr | None = None
     ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
@@ -104,7 +103,7 @@ class RuntimeConfig(BaseSettings):
             raise ValueError("must be printable ASCII")
         return value
 
-    # ---- 環境判定はここだけ（台帳 P2: 3ファイルに散っていた split-brain の解消） ----
+    # 環境による機能の切り替えはここで一元管理する。
     @property
     def is_local(self) -> bool:
         return self.ENVIRONMENT in ("development", "test")

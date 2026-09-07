@@ -161,10 +161,7 @@ jobs:
         run: |
           echo "🚀 Staging deployment would be triggered here"
           echo "Configure AWS/GCP/Azure deployment in this step"
-        # Add actual deployment steps here:
-        # - AWS ECS: aws ecs update-service
-        # - Google Cloud Run: gcloud run deploy
-        # - Azure Container Apps: az containerapp update
+        # 配布先へのデプロイは未実装。現在は案内の表示のみ。
 
   deploy-production:
     name: Deploy to Production
@@ -181,7 +178,4 @@ jobs:
         run: |
           echo "🚀 Production deployment would be triggered here"
           echo "Configure AWS/GCP/Azure deployment in this step"
-        # Add actual deployment steps here:
-        # - AWS ECS: aws ecs update-service
-        # - Google Cloud Run: gcloud run deploy
-        # - Azure Container Apps: az containerapp update
+        # 配布先へのデプロイは未実装。現在は案内の表示のみ。
