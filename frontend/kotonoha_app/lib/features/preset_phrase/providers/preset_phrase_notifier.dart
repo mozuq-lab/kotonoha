@@ -1,18 +1,11 @@
 /// PresetPhraseNotifier - 定型文状態管理
-///
-/// TASK-0041: 定型文CRUD機能実装
-/// TASK-0042: 定型文初期データ投入機能追加
-/// TDD-FAVORITE-SYNC: お気に入り画面との連動機能追加
-/// TDD Refactorフェーズ: ドキュメント改善
-///
-/// 関連要件:
-/// - REQ-104: 定型文の追加・編集・削除機能
-/// - REQ-105: お気に入り定型文を一覧上部に優先表示
-/// - REQ-107: 初期データとして50-100個の汎用定型文を提供
-/// - REQ-701: 定型文をお気に入りとして登録
-/// - CRUD-003: UUID形式の一意識別子を自動付与
-/// - CRUD-007: お気に入りフラグを切り替える機能
-/// - CRUD-008: createdAt/updatedAtタイムスタンプを自動設定
+/// 定型文の追加・編集・削除機能
+/// お気に入り定型文を一覧上部に優先表示
+/// 初期データとして50-100個の汎用定型文を提供
+/// 定型文をお気に入りとして登録
+/// UUID形式の一意識別子を自動付与
+/// お気に入りフラグを切り替える機能
+/// createdAt/updatedAtタイムスタンプを自動設定
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,7 +16,6 @@ import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:uuid/uuid.dart';
 
 /// 状態管理: 定型文一覧の状態
-/// 信頼性レベル: 青信号 - REQ-104に基づく
 class PresetPhraseState {
   /// 定型文一覧
   final List<PresetPhrase> phrases;
@@ -41,7 +33,6 @@ class PresetPhraseState {
   });
 
   /// 状態コピー: 指定したフィールドのみを更新した新しい状態を返す
-  ///
   /// エラーの扱い: `error` を省略した場合は現在のエラーを保持する。
   /// 明示的に消したい場合は `clearError: true` を指定すること。
   /// AIConversionState.copyWith と同じ「clearXxxフラグ方式」に統一している。
@@ -61,24 +52,19 @@ class PresetPhraseState {
 
 /// 機能概要: 定型文状態管理Notifier
 /// 実装方針: Riverpod StateNotifierで状態管理
-/// テスト対応: TC-041-032〜TC-041-042, TC-SYNC-001〜TC-SYNC-303
-/// 信頼性レベル: 青信号 - REQ-104, REQ-105, REQ-701に基づく
-///
 /// 定型文のCRUD操作を提供するStateNotifier。
 /// 追加、更新、削除、お気に入り切り替え機能を実装。
 /// お気に入り操作時はFavoriteNotifierと連動する。
-///
 /// エラー状態の方針: PresetPhraseScreen は `state.error != null` のとき
 /// リスト全体をエラー表示に差し替える。エラーを設定するのは
-/// initializeDefaultPhrases() の失敗のみで、同メソッドは phrases が非空だと
+/// initializeDefaultPhrases の失敗のみで、同メソッドは phrases が非空だと
 /// 早期returnするため、一度エラーが付いたまま定型文が1件でも増えると
 /// 二度と解除できなくなる。これを防ぐため、成功した操作の完了時には
 /// `clearError: true` を明示して状態を復帰させる。
 class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   /// お気に入りの正: FavoriteNotifier を必要になった時点で引く
-  ///
-  /// 設計変更: Phase 3 / WP-2 / Stage 3b - 以前は build() で
-  /// `late FavoriteNotifier?` に保持していたが、build() を差し替えた
+  /// 設計変更: Phase 3 / WP-2 / Stage 3b - 以前は build で
+  /// `late FavoriteNotifier?` に保持していたが、build を差し替えた
   /// テスト用 Notifier では初期化されず LateInitializationError になる。
   /// 参照は使う場所で引けばよい。
   FavoriteNotifier get _favoriteNotifier => ref.read(favoriteProvider.notifier);
@@ -102,20 +88,18 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
   /// メソッド: 定型文を追加する
   /// 実装内容: 新しい定型文をUUID付きで追加
-  /// テスト対応: TC-041-032, TC-041-033, TC-041-034
-  /// 信頼性レベル: 青信号 - REQ-104に基づく
   Future<void> addPhrase(String content, String category) async {
     final now = DateTime.now();
     final newPhrase = PresetPhrase(
-      id: _uuid.v4(), // UUID形式のID自動生成 (CRUD-003)
+      id: _uuid.v4(), // UUID形式のID自動生成
       content: content,
       category: category,
       displayOrder: state.phrases.length,
-      createdAt: now, // タイムスタンプ自動設定 (CRUD-008)
+      createdAt: now, // タイムスタンプ自動設定
       updatedAt: now,
     );
 
-    // 状態を更新し、お気に入り順でソート (REQ-105)
+    // 状態を更新し、お気に入り順でソート
     // エラークリア: 操作が成功したので直前のエラーは解消したとみなす
     final updatedPhrases = [...state.phrases, newPhrase];
     state = state.copyWith(
@@ -132,14 +116,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
   /// メソッド: 定型文を更新する
   /// 実装内容: 指定IDの定型文を更新
-  /// テスト対応: TC-041-035, TC-041-036
-  /// 信頼性レベル: 青信号 - REQ-104に基づく
   Future<void> updatePhrase(
     String id, {
     String? content,
     String? category,
   }) async {
-    // 対象の定型文を検索 (EDGE-009対応)
+    // 対象の定型文を検索 (対応)
     final index = state.phrases.indexWhere((p) => p.id == id);
     if (index == -1) {
       // 存在しないIDの場合は何もしない
@@ -150,7 +132,7 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     final updatedPhrase = original.copyWith(
       content: content ?? original.content,
       category: category ?? original.category,
-      updatedAt: DateTime.now(), // タイムスタンプ更新 (CRUD-008)
+      updatedAt: DateTime.now(), // タイムスタンプ更新
     );
 
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
@@ -170,21 +152,18 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
   /// メソッド: 定型文を削除する
   /// 実装内容: 指定IDの定型文を削除し、お気に入りの場合はFavoriteからも削除
-  /// テスト対応: TC-041-037, TC-SYNC-202
-  /// 信頼性レベル: 青信号 - REQ-104に基づく
   Future<void> deletePhrase(String id) async {
-    // 対象の定型文を検索 (EDGE-010対応)
+    // 対象の定型文を検索 (対応)
     final index = state.phrases.indexWhere((p) => p.id == id);
     if (index == -1) {
       // 存在しないIDの場合は何もしない
       return;
     }
 
-    // 連動処理: 定型文を削除したら、対応するお気に入りも消す（TC-SYNC-202）
+    // 連動処理: 定型文を削除したら、対応するお気に入りも消す
     // 無条件で呼ぶ理由: Phase 3 / WP-2 / Stage 3b で PresetPhrase.isFavorite が
     // 無くなったので、お気に入りかどうかは favoriteProvider しか知らない。
     // deleteFavoriteBySourceId は該当が無ければ何もしないため、無条件でよい。
-    // 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件に基づく
     await _favoriteNotifier.deleteFavoriteBySourceId(id);
 
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
@@ -201,16 +180,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
   /// メソッド: お気に入りを切り替える
   /// 実装内容: favoriteProvider へ委譲する。定型文レコードは変えない
-  /// テスト対応: TC-041-038〜039, TC-SYNC-001, TC-SYNC-002, TC-SYNC-003
-  /// 信頼性レベル: 青信号 - ADR-005, CRUD-007, REQ-701に基づく
-  ///
   /// 設計変更: Phase 3 / WP-2 / Stage 3b - お気に入りの正は favoriteProvider
   /// だけになった（ADR-005「1概念1真実」）。以前は PresetPhrase.isFavorite を
   /// 反転して Hive に書き戻し、さらに FavoriteNotifier へ連動させる双方向同期
   /// だったが、真実が2つあると必ず食い違う。
-  ///
   /// 定型文レコードを書き換えない: 定型文そのものは変わらないので
-  /// `repo.save()` は呼ばず、`updatedAt` も動かさない。
+  /// `repo.save` は呼ばず、`updatedAt` も動かさない。
   Future<void> toggleFavorite(String id) async {
     final index = state.phrases.indexWhere((p) => p.id == id);
     if (index == -1) {
@@ -242,7 +217,6 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   /// メソッド: 定型文一覧を読み込む
   /// 実装内容: Hive（Boxオープン時）から定型文を読み込み、お気に入り順で反映
   /// フォールバック: repo==nilの場合は従来どおりインメモリ管理のみ
-  /// 信頼性レベル: 青信号 - CRUD-205に基づく
   Future<void> loadPhrases() async {
     final repo = ref.read(presetPhraseRepositoryProvider);
     if (repo != null) {
@@ -261,9 +235,6 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
   /// メソッド: 初期定型文データを投入する
   /// 実装内容: DefaultPhrasesから70個程度の定型文を読み込み、状態に追加
-  /// テスト対応: TASK-0042
-  /// 信頼性レベル: 青信号 - REQ-107に基づく
-  ///
   /// 初回起動時に呼び出され、デフォルトの定型文を投入する。
   /// 既に定型文が存在する場合は何もしない（重複投入防止）。
   Future<void> initializeDefaultPhrases() async {
@@ -303,7 +274,7 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       }
 
       // エラークリア: 冒頭のクリアに依存せず、成功パスでも明示的に消す。
-      // await repo.saveAll() の待機中に他経路がエラーを設定し得るため。
+      // await repo.saveAll の待機中に他経路がエラーを設定し得るため。
       state = state.copyWith(
         phrases: phrases,
         isLoading: false,
@@ -319,8 +290,6 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
   /// メソッド: 定型文データをリセットする
   /// 実装内容: 全定型文を削除し、初期データを再投入
-  /// 信頼性レベル: 青信号 - REQ-107に基づく
-  ///
   /// 設定画面等から呼び出され、定型文を初期状態に戻す。
   Future<void> resetToDefaults() async {
     // 永続化: repoがあればHiveの定型文を全削除してから再投入
@@ -329,14 +298,12 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       await repo.deleteAll();
     }
     // エラークリア: ここでは行わない。phrasesを空にした直後なので
-    // 続く initializeDefaultPhrases() が早期returnせず必ず clearError する。
+    // 続く initializeDefaultPhrases が早期returnせず必ず clearError する。
     state = state.copyWith(phrases: [], isLoading: true);
     await initializeDefaultPhrases();
   }
 
   /// プライベートメソッド: 定型文を表示順で並べ替える
-  /// 信頼性レベル: 青信号 - REQ-105に基づく
-  ///
   /// 設計変更: Phase 3 / WP-2 / Stage 3b - お気に入りを先頭へ寄せる規則は
   /// ここから外した。お気に入り優先表示は PhraseListWidget のセクション分割
   /// （Stage 3a）が担っており、ここでも並べ替えると同じ規則が2箇所に散る。
@@ -349,8 +316,6 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
 /// Provider定義: PresetPhraseNotifierのProvider
 /// 実装内容: FavoriteNotifierを渡してお気に入り連動を有効化
-/// テスト対応: TC-SYNC-001, TC-SYNC-002（連動機能の依存関係）
-/// 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNCに基づく
 final presetPhraseNotifierProvider =
     NotifierProvider<PresetPhraseNotifier, PresetPhraseState>(
   PresetPhraseNotifier.new,

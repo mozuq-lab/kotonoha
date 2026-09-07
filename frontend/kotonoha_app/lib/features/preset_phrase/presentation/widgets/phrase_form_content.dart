@@ -1,15 +1,9 @@
 /// PhraseFormContent - 定型文フォームコンテンツ
-///
-/// TASK-0041: 定型文CRUD機能実装
-/// TDD Refactorフェーズ: 共通化
-///
 /// 追加・編集ダイアログで共通利用するフォーム部品。
 /// テキスト入力、文字数カウンター、カテゴリ選択を提供。
-///
-/// 関連要件:
-/// - CRUD-002: 内容とカテゴリを入力できるフォーム
-/// - CRUD-104: 500文字制限
-/// - CRUD-105: 空入力拒否
+/// 内容とカテゴリを入力できるフォーム
+/// 500文字制限
+/// 空入力拒否
 library;
 
 import 'package:flutter/material.dart';
@@ -20,33 +14,25 @@ import 'package:kotonoha_app/features/preset_phrase/domain/preset_phrase_validat
 
 /// 機能概要: 定型文フォームコンテンツ
 /// 実装方針: 追加・編集ダイアログで共通利用するStatelessWidget
-/// 信頼性レベル: 青信号 - CRUD-002に基づく
-///
 /// テキスト入力フィールド、文字数カウンター、カテゴリ選択を
 /// 一つのウィジェットにまとめて提供する。
 class PhraseFormContent extends StatelessWidget {
   /// パラメータ定義: テキストコントローラ
-  /// 信頼性レベル: 青信号 - フォーム入力の基本要素
   final TextEditingController controller;
 
   /// パラメータ定義: 選択中のカテゴリ
-  /// 信頼性レベル: 青信号 - CRUD-002に基づく
   final String selectedCategory;
 
   /// パラメータ定義: カテゴリ変更時のコールバック
-  /// 信頼性レベル: 青信号 - CRUD-002に基づく
   final ValueChanged<String> onCategoryChanged;
 
   /// パラメータ定義: エラーメッセージ（任意）
-  /// 信頼性レベル: 青信号 - CRUD-105に基づく
   final String? errorMessage;
 
   /// パラメータ定義: 入力変更時のコールバック（任意）
-  /// 信頼性レベル: 青信号 - UI更新用
   final VoidCallback? onTextChanged;
 
   /// パラメータ定義: 現在の文字数
-  /// 信頼性レベル: 青信号 - CRUD-104に基づく
   final int currentLength;
 
   /// PhraseFormContentを作成する
@@ -70,7 +56,6 @@ class PhraseFormContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // テキスト入力フィールド: 定型文内容の入力
-        // 信頼性レベル: 青信号 - CRUD-002に基づく
         TextField(
           controller: controller,
           maxLines: 4,
@@ -87,11 +72,10 @@ class PhraseFormContent extends StatelessWidget {
         const SizedBox(height: AppSizes.paddingSmall),
 
         // 文字数カウンター: 入力文字数表示
-        // 信頼性レベル: 青信号 - CRUD-104に基づく
-        // AA対応: 上限到達時の色に Colors.red(#F44336) を固定していたため、
+        // AA対応: 上限到達時の色に Colors.red(#F44336) を固定していたため
         // テーマの surface 上でライト 3.38:1 / 高コントラスト 3.68:1 と
         // WCAG AA(4.5:1) 未達だった。テーマの error 色は surface に対し
-        // AAを満たすよう定義済み（ライト 8.36:1 / ダーク 9.76:1 /
+        // AAを満たすよう定義済み（ライト 8.36:1 / ダーク 9.76:1
         // 高コントラスト 5.89:1）なのでそれを使う。
         Align(
           alignment: Alignment.centerRight,
@@ -108,7 +92,6 @@ class PhraseFormContent extends StatelessWidget {
         const SizedBox(height: AppSizes.paddingMedium),
 
         // カテゴリ選択: カテゴリ選択UI
-        // 信頼性レベル: 青信号 - CRUD-002に基づく
         const Text('カテゴリ'),
         const SizedBox(height: AppSizes.paddingSmall),
         Wrap(
