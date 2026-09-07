@@ -1,37 +1,25 @@
 /// 緊急音再生サービス
-///
-/// TASK-0047: 緊急音・画面赤表示実装
-/// 関連要件: REQ-303（緊急音発生）、FR-001〜FR-003
-/// 信頼性レベル: 青信号（要件定義書ベース）
-///
 /// 緊急ボタン押下時に緊急音を再生するサービス。
 /// audioplayersパッケージを使用してループ再生・最大音量で再生。
-///
 /// ## 設計概要
-///
-/// このサービスは以下の責務を持つ:
-/// - 緊急音の再生開始（ループ再生、最大音量）
-/// - 緊急音の停止
-/// - リソースの解放
-///
+/// このサービスは以下の責務を持つ
+/// 緊急音の再生開始（ループ再生、最大音量）
+/// 緊急音の停止
+/// リソースの解放
 /// ## 依存性注入
-///
 /// テスト容易性のため、AudioPlayerをコンストラクタで注入可能。
 /// ```dart
-/// // 本番環境
-/// final service = EmergencyAudioService();
-///
-/// // テスト環境
-/// final mockPlayer = MockAudioPlayer();
+/// 本番環境
+/// final service = EmergencyAudioService;
+/// テスト環境
+/// final mockPlayer = MockAudioPlayer;
 /// final service = EmergencyAudioService(player: mockPlayer);
 /// ```
 library;
 
 import 'package:audioplayers/audioplayers.dart';
 
-// =============================================================================
 // 定数定義
-// =============================================================================
 
 /// 緊急音再生に関する定数
 abstract class _EmergencyAudioConstants {
@@ -43,7 +31,6 @@ abstract class _EmergencyAudioConstants {
 }
 
 /// 緊急音再生サービスのインターフェース
-///
 /// テスト時にモック化するためのインターフェース定義。
 abstract class EmergencyAudioServiceInterface {
   /// 緊急音の再生を開始（ループ再生）
@@ -63,26 +50,21 @@ abstract class EmergencyAudioServiceInterface {
 }
 
 /// 緊急音再生サービス
-///
 /// audioplayers パッケージを使用して緊急音を再生する。
-///
-/// 機能:
-/// - ループ再生（ReleaseMode.loop）
-/// - 最大音量（volume: 1.0）
-/// - アセットからの音声ファイル読み込み
-///
-/// 使用例:
+/// 機能
+/// ループ再生（ReleaseMode.loop）
+/// 最大音量（volume: 1.0）
+/// アセットからの音声ファイル読み込み
+/// 使用例
 /// ```dart
-/// final service = EmergencyAudioService();
-/// await service.startEmergencySound();
-/// // ... 緊急状態 ...
-/// await service.stopEmergencySound();
-/// await service.dispose();
+/// final service = EmergencyAudioService;
+/// await service.startEmergencySound;
+/// ... 緊急状態 ...
+/// await service.stopEmergencySound;
+/// await service.dispose;
 /// ```
 class EmergencyAudioService implements EmergencyAudioServiceInterface {
-  // ---------------------------------------------------------------------------
   // フィールド
-  // ---------------------------------------------------------------------------
 
   /// AudioPlayer インスタンス
   final AudioPlayer _player;
@@ -93,20 +75,15 @@ class EmergencyAudioService implements EmergencyAudioServiceInterface {
   /// エラーコールバック
   void Function(Object error)? _onError;
 
-  // ---------------------------------------------------------------------------
   // コンストラクタ
-  // ---------------------------------------------------------------------------
 
   /// EmergencyAudioService を作成する
-  ///
   /// [player] - テスト用にAudioPlayerを注入可能。
-  ///            nullの場合は新しいインスタンスを作成。
+  /// nullの場合は新しいインスタンスを作成。
   EmergencyAudioService({AudioPlayer? player})
       : _player = player ?? AudioPlayer();
 
-  // ---------------------------------------------------------------------------
   // ゲッター・セッター
-  // ---------------------------------------------------------------------------
 
   @override
   bool get isPlaying => _isPlaying;
@@ -116,19 +93,15 @@ class EmergencyAudioService implements EmergencyAudioServiceInterface {
     _onError = callback;
   }
 
-  // ---------------------------------------------------------------------------
   // 公開メソッド
-  // ---------------------------------------------------------------------------
 
   /// 緊急音の再生を開始
-  ///
   /// ループ再生・最大音量で緊急音を再生する。
   /// 既に再生中の場合は何もしない。
-  ///
-  /// 例外発生時:
-  /// - onErrorコールバックを呼び出す
-  /// - エラーをログに記録
-  /// - 例外を再スローしない（UIは継続動作）
+  /// 例外発生時
+  /// onErrorコールバックを呼び出す
+  /// エラーをログに記録
+  /// 例外を再スローしない（UIは継続動作）
   @override
   Future<void> startEmergencySound() async {
     if (_isPlaying) return;
@@ -152,7 +125,6 @@ class EmergencyAudioService implements EmergencyAudioServiceInterface {
   }
 
   /// 緊急音の再生を停止
-  ///
   /// 現在再生中の緊急音を停止する。
   /// 再生中でない場合は何もしない。
   @override
@@ -170,7 +142,6 @@ class EmergencyAudioService implements EmergencyAudioServiceInterface {
   }
 
   /// リソースを解放
-  ///
   /// AudioPlayer のリソースを解放する。
   /// サービスが不要になった時に呼び出す。
   @override

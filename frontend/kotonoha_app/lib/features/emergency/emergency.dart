@@ -1,22 +1,16 @@
 /// Emergency Feature バレルエクスポート
-///
-/// TASK-0045: 緊急ボタンUI実装
-///
 /// 緊急呼び出し機能の全コンポーネントをまとめてエクスポート。
-///
-/// 使用例:
+/// 使用例
 /// ```dart
 /// import 'package:kotonoha_app/features/emergency/emergency.dart';
-///
-/// // プレゼンテーション層
+/// プレゼンテーション層
 /// EmergencyButtonWithConfirmation(
-///   onEmergencyConfirmed: () => handleEmergency(),
+/// onEmergencyConfirmed:  => handleEmergency
 /// );
-///
-/// // 確認ダイアログ
+/// 確認ダイアログ
 /// EmergencyConfirmationDialog(
-///   onConfirm: () => confirmEmergency(),
-///   onCancel: () => cancelEmergency(),
+/// onConfirm:  => confirmEmergency
+/// onCancel:  => cancelEmergency
 /// );
 /// ```
 library;

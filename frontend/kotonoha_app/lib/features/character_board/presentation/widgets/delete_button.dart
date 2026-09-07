@@ -1,23 +1,17 @@
 /// DeleteButton ウィジェット
-///
-/// TASK-0039: 削除ボタン・全消去ボタン実装
-///
 /// 入力バッファの最後の1文字を削除するためのボタン。
-/// アクセシビリティ要件（REQ-5001: 44px以上、NFR-202: 60px推奨）に準拠。
-///
-/// 関連要件:
-/// - REQ-003: 削除ボタンで最後の1文字を削除する機能を提供
-/// - REQ-5001: タップターゲットのサイズは44px x 44px以上
-/// - NFR-202: タップ領域は60px x 60px以上推奨
+/// アクセシビリティ要件（: 44px以上、: 60px推奨）に準拠。
+/// 削除ボタンで最後の1文字を削除する機能を提供
+/// タップターゲットのサイズは44px x 44px以上
+/// タップ領域は60px x 60px以上推奨
 library;
 
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
 /// 削除ボタンウィジェット
-///
 /// 入力バッファの最後の1文字を削除するためのボタン。
-/// アクセシビリティ要件（REQ-5001: 44px以上、NFR-202: 60px推奨）に準拠。
+/// アクセシビリティ要件（: 44px以上、: 60px推奨）に準拠。
 class DeleteButton extends StatelessWidget {
   /// ボタンタップ時のコールバック
   final VoidCallback? onPressed;
