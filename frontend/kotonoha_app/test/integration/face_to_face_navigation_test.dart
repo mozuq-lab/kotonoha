@@ -1,10 +1,7 @@
 /// 対面表示モードへのナビゲーション統合テスト（fix/improvement-p0-p2）
-///
-/// TASK-0052/0053: 実装済みだった対面表示モード（FaceToFaceScreen、
-/// 180度回転機能）が画面から到達できなかった問題を修正し、
+/// 180度回転機能）が画面から到達できなかった問題を修正し
 /// ホーム画面のAppBarアクションからgo_router経由で遷移できるよう配線した。
-///
-/// 関連要件: REQ-501〜503（対面表示モード）
+/// 503（対面表示モード）
 library;
 
 import 'package:flutter/material.dart';
@@ -120,8 +117,7 @@ void main() {
 }
 
 /// テスト用のモックSettingsNotifier
-///
-/// ローディング状態を回避するため、build()で即座にデフォルト設定を返す。
+/// ローディング状態を回避するため、buildで即座にデフォルト設定を返す。
 class _MockSettingsNotifier extends SettingsNotifier {
   @override
   Future<AppSettings> build() async {
