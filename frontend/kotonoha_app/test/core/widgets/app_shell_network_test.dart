@@ -1,13 +1,10 @@
 /// AppShell ネットワーク監視起動テスト
-///
 /// F2: AppShellがマウント時にネットワーク監視
 /// （initializeWithConnectivity / startListening）を起動することを検証する。
-/// これにより networkProvider の状態が checking から実際の接続状態へ更新され、
+/// これにより networkProvider の状態が checking から実際の接続状態へ更新され
 /// isAIConversionAvailable がオンライン時に true となる。
-///
-/// 関連要件:
-/// - REQ-1001: オフライン時AI変換無効化
-/// - REQ-3004: ネットワーク状態の正確な検知
+/// オフライン時AI変換無効化
+/// ネットワーク状態の正確な検知
 library;
 
 import 'dart:async';
@@ -81,7 +78,7 @@ void main() {
       // post-frame callback 実行とネットワーク初期化の非同期完了を待つ
       await tester.pumpAndSettle();
 
-      // initializeWithConnectivity / startListening が呼ばれた結果、
+      // initializeWithConnectivity / startListening が呼ばれた結果
       // checkConnectivity が実行され状態がオンラインへ更新される
       verify(() => mockService.checkConnectivity()).called(1);
       verify(() => mockService.onConnectivityChanged).called(greaterThan(0));
