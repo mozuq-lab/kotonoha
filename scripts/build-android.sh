@@ -1,6 +1,6 @@
 #!/bin/bash
 # kotonoha Android build script
-# NFR-401: Android 10+ support
+# Android 10+ support
 
 set -e
 
