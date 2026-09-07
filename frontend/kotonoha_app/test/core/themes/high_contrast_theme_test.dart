@@ -1,10 +1,6 @@
 /// 高コントラストテーマのプロパティテスト
-///
-/// テストケース: TC-301〜TC-306, TC-401〜TC-403
-///
+/// テストケース
 /// テスト対象: lib/core/themes/high_contrast_theme.dart (実装済み)
-///
-/// TDD Redフェーズ: テーマのプロパティとWCAG準拠を検証
 library;
 
 import 'package:flutter/material.dart';
@@ -17,13 +13,11 @@ import '../../support/contrast_helpers.dart';
 
 void main() {
   group('高コントラストテーマのプロパティテスト', () {
-    /// TC-301: 高コントラストテーマの背景色が純白である
-    ///
-    /// 前提条件:
-    /// - highContrastThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - highContrastTheme.scaffoldBackgroundColorがAppColors.backgroundHighContrast（#FFFFFF）である
+    /// 高コントラストテーマの背景色が純白である
+    /// 前提条件
+    /// highContrastThemeがインポートされている
+    /// 期待結果
+    /// highContrastTheme.scaffoldBackgroundColorがAppColors.backgroundHighContrast（#FFFFFF）である
     test('TC-301: 高コントラストテーマの背景色が純白である', () {
       // Assert
       expect(
@@ -36,13 +30,11 @@ void main() {
       );
     });
 
-    /// TC-302: 高コントラストテーマのテキスト色が純黒である
-    ///
-    /// 前提条件:
-    /// - highContrastThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - テキスト色がAppColors.onBackgroundHighContrast（#000000）である
+    /// 高コントラストテーマのテキスト色が純黒である
+    /// 前提条件
+    /// highContrastThemeがインポートされている
+    /// 期待結果
+    /// テキスト色がAppColors.onBackgroundHighContrast（#000000）である
     test('TC-302: 高コントラストテーマのテキスト色が純黒である', () {
       // Assert
       expect(
@@ -55,14 +47,12 @@ void main() {
       );
     });
 
-    /// TC-303: 高コントラストテーマのElevatedButtonボーダーが2px以上である
-    ///
-    /// 前提条件:
-    /// - highContrastThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - ボーダー幅が2.0px以上である
-    /// - ボーダー色が黒（Colors.black）である
+    /// 高コントラストテーマのElevatedButtonボーダーが2px以上である
+    /// 前提条件
+    /// highContrastThemeがインポートされている
+    /// 期待結果
+    /// ボーダー幅が2.0px以上である
+    /// ボーダー色が黒（Colors.black）である
     test('TC-303: 高コントラストテーマのElevatedButtonボーダーが2px以上である', () {
       // Arrange
       final buttonStyle = highContrastTheme.elevatedButtonTheme.style;
@@ -78,14 +68,12 @@ void main() {
       expect(side?.color, equals(Colors.black));
     });
 
-    /// TC-304: 高コントラストテーマのInputFieldボーダーが2px以上である
-    ///
-    /// 前提条件:
-    /// - highContrastThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - enabledBorderのボーダー幅が2.0px以上である
-    /// - ボーダー色が黒（Colors.black）である
+    /// 高コントラストテーマのInputFieldボーダーが2px以上である
+    /// 前提条件
+    /// highContrastThemeがインポートされている
+    /// 期待結果
+    /// enabledBorderのボーダー幅が2.0px以上である
+    /// ボーダー色が黒（Colors.black）である
     test('TC-304: 高コントラストテーマのInputFieldボーダーが2px以上である', () {
       // Arrange
       final inputTheme = highContrastTheme.inputDecorationTheme;
@@ -100,13 +88,11 @@ void main() {
       expect(outlineBorder.borderSide.color, equals(Colors.black));
     });
 
-    /// TC-305: 高コントラストテーマのElevatedButton最小サイズが60pxである
-    ///
-    /// 前提条件:
-    /// - highContrastThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - minimumSizeがSize(60.0, 60.0)である
+    /// 高コントラストテーマのElevatedButton最小サイズが60pxである
+    /// 前提条件
+    /// highContrastThemeがインポートされている
+    /// 期待結果
+    /// minimumSizeがSize(60.0, 60.0)である
     test('TC-305: 高コントラストテーマのElevatedButton最小サイズが60pxである', () {
       // Arrange
       final buttonStyle = highContrastTheme.elevatedButtonTheme.style;
@@ -124,13 +110,11 @@ void main() {
       expect(minimumSize?.height, greaterThanOrEqualTo(60.0));
     });
 
-    /// TC-306: 高コントラストテーマのIconButton最小サイズが44pxである
-    ///
-    /// 前提条件:
-    /// - highContrastThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - minimumSizeがSize(44.0, 44.0)である
+    /// 高コントラストテーマのIconButton最小サイズが44pxである
+    /// 前提条件
+    /// highContrastThemeがインポートされている
+    /// 期待結果
+    /// minimumSizeがSize(44.0, 44.0)である
     test('TC-306: 高コントラストテーマのIconButton最小サイズが44pxである', () {
       // Arrange
       final buttonStyle = highContrastTheme.iconButtonTheme.style;
@@ -149,9 +133,8 @@ void main() {
     });
 
     /// 高コントラストテーマのフォントサイズがAppSizes.fontSizeMediumである
-    ///
-    /// 期待結果:
-    /// - bodyMediumのfontSizeがAppSizes.fontSizeMedium（20.0）である
+    /// 期待結果
+    /// bodyMediumのfontSizeがAppSizes.fontSizeMedium（20.0）である
     test('高コントラストテーマのフォントサイズがAppSizes.fontSizeMediumである', () {
       // Assert
       expect(
@@ -165,9 +148,8 @@ void main() {
     });
 
     /// 高コントラストテーマでMaterial3が有効である
-    ///
-    /// 期待結果:
-    /// - useMaterial3がtrueである
+    /// 期待結果
+    /// useMaterial3がtrueである
     test('高コントラストテーマでMaterial3が有効である', () {
       // Assert
       expect(highContrastTheme.useMaterial3, isTrue);
@@ -195,15 +177,13 @@ void main() {
   });
 
   group('WCAG準拠（コントラスト比）のテスト', () {
-    /// TC-401: 高コントラストテーマのテキスト/背景コントラスト比が4.5:1以上である
-    ///
-    /// 前提条件:
-    /// - highContrastThemeがインポートされている
-    /// - コントラスト比計算関数が実装されている
-    ///
-    /// 期待結果:
-    /// - コントラスト比が4.5:1以上である（実際は21:1）
-    /// - WCAG 2.1 AAレベルの要件を満たす
+    /// 高コントラストテーマのテキスト/背景コントラスト比が4.5:1以上である
+    /// 前提条件
+    /// highContrastThemeがインポートされている
+    /// コントラスト比計算関数が実装されている
+    /// 期待結果
+    /// コントラスト比が4.5:1以上である（実際は21:1）
+    /// WCAG 2.1 AAレベルの要件を満たす
     test('TC-401: 高コントラストテーマのテキスト/背景コントラスト比が4.5:1以上である', () {
       // Arrange
       final backgroundColor = highContrastTheme.scaffoldBackgroundColor;
@@ -221,15 +201,13 @@ void main() {
       expect(ratio, closeTo(21.0, 0.1));
     });
 
-    /// TC-402: 高コントラストテーマのボタン背景/テキストコントラスト比が4.5:1以上である
-    ///
-    /// 前提条件:
-    /// - highContrastThemeがインポートされている
-    /// - コントラスト比計算関数が実装されている
-    ///
-    /// 期待結果:
-    /// - コントラスト比が4.5:1以上である（白背景に黒テキストで21:1）
-    /// - WCAG 2.1 AAレベルの要件を満たす
+    /// 高コントラストテーマのボタン背景/テキストコントラスト比が4.5:1以上である
+    /// 前提条件
+    /// highContrastThemeがインポートされている
+    /// コントラスト比計算関数が実装されている
+    /// 期待結果
+    /// コントラスト比が4.5:1以上である（白背景に黒テキストで21:1）
+    /// WCAG 2.1 AAレベルの要件を満たす
     test('TC-402: 高コントラストテーマのボタン背景/テキストコントラスト比が4.5:1以上である', () {
       // Arrange
       final buttonStyle = highContrastTheme.elevatedButtonTheme.style;
@@ -249,15 +227,13 @@ void main() {
       expect(ratio, closeTo(21.0, 0.1));
     });
 
-    /// TC-403: 高コントラストテーマのボーダー/背景コントラスト比が3:1以上である
-    ///
-    /// 前提条件:
-    /// - highContrastThemeがインポートされている
-    /// - コントラスト比計算関数が実装されている
-    ///
-    /// 期待結果:
-    /// - コントラスト比が3:1以上である（UIコンポーネント要件）
-    /// - WCAG 2.1 AA UIコンポーネント要件を満たす
+    /// 高コントラストテーマのボーダー/背景コントラスト比が3:1以上である
+    /// 前提条件
+    /// highContrastThemeがインポートされている
+    /// コントラスト比計算関数が実装されている
+    /// 期待結果
+    /// コントラスト比が3:1以上である（UIコンポーネント要件）
+    /// WCAG 2.1 AA UIコンポーネント要件を満たす
     test('TC-403: 高コントラストテーマのボーダー/背景コントラスト比が3:1以上である', () {
       // Arrange
       final backgroundColor = highContrastTheme.scaffoldBackgroundColor;

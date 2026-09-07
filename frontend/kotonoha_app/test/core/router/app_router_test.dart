@@ -1,58 +1,42 @@
-// go_routerナビゲーション設定 TDDテスト（Redフェーズ）
-// TASK-0015: go_routerナビゲーション設定・ルーティング実装
-//
 // テストフレームワーク: flutter_test + flutter_riverpod
 // 対象: GoRouterプロバイダー定義（app_router.dart）
-//
-// 信頼性レベル凡例:
-// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-// - 黄信号: 要件定義書から妥当な推測によるテスト
-// - 赤信号: 要件定義書にない推測によるテスト
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// テスト対象のプロバイダー（実装後にコメント解除）
 import 'package:kotonoha_app/core/router/app_router.dart';
 
 void main() {
   group('GoRouterプロバイダーテスト', () {
-    // TC-001: routerProvider生成テスト
+    // routerProvider生成テスト
     // テストカテゴリ: Unit Test
-    // 対応要件: FR-001（GoRouterプロバイダーの実装）
+    // 対応要件: （GoRouterプロバイダーの実装）
     // 対応受け入れ基準: AC-001, AC-008
-    // 青信号: アーキテクチャ設計書でRiverpod + go_routerの組み合わせが規定
     test('TC-001: routerProviderはGoRouterインスタンスを生成する', () {
-      // Given（準備フェーズ）
       // テスト用のProviderContainerを作成
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // When（実行フェーズ）
       // routerProviderからGoRouterインスタンスを取得
       final router = container.read(routerProvider);
 
-      // Then（検証フェーズ）
       // GoRouterインスタンスが正常に取得できることを確認
       expect(router, isNotNull, reason: 'GoRouterインスタンスはnullであってはならない');
       expect(router, isA<GoRouter>(),
           reason: 'routerProviderはGoRouter型を返す必要がある');
     });
 
-    // TC-002: 初期ルート設定テスト（/）
+    // 初期ルート設定テスト
     // テストカテゴリ: Unit Test
-    // 対応要件: FR-002（初期ルート設定）
+    // 対応要件: （初期ルート設定）
     // 対応受け入れ基準: AC-002
-    // 青信号: タスクファイルに基づく（initialLocation: '/'）
-    // 注: GoRouter v14+では初期化直後のcurrentConfigurationは空のため、
-    //     ホームルート（/）が存在することでinitialLocationの設定を確認
+    // 注: GoRouter v14+では初期化直後のcurrentConfigurationは空のため
+    // ホームルートが存在することでinitialLocationの設定を確認
     test('TC-002: 初期ルートは/（ホーム画面）である', () {
-      // Given（準備フェーズ）
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // When（実行フェーズ）
       final router = container.read(routerProvider);
       // ShellRoute導入により、GoRouteはShellRoute配下に定義される。
       // ShellRouteの.routesからGoRouteを集計する。
@@ -60,8 +44,7 @@ void main() {
           router.configuration.routes.whereType<ShellRoute>().single;
       final routes = shellRoute.routes.whereType<GoRoute>().toList();
 
-      // Then（検証フェーズ）
-      // ホームルート（/）が最初に定義されていることを確認
+      // ホームルートが最初に定義されていることを確認
       // GoRouterはinitialLocationで指定されたパスに対応するルートが必要
       final homeRoute = routes.firstWhere(
         (r) => r.path == '/',
@@ -79,36 +62,29 @@ void main() {
       );
     });
 
-    // TC-003: ルート定義数テスト（7ルート）
+    // ルート定義数テスト（7ルート）
     // テストカテゴリ: Unit Test
-    // 対応要件: FR-003（主要ルート定義）
+    // 対応要件: （主要ルート定義）
     // 対応受け入れ基準: AC-003〜AC-006
-    // 青信号: タスクファイルで主要ルートが明示
-    // TASK-0075: ヘルプルート追加
-    // TASK-0083: 定型文ルート追加
-    // TASK-0052/0053: 対面表示モードルート追加（fix/improvement-p0-p2で配線）
     test('TC-003: 7つの主要ルートが定義されている', () {
-      // Given（準備フェーズ）
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // When（実行フェーズ）
       final router = container.read(routerProvider);
-      // ShellRoute導入により、トップレベルには単一のShellRouteが存在し、
+      // ShellRoute導入により、トップレベルには単一のShellRouteが存在し
       // 7つの主要ルートはそのShellRoute配下のGoRouteとして定義される。
       final topRoutes = router.configuration.routes;
       final shellRoute = topRoutes.whereType<ShellRoute>().single;
       final goRoutes = shellRoute.routes.whereType<GoRoute>().toList();
 
-      // Then（検証フェーズ）
       // トップレベルは単一のShellRoute
       expect(
         topRoutes.length,
         equals(1),
         reason: 'トップレベルは全画面共通シェル（ShellRoute）1つである必要がある',
       );
-      // 7つの主要ルート（/, /settings, /history, /favorites, /help,
-      // /preset-phrases, /face-to-face）がShellRoute配下に定義されていることを確認
+      // 7つの主要ルート（/, /settings, /history, /favorites, /help
+      // preset-phrases, /face-to-face）がShellRoute配下に定義されていることを確認
       expect(
         goRoutes.length,
         equals(7),
@@ -117,19 +93,14 @@ void main() {
       );
     });
 
-    // TC-004: 名前付きルート確認テスト
+    // 名前付きルート確認テスト
     // テストカテゴリ: Unit Test
-    // 対応要件: FR-003（主要ルート定義）
+    // 対応要件: （主要ルート定義）
     // 対応受け入れ基準: AC-007
-    // 青信号: 名前付きルーティング対応が要件として明示
-    // TASK-0075: ヘルプルート追加
-    // TASK-0083: 定型文ルート追加
     test('TC-004: 名前付きルートが正しく定義されている', () {
-      // Given（準備フェーズ）
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // When（実行フェーズ）
       final router = container.read(routerProvider);
       // ShellRoute配下のGoRouteから名前を集計する。
       final shellRoute =
@@ -137,7 +108,6 @@ void main() {
       final routes = shellRoute.routes.whereType<GoRoute>().toList();
       final routeNames = routes.map((r) => r.name).whereType<String>().toList();
 
-      // Then（検証フェーズ）
       // 7つの名前付きルートが存在することを確認
       expect(
         routeNames,
@@ -155,24 +125,20 @@ void main() {
       );
     });
 
-    // TC-005: GoRouterインスタンスの設定確認テスト
+    // GoRouterインスタンスの設定確認テスト
     // テストカテゴリ: Unit Test
-    // 対応要件: FR-004（エラーページ対応）
+    // 対応要件: （エラーページ対応）
     // 対応受け入れ基準: AC-006
-    // 黄信号: NFR-204から推測（エラーメッセージ表示要件）
-    // 注: go_router v14.8以降ではerrorBuilderの直接アクセスが変更されたため、
-    //     エラーページの動作確認は統合テスト（TC-015）で行う
+    // 注: go_router v14.8以降ではerrorBuilderの直接アクセスが変更されたため
+    // エラーページの動作確認は統合テストで行う
     test('TC-005: GoRouterインスタンスが正しく設定されている', () {
-      // Given（準備フェーズ）
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // When（実行フェーズ）
       final router = container.read(routerProvider);
 
-      // Then（検証フェーズ）
       // GoRouterの基本設定が正しいことを確認
-      // errorBuilder自体の設定確認は統合テスト（TC-015）で行う
+      // errorBuilder自体の設定確認は統合テストで行う
       expect(
         router.configuration,
         isNotNull,
@@ -192,22 +158,18 @@ void main() {
   });
 
   group('ProviderScope統合テスト', () {
-    // TC-015相当: ProviderScope経由のRouter取得テスト
+    // 相当: ProviderScope経由のRouter取得テスト
     // テストカテゴリ: Unit Test
-    // 対応要件: FR-007（main.dartへのProviderScope統合）
+    // 対応要件: （main.dartへのProviderScope統合）
     // 対応受け入れ基準: AC-008
-    // 青信号: Riverpod標準パターン
     test('ProviderContainerからrouterProviderが正常に取得できる', () {
-      // Given（準備フェーズ）
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // When（実行フェーズ）
       // 複数回の読み取りでも同一インスタンスを返すことを確認
       final router1 = container.read(routerProvider);
       final router2 = container.read(routerProvider);
 
-      // Then（検証フェーズ）
       // 同一インスタンスが返されることを確認（シングルトン的な動作）
       expect(router1, isNotNull, reason: 'routerProviderはnullを返してはならない');
       expect(
