@@ -1,11 +1,4 @@
 /// RotationToggleButton widget test
-///
-/// TASK-0053: 180 degree screen rotation
-/// Test cases: TC-053-012 to TC-053-016
-///
-/// Test target: lib/features/face_to_face/presentation/widgets/rotation_toggle_button.dart
-///
-/// TDD Red phase: RotationToggleButton not implemented, tests should fail
 library;
 
 import 'package:flutter/material.dart';
@@ -16,7 +9,7 @@ import 'package:kotonoha_app/features/face_to_face/providers/face_to_face_provid
 
 void main() {
   group('RotationToggleButton widget test (TASK-0053)', () {
-    /// TC-053-012: Rotation button is displayed
+    /// Rotation button is displayed
     testWidgets('TC-053-012: Rotation button is displayed',
         (WidgetTester tester) async {
       await tester.pumpWidget(
@@ -36,7 +29,7 @@ void main() {
       );
     });
 
-    /// TC-053-013: Button tap toggles rotation state
+    /// Button tap toggles rotation state
     testWidgets('TC-053-013: Button tap toggles rotation state',
         (WidgetTester tester) async {
       final container = ProviderContainer();
@@ -78,7 +71,7 @@ void main() {
       );
     });
 
-    /// TC-053-014: Button size is 44px x 44px or larger
+    /// Button size is 44px x 44px or larger
     testWidgets('TC-053-014: Button size is 44px x 44px or larger',
         (WidgetTester tester) async {
       await tester.pumpWidget(
@@ -107,7 +100,7 @@ void main() {
       );
     });
 
-    /// TC-053-015: Button provides visual feedback based on rotation state
+    /// Button provides visual feedback based on rotation state
     testWidgets('TC-053-015: Button provides visual feedback',
         (WidgetTester tester) async {
       final container = ProviderContainer();
@@ -143,7 +136,7 @@ void main() {
       );
     });
 
-    /// TC-053-016: Rotation icon is clear
+    /// Rotation icon is clear
     testWidgets('TC-053-016: Rotation icon is clear',
         (WidgetTester tester) async {
       await tester.pumpWidget(
