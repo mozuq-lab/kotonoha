@@ -1,7 +1,3 @@
-/// TASK-0097: NFR-104 HTTPS通信テスト
-///
-/// 信頼性レベル: 青信号（NFR-104に基づく）
-/// テスト対象: API通信がHTTPS/TLS 1.2+で暗号化されること
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -28,7 +24,7 @@ void main() {
 
     group('TC-104-002: API通信がHTTPSで暗号化される', () {
       test('環境変数API_BASE_URLを使用してベースURLを設定する', () {
-        // 実装確認: AIConversionApiClientがString.fromEnvironmentを使用
+        // 実装AIConversionApiClientがString.fromEnvironmentを使用
         // この設計により、本番ビルド時にHTTPS URLを注入可能
 
         // 環境変数のキー

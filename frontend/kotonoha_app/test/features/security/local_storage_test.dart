@@ -1,7 +1,3 @@
-/// TASK-0097: NFR-101 ローカルストレージ保存テスト
-///
-/// 信頼性レベル: 青信号（NFR-101に基づく）
-/// テスト対象: ユーザーデータが端末内ローカルストレージにのみ保存されることを確認
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -236,7 +232,7 @@ void main() {
         // メモリ内に保持され、ネットワーク送信は行わない
         // この確認はStateNotifierの設計によって保証される
 
-        // 設計上の確認: InputBufferProviderはネットワーク依存を持たない
+        // 設計上のInputBufferProviderはネットワーク依存を持たない
         expect(true, isTrue); // 設計検証パス
       });
     });

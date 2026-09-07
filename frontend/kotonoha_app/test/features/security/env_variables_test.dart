@@ -1,7 +1,3 @@
-/// TASK-0097: NFR-105 環境変数管理テスト
-///
-/// 信頼性レベル: 青信号（NFR-105に基づく）
-/// テスト対象: 環境変数がアプリ内にハードコードされていないこと
 library;
 
 import 'dart:io';
@@ -27,7 +23,7 @@ void main() {
         for (final file in dartFiles) {
           final content = file.readAsStringSync();
 
-          // Anthropic APIキーパターン: sk-ant-
+          // Anthropic APIキーパターン: sk-ant
           expect(
             content.contains(RegExp(r'sk-ant-[a-zA-Z0-9_-]+')),
             isFalse,
@@ -148,8 +144,8 @@ void main() {
       test('String.fromEnvironmentを使用してAPI_BASE_URLを取得する', () {
         // 設計検証: ai_conversion_provider.dart で以下のコードが使用されている
         // const baseUrl = String.fromEnvironment(
-        //   'API_BASE_URL',
-        //   defaultValue: 'http://localhost:8000',
+        // 'API_BASE_URL'
+        // defaultValue: 'http://localhost:8000'
         // );
 
         // String.fromEnvironmentはDart compile時に--defineオプションで

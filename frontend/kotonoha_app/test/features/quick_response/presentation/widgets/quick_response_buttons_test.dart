@@ -1,11 +1,4 @@
 /// QuickResponseButtons ウィジェットテスト
-///
-/// TASK-0043: 「はい」「いいえ」「わからない」大ボタン実装
-/// テストケース: TC-QRBs-001〜TC-QRBs-011, TC-A11Y-005, TC-EDGE-004〜TC-EDGE-007
-///
-/// テスト対象: lib/features/quick_response/presentation/widgets/quick_response_buttons.dart
-///
-/// TDD Redフェーズ: ウィジェットが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';
@@ -19,14 +12,9 @@ import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_
 
 void main() {
   group('QuickResponseButtons', () {
-    // =========================================================================
     // 3.1 レンダリングテスト
-    // =========================================================================
     group('レンダリングテスト', () {
       /// TC-QRBs-001: 3つのボタン（はい、いいえ、わからない）が表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001
       testWidgets('TC-QRBs-001: 3つのボタンが表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -46,9 +34,6 @@ void main() {
       });
 
       /// TC-QRBs-002: ボタンが横並びで配置される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-002
       testWidgets('TC-QRBs-002: ボタンが横並びで配置される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -74,9 +59,6 @@ void main() {
       });
 
       /// TC-QRBs-003: ボタンの配置順序が左から「はい」「いいえ」「わからない」
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-U002
       testWidgets('TC-QRBs-003: ボタンの配置順序が正しい', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -99,14 +81,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 3.2 レイアウトテスト
-    // =========================================================================
     group('レイアウトテスト', () {
       /// TC-QRBs-004: ボタン間の間隔が8px以上である
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-005
       testWidgets('TC-QRBs-004: ボタン間の間隔が8px以上である', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -144,9 +121,6 @@ void main() {
       });
 
       /// TC-QRBs-005: 3つのボタンが画面幅に収まる
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-004
       testWidgets('TC-QRBs-005: 3つのボタンが画面幅に収まる', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -169,9 +143,6 @@ void main() {
       });
 
       /// TC-QRBs-006: 各ボタンの幅が均等に割り当てられる
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-004
       testWidgets('TC-QRBs-006: 各ボタンの幅が均等に割り当てられる', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -189,9 +160,6 @@ void main() {
       });
 
       /// TC-QRBs-007: ボタンコンテナがホーム画面上部に配置可能
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-002
       testWidgets('TC-QRBs-007: ボタンコンテナが上部に配置可能', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -217,14 +185,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 3.3 イベント伝播テスト
-    // =========================================================================
     group('イベント伝播テスト', () {
       /// TC-QRBs-008: 「はい」ボタンタップでonResponseコールバックがyesで呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
       testWidgets('TC-QRBs-008: 「はい」タップでonResponseがyesで呼ばれる', (tester) async {
         // Arrange
         QuickResponseType? receivedType;
@@ -248,9 +211,6 @@ void main() {
       });
 
       /// TC-QRBs-009: 「いいえ」ボタンタップでonResponseコールバックがnoで呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
       testWidgets('TC-QRBs-009: 「いいえ」タップでonResponseがnoで呼ばれる', (tester) async {
         // Arrange
         QuickResponseType? receivedType;
@@ -274,9 +234,6 @@ void main() {
       });
 
       /// TC-QRBs-010: 「わからない」ボタンタップでonResponseコールバックがunknownで呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
       testWidgets('TC-QRBs-010: 「わからない」タップでonResponseがunknownで呼ばれる',
           (tester) async {
         // Arrange
@@ -301,9 +258,6 @@ void main() {
       });
 
       /// TC-QRBs-011: タップ時にonTTSSpeakコールバックが呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
       testWidgets('TC-QRBs-011: タップ時にonTTSSpeakコールバックが呼ばれる', (tester) async {
         // Arrange
         String? spokenText;
@@ -378,14 +332,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // アクセシビリティテスト
-    // =========================================================================
     group('アクセシビリティテスト', () {
       /// TC-A11Y-005: ボタン間隔が誤タップ防止に十分（8px以上）
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-A002
       testWidgets('TC-A11Y-005: ボタン間隔が誤タップ防止に十分', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -410,14 +359,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // テーマテスト
-    // =========================================================================
     group('テーマテスト', () {
-      /// TC-TH-004: 高コントラストモードでコントラスト比4.5:1以上を確保
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-202
+      /// 高コントラストモードでコントラスト比4.5:1以上を確保
       testWidgets('TC-TH-004: 高コントラストモードでコントラスト比4.5:1以上', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -439,14 +383,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // エッジケーステスト
-    // =========================================================================
     group('エッジケーステスト', () {
-      /// TC-EDGE-004: 狭い画面幅（320px）でもボタンが44px以上を維持
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: EDGE-005, FR-201
+      /// TC-: 狭い画面幅（320px）でもボタンが44px以上を維持
       testWidgets('TC-EDGE-004: 狭い画面幅でもボタンが44px以上を維持', (tester) async {
         // Arrange - 狭い画面サイズを設定
         tester.view.physicalSize = const Size(320, 568);
@@ -486,10 +425,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      /// TC-EDGE-005: タブレット画面幅（768px以上）で適切なサイズで表示
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-003, FR-004
+      /// TC-: タブレット画面幅（768px以上）で適切なサイズで表示
       testWidgets('TC-EDGE-005: タブレット画面幅で適切なサイズで表示', (tester) async {
         // Arrange - タブレットサイズを設定
         tester.view.physicalSize = const Size(768, 1024);
@@ -524,10 +460,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      /// TC-EDGE-006: 画面回転（縦向き→横向き）でレイアウトが崩れない
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-104
+      /// TC-: 画面回転（縦向き→横向き）でレイアウトが崩れない
       testWidgets('TC-EDGE-006: 画面回転でレイアウトが崩れない', (tester) async {
         // Arrange - 縦向き
         tester.view.physicalSize = const Size(375, 812);
@@ -563,10 +496,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      /// TC-EDGE-007: 画面回転後もタップターゲットが44px以上を維持
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-104, FR-201
+      /// TC-: 画面回転後もタップターゲットが44px以上を維持
       testWidgets('TC-EDGE-007: 画面回転後もタップターゲットが44px以上', (tester) async {
         // Arrange - 横向き（短い高さ）
         tester.view.physicalSize = const Size(812, 375);
@@ -606,10 +536,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      /// TC-EDGE-003: 連続タップ時にonResponseが1回だけ呼ばれる（デバウンス期間内）
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: EDGE-004
+      /// TC-: 連続タップ時にonResponseが1回だけ呼ばれる（デバウンス期間内）
       testWidgets('TC-EDGE-003: 連続タップ時にonResponseが1回だけ呼ばれる', (tester) async {
         // Arrange
         int callCount = 0;
