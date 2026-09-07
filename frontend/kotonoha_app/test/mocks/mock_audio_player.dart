@@ -1,8 +1,5 @@
 /// AudioPlayerモッククラス
-///
-/// TASK-0047: 緊急音・画面赤表示実装
 /// audioplayersパッケージのモック
-///
 /// テスト用にAudioPlayerの動作をシミュレートする。
 library;
 
@@ -10,18 +7,15 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:mocktail/mocktail.dart';
 
 /// AudioPlayerのモッククラス
-///
 /// audioplayers パッケージの AudioPlayer クラスをモック化。
-///
-/// 使用例:
+/// 使用例
 /// ```dart
-/// final mockPlayer = MockAudioPlayer();
-/// when(() => mockPlayer.play(any())).thenAnswer((_) async {});
+/// final mockPlayer = MockAudioPlayer;
+/// when( => mockPlayer.play(any)).thenAnswer((_) async {});
 /// ```
 class MockAudioPlayer extends Mock implements AudioPlayer {}
 
 /// AudioPlayerインターフェース（テスト互換性のため保持）
-///
 /// 実際のAudioPlayerと同じインターフェースを持つ抽象クラス。
 /// EmergencyAudioServiceのテストで使用。
 abstract class AudioPlayerInterface {
