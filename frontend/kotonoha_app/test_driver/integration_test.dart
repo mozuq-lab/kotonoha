@@ -8,11 +8,11 @@
 /// 使用方法（Web / ヘッドレスChrome）
 /// ```bash
 /// flutter drive \
-/// driver=test_driver/integration_test.dart \
-/// target=integration_test/app_startup_test.dart \
-/// d web-server \
-/// browser-name=chrome \
-/// headless
+///   --driver=test_driver/integration_test.dart \
+///   --target=integration_test/app_startup_test.dart \
+///   -d web-server \
+///   --browser-name=chrome \
+///   --headless
 /// ```
 library;
 
