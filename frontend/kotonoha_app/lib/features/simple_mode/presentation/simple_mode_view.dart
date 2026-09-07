@@ -1,23 +1,17 @@
 /// シンプルモード画面ウィジェット
-///
 /// fix/improvement-p0-p2: シンプルモード（疲労時・症状進行時の簡易画面）
-///
 /// 疲労時・症状進行時に、文字盤を使わずワンタップで意思を伝えられる
 /// 大ボタンのみの簡易画面。
-///
-/// 表示内容:
-/// - 「通常モードに戻る」明示ボタン（常にスクロールなしで到達できる位置に固定配置。
-///   誤タップで抜けられなくなることを防ぐため）
-/// - クイック応答（はい/いいえ/わからない）
-/// - 状態ボタン12個（全ボタン: [allStatusTypes]）
-/// - お気に入り上位数件
-///
-/// 既存の [QuickResponseButtons] / [StatusButtons] / [Favorite] を再利用し、
+/// 表示内容
+/// 「通常モードに戻る」明示ボタン（常にスクロールなしで到達できる位置に固定配置。
+/// 誤タップで抜けられなくなることを防ぐため）
+/// クイック応答（はい/いいえ/わからない）
+/// 状態ボタン12個（全ボタン: [allStatusTypes]）
+/// お気に入り上位数件
+/// 既存の [QuickResponseButtons] / [StatusButtons] / [Favorite] を再利用し
 /// 新規の重複実装を避ける。TTS読み上げ・履歴保存は呼び出し元
 /// （HomeScreen）のコールバック経由で行うため、このウィジェット自体は
 /// Riverpodに依存しないStatelessWidgetとして実装する（テスト容易性向上）。
-///
-/// 信頼性レベル: 黄信号 - 要件定義書にない新規機能のため妥当な推測
 library;
 
 import 'package:flutter/material.dart';
@@ -148,7 +142,7 @@ class SimpleModeView extends StatelessWidget {
   Widget _buildFavoritesGrid(List<Favorite> topFavorites) {
     return GridView.builder(
       shrinkWrap: true,
-      // 外側のSingleChildScrollViewが全体をスクロールするため、
+      // 外側のSingleChildScrollViewが全体をスクロールするため
       // グリッド自体はスクロールを持たない。
       physics: const NeverScrollableScrollPhysics(),
       itemCount: topFavorites.length,
