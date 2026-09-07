@@ -1,7 +1,5 @@
 /// シンプルモード設定ウィジェット テスト
-///
 /// fix/improvement-p0-p2: シンプルモード（疲労時・症状進行時の簡易画面）
-///
 /// 対象: lib/features/settings/presentation/widgets/simple_mode_settings_widget.dart
 library;
 

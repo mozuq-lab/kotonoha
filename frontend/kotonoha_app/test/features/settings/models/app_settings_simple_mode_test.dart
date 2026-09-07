@@ -1,7 +1,5 @@
 /// AppSettings モデルテスト（シンプルモード）
-///
 /// fix/improvement-p0-p2: シンプルモード（疲労時・症状進行時の簡易画面）
-///
 /// テスト対象: lib/features/settings/models/app_settings.dart の simpleMode フィールド
 library;
 
