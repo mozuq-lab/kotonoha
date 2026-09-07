@@ -1,26 +1,20 @@
 /// ボタン（TextButton / OutlinedButton / ElevatedButton）前景色のコントラスト比回帰テスト
-///
 /// テスト対象: lib/core/themes/{light,dark,high_contrast}_theme.dart
-/// テスト目的: ダイアログ等に置かれる TextButton / OutlinedButton /
 /// ElevatedButton のラベルが、3テーマすべてで WCAG 2.1 AA（4.5:1）を
 /// 満たすことを保証する。
-///
 /// 背景（実障害）: Material 3 は TextButton / OutlinedButton / ElevatedButton の
 /// 既定の前景色に `colorScheme.primary` を使う（ElevatedButton は primary で
 /// 塗りつぶすのではなく、surfaceContainerLow の面に primary のラベルを載せる設計）。
 /// primary は「塗り」用途で選ばれた色であり、面に載る文字としては検証されて
-/// いなかったため、
-/// primaryLight(#2196F3) は surface(#F5F5F5) 上で 2.87:1、
+/// いなかったため
+/// primaryLight(#2196F3) は surface(#F5F5F5) 上で 2.87:1
 /// primaryDark(#1976D2) は surface(#1E1E1E) 上で 3.62:1 と AA 未達だった。
 /// 実際に AI変換結果ダイアログの「元の文を使う」、定型文削除ダイアログの
-/// 「キャンセル」、オフラインダイアログの「OK」が同じ理由で未達になっており、
+/// 「キャンセル」、オフラインダイアログの「OK」が同じ理由で未達になっており
 /// 個別ダイアログを1つずつ直しても新しいダイアログで再発する。
-///
-/// 方針: テーマ層で textButtonTheme / outlinedButtonTheme /
+/// 方針: テーマ層で textButtonTheme / outlinedButtonTheme
 /// elevatedButtonTheme の foregroundColor を明示し、「塗りとしての primary」と
 /// 「面に載る文字としての primary」を別トークンに分離する。
-///
-/// 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA・4.5:1以上）
 library;
 
 import 'package:flutter/material.dart';
@@ -90,7 +84,6 @@ Future<void> _pumpScaffoldWithButtons(
 }
 
 /// ボタン自身が描画している背景色を取得する。
-///
 /// ElevatedButton は自前の面を持つため、周囲の背景ではなくボタン自身の
 /// Material の色に対してコントラストを測る必要がある。
 Color _buttonBackground(WidgetTester tester, String label) {

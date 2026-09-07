@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# TASK-0095: 実機テスト実行スクリプト
+# 実機テスト実行スクリプト
 #
 # Usage: ./scripts/run_device_tests.sh [OPTIONS]
 #

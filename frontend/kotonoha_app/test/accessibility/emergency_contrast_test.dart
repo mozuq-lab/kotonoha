@@ -1,25 +1,18 @@
 /// 緊急機能のコントラスト比回帰テスト
-///
-/// テスト対象:
-/// - lib/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart
-/// - lib/features/emergency/presentation/screens/emergency_alert_screen.dart
-/// テスト目的: 3テーマ（ライト／ダーク／高コントラスト）すべてで
+/// テスト対象
+/// lib/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart
+/// lib/features/emergency/presentation/screens/emergency_alert_screen.dart
 /// WCAG 2.1 AA を満たし続けることを保証する。
-///
-/// 背景（実障害）: 緊急系の背景色は `getEmergencyColor()` でテーマごとに
+/// 背景（実障害）: 緊急系の背景色は `getEmergencyColor` でテーマごとに
 /// 変わるのに、前景は `Colors.white` 固定・説明文は `Colors.grey` 固定だった。
-/// - 確認ダイアログの説明文 Colors.grey(#9E9E9E): ライト 2.46:1 / 高コントラスト 2.68:1
-/// - 「はい」ボタンの白文字: ダーク(#EF5350) 3.49:1 / 高コントラスト(#FF0000) 4.00:1
-/// - 緊急画面の白文字・白アイコン: 同上
-/// - 緊急ボタン本体の白アイコン: 同上
-///
+/// 確認ダイアログの説明文 Colors.grey(#9E9E9E): ライト 2.46:1 / 高コントラスト 2.68:1
+/// 「はい」ボタンの白文字: ダーク(#EF5350) 3.49:1 / 高コントラスト(#FF0000) 4.00:1
+/// 緊急画面の白文字・白アイコン: 同上
+/// 緊急ボタン本体の白アイコン: 同上
 /// 設計判断: 緊急表示の赤は「目立たせる」ための色であり暗くしない。
 /// 背景色の輝度から黒・白のうちコントラスト比が高い方を選ぶ
 /// （[bestContrastingTextColor]）ことで、赤を保ったまま基準を満たす。
-///
 /// 重要: 色は宣言値ではなく**解決済みの描画色**から読む。
-///
-/// 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA・4.5:1以上）
 library;
 
 import 'package:flutter/material.dart';
@@ -53,8 +46,7 @@ Color _dialogBackground(WidgetTester tester) {
 }
 
 /// ボタンが実際に描画している背景色を取り出す
-///
-/// `ElevatedButton.styleFrom(backgroundColor:)` の宣言値ではなく、
+/// `ElevatedButton.styleFrom(backgroundColor:)` の宣言値ではなく
 /// ButtonStyleButton が生成する Material の色を読む。背景の指定が
 /// 外れてテーマ既定へフォールバックした場合もその実色で判定できる。
 Color _buttonBackground(WidgetTester tester, Finder buttonFinder) {
@@ -101,7 +93,6 @@ Future<void> _pumpAlertScreen(WidgetTester tester, ThemeData theme) async {
 }
 
 /// 緊急ボタンのアイコンは非テキスト要素だが、**4.5:1（テキスト基準）** で判定する。
-///
 /// 理由: このボタンは app_shell 経由で全画面に常時表示される、本アプリで
 /// 最も重要な操作であり、アイコンが唯一のラベルでもある。緊急「画面」の警告
 /// アイコンを同じ考え方で 5.25〜6.02:1 まで引き上げた以上、緊急「ボタン」を
