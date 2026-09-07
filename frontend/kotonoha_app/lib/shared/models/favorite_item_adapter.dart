@@ -2,20 +2,15 @@ import 'package:hive/hive.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 
 /// Hive TypeAdapter for FavoriteItem
-///
-/// TASK-0065: お気に入りHiveモデル・リポジトリ実装
 /// 手動実装: hive_generatorとriverpod_generatorのバージョン互換性問題を回避
-///
 /// typeId: 2
-/// Fields:
-/// - 0: id (String)
-/// - 1: content (String)
-/// - 2: createdAt (DateTime)
-/// - 3: displayOrder (int)
-/// - 4: sourceType (String?)
-/// - 5: sourceId (String?)
-///
-/// 信頼性レベル: 青信号 - REQ-701、FR-065-001に基づく
+/// Fields
+/// 0: id (String)
+/// 1: content (String)
+/// 2: createdAt (DateTime)
+/// 3: displayOrder (int)
+/// 4: sourceType (String?)
+/// 5: sourceId (String?)
 class FavoriteItemAdapter extends TypeAdapter<FavoriteItem> {
   @override
   final int typeId = 2;
