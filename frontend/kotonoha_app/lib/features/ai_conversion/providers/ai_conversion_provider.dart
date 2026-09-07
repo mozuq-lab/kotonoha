@@ -1,9 +1,4 @@
 /// AI変換Provider・状態管理
-///
-/// TASK-0070: AI変換Provider・状態管理
-///
-/// 信頼性レベル: 青信号（interfaces.dartベース）
-/// 関連要件: REQ-901, REQ-902, REQ-903, REQ-904
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +10,6 @@ import '../domain/models/politeness_level.dart';
 import 'ai_conversion_state.dart';
 
 /// AI変換APIクライアントのProvider
-///
 /// 環境変数からベースURLを取得（デフォルト: localhost:8000）
 final aiConversionApiClientProvider = Provider<AIConversionApiClient>((ref) {
   const baseUrl = String.fromEnvironment(
@@ -30,19 +24,17 @@ final aiConversionApiClientProvider = Provider<AIConversionApiClient>((ref) {
 });
 
 /// AI変換Providerの定義
-///
-/// REQ-901〜REQ-904: AI変換機能の状態管理
+/// AI変換機能の状態管理
 final aiConversionProvider =
     NotifierProvider<AIConversionNotifier, AIConversionState>(
   AIConversionNotifier.new,
 );
 
 /// AI変換の状態管理Notifier
-///
-/// REQ-901: 短い入力をより丁寧で自然な文章に変換
-/// REQ-902: AI変換結果を表示し、採用・却下を選択可能
-/// REQ-903: 丁寧さレベルを3段階から選択可能
-/// REQ-904: 再生成または元の文を使用できる機能を提供
+/// 短い入力をより丁寧で自然な文章に変換
+/// AI変換結果を表示し、採用・却下を選択可能
+/// 丁寧さレベルを3段階から選択可能
+/// 再生成または元の文を使用できる機能を提供
 class AIConversionNotifier extends Notifier<AIConversionState> {
   /// 初期状態
   @override
@@ -56,13 +48,11 @@ class AIConversionNotifier extends Notifier<AIConversionState> {
   NetworkNotifier get _networkNotifier => ref.read(networkProvider.notifier);
 
   /// AI変換を実行
-  ///
   /// [inputText] 変換対象テキスト（2文字以上）
   /// [politenessLevel] 丁寧さレベル
-  ///
-  /// REQ-901: 短い入力をより丁寧で自然な文章に変換
-  /// REQ-903: 丁寧さレベルを3段階から選択可能
-  /// REQ-1001, REQ-3004: オフライン時はエラー
+  /// 短い入力をより丁寧で自然な文章に変換
+  /// 丁寧さレベルを3段階から選択可能
+  /// オフライン時はエラー
   Future<void> convert({
     required String inputText,
     required PolitenessLevel politenessLevel,
@@ -121,10 +111,8 @@ class AIConversionNotifier extends Notifier<AIConversionState> {
   }
 
   /// 再生成を実行
-  ///
   /// 前回の変換情報を使用して再変換を実行
-  ///
-  /// REQ-904: 再生成機能
+  /// 再生成機能
   Future<void> regenerate() async {
     // 前回の変換結果がない場合は何もしない
     if (state.originalText == null ||
@@ -187,7 +175,6 @@ class AIConversionNotifier extends Notifier<AIConversionState> {
   }
 
   /// 状態をクリア
-  ///
   /// 初期状態に戻す
   void clear() {
     state = AIConversionState.initial;

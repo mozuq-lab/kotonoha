@@ -1,18 +1,11 @@
 /// AI変換状態クラス
-///
-/// TASK-0070: AI変換Provider・状態管理
-/// TDD Redフェーズ: スタブファイル
-///
-/// 信頼性レベル: 青信号（interfaces.dartベース）
-/// 関連要件: REQ-901, REQ-902, REQ-903, REQ-904
 library;
 
 import '../domain/exceptions/ai_conversion_exception.dart';
 import '../domain/models/politeness_level.dart';
 
 /// AI変換の状態
-///
-/// REQ-902: 変換状態を管理（変換中、成功、エラー）
+/// 変換状態を管理（変換中、成功、エラー）
 enum AIConversionStatus {
   /// 初期状態・アイドル
   idle,
@@ -28,9 +21,8 @@ enum AIConversionStatus {
 }
 
 /// AI変換の状態を表す不変クラス
-///
-/// REQ-902: AI変換結果を表示し、採用・却下を選択可能
-/// REQ-904: 再生成または元の文を使用できる機能を提供
+/// AI変換結果を表示し、採用・却下を選択可能。
+/// 再生成または元の文を使用できる機能を提供。
 class AIConversionState {
   /// 現在の状態
   final AIConversionStatus status;
