@@ -1,15 +1,9 @@
 /// AI変換レスポンスモデル
-///
-/// TASK-0067: AI変換APIクライアント実装
-///
-/// 信頼性レベル: 青信号（api-endpoints.mdベース）
-/// 関連要件: REQ-901, REQ-902
 library;
 
 import '../../domain/models/politeness_level.dart';
 
 /// AI変換レスポンス
-///
 /// POST /api/v1/ai/convert のレスポンスデータ
 class AIConversionResponse {
   /// 変換後のテキスト
@@ -33,7 +27,6 @@ class AIConversionResponse {
   });
 
   /// JSONから変換
-  ///
   /// API仕様のsnake_case形式からcamelCaseへ変換
   factory AIConversionResponse.fromJson(Map<String, dynamic> json) {
     return AIConversionResponse(
