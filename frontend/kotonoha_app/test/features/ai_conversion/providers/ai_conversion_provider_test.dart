@@ -1,10 +1,4 @@
 /// AI変換Provider・Notifier テスト
-///
-/// TASK-0070: AI変換Provider・状態管理
-/// TDD Redフェーズ: 失敗するテスト
-///
-/// 信頼性レベル: 青信号（interfaces.dartベース）
-/// 関連要件: REQ-901, REQ-902, REQ-903, REQ-904
 library;
 
 import 'package:dio/dio.dart';
@@ -72,7 +66,7 @@ void main() {
 
   group('AIConversionProvider', () {
     group('初期状態', () {
-      // TC-070-001: 初期状態がidleである
+      // 初期状態がidleである
       test('should have idle status initially', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -89,7 +83,7 @@ void main() {
         expect(state.hasError, false);
       });
 
-      // TC-070-002: AIConversionState.initialと等しい
+      // AIConversionState.initialと等しい
       test('should equal AIConversionState.initial', () async {
         container = createContainer();
 
@@ -98,7 +92,7 @@ void main() {
         expect(state, AIConversionState.initial);
       });
 
-      // TC-070-025: aiConversionProviderが正しく初期化される
+      // aiConversionProviderが正しく初期化される
       test('aiConversionProvider should be properly initialized', () async {
         container = createContainer();
 
@@ -108,7 +102,7 @@ void main() {
         expect(state.status, AIConversionStatus.idle);
       });
 
-      // TC-070-026: aiConversionProvider.notifierがNotifierを返す
+      // aiConversionProvider.notifierがNotifierを返す
       test('aiConversionProvider.notifier should return Notifier', () async {
         container = createContainer();
 
@@ -119,7 +113,7 @@ void main() {
     });
 
     group('変換処理（convert）', () {
-      // TC-070-003: convert呼び出しで状態がconvertingになる
+      // convert呼び出しで状態がconvertingになる
       test('should set status to converting when convert is called', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -155,12 +149,12 @@ void main() {
         expect(state.originalText, 'テスト');
         expect(state.politenessLevel, PolitenessLevel.polite);
 
-        // テスト終了（container破棄）前に変換処理の完了を待ち、
+        // テスト終了（container破棄）前に変換処理の完了を待ち
         // 破棄済みNotifierへのstate更新（failed after test completion）を防ぐ。
         await convertFuture;
       });
 
-      // TC-070-004: convert成功で状態がsuccessになり結果が設定される
+      // convert成功で状態がsuccessになり結果が設定される
       test('should set status to success when convert succeeds', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -193,7 +187,7 @@ void main() {
         expect(state.error, isNull);
       });
 
-      // TC-070-005: convert失敗で状態がerrorになり例外が設定される
+      // convert失敗で状態がerrorになり例外が設定される
       test('should set status to error when convert fails', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -221,7 +215,7 @@ void main() {
         expect(state.convertedText, isNull);
       });
 
-      // TC-070-006: オフライン時のconvertでエラー状態になる
+      // オフライン時のconvertでエラー状態になる
       test('should set error status when offline', () async {
         container = createContainer(initialNetworkState: NetworkState.offline);
         await container.read(networkProvider.notifier).setOffline();
@@ -240,7 +234,7 @@ void main() {
         expect(state.error!.code, 'NETWORK_ERROR');
       });
 
-      // TC-070-027: NetworkNotifierとの連携確認
+      // NetworkNotifierとの連携確認
       test('should check network state before calling API', () async {
         container = createContainer(initialNetworkState: NetworkState.offline);
         await container.read(networkProvider.notifier).setOffline();
@@ -258,7 +252,7 @@ void main() {
             ));
       });
 
-      // TC-070-007: 丁寧さレベルcasualでの変換
+      // 丁寧さレベルcasualでの変換
       test('should convert with casual politeness level', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -287,7 +281,7 @@ void main() {
         expect(state.politenessLevel, PolitenessLevel.casual);
       });
 
-      // TC-070-008: 丁寧さレベルnormalでの変換
+      // 丁寧さレベルnormalでの変換
       test('should convert with normal politeness level', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -316,7 +310,7 @@ void main() {
         expect(state.politenessLevel, PolitenessLevel.normal);
       });
 
-      // TC-070-009: 丁寧さレベルpoliteでの変換
+      // 丁寧さレベルpoliteでの変換
       test('should convert with polite politeness level', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -347,7 +341,7 @@ void main() {
     });
 
     group('再生成処理（regenerate）', () {
-      // TC-070-010: regenerateで前回の情報を使用して再変換が実行される
+      // regenerateで前回の情報を使用して再変換が実行される
       test('should use previous info for regenerate', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -395,7 +389,7 @@ void main() {
             )).called(1);
       });
 
-      // TC-070-011: regenerate成功で新しい変換結果が設定される
+      // regenerate成功で新しい変換結果が設定される
       test('should set new converted text on regenerate success', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -443,7 +437,7 @@ void main() {
         expect(state.politenessLevel, PolitenessLevel.polite); // 変わらない
       });
 
-      // TC-070-012: 結果がない状態でregenerateを呼び出した場合
+      // 結果がない状態でregenerateを呼び出した場合
       test(
           'should do nothing when regenerate is called without previous result',
           () async {
@@ -470,7 +464,7 @@ void main() {
     });
 
     group('状態クリア（clear）', () {
-      // TC-070-013: clearで状態がidleに戻る
+      // clearで状態がidleに戻る
       test('should reset to idle on clear', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -509,7 +503,7 @@ void main() {
         expect(state.error, isNull);
       });
 
-      // TC-070-014: エラー状態からclearでidleに戻る
+      // エラー状態からclearでidleに戻る
       test('should reset to idle from error state on clear', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -543,7 +537,7 @@ void main() {
     });
 
     group('状態遷移', () {
-      // TC-070-016: idle → converting → success → idle (clear)
+      // idle → converting → success → idle (clear)
       test('should transition: idle -> converting -> success -> idle',
           () async {
         container = createContainer();
@@ -581,7 +575,7 @@ void main() {
             AIConversionStatus.idle);
       });
 
-      // TC-070-017: idle → converting → error → idle (clear)
+      // idle → converting → error → idle (clear)
       test('should transition: idle -> converting -> error -> idle', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -614,7 +608,7 @@ void main() {
             AIConversionStatus.idle);
       });
 
-      // TC-070-018: success → converting → success (regenerate)
+      // success → converting → success (regenerate)
       test('should transition: success -> converting -> success on regenerate',
           () async {
         container = createContainer();
@@ -663,7 +657,7 @@ void main() {
     });
 
     group('エラーハンドリング', () {
-      // TC-070-019: タイムアウトエラー時の状態
+      // タイムアウトエラー時の状態
       test('should handle timeout error', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -688,7 +682,7 @@ void main() {
         expect(state.error!.code, 'AI_API_TIMEOUT');
       });
 
-      // TC-070-020: レート制限エラー時の状態
+      // レート制限エラー時の状態
       test('should handle rate limit error', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -713,7 +707,7 @@ void main() {
         expect(state.error!.code, 'RATE_LIMIT_EXCEEDED');
       });
 
-      // TC-070-021: バリデーションエラー時の状態
+      // バリデーションエラー時の状態
       test('should handle validation error', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
@@ -740,7 +734,7 @@ void main() {
     });
 
     group('境界値・エッジケース', () {
-      // TC-070-028: 最小文字数（2文字）での変換
+      // 最小文字数（2文字）での変換
       test('should convert minimum length text (2 chars)', () async {
         container = createContainer();
         await container.read(networkProvider.notifier).setOnline();
