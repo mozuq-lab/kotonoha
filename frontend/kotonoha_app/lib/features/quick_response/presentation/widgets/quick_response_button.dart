@@ -1,9 +1,4 @@
 /// QuickResponseButton ウィジェット
-///
-/// TASK-0043: 「はい」「いいえ」「わからない」大ボタン実装
-/// 要件: FR-001（大ボタン表示）、FR-003（サイズ保証）、FR-101（TTS読み上げ）
-/// 信頼性レベル: 青信号（要件定義書ベース）
-///
 /// クイック応答用の大ボタンウィジェット。
 /// タップ時にTTS読み上げを実行し、アクセシビリティ要件を満たす。
 library;
@@ -17,28 +12,24 @@ import 'package:kotonoha_app/features/quick_response/presentation/mixins/debounc
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 
 /// クイック応答ボタンの色定義
-///
 /// NFR-U003: 各ボタンの色分けは意味を反映
-/// - はい: 青/緑系（肯定的）
-/// - いいえ: 赤系（否定的）
-/// - わからない: グレー系（中立）
+/// はい: 青/緑系（肯定的）
+/// いいえ: 赤系（否定的）
+/// わからない: グレー系（中立）
 class QuickResponseButtonColors {
   QuickResponseButtonColors._();
 
   /// 「はい」ボタンの背景色（緑系・濃いシェード）
-  ///
   /// 白文字とのコントラスト比 約5.0:1（WCAG AA適合）。
   /// 旧 #4CAF50 は白文字で約2.8:1とAA不足だったため #2E7D32 に変更。
   static const Color yes = Color(0xFF2E7D32);
 
   /// 「いいえ」ボタンの背景色（赤系・濃いシェード）
-  ///
   /// 白文字とのコントラスト比 約5.5:1（WCAG AA適合）。
   /// 旧 #E53935 は白文字で約3.9:1とAA不足だったため #C62828 に変更。
   static const Color no = Color(0xFFC62828);
 
   /// 「わからない」ボタンの背景色（グレー系・濃いシェード）
-  ///
   /// 白文字とのコントラスト比 約6.4:1（WCAG AA適合）。
   /// 旧 #9E9E9E は白文字で約2.6:1とAA不足だったため #616161 に変更。
   static const Color unknown = Color(0xFF616161);
@@ -57,16 +48,14 @@ class QuickResponseButtonColors {
 }
 
 /// クイック応答ボタンウィジェット
-///
 /// 「はい」「いいえ」「わからない」のクイック応答用大ボタン。
-/// アクセシビリティ要件（REQ-5001）に準拠した大きなタップターゲットを持つ。
-///
-/// 使用例:
+/// アクセシビリティ要件に準拠した大きなタップターゲットを持つ。
+/// 使用例
 /// ```dart
 /// QuickResponseButton(
-///   responseType: QuickResponseType.yes,
-///   onPressed: () => print('はいがタップされました'),
-///   onTTSSpeak: (text) => ttsService.speak(text),
+/// responseType: QuickResponseType.yes
+/// onPressed:  => print('はいがタップされました')
+/// onTTSSpeak: (text) => ttsService.speak(text)
 /// )
 /// ```
 class QuickResponseButton extends StatefulWidget {
@@ -98,7 +87,7 @@ class QuickResponseButton extends StatefulWidget {
   final double? height;
 
   /// フォントサイズ設定（オプション）
-  /// FR-007: フォントサイズ設定への追従
+  /// フォントサイズ設定への追従
   final FontSize? fontSize;
 
   /// QuickResponseButtonを作成する
@@ -158,13 +147,12 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
       QuickResponseButtonColors.getColor(widget.responseType);
 
   /// テキスト色を取得
-  ///
   /// AA対応: 以前は `Colors.white` 固定だった。既定パレットは暗色なので
   /// 既定の見た目では問題にならないが、[QuickResponseButton.backgroundColor] は
   /// public なパラメータであり、明るい色を渡されると白文字が載って AA 未達になる。
-  /// 双子ウィジェットの StatusButton から取り除いたのと同じ危険なので、
-  /// 前景の決め方も同じ `bestContrastingTextColor()` に統一する。
-  /// （既定パレット #2E7D32 / #C62828 / #616161 ではいずれも白が選ばれるため、
+  /// 双子ウィジェットの StatusButton から取り除いたのと同じ危険なので
+  /// 前景の決め方も同じ `bestContrastingTextColor` に統一する。
+  /// （既定パレット #2E7D32 / #C62828 / #616161 ではいずれも白が選ばれるため
   /// 既定の見た目は変わらない）
   Color get _textColor =>
       widget.textColor ?? bestContrastingTextColor(_backgroundColor);
@@ -209,7 +197,7 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
               ),
             ),
             // スマホ幅対応: 「わからない」等ラベルが長い場合、狭い幅
-            // （スマホ幅でExpanded/Padding経由で圧縮される）で折り返し・
+            // （スマホ幅でExpanded/Padding経由で圧縮される）で折り返し
             // クリップが発生しないよう、FittedBox(scaleDown)+maxLines:1で
             // 縮小表示する。status_button.dartの対策と同方式。
             child: FittedBox(

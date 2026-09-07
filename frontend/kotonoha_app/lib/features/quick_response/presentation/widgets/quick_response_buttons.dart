@@ -1,9 +1,4 @@
 /// QuickResponseButtons ウィジェット
-///
-/// TASK-0043: 「はい」「いいえ」「わからない」大ボタン実装
-/// 要件: FR-001（3ボタン表示）、FR-002（上部常時配置）、FR-005（間隔）
-/// 信頼性レベル: 青信号（要件定義書ベース）
-///
 /// 「はい」「いいえ」「わからない」の3ボタンを横並びで表示するコンテナウィジェット。
 /// ホーム画面上部に配置し、ユーザーが質問に即座に回答できるようにする。
 library;
@@ -16,16 +11,14 @@ import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 
 /// クイック応答ボタンコンテナウィジェット
-///
 /// 3つのクイック応答ボタン（はい・いいえ・わからない）を横並びで表示。
-/// REQ-201: 画面上部に常時表示
+/// 画面上部に常時表示
 /// NFR-U002: 左から「はい」「いいえ」「わからない」の順序
-///
-/// 使用例:
+/// 使用例
 /// ```dart
 /// QuickResponseButtons(
-///   onResponse: (type) => handleResponse(type),
-///   onTTSSpeak: (text) => ttsService.speak(text),
+/// onResponse: (type) => handleResponse(type)
+/// onTTSSpeak: (text) => ttsService.speak(text)
 /// )
 /// ```
 class QuickResponseButtons extends StatefulWidget {
@@ -38,11 +31,11 @@ class QuickResponseButtons extends StatefulWidget {
   final void Function(String text)? onTTSSpeak;
 
   /// フォントサイズ設定（オプション）
-  /// FR-007: フォントサイズ設定への追従
+  /// フォントサイズ設定への追従
   final FontSize? fontSize;
 
   /// ボタン間のスペース（オプション）
-  /// FR-005: 8px以上、デフォルト12px
+  /// 8px以上、デフォルト12px
   final double? spacing;
 
   /// ボタンの高さ（オプション）
