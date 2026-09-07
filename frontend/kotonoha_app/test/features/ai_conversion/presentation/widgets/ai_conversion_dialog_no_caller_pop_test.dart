@@ -1,38 +1,4 @@
 /// home_screen: AI変換結果ダイアログ表示メソッド内でのpop禁止を保証する回帰テスト
-///
-/// テスト目的: `_showConversionResult` の中でNavigatorのpopが行われていないことを
-/// 保証する
-///
-/// 背景（実障害）:
-/// showDialogはroot Navigatorにダイアログを積む一方、呼び出し元contextは
-/// go_routerのShellRoute配下branch Navigatorに属する。呼び出し元contextで
-/// popすると、ダイアログではなく背後のページがpopされ、
-/// リリースビルドで画面が空白になり再操作不能になっていた。
-/// ダイアログのクローズは AIConversionResultDialog.show() 内部の
-/// dialogContext が担当するため、このメソッドはpopしてはならない。
-///
-/// 検査方針:
-/// analyzer でDartの構文木を解析し、`_showConversionResult` の本体に
-/// pop / popUntil / maybePop の呼び出しが一切現れないことを検証する。
-///
-/// レシーバ（`Navigator.of(context)` なのか `context` なのか等）は問わない。
-/// メソッド内では全面禁止とすることで、`Navigator.pop(context)`・
-/// `context.pop()`・`GoRouter.of(context).pop()`・変数経由・カスケード・
-/// 総称呼び出し `pop<T>()` など記法を問わず検出できる。
-///
-/// 構文木を使うため、コメント・文字列リテラル・文字列補間・波括弧の対応は
-/// パーサが正しく扱う。自前の字句解析は不要。
-///
-/// このテストの限界:
-/// - 静的解析であり実行時の挙動は検証しない
-///   （実挙動は ai_conversion_result_dialog_shell_route_test.dart が担当）
-/// - コールバック本体を別メソッドへ切り出し、そのメソッド内でpopする形は
-///   検出できない。ダイアログ表示と同じメソッドに処理を保つこと
-/// - 呼び出しの形でないものは検出しない: tear-off（`onTap: nav.pop`）、
-///   `nav.pop.call()`、`(nav.pop)()`。いずれも旧実装でも検出できておらず実害はない
-/// - `_showConversionResult` を改名・移動した場合は健全性チェックで明示的に落ちる
-///
-/// 信頼性レベル: 青信号 - P0障害（ShellRoute配下でのダイアログpop）の回帰防止
 library;
 
 import 'dart:io';
@@ -43,7 +9,6 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// 対象ソースのパス（パッケージルートからの相対）。
-///
 /// `flutter test` は常にパッケージルートをcwdにするため相対パスで解決できる。
 const String kHomeScreenPath =
     'lib/features/character_board/presentation/home_screen.dart';
