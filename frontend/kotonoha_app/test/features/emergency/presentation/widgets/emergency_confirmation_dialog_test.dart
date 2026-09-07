@@ -1,11 +1,4 @@
 /// EmergencyConfirmationDialog ウィジェットテスト
-///
-/// TASK-0045: 緊急ボタンUI実装
-/// テストケース: TC-045-028〜TC-045-049
-///
-/// テスト対象: lib/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart
-///
-/// TDD Redフェーズ: ウィジェットが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';
@@ -18,14 +11,9 @@ import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_c
 
 void main() {
   group('EmergencyConfirmationDialog', () {
-    // =========================================================================
     // 2.1 表示テスト
-    // =========================================================================
     group('表示テスト', () {
-      /// TC-045-028: ダイアログが表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-2004
+      /// ダイアログが表示される
       testWidgets('TC-045-028: ダイアログが表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -57,10 +45,7 @@ void main() {
         expect(find.byType(EmergencyConfirmationDialog), findsOneWidget);
       });
 
-      /// TC-045-029: タイトル「緊急呼び出し」が表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: AC-006
+      /// タイトル「緊急呼び出し」が表示される
       testWidgets('TC-045-029: タイトル「緊急呼び出し」が表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -91,10 +76,7 @@ void main() {
         expect(find.text('緊急呼び出し'), findsOneWidget);
       });
 
-      /// TC-045-030: メッセージ「緊急呼び出しを実行しますか?」が表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101, AC-006
+      /// メッセージ「緊急呼び出しを実行しますか?」が表示される
       testWidgets('TC-045-030: メッセージ「緊急呼び出しを実行しますか?」が表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -125,10 +107,7 @@ void main() {
         expect(find.text('緊急呼び出しを実行しますか?'), findsOneWidget);
       });
 
-      /// TC-045-031: 補足メッセージ「周囲に緊急音が鳴り、画面が赤くなります。」が表示される
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: REQ-303, REQ-304
+      /// 補足メッセージ「周囲に緊急音が鳴り、画面が赤くなります。」が表示される
       testWidgets('TC-045-031: 補足メッセージが表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -159,10 +138,7 @@ void main() {
         expect(find.textContaining('周囲に緊急音が鳴り'), findsOneWidget);
       });
 
-      /// TC-045-032: 「はい」ボタンが表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: AC-007
+      /// 「はい」ボタンが表示される
       testWidgets('TC-045-032: 「はい」ボタンが表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -193,10 +169,7 @@ void main() {
         expect(find.text('はい'), findsOneWidget);
       });
 
-      /// TC-045-033: 「いいえ」ボタンが表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: AC-007
+      /// 「いいえ」ボタンが表示される
       testWidgets('TC-045-033: 「いいえ」ボタンが表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -227,10 +200,7 @@ void main() {
         expect(find.text('いいえ'), findsOneWidget);
       });
 
-      /// TC-045-034: 「はい」ボタンが赤色で表示される
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-U001
+      /// 「はい」ボタンが赤色で表示される
       testWidgets('TC-045-034: 「はい」ボタンが赤色で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -262,9 +232,7 @@ void main() {
         expect(find.text('はい'), findsOneWidget);
       });
 
-      /// TC-045-035: 「いいえ」ボタンがグレー系で表示される
-      ///
-      /// 優先度: P1（高優先度）
+      /// 「いいえ」ボタンがグレー系で表示される
       testWidgets('TC-045-035: 「いいえ」ボタンがグレー系で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -296,10 +264,7 @@ void main() {
         expect(find.text('いいえ'), findsOneWidget);
       });
 
-      /// TC-ED-008: ダイアログがモーダルとして表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-204
+      /// ダイアログがモーダルとして表示される
       testWidgets('TC-ED-008: ダイアログがモーダルとして表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -334,14 +299,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.2 インタラクションテスト
-    // =========================================================================
     group('インタラクションテスト', () {
-      /// TC-045-036: 「はい」ボタンタップでonConfirmが呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-104, AC-008
+      /// 「はい」ボタンタップでonConfirmが呼ばれる
       testWidgets('TC-045-036: 「はい」ボタンタップでonConfirmが呼ばれる', (tester) async {
         // Arrange
         bool confirmCalled = false;
@@ -378,10 +338,7 @@ void main() {
         expect(confirmCalled, isTrue);
       });
 
-      /// TC-045-037: 「いいえ」ボタンタップでonCancelが呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-105, AC-009
+      /// 「いいえ」ボタンタップでonCancelが呼ばれる
       testWidgets('TC-045-037: 「いいえ」ボタンタップでonCancelが呼ばれる', (tester) async {
         // Arrange
         bool cancelCalled = false;
@@ -418,10 +375,7 @@ void main() {
         expect(cancelCalled, isTrue);
       });
 
-      /// TC-045-038: ダイアログ外タップでダイアログが閉じない（誤操作防止）
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: EDGE-005 (修正: 誤タップ防止のため閉じない仕様)
+      /// ダイアログ外タップでダイアログが閉じない（誤操作防止）
       testWidgets('TC-045-038: ダイアログ外タップでダイアログが閉じない', (tester) async {
         // Arrange
         await tester.pumpWidget(
@@ -460,10 +414,7 @@ void main() {
         expect(find.byType(EmergencyConfirmationDialog), findsOneWidget);
       });
 
-      /// TC-ED-009: 「はい」タップでダイアログ閉じ + 緊急処理実行
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-104
+      /// 「はい」タップでダイアログ閉じ + 緊急処理実行
       testWidgets('TC-ED-009: 「はい」タップでダイアログが閉じる', (tester) async {
         // Arrange
         await tester.pumpWidget(
@@ -501,10 +452,7 @@ void main() {
         expect(find.byType(EmergencyConfirmationDialog), findsNothing);
       });
 
-      /// TC-ED-010: 「いいえ」タップでダイアログ閉じる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-105
+      /// 「いいえ」タップでダイアログ閉じる
       testWidgets('TC-ED-010: 「いいえ」タップでダイアログが閉じる', (tester) async {
         // Arrange
         await tester.pumpWidget(
@@ -543,14 +491,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.3 アクセシビリティテスト
-    // =========================================================================
     group('アクセシビリティテスト', () {
-      /// TC-045-040: 「はい」ボタンのタップターゲットが44x44px以上
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: AC-014, REQ-5001
+      /// 「はい」ボタンのタップターゲットが44x44px以上
       testWidgets('TC-045-040: 「はい」ボタンのタップターゲットが44x44px以上', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -584,10 +527,7 @@ void main() {
         expect(size.height, greaterThanOrEqualTo(AppSizes.minTapTarget));
       });
 
-      /// TC-045-041: 「いいえ」ボタンのタップターゲットが44x44px以上
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: AC-014, REQ-5001
+      /// 「いいえ」ボタンのタップターゲットが44x44px以上
       testWidgets('TC-045-041: 「いいえ」ボタンのタップターゲットが44x44px以上', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -621,10 +561,7 @@ void main() {
         expect(size.height, greaterThanOrEqualTo(AppSizes.minTapTarget));
       });
 
-      /// TC-045-042: 「はい」ボタン幅が100px以上である
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: 境界値
+      /// 「はい」ボタン幅が100px以上である
       testWidgets('TC-045-042: 「はい」ボタン幅が100px以上である', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -657,10 +594,7 @@ void main() {
         expect(size.width, greaterThanOrEqualTo(100.0));
       });
 
-      /// TC-045-043: 「いいえ」ボタン幅が100px以上である
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: 境界値
+      /// 「いいえ」ボタン幅が100px以上である
       testWidgets('TC-045-043: 「いいえ」ボタン幅が100px以上である', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -693,10 +627,7 @@ void main() {
         expect(size.width, greaterThanOrEqualTo(100.0));
       });
 
-      /// TC-045-044: ダイアログにSemantics情報が設定されている
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-A003
+      /// ダイアログにSemantics情報が設定されている
       testWidgets('TC-045-044: ダイアログにSemantics情報が設定されている', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -734,14 +665,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.4 テーマ対応テスト
-    // =========================================================================
     group('テーマ対応テスト', () {
-      /// TC-045-045: ライトモードで適切な配色で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-103
+      /// ライトモードで適切な配色で表示される
       testWidgets('TC-045-045: ライトモードで適切な配色で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -775,10 +701,7 @@ void main() {
         expect(Theme.of(context).brightness, equals(Brightness.light));
       });
 
-      /// TC-045-046: ダークモードで適切な配色で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-103
+      /// ダークモードで適切な配色で表示される
       testWidgets('TC-045-046: ダークモードで適切な配色で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -812,10 +735,7 @@ void main() {
         expect(Theme.of(context).brightness, equals(Brightness.dark));
       });
 
-      /// TC-045-047: 高コントラストモードで適切な配色で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-103, FR-202
+      /// 高コントラストモードで適切な配色で表示される
       testWidgets('TC-045-047: 高コントラストモードで適切な配色で表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -848,14 +768,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.5 エッジケーステスト
-    // =========================================================================
     group('エッジケーステスト', () {
-      /// TC-045-048: 「はい」ボタン連続タップでonConfirmが1回だけ呼ばれる
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: EDGE-001
+      /// 「はい」ボタン連続タップでonConfirmが1回だけ呼ばれる
       testWidgets('TC-045-048: 「はい」ボタン連続タップでonConfirmが1回だけ呼ばれる',
           (tester) async {
         // Arrange
@@ -898,10 +813,7 @@ void main() {
         expect(callCount, equals(1));
       });
 
-      /// TC-045-049: 「いいえ」ボタン連続タップでonCancelが1回だけ呼ばれる
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: EDGE-001
+      /// 「いいえ」ボタン連続タップでonCancelが1回だけ呼ばれる
       testWidgets('TC-045-049: 「いいえ」ボタン連続タップでonCancelが1回だけ呼ばれる',
           (tester) async {
         // Arrange
@@ -945,14 +857,8 @@ void main() {
       });
     });
 
-    // =========================================================================
-    // TASK-0046: 緊急ボタン2段階確認実装 - 追加テスト
-    // =========================================================================
     group('TASK-0046 追加テスト: ボタン配置・連続タップ防止', () {
-      /// TC-046-008: ボタンが「いいえ」「はい」の順（左→右）で配置される
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-006, NFR-U003
+      /// ボタンが「いいえ」「はい」の順（左→右）で配置される
       testWidgets('TC-046-008: ボタンが「いいえ」「はい」の順（左→右）で配置される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -990,10 +896,7 @@ void main() {
         expect(noButtonCenter.dx, lessThan(yesButtonCenter.dx));
       });
 
-      /// TC-046-017: モーダルバリアが存在する
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-103, REQ-5002
+      /// モーダルバリアが存在する
       testWidgets('TC-046-017: モーダルバリアが存在する', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -1025,10 +928,7 @@ void main() {
         expect(find.byType(ModalBarrier), findsWidgets);
       });
 
-      /// TC-046-018: ダイアログ外の複数回タップでもダイアログが閉じない
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-103, REQ-5002, EDGE-002
+      /// ダイアログ外の複数回タップでもダイアログが閉じない
       testWidgets('TC-046-018: ダイアログ外の複数回タップでもダイアログが閉じない', (tester) async {
         // Arrange
         await tester.pumpWidget(
@@ -1070,10 +970,7 @@ void main() {
         expect(find.byType(EmergencyConfirmationDialog), findsOneWidget);
       });
 
-      /// TC-046-027: 確認ダイアログにSemantics「緊急呼び出し確認ダイアログ」が設定されている
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-A001, AC-017
+      /// 確認ダイアログにSemantics「緊急呼び出し確認ダイアログ」が設定されている
       testWidgets('TC-046-027: 確認ダイアログにSemantics「緊急呼び出し確認ダイアログ」が設定されている',
           (tester) async {
         // Arrange & Act
@@ -1108,12 +1005,7 @@ void main() {
         expect(semantics.label, contains('緊急呼び出し確認ダイアログ'));
       });
 
-      /// TC-046-021: 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: AC-013, EDGE-003
-      /// 検証内容: ダイアログ閉じ前の連続タップでもコールバックが1回のみ呼ばれる
-      /// TDD Red: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
+      /// 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）
       testWidgets('TC-046-021: 「はい」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）',
           (tester) async {
         // Arrange
@@ -1160,11 +1052,7 @@ void main() {
         expect(confirmCallCount, equals(1));
       });
 
-      /// TC-046-022: 「いいえ」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: AC-014, EDGE-004
-      /// TDD Red: ダイアログ内部で連続タップ防止機能が未実装の場合、このテストは失敗する
+      /// 「いいえ」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）
       testWidgets('TC-046-022: 「いいえ」ボタン連続タップでコールバックが1回だけ呼ばれる（ダイアログ単体）',
           (tester) async {
         // Arrange
