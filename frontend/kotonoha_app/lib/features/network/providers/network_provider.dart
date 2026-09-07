@@ -1,14 +1,8 @@
 /// ネットワーク状態管理プロバイダー
-///
-/// TASK-0057: Riverpod Provider 構造設計
-/// TASK-0076: ネットワーク状態管理Provider（connectivity_plus統合）
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件:
-/// - REQ-1001: オフライン時AI変換無効化
-/// - REQ-1002: オフライン状態表示
-/// - REQ-1003: オフライン時基本機能動作
-/// - REQ-3004: ネットワーク状態の正確な検知
+/// オフライン時AI変換無効化
+/// オフライン状態表示
+/// オフライン時基本機能動作
+/// ネットワーク状態の正確な検知
 library;
 
 import 'dart:async';
@@ -20,8 +14,7 @@ import '../domain/models/network_state.dart';
 import '../domain/services/connectivity_service.dart';
 
 /// ネットワーク状態管理Notifier
-///
-/// connectivity_plusを使用してネットワーク接続状態を監視し、
+/// connectivity_plusを使用してネットワーク接続状態を監視し
 /// AI変換機能の利用可否を判定する。
 class NetworkNotifier extends Notifier<NetworkState> {
   /// 接続状態変更リスナーのサブスクリプション
@@ -40,7 +33,6 @@ class NetworkNotifier extends Notifier<NetworkState> {
       ref.read(connectivityServiceProvider);
 
   /// connectivity_plusを使用して初期化する
-  ///
   /// 現在の接続状態を確認し、状態を更新する。
   Future<void> initializeWithConnectivity() async {
     final service = _connectivityService;
@@ -59,7 +51,6 @@ class NetworkNotifier extends Notifier<NetworkState> {
   }
 
   /// 接続状態変更のリスナーを開始する
-  ///
   /// ネットワーク接続状態が変更されるたびに状態を更新する。
   Future<void> startListening() async {
     final service = _connectivityService;
@@ -92,14 +83,12 @@ class NetworkNotifier extends Notifier<NetworkState> {
   }
 
   /// オンライン状態を設定（手動設定用）
-  ///
   /// テストやシミュレーション用。
   Future<void> setOnline() async {
     state = NetworkState.online;
   }
 
   /// オフライン状態を設定（手動設定用）
-  ///
   /// テストやシミュレーション用。
   Future<void> setOffline() async {
     state = NetworkState.offline;
@@ -116,7 +105,6 @@ class NetworkNotifier extends Notifier<NetworkState> {
   }
 
   /// ネットワーク接続状態をチェックする
-  ///
   /// connectivity_plusを使用して現在の接続状態を確認する。
   Future<void> checkConnectivity() async {
     if (_connectivityService != null) {
@@ -125,7 +113,6 @@ class NetworkNotifier extends Notifier<NetworkState> {
   }
 
   /// AI変換機能が利用可能かどうか
-  ///
   /// オンライン時のみtrue、オフライン・チェック中はfalse。
   bool get isAIConversionAvailable {
     return state == NetworkState.online;
@@ -139,7 +126,6 @@ class NetworkNotifier extends Notifier<NetworkState> {
 }
 
 /// NetworkNotifierのProvider
-///
 /// ConnectivityServiceを注入してテスト可能にする。
 final networkProvider = NotifierProvider<NetworkNotifier, NetworkState>(
   NetworkNotifier.new,

@@ -1,28 +1,19 @@
 /// DefaultPhrases - 初期定型文データ定義
-///
-/// TASK-0042: 定型文初期データ（50-100個サンプル）
-///
-/// 関連要件:
-/// - REQ-107: 初期データとして50-100個の汎用定型文を提供
-///
-/// 発話困難な方が使いやすい定型文を3つのカテゴリに分類:
-/// - daily (日常): 挨拶、感謝、日常会話、依頼
-/// - health (体調): 身体状態、症状、介助依頼
-/// - other (その他): 場所、時間、数量、その他の表現
+/// 初期データとして50-100個の汎用定型文を提供
+/// 発話困難な方が使いやすい定型文を3つのカテゴリに分類
+/// daily (日常): 挨拶、感謝、日常会話、依頼
+/// health (体調): 身体状態、症状、介助依頼
+/// other (その他): 場所、時間、数量、その他の表現
 library;
 
 /// 機能概要: 初期定型文データの定義
 /// 実装方針: 静的定数でカテゴリ別にデータを定義
-/// 信頼性レベル: 青信号 - REQ-107に基づく
-///
 /// 初回起動時に投入される定型文データ。
 /// 発話困難な方のコミュニケーションを支援する汎用的な表現を収録。
 class DefaultPhrases {
   DefaultPhrases._();
 
   /// 定数定義: 日常カテゴリの定型文
-  /// 信頼性レベル: 青信号 - REQ-107に基づく
-  ///
   /// 挨拶、感謝、日常会話、依頼など日常的に使う表現
   static const List<String> dailyPhrases = [
     // 挨拶
@@ -64,8 +55,6 @@ class DefaultPhrases {
   ];
 
   /// 定数定義: 体調カテゴリの定型文
-  /// 信頼性レベル: 青信号 - REQ-107に基づく
-  ///
   /// 身体状態、症状、体調に関する表現
   static const List<String> healthPhrases = [
     // 身体状態
@@ -108,8 +97,6 @@ class DefaultPhrases {
   ];
 
   /// 定数定義: その他カテゴリの定型文
-  /// 信頼性レベル: 青信号 - REQ-107に基づく
-  ///
   /// 場所、時間、数量、その他の表現
   static const List<String> otherPhrases = [
     // 人を呼ぶ
@@ -154,8 +141,6 @@ class DefaultPhrases {
   ];
 
   /// メソッド: 全定型文データを取得
-  /// 信頼性レベル: 青信号 - REQ-107に基づく
-  ///
   /// カテゴリ別の定型文データをMapで返す。
   /// PresetPhraseNotifierの初期化処理で使用。
   static Map<String, List<String>> getAllPhrases() {
@@ -167,7 +152,6 @@ class DefaultPhrases {
   }
 
   /// メソッド: 定型文の総数を取得
-  /// 信頼性レベル: 青信号 - テスト用ユーティリティ
   static int get totalCount =>
       dailyPhrases.length + healthPhrases.length + otherPhrases.length;
 }

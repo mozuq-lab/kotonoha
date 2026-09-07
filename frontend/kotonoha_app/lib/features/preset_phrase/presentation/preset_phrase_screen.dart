@@ -1,10 +1,4 @@
 /// PresetPhraseScreen - 定型文画面
-///
-/// TASK-0083: 定型文E2Eテスト
-/// TDD Greenフェーズ: 定型文画面の実装
-///
-/// 信頼性レベル: 青信号（REQ-101, REQ-102, REQ-103, REQ-104, REQ-105, REQ-106, REQ-107に基づく）
-///
 /// 定型文一覧を表示し、選択・編集・削除・追加機能を提供する画面。
 /// お気に入り優先表示、カテゴリ別分類、即座読み上げ機能を実装。
 library;
@@ -26,8 +20,6 @@ import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
 /// 機能概要: 定型文画面
 /// 実装方針: Scaffoldベースでお気に入り・カテゴリ別定型文リストを表示
-/// 信頼性レベル: 青信号 - REQ-101〜107に基づく
-///
 /// 定型文の一覧表示、選択時の即座読み上げ、CRUD操作を提供。
 class PresetPhraseScreen extends ConsumerStatefulWidget {
   /// 定型文画面を作成する。
@@ -101,9 +93,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
 
   /// メソッド: 定型文選択時の処理
   /// 実装内容: 即座にTTS読み上げを開始し、履歴に保存
-  /// 信頼性レベル: 青信号 - REQ-103、NFR-001に基づく
-  ///
-  /// バグ修正: DebounceMixin未適用で誤タップによる連続発話が発生し得たため、
+  /// バグ修正: DebounceMixin未適用で誤タップによる連続発話が発生し得たため
   /// 他画面（クイック応答ボタン等）と同様にデバウンスを適用した。
   void _onPhraseSelected(PresetPhrase phrase) {
     // デバウンス期間内の連続タップは無視する（誤タップによる連続発話防止）
@@ -120,13 +110,11 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
   }
 
   /// メソッド: お気に入り切り替え処理
-  /// 信頼性レベル: 青信号 - REQ-105に基づく
   void _onFavoriteToggle(PresetPhrase phrase) {
     ref.read(presetPhraseNotifierProvider.notifier).toggleFavorite(phrase.id);
   }
 
   /// メソッド: 編集処理
-  /// 信頼性レベル: 青信号 - REQ-104に基づく
   void _onEdit(PresetPhrase phrase) {
     showDialog<void>(
       context: context,
@@ -145,8 +133,6 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
   }
 
   /// メソッド: 削除処理
-  /// 信頼性レベル: 青信号 - REQ-104に基づく
-  ///
   /// Phase 3 / WP-2: 定型文の削除はお気に入りも連動削除する
   /// （deletePhrase → deleteFavoriteBySourceId、振る舞いは変更しない）。
   /// お気に入り登録済みのときだけ、確認ダイアログにその旨を足す。
@@ -167,7 +153,6 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
   }
 
   /// メソッド: 追加ダイアログを表示
-  /// 信頼性レベル: 青信号 - REQ-104に基づく
   void _showAddDialog(BuildContext context) {
     showDialog<void>(
       context: context,
