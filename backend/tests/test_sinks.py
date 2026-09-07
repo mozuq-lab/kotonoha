@@ -3,9 +3,7 @@
 境界: (1) プロバイダ SDK の HTTP 応答、(2) 入力検証、(3) 想定外例外、(4) 設定の失敗。
 観測面 × 発火経路の表を、テストで1セルずつ埋める。
 
-実測で確認した前提（経緯は docs/archive/verification-principles.md §3）:
-- 漏えいシンクは stdout / stderr / HTTP レスポンスボディ / ログの4種類。
-  4つ目（アプリが外部へ能動的に返す面）を忘れやすい。
+検証する経路:
 - SecretStr は repr と str を隠すだけで、.get_secret_value() の戻り値・
   例外メッセージ・ログの %r は守らない（pydantic 2.12.5）。
 - 例外連鎖（raise ... from exc）は __cause__ に元の例外を運び、traceback 出力に本文が出る。
@@ -124,7 +122,7 @@ class AcloseExplodingProvider:
 
 
 def test_lifespan_aclose_failure_boundary(capsys: pytest.CaptureFixture[str]) -> None:
-    """I-5: lifespan 終了時に provider.aclose() が失敗しても、例外は外へ出さず型名だけ記録する
+    """lifespan 終了時に provider.aclose() が失敗しても、例外は外へ出さず型名だけ記録する
     （app/main.py の lifespan finally 節）。"""
     app = create_app(
         make_config(), provider_factory=lambda _c: AcloseExplodingProvider(), environ={}, argv=[]
@@ -138,7 +136,7 @@ def test_lifespan_aclose_failure_boundary(capsys: pytest.CaptureFixture[str]) ->
 
 
 def test_config_boundary_in_a_real_process(tmp_path: Path) -> None:
-    """設定失敗はプロセスの stdout / stderr 全体で観測する（8周で唯一破られなかった検証法）。"""
+    """設定失敗はプロセスの stdout / stderr 全体で観測する。"""
     (tmp_path / ".env").write_text(
         f"ANTHROPIC_API_KEY=sk-{CANARY}-é\nRATE_LIMIT_TIMES={CANARY}\n", encoding="utf-8"
     )
@@ -187,7 +185,7 @@ async def boom() -> None:
 def test_exception_boundary_stops_uvicorn_traceback_leak(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """I-1: ServerErrorMiddleware は応答を作った後に必ず再送出するため、その手前の
+    """ServerErrorMiddleware は応答を作った後に必ず再送出するため、その手前の
     ExceptionBoundaryMiddleware（CORS の内側・router の外側）で受け止める。
     ``raise_server_exceptions=True`` のまま例外が test に伝播しなければ、
     ServerErrorMiddleware まで届いていないことが分かる。"""

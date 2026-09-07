@@ -1,13 +1,9 @@
 /// アクセシビリティ要件テスト
-///
-/// テストケース: TC-501〜TC-503
-///
-/// テスト対象:
-/// - lib/core/themes/light_theme.dart
-/// - lib/core/themes/dark_theme.dart
-/// - lib/core/themes/high_contrast_theme.dart
-///
-/// TDD Redフェーズ: 全テーマ共通のアクセシビリティ要件を検証
+/// テストケース
+/// テスト対象
+/// lib/core/themes/light_theme.dart
+/// lib/core/themes/dark_theme.dart
+/// lib/core/themes/high_contrast_theme.dart
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -18,15 +14,13 @@ import 'package:kotonoha_app/core/themes/light_theme.dart';
 
 void main() {
   group('アクセシビリティ要件テスト', () {
-    /// TC-501: 全テーマでElevatedButtonの最小サイズが60px以上である
-    ///
-    /// 前提条件:
-    /// - lightTheme、darkTheme、highContrastThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - lightTheme.elevatedButtonTheme.style.minimumSize >= 60px x 60px
-    /// - darkTheme.elevatedButtonTheme.style.minimumSize >= 60px x 60px
-    /// - highContrastTheme.elevatedButtonTheme.style.minimumSize >= 60px x 60px
+    /// 全テーマでElevatedButtonの最小サイズが60px以上である
+    /// 前提条件
+    /// lightTheme、darkTheme、highContrastThemeがインポートされている
+    /// 期待結果
+    /// lightTheme.elevatedButtonTheme.style.minimumSize >= 60px x 60px
+    /// darkTheme.elevatedButtonTheme.style.minimumSize >= 60px x 60px
+    /// highContrastTheme.elevatedButtonTheme.style.minimumSize >= 60px x 60px
     group('TC-501: 全テーマでElevatedButtonの最小サイズが60px以上である', () {
       test('ライトテーマのElevatedButton最小サイズが60px以上である', () {
         // Arrange
@@ -83,15 +77,13 @@ void main() {
       });
     });
 
-    /// TC-502: 全テーマでIconButtonの最小サイズが44px以上である
-    ///
-    /// 前提条件:
-    /// - lightTheme、darkTheme、highContrastThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - lightTheme.iconButtonTheme.style.minimumSize >= 44px x 44px
-    /// - darkTheme.iconButtonTheme.style.minimumSize >= 44px x 44px
-    /// - highContrastTheme.iconButtonTheme.style.minimumSize >= 44px x 44px
+    /// 全テーマでIconButtonの最小サイズが44px以上である
+    /// 前提条件
+    /// lightTheme、darkTheme、highContrastThemeがインポートされている
+    /// 期待結果
+    /// lightTheme.iconButtonTheme.style.minimumSize >= 44px x 44px
+    /// darkTheme.iconButtonTheme.style.minimumSize >= 44px x 44px
+    /// highContrastTheme.iconButtonTheme.style.minimumSize >= 44px x 44px
     group('TC-502: 全テーマでIconButtonの最小サイズが44px以上である', () {
       test('ライトテーマのIconButton最小サイズが44px以上である', () {
         // Arrange
@@ -145,9 +137,8 @@ void main() {
       });
     });
 
-    /// TC-502b: 全テーマでTextButtonの最小サイズが44px以上である
-    ///
-    /// ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため、
+    /// 全テーマでTextButtonの最小サイズが44px以上である
+    /// ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため
     /// 各テーマのtextButtonThemeで44px以上を保証する。
     group('TC-502b: 全テーマでTextButtonの最小サイズが44px以上である', () {
       test('ライトテーマのTextButton最小サイズが44px以上である', () {
@@ -187,14 +178,12 @@ void main() {
       });
     });
 
-    /// TC-503: 全テーマで同じフォントサイズが使用されている
-    ///
-    /// 前提条件:
-    /// - lightTheme、darkTheme、highContrastThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - 全テーマでbodyMediumのフォントサイズがAppSizes.fontSizeMedium（20px）である
-    /// - テーマ間でフォントサイズの一貫性が保たれている
+    /// 全テーマで同じフォントサイズが使用されている
+    /// 前提条件
+    /// lightTheme、darkTheme、highContrastThemeがインポートされている
+    /// 期待結果
+    /// 全テーマでbodyMediumのフォントサイズがAppSizes.fontSizeMedium（20px）である
+    /// テーマ間でフォントサイズの一貫性が保たれている
     group('TC-503: 全テーマで同じフォントサイズが使用されている', () {
       test('ライトテーマのbodyMediumフォントサイズがAppSizes.fontSizeMediumである', () {
         // Assert

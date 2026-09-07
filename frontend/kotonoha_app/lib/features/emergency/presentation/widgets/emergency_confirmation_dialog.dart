@@ -1,10 +1,4 @@
 /// EmergencyConfirmationDialog ウィジェット
-///
-/// TASK-0045: 緊急ボタンUI実装
-/// TASK-0046: 緊急ボタン2段階確認実装（連続タップ防止機能追加）
-/// 要件: REQ-2004（確認ダイアログ表示）、REQ-2005（確認後の動作）
-/// 信頼性レベル: 青信号（要件定義書ベース）
-///
 /// 緊急呼び出し確認ダイアログ。
 /// 緊急ボタンタップ後に表示され、2段階確認を実現する。
 library;
@@ -16,38 +10,34 @@ import 'package:kotonoha_app/core/constants/app_text_styles.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 
 /// 緊急呼び出し確認ダイアログ
-///
 /// 緊急ボタンタップ後に表示される確認ダイアログ。
-/// REQ-302: 2段階確認（ボタンタップ→確認ダイアログ→確認タップ）を実現する。
-///
-/// デザイン仕様:
-/// - タイトル: 「緊急呼び出し」
-/// - メッセージ: 「緊急呼び出しを実行しますか?」
-/// - 「はい」ボタン: 赤色背景、緊急処理実行
-/// - 「いいえ」ボタン: グレー背景、キャンセル
-/// - ダイアログ外タップでは閉じない（barrierDismissible: false）
-/// - 連続タップ防止機能により、ボタンは1回のみ反応する
-///
-/// 使用例:
+/// 2段階確認（ボタンタップ→確認ダイアログ→確認タップ）を実現する。
+/// デザイン仕様
+/// タイトル: 「緊急呼び出し」
+/// メッセージ: 「緊急呼び出しを実行しますか?」
+/// 「はい」ボタン: 赤色背景、緊急処理実行
+/// 「いいえ」ボタン: グレー背景、キャンセル
+/// ダイアログ外タップでは閉じない（barrierDismissible: false）
+/// 連続タップ防止機能により、ボタンは1回のみ反応する
+/// 使用例
 /// ```dart
 /// showDialog(
-///   context: context,
-///   barrierDismissible: false,
-///   builder: (_) => EmergencyConfirmationDialog(
-///     onConfirm: () {
-///       Navigator.of(context).pop();
-///       executeEmergency();
-///     },
-///     onCancel: () => Navigator.of(context).pop(),
-///   ),
+/// context: context
+/// barrierDismissible: false
+/// builder: (_) => EmergencyConfirmationDialog(
+/// onConfirm:  {
+/// Navigator.of(context).pop;
+/// executeEmergency;
+/// }
+/// onCancel:  => Navigator.of(context).pop
+/// )
 /// );
 /// ```
 class EmergencyConfirmationDialog extends StatefulWidget {
   /// 確認メッセージ
-  ///
-  /// 定数として公開する理由: テストがこの文言をハードコードすると、
+  /// 定数として公開する理由: テストがこの文言をハードコードすると
   /// 疑問符の全角・半角のような1文字の差で照合が外れ、しかも
-  /// 「ダイアログが出ていない」という誤った症状に見える。実際にそれが起き、
+  /// 「ダイアログが出ていない」という誤った症状に見える。実際にそれが起き
   /// E2E の緊急ボタン7件が失敗していた（Issue #84）。
   /// テストはこの定数を参照すること。
   static const String confirmationMessage = '緊急呼び出しを実行しますか?';
@@ -68,7 +58,6 @@ class EmergencyConfirmationDialog extends StatefulWidget {
   final VoidCallback onCancel;
 
   /// EmergencyConfirmationDialogを作成する
-  ///
   /// [onConfirm] - 「はい」タップ時のコールバック（必須）
   /// [onCancel] - 「いいえ」タップ時のコールバック（必須）
   const EmergencyConfirmationDialog({
@@ -78,10 +67,9 @@ class EmergencyConfirmationDialog extends StatefulWidget {
   });
 
   /// テーマに応じた緊急ボタンの色を取得
-  ///
-  /// - ライトモード: 標準の赤色（AppColors.emergency）
-  /// - ダークモード: 明るい赤色（AppColors.emergencyDark）
-  /// - 高コントラストモード: 純粋な赤色（AppColors.emergencyHighContrast）
+  /// ライトモード: 標準の赤色（AppColors.emergency）
+  /// ダークモード: 明るい赤色（AppColors.emergencyDark）
+  /// 高コントラストモード: 純粋な赤色（AppColors.emergencyHighContrast）
   static Color getEmergencyColor(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -157,7 +145,7 @@ class _EmergencyConfirmationDialogState
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: AppSizes.paddingSmall),
-            // AA対応: 補足文の色に Colors.grey(#9E9E9E) を固定していたため、
+            // AA対応: 補足文の色に Colors.grey(#9E9E9E) を固定していたため
             // ダイアログ背景との組み合わせでライト 2.46:1 / 高コントラスト 2.68:1 と
             // WCAG AA(4.5:1)未達だった。テーマの onSurfaceVariant は各テーマの
             // サーフェス色に対しAAを満たすよう定義済みのため、これを使う。
@@ -218,11 +206,10 @@ class _EmergencyConfirmationDialogState
       );
 
   /// 「はい」ボタンを構築
-  ///
   /// AA対応: 背景は緊急色（テーマごとに変わる）なのに文字色を
-  /// Colors.white 固定にしていたため、ダーク(#EF5350) 3.49:1 /
+  /// Colors.white 固定にしていたため、ダーク(#EF5350) 3.49:1
   /// 高コントラスト(#FF0000) 4.00:1 で WCAG AA(4.5:1) 未達だった。
-  /// 緊急色は「目立たせる」ための色なので暗くはせず、
+  /// 緊急色は「目立たせる」ための色なので暗くはせず
   /// 背景輝度から最良の文字色を選ぶことで赤を保ったまま基準を満たす。
   Widget _buildConfirmButton(Color backgroundColor) => _buildDialogButton(
         label: EmergencyConfirmationDialog.confirmLabel,

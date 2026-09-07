@@ -1,26 +1,22 @@
 /// PresetPhraseAdapter 後方互換テスト（旧7フィールド形式を読めること）
-///
 /// Phase 3 / WP-2 / Stage 3b: PresetPhrase.isFavorite（旧 field 3）を削除した。
-///
-/// このテストが守っているもの:
-/// 旧アダプタは 0:id / 1:content / 2:category / **3:isFavorite(bool)** /
+/// このテストが守っているもの
+/// 旧アダプタは 0:id / 1:content / 2:category / **3:isFavorite(bool)**
 /// 4:displayOrder(int) / 5:createdAt / 6:updatedAt の7フィールドを書いていた。
 /// isFavorite を消したあとも、**残るフィールドの番号（4,5,6）を詰め直してはいけない。**
 /// 詰めると旧バイト列の `fields[3]`（bool）を displayOrder（int）として読むことになり
 /// `TypeError` が出る。この例外は `openBoxWithRecovery`（lib/core/utils/hive_init.dart）
-/// の `_isCorruptionError` が破損とみなさない型なので「環境起因」と判定され、
-/// **box を開けないまま null を返す**——利用者から見ると定型文が全消えし、
+/// の `_isCorruptionError` が破損とみなさない型なので「環境起因」と判定され
+/// **box を開けないまま null を返す**——利用者から見ると定型文が全消えし
 /// アプリは無言でインメモリ動作を続ける。
-///
 /// 旧バイト列の作り方: 実 box の境界で確かめるため、旧形式（7フィールド）を書く
-/// アダプタ `_LegacyPresetPhraseAdapter` を typeId 1 に登録して実際に Hive へ書き、
+/// アダプタ `_LegacyPresetPhraseAdapter` を typeId 1 に登録して実際に Hive へ書き
 /// box を閉じてから `Hive.registerAdapter(..., override: true)` で現行アダプタへ
 /// 差し替え、開き直して読む。`override` 引数は hive 2.2.3 の
 /// `TypeRegistryImpl.registerAdapter`（lib/src/registry/type_registry_impl.dart:78-119）
 /// に実在する。
-///
 /// testWidgets を使わない理由: 実 Hive のファイル I/O は FakeAsync と待ち合って
-/// ハングするため、素の test() で書いている。
+/// ハングするため、素の test で書いている。
 library;
 
 import 'dart:io';
@@ -31,18 +27,16 @@ import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
 
 /// テスト用フィクスチャ: Stage 3b 以前の PresetPhraseAdapter の write 側
-///
 /// 端末に既に書かれている「旧形式のバイト列」を再現するためだけのもの。
 /// 現行実装のコピーではなく、**消えた過去の外部データ形式**を表している。
-///
-/// フィールド番号と型:
-/// - 0: id (String)
-/// - 1: content (String)
-/// - 2: category (String)
-/// - 3: isFavorite (bool)  ← Stage 3b で削除された
-/// - 4: displayOrder (int)
-/// - 5: createdAt (DateTime)
-/// - 6: updatedAt (DateTime)
+/// フィールド番号と型
+/// 0: id (String)
+/// 1: content (String)
+/// 2: category (String)
+/// 3: isFavorite (bool)  ← Stage 3b で削除された
+/// 4: displayOrder (int)
+/// 5: createdAt (DateTime)
+/// 6: updatedAt (DateTime)
 class _LegacyPresetPhraseAdapter extends TypeAdapter<PresetPhrase> {
   @override
   final int typeId = 1;

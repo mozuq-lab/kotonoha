@@ -1,32 +1,24 @@
 /// 文字入力バッファの状態管理（Riverpod Notifier）
-///
-/// TASK-0038: 文字入力バッファ管理（Riverpod Notifier）
-///
-/// 主な機能:
-/// - 文字の追加（1文字ずつ）
-/// - 最後の文字の削除
-/// - バッファのクリア
-/// - テキストの設定（定型文挿入等）
-///
-/// 設計方針:
-/// - Notifierによる同期的な状態管理でUI応答性を維持（100ms以内）
-/// - 1000文字制限（EDGE-101）
-/// - 制御文字（改行・タブ）は入力を拒否
-///
-/// 対応要件: REQ-002, REQ-003, REQ-004, EDGE-101
+/// 主な機能
+/// 文字の追加（1文字ずつ）
+/// 最後の文字の削除
+/// バッファのクリア
+/// テキストの設定（定型文挿入等）
+/// 設計方針
+/// Notifierによる同期的な状態管理でUI応答性を維持（100ms以内）
+/// 1000文字制限
+/// 制御文字（改行・タブ）は入力を拒否
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/features/character_board/domain/dakuten_converter.dart';
 
 /// 文字入力バッファのプロバイダー
-///
-/// 使用例:
+/// 使用例
 /// ```dart
-/// // 状態の読み取り
+/// 状態の読み取り
 /// final buffer = ref.watch(inputBufferProvider);
-///
-/// // 文字の追加
+/// 文字の追加
 /// ref.read(inputBufferProvider.notifier).addCharacter('あ');
 /// ```
 final inputBufferProvider = NotifierProvider<InputBufferNotifier, String>(
@@ -34,11 +26,10 @@ final inputBufferProvider = NotifierProvider<InputBufferNotifier, String>(
 );
 
 /// 文字入力バッファの状態管理クラス
-///
 /// [Notifier]を継承し、同期的な状態更新でUI応答性を維持する。
 /// 状態は[String]型で、入力された文字列を保持する。
 class InputBufferNotifier extends Notifier<String> {
-  /// 入力バッファの最大文字数（EDGE-101）
+  /// 入力バッファの最大文字数
   static const int maxLength = 1000;
 
   /// 拒否する制御文字のセット
@@ -49,7 +40,6 @@ class InputBufferNotifier extends Notifier<String> {
   String build() => '';
 
   /// 1文字を入力バッファに追加する
-  ///
   /// [character]が空文字列、制御文字（改行・タブ）の場合は何もしない。
   /// 2文字以上の場合は最初の1文字のみ追加する。
   /// バッファが[maxLength]に達している場合は追加しない。
@@ -68,7 +58,6 @@ class InputBufferNotifier extends Notifier<String> {
   }
 
   /// 最後の1文字を削除する
-  ///
   /// バッファが空の場合は何もしない。
   /// 将来的にはgrapheme cluster単位での削除（絵文字対応）を検討。
   void deleteLastCharacter() {
@@ -82,7 +71,6 @@ class InputBufferNotifier extends Notifier<String> {
   }
 
   /// テキストを設定する（定型文挿入等に使用）
-  ///
   /// [text]が[maxLength]を超える場合は切り捨てる。
   /// 既存のテキストは上書きされる。
   void setText(String text) {
@@ -90,7 +78,6 @@ class InputBufferNotifier extends Notifier<String> {
   }
 
   /// 入力バッファ末尾の文字を濁音化（または清音に戻すトグル）する
-  ///
   /// 文字盤の「゛」キー用。バッファが空、または変換不能な文字の場合は
   /// 何もしない（無視する）。
   void applyDakuten() {
@@ -104,7 +91,6 @@ class InputBufferNotifier extends Notifier<String> {
   }
 
   /// 入力バッファ末尾の文字を半濁音化（または清音に戻すトグル）する
-  ///
   /// 文字盤の「゜」キー用。バッファが空、または変換不能な文字の場合は
   /// 何もしない（無視する）。
   void applyHandakuten() {

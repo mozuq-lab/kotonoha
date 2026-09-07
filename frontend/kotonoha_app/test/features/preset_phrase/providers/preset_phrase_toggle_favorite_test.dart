@@ -1,15 +1,12 @@
 /// toggleFavorite が定型文レコードを書き換えないことのテスト
-///
 /// Phase 3 / WP-2 / Stage 3b: お気に入りの正は favoriteProvider だけになった
 /// （ADR-005「1概念1真実」）。定型文（PresetPhrase）は自分がお気に入りかを
 /// 知らなくなったので、**お気に入りの切り替えで定型文レコードは変わらない。**
-///
 /// なぜ実 box で確かめるか: 「定型文を書き換えない」は、状態オブジェクトの
 /// 中身ではなくディスクに残った行で見ないと確かめたことにならない。box を
 /// 閉じて開き直し、バイト列から読んだ値を検証する。
-///
 /// testWidgets を使わない理由: 実 Hive のファイル I/O は FakeAsync と待ち合って
-/// ハングするため、素の test() で書いている。
+/// ハングするため、素の test で書いている。
 library;
 
 import 'dart:io';
@@ -27,8 +24,8 @@ void main() {
   group('toggleFavorite - 定型文レコードは書き換わらない', () {
     late Directory tempDir;
 
-    /// 固定値: DateTime.now() に依存させないため、時刻は定数で置く。
-    /// 「更新日時が変わらない」を now() 同士の比較で見ると、
+    /// 固定値: DateTime.now に依存させないため、時刻は定数で置く。
+    /// 「更新日時が変わらない」を now 同士の比較で見ると
     /// 実行が速いときに偶然一致して通ってしまう。
     final createdAt = DateTime(2026, 1, 1, 9, 0);
     final updatedAt = DateTime(2026, 1, 1, 9, 0);

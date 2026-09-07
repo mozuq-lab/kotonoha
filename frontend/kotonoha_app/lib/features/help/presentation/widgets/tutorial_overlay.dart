@@ -1,10 +1,5 @@
 /// チュートリアルオーバーレイウィジェット
-///
-/// TASK-0075: ヘルプ画面・初回チュートリアル実装
-///
-/// 信頼性レベル: 黄信号（REQ-3001から推測）
-/// 関連要件:
-/// - REQ-3001: 初回起動時の簡易チュートリアル表示
+/// 初回起動時に簡易チュートリアルを表示する。
 library;
 
 import 'package:flutter/material.dart';
@@ -64,10 +59,8 @@ const _tutorialSteps = [
 ];
 
 /// チュートリアルオーバーレイウィジェット
-///
 /// 初回起動時に表示されるチュートリアルオーバーレイ。
 /// ステップごとに基本的な使い方を説明する。
-///
 /// [child] オーバーレイの背後に表示されるメインコンテンツ
 /// [onComplete] チュートリアル完了時のコールバック
 class TutorialOverlay extends StatefulWidget {
@@ -136,7 +129,6 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                   // よう、可視高さに応じてアイコン・余白を縮小し、本文はスクロール可能にする。
                   // Next/Skipボタンとステップインジケーターは常にスクロール領域外の
                   // 固定位置に置き、タップ不能にならないようにする。
-                  // 信頼性レベル: 黄信号 - Codexレビュー指摘（P2）に基づく
                   final availableHeight = constraints.maxHeight.isFinite
                       ? constraints.maxHeight
                       : MediaQuery.sizeOf(context).height;
@@ -263,7 +255,6 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
 }
 
 /// チュートリアルステップインジケーター
-///
 /// 現在のステップをドットで表示する。
 class TutorialStepIndicator extends StatelessWidget {
   /// 総ステップ数

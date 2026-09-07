@@ -1,6 +1,5 @@
 #!/bin/bash
 # kotonoha iOS Build Script
-# TASK-0091: iOSビルド設定
 #
 # Usage:
 #   ./scripts/build-ios.sh [debug|release|profile] [--archive] [--testflight]

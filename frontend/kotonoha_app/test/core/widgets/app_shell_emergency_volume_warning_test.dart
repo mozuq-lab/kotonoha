@@ -1,11 +1,8 @@
-/// AppShell 緊急時音量警告配線テスト（EDGE-203）
-///
-/// 緊急状態（alertActive）に遷移した際、VolumeServiceでOS音量をチェックし、
+/// AppShell 緊急時音量警告配線テスト
+/// 緊急状態（alertActive）に遷移した際、VolumeServiceでOS音量をチェックし
 /// 音量が0（マナーモード等で音が鳴らない可能性がある）場合に
 /// EmergencyAlertScreen へ warningMessage が渡されることを検証する。
-///
-/// 関連要件:
-/// - EDGE-203: マナーモード・音量0時に緊急音が聞こえない場合の視覚的警告
+/// マナーモード・音量0時に緊急音が聞こえない場合の視覚的警告
 library;
 
 import 'package:flutter/material.dart';

@@ -1,12 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/utils/exceptions.dart';
 
-/// Test suite for custom exception classes (TASK-0018)
-///
-/// TC-ERR-001 to TC-ERR-004: Custom exception generation tests
+/// to : Custom exception generation tests
 void main() {
   group('NetworkException Tests', () {
-    // TC-ERR-001: NetworkException生成テスト
+    // NetworkException生成テスト
     test('TC-ERR-001: should create NetworkException with message', () {
       // Arrange
       const message = '接続エラー';
@@ -36,7 +34,7 @@ void main() {
   });
 
   group('AppTimeoutException Tests', () {
-    // TC-ERR-002: TimeoutException生成テスト
+    // TimeoutException生成テスト
     test('TC-ERR-002: should create AppTimeoutException with message', () {
       // Arrange
       const message = 'タイムアウト';
@@ -66,7 +64,7 @@ void main() {
   });
 
   group('AiConversionException Tests', () {
-    // TC-ERR-003: AiConversionException生成テスト
+    // AiConversionException生成テスト
     test('TC-ERR-003: should create AiConversionException with message', () {
       // Arrange
       const message = '変換失敗';
@@ -98,7 +96,7 @@ void main() {
   });
 
   group('ValidationException Tests', () {
-    // TC-ERR-004: ValidationException生成テスト
+    // ValidationException生成テスト
     test('TC-ERR-004: should create ValidationException with message', () {
       // Arrange
       const message = '入力値が無効です';

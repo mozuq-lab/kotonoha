@@ -1,8 +1,4 @@
 /// Home screen widget (Character Board)
-///
-/// TASK-0015: go_routerナビゲーション設定・ルーティング実装
-/// TASK-0060: Phase 3 統合テスト - ホーム画面統合
-/// 信頼性レベル: 青信号（要件定義書ベース）
 library;
 
 import 'package:flutter/material.dart';
@@ -40,15 +36,13 @@ import 'package:kotonoha_app/features/history/providers/history_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 
 /// ホーム画面（文字盤画面）ウィジェット
-///
 /// アプリケーションのメイン画面。文字盤入力機能を提供する。
-///
-/// 実装要件:
-/// - FR-002: 初期ルート「/」でこの画面を表示
-/// - REQ-001: 五十音配列の文字盤UI
-/// - REQ-002: タップで入力欄に文字追加
-/// - REQ-201: クイック応答ボタン（はい/いいえ/わからない）
-/// - REQ-401: TTS読み上げ機能
+/// 実装要件
+/// 初期ルート「/」でこの画面を表示
+/// 五十音配列の文字盤UI
+/// タップで入力欄に文字追加
+/// クイック応答ボタン（はい/いいえ/わからない）
+/// TTS読み上げ機能
 class HomeScreen extends ConsumerWidget {
   /// ホーム画面を作成する。
   const HomeScreen({super.key});
@@ -62,7 +56,7 @@ class HomeScreen extends ConsumerWidget {
     final aiPoliteness = settings?.aiPoliteness ?? PolitenessLevel.normal;
     final simpleMode = settings?.simpleMode ?? false;
 
-    // 音量ゼロ警告の配線(EDGE-202): tts_button.dart自体は変更せず、
+    // 音量ゼロ警告の配線: tts_button.dart自体は変更せず
     // グローバルなttsProviderの状態遷移(非speaking -> speaking)を横断的に
     // 監視することで、どのボタン（クイック応答・状態ボタン・読み上げボタン等）
     // から読み上げが開始されても音量チェックが行われるようにする。
@@ -78,8 +72,8 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('kotonoha'),
-        // シンプルモード: 文字盤を使わない大ボタン画面に切り替えている間は、
-        // 認知負荷を下げるため他のナビゲーションアイコンは表示せず、
+        // シンプルモード: 文字盤を使わない大ボタン画面に切り替えている間は
+        // 認知負荷を下げるため他のナビゲーションアイコンは表示せず
         // 通常モードへ戻すトグルアイコンのみを表示する。
         actions: simpleMode
             ? [_buildSimpleModeToggleButton(ref, simpleMode: true)]
@@ -115,7 +109,7 @@ class HomeScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // 音量0警告（EDGE-202）: 警告不要時はSizedBox.shrinkで高さ0のため
+            // 音量0警告: 警告不要時はSizedBox.shrinkで高さ0のため
             // 既存レイアウトへの影響はない。シンプルモード中も表示する。
             VolumeWarningWidget(
               isVisible: showVolumeWarning,
@@ -128,11 +122,11 @@ class HomeScreen extends ConsumerWidget {
                   : LayoutBuilder(
                       builder: (context, constraints) {
                         // レスポンシブ対応: 可視高さ・幅に応じてレイアウトを切り替える。
-                        // - isCompactHeight: 主に横持ちスマホ（可視高さ< compactHeightThreshold）。
-                        //   固定サイズのセクションを縦に積むと必要高さが可視高さを超え、
-                        //   RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
-                        // - isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
-                        //   しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
+                        // isCompactHeight: 主に横持ちスマホ（可視高さ< compactHeightThreshold）。
+                        // 固定サイズのセクションを縦に積むと必要高さが可視高さを超え
+                        // RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
+                        // isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
+                        // しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
                         final isCompactHeight = constraints.maxHeight <
                             AppSizes.compactHeightThreshold;
                         final isPhoneWidth =
@@ -168,8 +162,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// シンプルモードの切替トグルボタンを構築する
-  ///
-  /// [simpleMode] は現在シンプルモードが有効かどうか。有効な場合はアイコン・
+  /// [simpleMode] は現在シンプルモードが有効かどうか。有効な場合はアイコン
   /// tooltip（=Semanticsラベル）を「解除」用に切り替える。
   Widget _buildSimpleModeToggleButton(
     WidgetRef ref, {
@@ -187,7 +180,6 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// シンプルモード画面の中身を構築する
-  ///
   /// 文字盤を使わない大ボタン画面。クイック応答・状態ボタン・お気に入りを
   /// 再利用し、TTS読み上げ・履歴保存はこのメソッド内のコールバックで配線する。
   Widget _buildSimpleModeContent(
@@ -209,7 +201,7 @@ class HomeScreen extends ConsumerWidget {
         ref.read(ttsProvider.notifier).speak(text);
       },
       onFavoriteTap: (favorite) {
-        // 既存挙動に合わせる: FavoritesScreenのお気に入りタップと同様、
+        // 既存挙動に合わせる: FavoritesScreenのお気に入りタップと同様
         // 読み上げのみ行い、履歴への再保存は行わない。
         if (favorite.content.isEmpty) return;
         ref.read(ttsProvider.notifier).speak(favorite.content);
@@ -220,9 +212,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  /// 対面表示モード画面を開く（TASK-0052/0053, REQ-501〜503）
-  ///
-  /// 表示するテキストは、入力中のテキスト（input_buffer）を優先し、
+  /// 表示するテキストは、入力中のテキスト（input_buffer）を優先し
   /// 入力が空の場合は直近の読み上げ履歴（historyProvider）のテキストを使う。
   void _openFaceToFace(
       BuildContext context, WidgetRef ref, String inputBuffer) {
@@ -237,7 +227,6 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// 標準レイアウト（タブレット・縦持ちスマホ）
-  ///
   /// 各セクションを縦に積むレイアウト。[compact] がtrue（スマホ幅）の場合は
   /// パディング・ボタン高さを圧縮し、文字盤（Expanded）の可視領域を広げる。
   Widget _buildStandardLayout(
@@ -260,7 +249,6 @@ class HomeScreen extends ConsumerWidget {
           padding: compact ? AppSizes.paddingSmall : AppSizes.paddingMedium,
           compact: compact,
         ),
-        // 状態ボタン（痛い/トイレ/暑い/寒い等、TASK-0044）: 横スクロール1行ストリップ
         _buildStatusButtonsSection(ref, fontSize: fontSize),
         // 入力表示エリア
         _buildInputArea(
@@ -294,7 +282,6 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// コンパクト2ペインレイアウト（主に横持ちスマホ、可視高さが乏しい場合）
-  ///
   /// 縦積みだと固定セクションの必要高さが可視高さを超えRenderFlex
   /// オーバーフローが発生するため、左ペイン（各種操作UI・スクロール可）と
   /// 右ペイン（文字盤、残り全高さをExpandedで使用）の横並びに切り替える。
@@ -325,7 +312,6 @@ class HomeScreen extends ConsumerWidget {
                   padding: AppSizes.paddingXSmall,
                   compact: true,
                 ),
-                // 状態ボタン（痛い/トイレ/暑い/寒い等、TASK-0044）:
                 // 左ペインのスクロール領域内、横スクロール1行ストリップとして配置。
                 _buildStatusButtonsSection(ref, fontSize: fontSize),
                 _buildInputArea(
@@ -361,9 +347,8 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// クイック応答ボタンセクションを構築する
-  ///
-  /// バグ修正: 従来はonResponse内でもTTS読み上げを行っていたため、
-  /// onTTSSpeak（読み上げ実行）と合わせて1タップでspeak()が二重に
+  /// バグ修正: 従来はonResponse内でもTTS読み上げを行っていたため
+  /// onTTSSpeak（読み上げ実行）と合わせて1タップでspeakが二重に
   /// 呼ばれていた。読み上げはonTTSSpeakのみに一本化し、onResponseは
   /// 履歴保存のみを担当するようにした。
   /// バグ修正: 履歴種類が誤ってHistoryType.manualInput（文字盤入力）に
@@ -391,10 +376,8 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  /// 状態ボタンセクションを構築する（TASK-0044, REQ-202〜204）
-  ///
   /// 「痛い」「トイレ」「暑い」「寒い」等の状態ボタンをホーム画面に統合する。
-  /// 縦スペースが貴重なため、StatusButtons（4列グリッド）はそのまま使わず、
+  /// 縦スペースが貴重なため、StatusButtons（4列グリッド）はそのまま使わず
   /// 高さ約56px（[AppSizes.statusButtonStripHeight]）の横スクロール1行
   /// ストリップとして必須8個を表示する。タップで即座にTTS読み上げ＋
   /// 履歴保存（大ボタン扱い: HistoryType.quickButton）を行う。
@@ -429,8 +412,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// 入力表示エリアを構築する
-  ///
-  /// 長文（最大1000文字）入力時に文字盤エリアを圧迫しないよう、
+  /// 長文（最大1000文字）入力時に文字盤エリアを圧迫しないよう
   /// 可視高さの約20%を上限（maxHeight）とし、内部をSingleChildScrollView
   /// （reverse: true）にすることで、超過分は末尾（最新入力）が見える形で
   /// スクロール可能にする。
@@ -486,9 +468,8 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// 入力候補チップ行セクションを構築する（頻度ベースの入力候補）
-  ///
   /// 履歴・定型文・お気に入りから前方一致で算出された候補を、入力表示
-  /// エリアの直下に横スクロールのチップ行として表示する。候補が0件、
+  /// エリアの直下に横スクロールのチップ行として表示する。候補が0件
   /// または入力バッファが空の場合はウィジェット自身が高さ0になる。
   /// タップで入力バッファを候補テキストに置換する（前方一致のため
   /// 自然な補完になる）。
@@ -507,11 +488,10 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// コントロールボタン行（削除・全消去・読み上げ）を構築する
-  ///
   /// バグ修正: コンパクト2ペインレイアウトの左ペイン（幅の狭いExpanded flex:2）
   /// では、固定サイズのボタン群がRow(mainAxisAlignment.spaceBetween)の
-  /// 幅を超えRenderFlexオーバーフローが発生していた。Wrapに変更することで、
-  /// 幅に余裕がある場合は従来通り1行（spaceBetween相当）で表示しつつ、
+  /// 幅を超えRenderFlexオーバーフローが発生していた。Wrapに変更することで
+  /// 幅に余裕がある場合は従来通り1行（spaceBetween相当）で表示しつつ
   /// 幅が不足する場合はスワイプ操作を必要とせず2行に折り返して収める
   /// （タップ操作のみで完結させるための対応）。
   Widget _buildControlRow(
@@ -531,7 +511,7 @@ class HomeScreen extends ConsumerWidget {
           // バグ修正: 削除・全消去ボタン（各60px推奨サイズ）は、コンパクト
           // 2ペインレイアウトの左ペインのように2ボタン分の幅すら確保できない
           // 極端に狭い幅では、この内側グループ自体もWrapにしないと
-          // オーバーフローする（外側WrapはRunをまたぐ折り返しのみ制御し、
+          // オーバーフローする（外側WrapはRunをまたぐ折り返しのみ制御し
           // 単一の子の内部レイアウトまでは救えないため）。
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -650,12 +630,11 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// 履歴に保存する
-  ///
-  /// バグ修正: 従来は常にHistoryType.manualInput固定で保存していたため、
-  /// クイック応答・状態ボタン経由の履歴も「文字盤入力」として記録され、
+  /// バグ修正: 従来は常にHistoryType.manualInput固定で保存していたため
+  /// クイック応答・状態ボタン経由の履歴も「文字盤入力」として記録され
   /// 履歴画面のアイコン・スクリーンリーダー読み上げが実態と異なっていた。
   /// 呼び出し元ごとに適切な[type]を指定できるようにした
-  /// （文字盤入力: HistoryType.manualInput、クイック応答・状態ボタン:
+  /// （文字盤入力: HistoryType.manualInput、クイック応答・状態ボタン
   /// HistoryType.quickButton）。
   void _saveToHistory(WidgetRef ref, String text, HistoryType type) {
     ref.read(historyProvider.notifier).addHistory(text, type);
@@ -766,9 +745,9 @@ class HomeScreen extends ConsumerWidget {
     String convertedText,
     PolitenessLevel politenessLevel,
   ) {
-    // 注意ダイアログのクローズはAIConversionResultDialog.show()内部で
+    // 注意ダイアログのクローズはAIConversionResultDialog.show内部で
     // dialogContext（root Navigator）を使って行われるため、ここで
-    // Navigator.of(context).pop()を呼んではならない。
+    // Navigator.of(context).popを呼んではならない。
     // 呼び出し元contextはShellRoute配下のbranch Navigatorに属し、popすると
     // ダイアログではなく背後のページが閉じられてしまう。
     AIConversionResultDialog.show(
@@ -820,9 +799,8 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// FontSizeからフォントサイズ値を取得
-  ///
-  /// REQ-802: 入力欄のフォントサイズを設定に追従させる
-  /// 青信号: AppSizesの定義に基づく
+  /// 入力欄のフォントサイズを設定に追従させる
+  /// AppSizesの定義に基づく
   double _getFontSizeValue(FontSize fontSize) {
     switch (fontSize) {
       case FontSize.small:

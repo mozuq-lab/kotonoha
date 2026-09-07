@@ -1,9 +1,4 @@
 /// 五十音文字盤ウィジェット
-///
-/// TASK-0037: 五十音文字盤UI実装
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件: REQ-001, REQ-002, REQ-5001, NFR-003, NFR-202
 library;
 
 import 'package:flutter/material.dart';
@@ -12,19 +7,16 @@ import 'package:kotonoha_app/features/character_board/domain/character_data.dart
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
 /// 五十音文字盤ウィジェット
-///
 /// 五十音配列の文字盤UIを表示し、ユーザーがタップした文字を
 /// コールバック経由で返却する。
-///
-/// 実装要件:
-/// - REQ-001: 五十音配列の文字盤UI表示
-/// - REQ-002: タップで入力欄に文字追加
-/// - REQ-5001: タップターゲット44px × 44px以上
-/// - NFR-003: 100ms以内の応答
-/// - NFR-202: 推奨60px × 60px以上
+/// 実装要件
+/// 五十音配列の文字盤UI表示
+/// タップで入力欄に文字追加
+/// タップターゲット44px × 44px以上
+/// 100ms以内の応答
+/// 推奨60px × 60px以上
 class CharacterBoardWidget extends StatefulWidget {
   /// 文字盤ウィジェットを作成する。
-  ///
   /// [onCharacterTap] - 文字タップ時のコールバック（必須）
   /// [fontSize] - フォントサイズ設定（デフォルト: medium）
   /// [isEnabled] - 有効/無効状態（デフォルト: true）
@@ -175,7 +167,6 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
             }
             // RepaintBoundaryで個別ボタンの再描画範囲を限定
             // タップ時に該当ボタンのみ再描画し、他のボタンへの影響を最小化
-            // TASK-0089: 文字盤UI最適化 (REQ-OPT-002)
             return RepaintBoundary(
               child: CharacterButton(
                 key: ValueKey('character_button_$character'),
@@ -199,15 +190,12 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
 }
 
 /// 文字ボタンウィジェット
-///
 /// 個々の文字を表示するボタン。タップ時にコールバックを呼び出す。
-///
-/// 実装要件:
-/// - REQ-5001: タップターゲット44px × 44px以上
-/// - NFR-202: 推奨60px × 60px以上
+/// 実装要件
+/// タップターゲット44px × 44px以上
+/// 推奨60px × 60px以上
 class CharacterButton extends StatelessWidget {
   /// 文字ボタンを作成する。
-  ///
   /// [character] - 表示する文字（タップ時にコールバックへ渡す値）
   /// [onTap] - タップ時のコールバック
   /// [size] - ボタンサイズ（デフォルト: 60.0）
@@ -242,12 +230,10 @@ class CharacterButton extends StatelessWidget {
   final FontSize fontSize;
 
   /// ボタンに表示するラベル（濁点・半濁点・空白キー等の特殊表示用）
-  ///
   /// nullの場合は[character]をそのまま表示する。
   final String? displayLabel;
 
   /// スクリーンリーダー用ラベル（濁点・半濁点・空白キー等の特殊表示用）
-  ///
   /// nullの場合は[character]をそのまま使用する。
   final String? accessibilityLabel;
 

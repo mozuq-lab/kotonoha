@@ -1,12 +1,6 @@
 /// 緊急機能の全画面配線テスト（AppShell / ShellRoute経由）
-///
 /// F3: 緊急機能（緊急ボタン常時表示・緊急アラート表示）が
 /// AppShellを経由して全画面に配線されていることを検証する。
-///
-/// 関連要件:
-/// - REQ-301: 緊急ボタンの全画面常時表示
-/// - REQ-302: 2段階確認（ボタンタップ→確認ダイアログ→確認タップ）
-/// - REQ-304: 緊急アラート画面のフルスクリーン表示
 library;
 
 import 'package:flutter/material.dart';
@@ -106,12 +100,12 @@ void main() {
       // 初期状態では緊急アラート画面は表示されない
       expect(find.byType(EmergencyAlertScreen), findsNothing);
 
-      // 緊急ボタンをタップ → 確認ダイアログ表示（REQ-302 1段階目）
+      // 緊急ボタンをタップ → 確認ダイアログ表示（1段階目）
       await tester.tap(find.byType(EmergencyButtonWithConfirmation));
       await tester.pumpAndSettle();
 
       // 確認ダイアログ（EmergencyConfirmationDialog）内の「はい」ボタンに限定。
-      // ホーム画面にも定型文等で「はい」テキストが存在しうるため、
+      // ホーム画面にも定型文等で「はい」テキストが存在しうるため
       // AlertDialog配下のElevatedButtonに絞り込む。
       final confirmButton = find.descendant(
         of: find.byType(AlertDialog),
@@ -123,11 +117,11 @@ void main() {
         reason: '緊急ボタンタップで確認ダイアログ（はいボタン）が表示される必要がある',
       );
 
-      // 「はい」をタップ → 緊急処理開始（REQ-302 2段階目）
+      // 「はい」をタップ → 緊急処理開始（2段階目）
       await tester.tap(confirmButton);
       await tester.pumpAndSettle();
 
-      // 緊急アラート画面が最前面に表示される（REQ-304）
+      // 緊急アラート画面が最前面に表示される
       expect(
         find.byType(EmergencyAlertScreen),
         findsOneWidget,
@@ -155,8 +149,7 @@ void main() {
 }
 
 /// テスト用のモックSettingsNotifier
-///
-/// ローディング状態を回避するため、build()で即座にデフォルト設定を返す。
+/// ローディング状態を回避するため、buildで即座にデフォルト設定を返す。
 class _MockSettingsNotifier extends SettingsNotifier {
   @override
   Future<AppSettings> build() async {

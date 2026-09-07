@@ -1,12 +1,9 @@
 /// 定型文の往復テスト（Phase 3 / WP-3）
-///
 /// **UI → provider → repository → 実 Hive box → 再起動相当 → UI** を1本で通す。
-///
 /// お気に入りトグルを選んだ理由: WP-2 で「定型文がお気に入りか」の真実を
-/// `favoriteProvider` へ寄せた（ADR-005）。`PresetPhrase.isFavorite` は削除済みで、
-/// 定型文 UI は favorites box の内容から星を描く。**2つの box をまたぐ往復**なので、
+/// `favoriteProvider` へ寄せた（ADR-005）。`PresetPhrase.isFavorite` は削除済みで
+/// 定型文 UI は favorites box の内容から星を描く。**2つの box をまたぐ往復**なので
 /// 真実が1つに寄っていることを最も外側の境界で確かめられる。
-///
 /// 制約と対処（実 Hive × testWidgets）は
 /// `test/features/history/history_round_trip_test.dart` の冒頭コメントを参照。
 library;

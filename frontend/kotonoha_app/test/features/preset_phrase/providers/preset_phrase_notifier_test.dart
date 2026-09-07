@@ -1,12 +1,4 @@
 /// PresetPhraseNotifier テスト
-///
-/// TASK-0041: 定型文CRUD機能実装
-/// TASK-0042: 定型文初期データ投入機能
-/// テストケース: TC-041-032〜TC-041-042, TC-042-XXX
-///
-/// テスト対象: lib/features/preset_phrase/providers/preset_phrase_notifier.dart
-///
-/// TDD Redフェーズ: Notifierが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,18 +21,8 @@ void main() {
   });
 
   group('PresetPhraseNotifier - 追加機能テスト', () {
-    // =========================================================================
-    // TC-041-032: 定型文を追加できる
-    // =========================================================================
-    /// TC-041-032: addPhrase()で定型文を追加できる
-    ///
-    /// テスト目的: 追加機能の確認
-    /// テスト内容: 追加機能
-    /// 期待される動作: 新しい定型文が状態に追加される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: REQ-104, AC-002
-    /// 優先度: P0 必須
+    // 定型文を追加できる
+    /// addPhraseで定型文を追加できる
     test('TC-041-032: addPhrase()で定型文を追加できる', () async {
       // 入力データ: 新規定型文
       const content = 'おはようございます';
@@ -51,23 +33,13 @@ void main() {
 
       // 結果検証: 状態に追加されていることを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, equals(1)); // 確認内容: 状態の変化
-      expect(state.phrases.first.content, equals(content)); // 確認内容: 内容が正しい
-      expect(state.phrases.first.category, equals(category)); // 確認内容: カテゴリが正しい
+      expect(state.phrases.length, equals(1));
+      expect(state.phrases.first.content, equals(content));
+      expect(state.phrases.first.category, equals(category));
     });
 
-    // =========================================================================
-    // TC-041-033: 追加時にUUIDが自動付与される
-    // =========================================================================
-    /// TC-041-033: 追加された定型文にUUID形式のIDが自動付与される
-    ///
-    /// テスト目的: ID自動生成の確認
-    /// テスト内容: ID自動生成
-    /// 期待される動作: UUID形式のIDが付与される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: CRUD-003
-    /// 優先度: P0 必須
+    // 追加時にUUIDが自動付与される
+    /// 追加された定型文にUUID形式のIDが自動付与される
     test('TC-041-033: 追加された定型文にUUID形式のIDが自動付与される', () async {
       // 入力データ: 新規定型文（ID未指定）
       const content = 'テスト';
@@ -78,7 +50,7 @@ void main() {
 
       // 結果検証: UUID形式のIDがあることを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.first.id, isNotEmpty); // 確認内容: IDが存在する
+      expect(state.phrases.first.id, isNotEmpty);
       // UUID形式の確認（8-4-4-4-12の形式）
       final uuidRegex = RegExp(
         r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
@@ -87,21 +59,11 @@ void main() {
       expect(
         uuidRegex.hasMatch(state.phrases.first.id),
         isTrue,
-      ); // 確認内容: IDの形式
+      );
     });
 
-    // =========================================================================
-    // TC-041-034: 追加時にcreatedAt/updatedAtが設定される
-    // =========================================================================
-    /// TC-041-034: 追加された定型文にcreatedAt/updatedAtが自動設定される
-    ///
-    /// テスト目的: タイムスタンプ設定の確認
-    /// テスト内容: タイムスタンプ自動設定
-    /// 期待される動作: 現在時刻が設定される
-    ///
-    /// 信頼性レベル: 黄信号
-    /// 関連要件: CRUD-008
-    /// 優先度: P1 重要
+    // 追加時にcreatedAt/updatedAtが設定される
+    /// 追加された定型文にcreatedAt/updatedAtが自動設定される
     test('TC-041-034: 追加された定型文にcreatedAt/updatedAtが自動設定される', () async {
       // 入力データ: 新規定型文
       final beforeAdd = DateTime.now();
@@ -121,7 +83,7 @@ void main() {
         phrase.createdAt
             .isAfter(beforeAdd.subtract(const Duration(seconds: 1))),
         isTrue,
-      ); // 確認内容: createdAtの値
+      );
       expect(
         phrase.createdAt.isBefore(afterAdd.add(const Duration(seconds: 1))),
         isTrue,
@@ -132,23 +94,13 @@ void main() {
         phrase.updatedAt
             .isAfter(beforeAdd.subtract(const Duration(seconds: 1))),
         isTrue,
-      ); // 確認内容: updatedAtの値
+      );
     });
   });
 
   group('PresetPhraseNotifier - 更新機能テスト', () {
-    // =========================================================================
-    // TC-041-035: 定型文の内容を更新できる
-    // =========================================================================
-    /// TC-041-035: updatePhrase()で定型文の内容を更新できる
-    ///
-    /// テスト目的: 内容更新の確認
-    /// テスト内容: 内容更新機能
-    /// 期待される動作: 指定した定型文の内容が更新される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: REQ-104, AC-004
-    /// 優先度: P0 必須
+    // 定型文の内容を更新できる
+    /// updatePhraseで定型文の内容を更新できる
     test('TC-041-035: updatePhrase()で定型文の内容を更新できる', () async {
       // 前提条件: 定型文を1件追加
       await notifier.addPhrase('元の内容', 'daily');
@@ -163,22 +115,11 @@ void main() {
 
       // 結果検証: 内容が更新されていることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.first.content,
-          equals(newContent)); // 確認内容: 更新後のcontent
+      expect(updatedState.phrases.first.content, equals(newContent));
     });
 
-    // =========================================================================
-    // TC-041-036: 定型文のカテゴリを更新できる
-    // =========================================================================
-    /// TC-041-036: updatePhrase()で定型文のカテゴリを更新できる
-    ///
-    /// テスト目的: カテゴリ更新の確認
-    /// テスト内容: カテゴリ更新機能
-    /// 期待される動作: 指定した定型文のカテゴリが更新される
-    ///
-    /// 信頼性レベル: 黄信号
-    /// 関連要件: REQ-104
-    /// 優先度: P1 重要
+    // 定型文のカテゴリを更新できる
+    /// updatePhraseで定型文のカテゴリを更新できる
     test('TC-041-036: updatePhrase()で定型文のカテゴリを更新できる', () async {
       // 前提条件: 定型文を1件追加
       await notifier.addPhrase('テスト', 'daily');
@@ -193,24 +134,13 @@ void main() {
 
       // 結果検証: カテゴリが更新されていることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.first.category,
-          equals(newCategory)); // 確認内容: 更新後のcategory
+      expect(updatedState.phrases.first.category, equals(newCategory));
     });
   });
 
   group('PresetPhraseNotifier - 削除機能テスト', () {
-    // =========================================================================
-    // TC-041-037: 定型文を削除できる
-    // =========================================================================
-    /// TC-041-037: deletePhrase()で定型文を削除できる
-    ///
-    /// テスト目的: 削除機能の確認
-    /// テスト内容: 削除機能
-    /// 期待される動作: 指定した定型文が状態から削除される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: REQ-104, AC-006
-    /// 優先度: P0 必須
+    // 定型文を削除できる
+    /// deletePhraseで定型文を削除できる
     test('TC-041-037: deletePhrase()で定型文を削除できる', () async {
       // 前提条件: 定型文を1件追加
       await notifier.addPhrase('削除テスト', 'daily');
@@ -225,26 +155,13 @@ void main() {
 
       // 結果検証: 削除されていることを確認
       final updatedState = container.read(presetPhraseNotifierProvider);
-      expect(updatedState.phrases.length, equals(0)); // 確認内容: 状態から削除されていること
+      expect(updatedState.phrases.length, equals(0));
     });
   });
 
   group('PresetPhraseNotifier - お気に入り機能テスト', () {
-    // =========================================================================
-    // TC-041-038: お気に入りフラグを切り替えできる
-    // =========================================================================
-    /// TC-041-038: toggleFavorite()でお気に入りフラグを切り替えできる
-    ///
-    /// テスト目的: お気に入り切替の確認
-    /// テスト内容: お気に入り切替機能
-    /// 期待される動作: favoriteProviderに定型文由来のお気に入りが1件増える
-    ///
-    /// 設計変更: Phase 3 / WP-2 / Stage 3b - お気に入りの正はfavoriteProvider
-    /// だけになった（ADR-005「1概念1真実」）ので、確認先もそちらへ移した。
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: ADR-005, CRUD-007, CRUD-106, AC-007
-    /// 優先度: P0 必須
+    // お気に入りフラグを切り替えできる
+    /// toggleFavoriteでお気に入りフラグを切り替えできる
     test('TC-041-038: toggleFavorite()でお気に入りにできる（未登録→登録）', () async {
       // 前提条件: 定型文を1件追加
       await notifier.addPhrase('お気に入りテスト', 'daily');
@@ -257,25 +174,14 @@ void main() {
 
       // 結果検証: お気に入りの正に、この定型文由来の1件が入る
       final favorites = container.read(favoriteProvider).favorites;
-      expect(favorites.length, equals(1)); // 確認内容: 1件登録された
-      expect(
-          favorites.first.sourceType, equals('preset_phrase')); // 確認内容: 定型文由来
-      expect(favorites.first.sourceId, equals(existingId)); // 確認内容: どの定型文か
+      expect(favorites.length, equals(1));
+      expect(favorites.first.sourceType, equals('preset_phrase'));
+      expect(favorites.first.sourceId, equals(existingId));
       expect(favorites.first.content, equals('お気に入りテスト'));
     });
 
-    // =========================================================================
-    // TC-041-039: お気に入り解除ができる
-    // =========================================================================
-    /// TC-041-039: toggleFavorite()でお気に入り解除ができる
-    ///
-    /// テスト目的: お気に入り解除の確認
-    /// テスト内容: お気に入り解除機能
-    /// 期待される動作: favoriteProviderから定型文由来のお気に入りが消える
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: ADR-005, CRUD-007
-    /// 優先度: P0 必須
+    // お気に入り解除ができる
+    /// toggleFavoriteでお気に入り解除ができる
     test('TC-041-039: toggleFavorite()でお気に入り解除ができる（登録→未登録）', () async {
       // 前提条件: お気に入り登録済みの定型文を作成
       await notifier.addPhrase('お気に入りテスト', 'daily');
@@ -290,27 +196,16 @@ void main() {
       await notifier.toggleFavorite(existingId);
 
       // 結果検証: お気に入りの正から消えていること
-      expect(
-          container.read(favoriteProvider).favorites, isEmpty); // 確認内容: 解除された
-      // 確認内容: 定型文そのものは残っている（解除は削除ではない）
+      expect(container.read(favoriteProvider).favorites, isEmpty);
+      // 定型文そのものは残っている（解除は削除ではない）
       expect(container.read(presetPhraseNotifierProvider).phrases.length,
           equals(1));
     });
   });
 
   group('PresetPhraseNotifier - エラーハンドリングテスト', () {
-    // =========================================================================
-    // TC-041-041: 存在しないIDで更新しようとするとエラー
-    // =========================================================================
-    /// TC-041-041: 存在しないIDでupdatePhrase()を呼び出すとエラーハンドリングされる
-    ///
-    /// テスト目的: エラーハンドリングの確認
-    /// テスト内容: 不正ID時のエラーハンドリング
-    /// 期待される動作: エラーが発生し、状態は変化しない
-    ///
-    /// 信頼性レベル: 黄信号
-    /// 関連要件: EDGE-009
-    /// 優先度: P1 重要
+    // 存在しないIDで更新しようとするとエラー
+    /// 存在しないIDでupdatePhraseを呼び出すとエラーハンドリングされる
     test('TC-041-041: 存在しないIDでupdatePhrase()を呼び出すとエラーハンドリングされる', () async {
       // 前提条件: 空の状態
       final initialState = container.read(presetPhraseNotifierProvider);
@@ -324,23 +219,13 @@ void main() {
 
       // 結果検証: エラーハンドリングされ、状態は変化しないことを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, equals(0)); // 確認内容: 状態は変化しない
+      expect(state.phrases.length, equals(0));
       // エラー状態が設定されているか、またはログ出力されていることを確認
       // （実装によってはerrorフィールドに設定される可能性がある）
     });
 
-    // =========================================================================
-    // TC-041-042: 存在しないIDで削除しようとするとエラー
-    // =========================================================================
-    /// TC-041-042: 存在しないIDでdeletePhrase()を呼び出すとエラーハンドリングされる
-    ///
-    /// テスト目的: エラーハンドリングの確認
-    /// テスト内容: 不正ID時のエラーハンドリング
-    /// 期待される動作: エラーが発生し、状態は変化しない
-    ///
-    /// 信頼性レベル: 黄信号
-    /// 関連要件: EDGE-010
-    /// 優先度: P1 重要
+    // 存在しないIDで削除しようとするとエラー
+    /// 存在しないIDでdeletePhraseを呼び出すとエラーハンドリングされる
     test('TC-041-042: 存在しないIDでdeletePhrase()を呼び出すとエラーハンドリングされる', () async {
       // 前提条件: 定型文を1件追加
       await notifier.addPhrase('テスト', 'daily');
@@ -355,23 +240,13 @@ void main() {
 
       // 結果検証: エラーハンドリングされ、状態は変化しないことを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, equals(1)); // 確認内容: 状態は変化しない
+      expect(state.phrases.length, equals(1));
     });
   });
 
   group('PresetPhraseNotifier - 初期データ投入機能テスト (TASK-0042)', () {
-    // =========================================================================
-    // TC-042-001: 初期データが投入される
-    // =========================================================================
-    /// TC-042-001: initializeDefaultPhrases()で初期データが投入される
-    ///
-    /// テスト目的: 初期データ投入の確認
-    /// テスト内容: 初期データ投入機能
-    /// 期待される動作: 50個以上の定型文が投入される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: REQ-107
-    /// 優先度: P0 必須
+    // 初期データが投入される
+    /// initializeDefaultPhrasesで初期データが投入される
     test('TC-042-001: initializeDefaultPhrases()で50個以上の定型文が投入される', () async {
       // 前提条件: 空の状態
       final initialState = container.read(presetPhraseNotifierProvider);
@@ -382,22 +257,12 @@ void main() {
 
       // 結果検証: 50個以上の定型文があることを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, greaterThanOrEqualTo(50)); // 確認内容: REQ-107
-      expect(state.phrases.length, lessThanOrEqualTo(100)); // 確認内容: 100個以下
+      expect(state.phrases.length, greaterThanOrEqualTo(50));
+      expect(state.phrases.length, lessThanOrEqualTo(100));
     });
 
-    // =========================================================================
-    // TC-042-002: カテゴリごとに適切に分類される
-    // =========================================================================
-    /// TC-042-002: 投入される定型文がカテゴリごとに分類されている
-    ///
-    /// テスト目的: カテゴリ分類の確認
-    /// テスト内容: カテゴリ分類機能
-    /// 期待される動作: daily, health, otherの3カテゴリに分類される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: REQ-107
-    /// 優先度: P0 必須
+    // カテゴリごとに適切に分類される
+    /// 投入される定型文がカテゴリごとに分類されている
     test('TC-042-002: 投入される定型文が3カテゴリに分類されている', () async {
       // 実行: 初期データを投入
       await notifier.initializeDefaultPhrases();
@@ -409,23 +274,13 @@ void main() {
       final healthPhrases = state.phrases.where((p) => p.category == 'health');
       final otherPhrases = state.phrases.where((p) => p.category == 'other');
 
-      expect(dailyPhrases.length, greaterThan(0)); // 確認内容: daily
-      expect(healthPhrases.length, greaterThan(0)); // 確認内容: health
-      expect(otherPhrases.length, greaterThan(0)); // 確認内容: other
+      expect(dailyPhrases.length, greaterThan(0));
+      expect(healthPhrases.length, greaterThan(0));
+      expect(otherPhrases.length, greaterThan(0));
     });
 
-    // =========================================================================
-    // TC-042-003: 重複投入されない
-    // =========================================================================
-    /// TC-042-003: 既にデータがある場合は投入されない
-    ///
-    /// テスト目的: 重複投入防止の確認
-    /// テスト内容: 重複投入防止機能
-    /// 期待される動作: 既存データがある場合は何もしない
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: REQ-107
-    /// 優先度: P0 必須
+    // 重複投入されない
+    /// 既にデータがある場合は投入されない
     test('TC-042-003: 既にデータがある場合は初期データが投入されない', () async {
       // 前提条件: 手動でデータを追加
       await notifier.addPhrase('手動追加', 'daily');
@@ -437,22 +292,12 @@ void main() {
 
       // 結果検証: データが増えていないことを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, equals(1)); // 確認内容: 重複投入防止
+      expect(state.phrases.length, equals(1));
       expect(state.phrases.first.content, equals('手動追加'));
     });
 
-    // =========================================================================
-    // TC-042-004: 初期データにUUIDが付与される
-    // =========================================================================
-    /// TC-042-004: 投入される初期データにUUIDが自動付与される
-    ///
-    /// テスト目的: UUID付与の確認
-    /// テスト内容: UUID自動生成
-    /// 期待される動作: すべてのデータにユニークなUUIDが付与される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: CRUD-003
-    /// 優先度: P1 重要
+    // 初期データにUUIDが付与される
+    /// 投入される初期データにUUIDが自動付与される
     test('TC-042-004: 投入される初期データにユニークなUUIDが付与される', () async {
       // 実行: 初期データを投入
       await notifier.initializeDefaultPhrases();
@@ -460,7 +305,7 @@ void main() {
       // 結果検証: すべてのIDがユニークであることを確認
       final state = container.read(presetPhraseNotifierProvider);
       final ids = state.phrases.map((p) => p.id).toSet();
-      expect(ids.length, equals(state.phrases.length)); // 確認内容: IDのユニーク性
+      expect(ids.length, equals(state.phrases.length));
 
       // UUID形式の確認
       final uuidRegex = RegExp(
@@ -468,44 +313,23 @@ void main() {
         caseSensitive: false,
       );
       for (final phrase in state.phrases) {
-        expect(uuidRegex.hasMatch(phrase.id), isTrue); // 確認内容: UUID形式
+        expect(uuidRegex.hasMatch(phrase.id), isTrue);
       }
     });
 
-    // =========================================================================
-    // TC-042-005: 初期データとDefaultPhrasesの整合性
-    // =========================================================================
-    /// TC-042-005: 投入される定型文の数がDefaultPhrasesと一致する
-    ///
-    /// テスト目的: データ整合性の確認
-    /// テスト内容: データ整合性
-    /// 期待される動作: DefaultPhrases.totalCountと一致する
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: REQ-107
-    /// 優先度: P1 重要
+    // 初期データとDefaultPhrasesの整合性
+    /// 投入される定型文の数がDefaultPhrasesと一致する
     test('TC-042-005: 投入される定型文の数がDefaultPhrasesと一致する', () async {
       // 実行: 初期データを投入
       await notifier.initializeDefaultPhrases();
 
       // 結果検証: 数が一致することを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length,
-          equals(DefaultPhrases.totalCount)); // 確認内容: 数の一致
+      expect(state.phrases.length, equals(DefaultPhrases.totalCount));
     });
 
-    // =========================================================================
-    // TC-042-006: リセット機能のテスト
-    // =========================================================================
-    /// TC-042-006: resetToDefaults()でデータを初期状態に戻せる
-    ///
-    /// テスト目的: リセット機能の確認
-    /// テスト内容: リセット機能
-    /// 期待される動作: 既存データが削除され、初期データが投入される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: REQ-107
-    /// 優先度: P2 推奨
+    // リセット機能のテスト
+    /// resetToDefaultsでデータを初期状態に戻せる
     test('TC-042-006: resetToDefaults()でデータを初期状態に戻せる', () async {
       // 前提条件: 手動でデータを追加し、初期データを投入しない状態
       await notifier.addPhrase('手動追加1', 'daily');
@@ -516,8 +340,7 @@ void main() {
 
       // 結果検証: 初期データに戻っていることを確認
       final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length,
-          equals(DefaultPhrases.totalCount)); // 確認内容: リセット成功
+      expect(state.phrases.length, equals(DefaultPhrases.totalCount));
 
       // 手動追加のデータがないことを確認
       final manualPhrases = state.phrases.where(

@@ -1,26 +1,17 @@
 /// EmptyHistoryWidget ウィジェット
-///
-/// TASK-0061: 履歴一覧UI実装
-/// TDD Refactorフェーズ: 定数抽出・constコンストラクタ・アクセシビリティ改善
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件: FR-061-004, EDGE-061-004
 library;
 
 import 'package:flutter/material.dart';
 import '../constants/history_ui_constants.dart';
 
 /// 空状態表示ウィジェット
-///
 /// 履歴が0件の場合に表示するウィジェット。
-///
-/// 表示内容:
-/// - 空状態アイコン
-/// - 「履歴がありません」メッセージ
-/// - 使い方のヒント
-///
-/// アクセシビリティ:
-/// - 情報提示のみなので、スクリーンリーダーには読み上げさせる
+/// 表示内容
+/// 空状態アイコン
+/// 「履歴がありません」メッセージ
+/// 使い方のヒント
+/// アクセシビリティ
+/// 情報提示のみなので、スクリーンリーダーには読み上げさせる
 class EmptyHistoryWidget extends StatelessWidget {
   /// コンストラクタ
   const EmptyHistoryWidget({super.key});

@@ -1,17 +1,13 @@
 /// copyWith のエラー引数規約テスト（回帰テスト）
-///
 /// 改善対応: copyWith のエラー引数パターンの統一
-///
 /// 背景: 状態クラスごとに copyWith のエラー引数の扱いが3パターンに
 /// 分かれており、いずれも意図しない挙動を生んでいた。
-///
-/// - `error: error`（favorite / history / preset_phrase）
-///   → 引数を省略しただけでエラーが消える（意図せずエラーが消える）
-/// - `errorMessage ?? this.errorMessage`（tts）
-///   → 一度設定されたエラーを二度と消せない（逆方向のバグ）
-/// - `clearXxx` フラグ方式（ai_conversion）
-///   → 正しい実装。省略時は保持、`clearXxx: true` で明示的にクリア
-///
+/// `error: error`（favorite / history / preset_phrase）
+/// → 引数を省略しただけでエラーが消える（意図せずエラーが消える）
+/// `errorMessage ?? this.errorMessage`（tts）
+/// → 一度設定されたエラーを二度と消せない（逆方向のバグ）
+/// `clearXxx` フラグ方式（ai_conversion）
+/// → 正しい実装。省略時は保持、`clearXxx: true` で明示的にクリア
 /// 本テストは、全状態クラスが `clearXxx` フラグ方式に統一されたことを
 /// 「明示的にクリアする」「エラーを保持したまま他フィールドを更新する」の
 /// 両面から検証する。
@@ -38,15 +34,14 @@ import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import '../mocks/mock_flutter_tts.dart';
 
 /// テスト用: 任意の初期状態から実メソッドを動かすための Notifier
-///
-/// 本番コードでは error を設定する入口が限られているため、
+/// 本番コードでは error を設定する入口が限られているため
 /// 「エラーが残っている状態」を起点にした回帰テストを行えるように
 /// state のセッターだけを公開する。
 class _TestablePresetPhraseNotifier extends PresetPhraseNotifier {
   void setStateForTest(PresetPhraseState value) => state = value;
 }
 
-/// テスト用: saveAll() の待機中に別経路がエラーを設定する状況を再現するための偽Repository
+/// テスト用: saveAll の待機中に別経路がエラーを設定する状況を再現するための偽Repository
 class _FakePresetPhraseRepository extends Mock
     implements PresetPhraseRepository {}
 
@@ -225,14 +220,13 @@ void main() {
     tearDown(() => container.dispose());
 
     /// 回帰テスト: エラー画面が恒久的に固着するシナリオ
-    ///
     /// PresetPhraseScreen は state.error != null のときリスト全体を
-    /// エラー表示へ差し替える。エラーを消すのは loadPhrases() /
-    /// resetToDefaults()（どちらも lib/ に呼び出し元が無い）と
-    /// initializeDefaultPhrases()（phrases が非空だと早期return）だけなので、
+    /// エラー表示へ差し替える。エラーを消すのは loadPhrases
+    /// resetToDefaults（どちらも lib/ に呼び出し元が無い）と
+    /// initializeDefaultPhrases（phrases が非空だと早期return）だけなので
     /// 「初期化失敗 → 1件追加成功 → 画面再訪」でエラーが解除不能になる。
     test('初期化失敗後に定型文を1件追加すると、画面再訪してもエラーが残らない', () async {
-      // 1. initializeDefaultPhrases() が失敗してエラー画面
+      // 1. initializeDefaultPhrases が失敗してエラー画面
       notifier.setStateForTest(errorState);
 
       // 2. FABから定型文を1件追加（成功）
@@ -244,7 +238,7 @@ void main() {
       expect(afterAdd.error, isNull);
 
       // 4. 画面を再訪しても（initializeDefaultPhrases は早期returnする）
-      //    エラーが復活しないこと
+      // エラーが復活しないこと
       await notifier.initializeDefaultPhrases();
       final afterRevisit = container.read(presetPhraseNotifierProvider);
       expect(afterRevisit.phrases.length, equals(1),
@@ -317,8 +311,8 @@ void main() {
       expect(state.isLoading, isFalse);
     });
 
-    /// resetToDefaults() 自体は clearError を持たない。phrases を空にした直後に
-    /// 呼ぶ initializeDefaultPhrases() が早期returnせず必ずクリアするため、
+    /// resetToDefaults 自体は clearError を持たない。phrases を空にした直後に
+    /// 呼ぶ initializeDefaultPhrases が早期returnせず必ずクリアするため
     /// 二重にクリアする必要がない（重複させるとテストで検証できない
     /// デッドコードになる）。ここでは観測可能な最終状態のみを固定する。
     test('resetToDefaults() の完了後はエラーが解消している', () async {
@@ -342,7 +336,7 @@ void main() {
     });
 
     /// 成功パスは冒頭のクリアに依存せず、自分でもクリアする必要がある。
-    /// `await repo.saveAll()` の待機中に他経路がエラーを設定し得るため。
+    /// `await repo.saveAll` の待機中に他経路がエラーを設定し得るため。
     test('initializeDefaultPhrases() は待機中に入ったエラーも成功時にクリアする', () async {
       final repo = _FakePresetPhraseRepository();
       when(repo.loadAllSync).thenReturn(<PresetPhrase>[]);
@@ -444,8 +438,8 @@ void main() {
     tearDown(() => container.dispose());
 
     test('読み上げ失敗後に成功するとエラーメッセージが消える', () async {
-      // 回帰: 旧実装（errorMessage ?? this.errorMessage）では、
-      // TTSService 側の errorMessage が null に戻らないこともあり、
+      // 回帰: 旧実装（errorMessage ?? this.errorMessage）では
+      // TTSService 側の errorMessage が null に戻らないこともあり
       // 一度出たエラーメッセージが状態に残り続けていた
       final notifier = container.read(ttsProvider.notifier);
 
@@ -479,7 +473,7 @@ void main() {
     });
 
     test('停止失敗時はエラーメッセージが状態へ反映される', () async {
-      // 回帰: 旧実装の stop() は copyWith(state: ...) だけで errorMessage を
+      // 回帰: 旧実装の stop は copyWith(state: ...) だけで errorMessage を
       // 渡しておらず、停止失敗のメッセージが状態に反映されていなかった
       final notifier = container.read(ttsProvider.notifier);
 
@@ -496,8 +490,8 @@ void main() {
     });
 
     test('未初期化のまま speak() して初期化に失敗した場合もエラーメッセージが残る', () async {
-      // 回帰: TTSService.initialize() が state を error にしないと、
-      // _syncStateFromService() が「エラーなし」と誤判定して
+      // 回帰: TTSService.initialize が state を error にしないと
+      // _syncStateFromService が「エラーなし」と誤判定して
       // 初期化失敗のメッセージを消してしまう
       when(() => mockFlutterTts.setLanguage(any()))
           .thenThrow(Exception('init error'));

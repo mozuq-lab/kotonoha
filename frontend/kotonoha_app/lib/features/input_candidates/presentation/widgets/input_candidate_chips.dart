@@ -1,10 +1,7 @@
 /// 入力候補チップ行ウィジェット
-///
 /// fix/improvement-p0-p2: 頻度ベースの入力候補
-///
 /// 入力表示エリアの直下に表示する、横スクロールの候補チップ行。
 /// 候補が0件の場合は高さ0（[SizedBox.shrink]）になり、縦スペースを取らない。
-/// 信頼性レベル: 黄信号 - 新規実装
 library;
 
 import 'package:flutter/material.dart';
@@ -14,7 +11,6 @@ import 'package:kotonoha_app/features/input_candidates/domain/models/input_candi
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 
 /// 入力候補チップ行
-///
 /// [candidates] が空の場合は何も描画せず高さ0にする。
 /// 各チップは44px以上のタップターゲットを持ち、タップで
 /// [onSelect] に候補テキストを渡す（入力バッファをそのテキストで置換する用途）。
@@ -55,10 +51,9 @@ class InputCandidateChips extends StatelessWidget {
     }
 
     // チップ最大幅の算出: 長文候補（履歴文など）でチップが際限なく
-    // 横に伸び、後続候補が実質表示されなくなる問題を防ぐため、
+    // 横に伸び、後続候補が実質表示されなくなる問題を防ぐため
     // 画面幅を基準にした上限を設ける（画面幅の約60%、ただし
     // AppSizes.candidateChipMaxWidthを絶対上限とする）。
-    // 信頼性レベル: 黄信号 - Codexレビュー指摘（P2）に基づく
     final screenWidth = MediaQuery.sizeOf(context).width;
     final chipMaxWidth = (screenWidth * 0.6)
         .clamp(AppSizes.minTapTarget, AppSizes.candidateChipMaxWidth)
@@ -69,7 +64,7 @@ class InputCandidateChips extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         // 注意: 縦方向のpaddingを指定するとSliverPaddingにより
-        // 横スクロールリストのcross-axis（高さ）そのものが縮むため、
+        // 横スクロールリストのcross-axis（高さ）そのものが縮むため
         // ここでは横方向のみpaddingを指定し、縦の余白は各アイテムを
         // Centerで配置することで確保する（44pxタップターゲットを
         // 確実に確保するため）。

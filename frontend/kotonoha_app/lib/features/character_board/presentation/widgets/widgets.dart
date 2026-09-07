@@ -1,8 +1,5 @@
 /// character_board ウィジェットのエクスポート
-///
-/// TASK-0039: 削除ボタン・全消去ボタン実装
-///
-/// このファイルから全てのcharacter_boardウィジェットをインポートできます：
+/// このファイルから全てのcharacter_boardウィジェットをインポートできます
 /// ```dart
 /// import 'package:kotonoha_app/features/character_board/presentation/widgets/widgets.dart';
 /// ```

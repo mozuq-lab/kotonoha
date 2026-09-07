@@ -1,12 +1,10 @@
 /// Custom exception classes for kotonoha app
-///
 /// Provides application-specific exception types for better error handling.
 library;
 
 /// Base class for all app-specific exceptions
 abstract class AppException implements Exception {
   /// Creates an [AppException] with the given [message].
-  ///
   /// Optionally accepts [originalError] and [stackTrace] for chaining exceptions.
   AppException(this.message, {this.originalError, this.stackTrace});
 
@@ -32,7 +30,6 @@ class NetworkException extends AppException {
 /// Exception thrown when a request times out
 class AppTimeoutException extends AppException {
   /// Creates an [AppTimeoutException] with the given [message].
-  ///
   /// Optionally accepts [duration] to indicate the timeout duration.
   AppTimeoutException(
     super.message, {
@@ -48,7 +45,6 @@ class AppTimeoutException extends AppException {
 /// Exception thrown when AI conversion fails
 class AiConversionException extends AppException {
   /// Creates an [AiConversionException] with the given [message].
-  ///
   /// Optionally accepts [originalText] to preserve the input that failed conversion.
   AiConversionException(
     super.message, {
@@ -64,7 +60,6 @@ class AiConversionException extends AppException {
 /// Exception thrown when validation fails
 class ValidationException extends AppException {
   /// Creates a [ValidationException] with the given [message].
-  ///
   /// Optionally accepts [field] to indicate which field failed validation.
   ValidationException(
     super.message, {

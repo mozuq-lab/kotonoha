@@ -1,11 +1,4 @@
 /// フォントサイズ設定UI・適用 テスト
-///
-/// TASK-0072: フォントサイズ設定UI・適用
-/// テストケース: TC-072-001〜TC-072-013
-///
-/// テスト対象: フォントサイズ設定がアプリ全体に正しく反映されること
-///
-/// TDD Redフェーズ: フォントサイズ適用の検証テスト
 library;
 
 import 'package:flutter/material.dart';
@@ -26,22 +19,10 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    // =========================================================================
-    // 1. 正常系テストケース（基本動作）
-    // =========================================================================
     group('正常系テスト', () {
-      /// TC-072-001: 設定画面でフォントサイズ選択UIが表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-801
-      /// 検証内容: 設定画面にフォントサイズ選択UIが表示されること
+      /// 設定画面でフォントサイズ選択UIが表示される
       testWidgets('TC-072-001: 設定画面でフォントサイズ選択UIが表示される',
           (WidgetTester tester) async {
-        // テスト目的: 設定画面にフォントサイズ選択UIが表示されることを確認
-        // テスト内容: 設定画面をレンダリングし、フォントサイズ選択のUI要素が表示されることを検証
-        // 期待される動作: 「フォントサイズ」ラベルと3つの選択肢（小/中/大）が表示される
-        // 青信号: REQ-801「フォントサイズを3段階から選択可能」
-
         // Given: テストデータ準備: ProviderScopeでラップした設定画面を構築
         await tester.pumpWidget(
           const ProviderScope(
@@ -61,18 +42,9 @@ void main() {
         expect(find.text('大'), findsOneWidget);
       });
 
-      /// TC-072-002: フォントサイズ変更が CharacterBoardWidget に反映される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-802
-      /// 検証内容: フォントサイズ設定が文字盤の文字サイズに反映されること
+      /// フォントサイズ変更が CharacterBoardWidget に反映される
       testWidgets('TC-072-002: フォントサイズ変更が CharacterBoardWidget に反映される',
           (WidgetTester tester) async {
-        // テスト目的: フォントサイズ設定が文字盤の文字サイズに反映されることを確認
-        // テスト内容: フォントサイズを「大」に設定し、CharacterBoardWidgetに反映されることを検証
-        // 期待される動作: CharacterBoardWidgetのfontSizeがlargeになる
-        // 青信号: REQ-802「文字盤のフォントサイズを設定に追従させる」
-
         // Given: テストデータ準備: フォントサイズを「大」に設定した状態
         final container = ProviderContainer(
           overrides: [
@@ -109,18 +81,9 @@ void main() {
         container.dispose();
       });
 
-      /// TC-072-003: フォントサイズ変更が QuickResponseButtons に反映される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-802
-      /// 検証内容: フォントサイズ設定がクイック応答ボタンに反映されること
+      /// フォントサイズ変更が QuickResponseButtons に反映される
       testWidgets('TC-072-003: フォントサイズ変更が QuickResponseButtons に反映される',
           (WidgetTester tester) async {
-        // テスト目的: フォントサイズ設定がクイック応答ボタンに反映されることを確認
-        // テスト内容: フォントサイズを「大」に設定し、QuickResponseButtonsに反映されることを検証
-        // 期待される動作: QuickResponseButtonsのfontSizeがlargeになる
-        // 青信号: REQ-802「ボタンラベルのフォントサイズを設定に追従させる」
-
         // Given: テストデータ準備: QuickResponseButtonsにフォントサイズを渡す
         await tester.pumpWidget(
           MaterialApp(
@@ -142,18 +105,9 @@ void main() {
         expect(quickResponseButtons.fontSize, FontSize.large);
       });
 
-      /// TC-072-004: フォントサイズ変更が即座に反映される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-2007
-      /// 検証内容: 設定変更後すぐにUIに反映されること
+      /// フォントサイズ変更が即座に反映される
       testWidgets('TC-072-004: フォントサイズ変更が即座に反映される',
           (WidgetTester tester) async {
-        // テスト目的: 設定変更後すぐにUIに反映されることを確認
-        // テスト内容: setFontSize()呼び出し直後にstateが更新されることを検証
-        // 期待される動作: 楽観的更新で即座にstateが更新される
-        // 青信号: REQ-2007「フォントサイズ変更時に即座に変更」
-
         // Given: テストデータ準備: ProviderContainer作成
         SharedPreferences.setMockInitialValues({});
         final container = ProviderContainer();
@@ -175,15 +129,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-072-005: フォントサイズ「小」の設定と適用
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-801
-      /// 検証内容: フォントサイズ「小」が正しく設定・適用されること
+      /// フォントサイズ「小」の設定と適用
       testWidgets('TC-072-005: フォントサイズ「小」の設定と適用', (WidgetTester tester) async {
-        // テスト目的: フォントサイズ「小」が正しく設定・適用されることを確認
-        // 青信号: REQ-801「小/中/大の3段階」
-
         // Given: テストデータ準備: ProviderContainer作成
         SharedPreferences.setMockInitialValues({});
         final container = ProviderContainer();
@@ -207,16 +154,9 @@ void main() {
         container.dispose();
       });
 
-      /// TC-072-006: フォントサイズ「中」の設定と適用（デフォルト）
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-804
-      /// 検証内容: フォントサイズ「中」（デフォルト）が正しく設定・適用されること
+      /// フォントサイズ「中」の設定と適用（デフォルト）
       testWidgets('TC-072-006: フォントサイズ「中」の設定と適用（デフォルト）',
           (WidgetTester tester) async {
-        // テスト目的: フォントサイズ「中」が正しく設定・適用されることを確認
-        // 青信号: REQ-804「標準フォントサイズを高齢者にも見やすいサイズに設定」
-
         // Given: テストデータ準備: 空のSharedPreferences
         SharedPreferences.setMockInitialValues({});
         final container = ProviderContainer();
@@ -230,15 +170,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-072-007: フォントサイズ「大」の設定と適用
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-801
-      /// 検証内容: フォントサイズ「大」が正しく設定・適用されること
+      /// フォントサイズ「大」の設定と適用
       testWidgets('TC-072-007: フォントサイズ「大」の設定と適用', (WidgetTester tester) async {
-        // テスト目的: フォントサイズ「大」が正しく設定・適用されることを確認
-        // 青信号: REQ-801「小/中/大の3段階」
-
         // Given: テストデータ準備: ProviderContainer作成
         SharedPreferences.setMockInitialValues({});
         final container = ProviderContainer();
@@ -262,16 +195,9 @@ void main() {
         container.dispose();
       });
 
-      /// TC-072-008: アプリ再起動後のフォントサイズ設定復元
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-5003
-      /// 検証内容: アプリ再起動後に保存したフォントサイズが復元されること
+      /// アプリ再起動後のフォントサイズ設定復元
       testWidgets('TC-072-008: アプリ再起動後のフォントサイズ設定復元',
           (WidgetTester tester) async {
-        // テスト目的: アプリ再起動後に保存したフォントサイズが復元されることを確認
-        // 青信号: REQ-5003「永続化機構を実装」
-
         // Given: テストデータ準備: SharedPreferencesに事前にフォントサイズ「large」を保存
         // 後方互換性: 旧形式（enum index int）で保存されたデータでも
         // 正しく復元できることを検証する（マイグレーション対応）
@@ -290,19 +216,9 @@ void main() {
       });
     });
 
-    // =========================================================================
-    // 2. 異常系テストケース（エラーハンドリング）
-    // =========================================================================
     group('異常系テスト', () {
-      /// TC-072-009: 設定読み込み中のデフォルト値使用
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-301, EDGE-201
-      /// 検証内容: 設定の非同期読み込み中にUIが表示される場合
+      /// 設定読み込み中のデフォルト値使用
       testWidgets('TC-072-009: 設定読み込み中のデフォルト値使用', (WidgetTester tester) async {
-        // テスト目的: ローディング中もアプリが動作することを確認
-        // 黄信号: EDGE-201、NFR-301から推測
-
         // Given: テストデータ準備: ProviderScopeでラップした画面
         await tester.pumpWidget(
           const ProviderScope(
@@ -320,15 +236,8 @@ void main() {
         expect(find.byType(SettingsScreen), findsOneWidget);
       });
 
-      /// TC-072-010: 不正な保存値のフォールバック
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-301
-      /// 検証内容: SharedPreferencesに不正な値が保存されている場合
+      /// 不正な保存値のフォールバック
       testWidgets('TC-072-010: 不正な保存値のフォールバック', (WidgetTester tester) async {
-        // テスト目的: 設定ファイルの破損時もアプリが起動することを確認
-        // 黄信号: NFR-301「基本機能継続」から推測
-
         // Given: テストデータ準備: SharedPreferencesに不正な値（範囲外）を保存
         SharedPreferences.setMockInitialValues({
           'fontSize': 99, // FontSize enumの範囲外（0-2）
@@ -338,7 +247,7 @@ void main() {
         final container = ProviderContainer();
 
         // Then: 結果検証: エラーが発生せず、デフォルト値（medium）またはフォールバックが使用される
-        // Note: 現在の実装ではRangeErrorが発生する可能性があるため、
+        // Note: 現在の実装ではRangeErrorが発生する可能性があるため
         // 実装側でtry-catchによるフォールバック処理が必要
         try {
           final settings =
@@ -347,7 +256,6 @@ void main() {
           expect(settings.fontSize, isA<FontSize>());
         } catch (e) {
           // RangeErrorが発生した場合 - 実装が不足している
-          // TDD Greenフェーズでフォールバック処理を実装する必要がある
           fail('不正な値でRangeErrorが発生: 実装にフォールバック処理が必要');
         }
 
@@ -355,20 +263,10 @@ void main() {
       });
     });
 
-    // =========================================================================
-    // 3. 境界値テストケース
-    // =========================================================================
     group('境界値テスト', () {
-      /// TC-072-011: FontSize enum の最小値（small = 0）
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-801
-      /// 検証内容: enum の最初の値（index = 0）
+      /// FontSize enum の最小値（small = 0）
       testWidgets('TC-072-011: FontSize enum の最小値（small = 0）',
           (WidgetTester tester) async {
-        // テスト目的: 最小値でも正常に動作することを確認
-        // 青信号: REQ-801の3段階（最小）
-
         // Given: テストデータ準備: SharedPreferencesに最小値（0）を保存
         SharedPreferences.setMockInitialValues({
           'fontSize': 0, // FontSize.small.index
@@ -385,16 +283,9 @@ void main() {
         container.dispose();
       });
 
-      /// TC-072-012: FontSize enum の最大値（large = 2）
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-801
-      /// 検証内容: enum の最後の値（index = 2）
+      /// FontSize enum の最大値（large = 2）
       testWidgets('TC-072-012: FontSize enum の最大値（large = 2）',
           (WidgetTester tester) async {
-        // テスト目的: 最大値でも正常に動作することを確認
-        // 青信号: REQ-801の3段階（最大）
-
         // Given: テストデータ準備: SharedPreferencesに最大値（2）を保存
         SharedPreferences.setMockInitialValues({
           'fontSize': 2, // FontSize.large.index
@@ -411,15 +302,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-072-013: フォントサイズ切り替えの連続操作
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: 一般的なUI動作
-      /// 検証内容: 状態遷移の連続性
+      /// フォントサイズ切り替えの連続操作
       testWidgets('TC-072-013: フォントサイズ切り替えの連続操作', (WidgetTester tester) async {
-        // テスト目的: 連続した変更が正常に処理されることを確認
-        // 黄信号: 一般的なUI動作から推測
-
         // Given: テストデータ準備: ProviderContainer作成
         SharedPreferences.setMockInitialValues({});
         final container = ProviderContainer();
@@ -458,7 +342,6 @@ void main() {
 }
 
 /// テスト用のFakeSettingsNotifier
-///
 /// ウィジェットテストで特定の状態を設定するために使用
 class FakeSettingsNotifier extends SettingsNotifier {
   final AppSettings _settings;

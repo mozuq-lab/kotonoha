@@ -1,13 +1,11 @@
 /// HomeScreen シンプルモード統合テスト（fix/improvement-p0-p2）
-///
 /// シンプルモード（疲労時・症状進行時の簡易画面）がホーム画面に正しく
 /// 統合されていることを確認する。
-///
-/// - AppBarにトグルアイコンが表示され、タップで設定がONになる
-/// - シンプルモードON時は文字盤が非表示になり、SimpleModeViewが表示される
-/// - シンプルモード中もTTS読み上げが機能する
-/// - シンプルモード中もVolumeWarningWidgetが機能する
-/// - 「通常モードに戻る」操作、AppBarトグル操作の両方でOFFに戻せる
+/// AppBarにトグルアイコンが表示され、タップで設定がONになる
+/// シンプルモードON時は文字盤が非表示になり、SimpleModeViewが表示される
+/// シンプルモード中もTTS読み上げが機能する
+/// シンプルモード中もVolumeWarningWidgetが機能する
+/// 「通常モードに戻る」操作、AppBarトグル操作の両方でOFFに戻せる
 library;
 
 import 'package:flutter/material.dart';

@@ -1,11 +1,6 @@
 /// オンライン復帰通知ウィジェット
-///
-/// TASK-0077: オフライン時UI表示・AI変換無効化
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件:
-/// - EDGE-001: ネットワーク復帰時の通知
-/// - NFR-203: ユーザー操作を妨げない通知
+/// ネットワーク復帰時の通知
+/// ユーザー操作を妨げない通知
 library;
 
 import 'dart:async';
@@ -17,12 +12,9 @@ import '../../domain/models/network_state.dart';
 import '../../providers/network_provider.dart';
 
 /// オンライン復帰時に表示される通知ウィジェット
-///
 /// オフライン→オンラインに状態が変化した時、一時的に
 /// 「オンラインに戻りました。AI変換が利用可能です」を表示する。
-///
-/// 関連要件:
-/// - EDGE-001: ネットワーク復帰時の通知
+/// ネットワーク復帰時の通知
 class OnlineRecoveryNotification extends ConsumerStatefulWidget {
   /// 子ウィジェット
   final Widget child;

@@ -1,12 +1,4 @@
 /// NetworkProvider テスト
-///
-/// TASK-0057: Riverpod Provider 構造設計
-/// TC-057-025 〜 TC-057-033
-///
-/// 関連要件:
-/// - REQ-1001: オフライン時AI変換無効化
-/// - REQ-1002: オフライン状態表示
-/// - REQ-1003: オフライン時基本機能動作
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,9 +18,7 @@ void main() {
       container.dispose();
     });
 
-    // =========================================================================
     // 正常系テスト
-    // =========================================================================
 
     group('正常系テスト', () {
       test('TC-057-025: オンライン状態を検知できる', () async {
@@ -106,9 +96,7 @@ void main() {
       });
     });
 
-    // =========================================================================
     // デフォルト値テスト
-    // =========================================================================
 
     group('デフォルト値テスト', () {
       test('TC-057-030: 初期状態はchecking', () {
@@ -118,9 +106,7 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 異常系テスト
-    // =========================================================================
 
     group('異常系テスト', () {
       test('TC-057-031: 接続チェック失敗時はoffline扱い', () async {
@@ -143,9 +129,6 @@ void main() {
         // Act & Assert - ネットワーク状態に関係なくProviderが存在することを確認
         final networkState = container.read(networkProvider);
         expect(networkState, NetworkState.offline);
-
-        // 基本機能（inputBuffer等）の動作はTASK-0058で詳細テスト
-        // ここではNetworkProviderが正常にoffline状態を保持することを確認
       });
 
       test('TC-057-033: オフラインでも定型文は動作', () async {
@@ -156,9 +139,6 @@ void main() {
         // Act & Assert - ネットワーク状態に関係なくProviderが存在することを確認
         final networkState = container.read(networkProvider);
         expect(networkState, NetworkState.offline);
-
-        // 定型文機能の動作はTASK-0058で詳細テスト
-        // ここではNetworkProviderが正常にoffline状態を保持することを確認
       });
     });
   });

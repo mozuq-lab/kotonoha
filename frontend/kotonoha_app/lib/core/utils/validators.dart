@@ -1,5 +1,4 @@
 /// Validation utility functions
-///
 /// Provides input validation and sanitization for user-entered text.
 library;
 
@@ -21,7 +20,6 @@ class Validators {
   static final RegExp _whitespacePattern = RegExp(r'^[\s\u3000]+|[\s\u3000]+$');
 
   /// Validates general input text
-  ///
   /// Returns null if valid, error message string if invalid.
   /// Empty or null input is allowed (returns null).
   static String? validateInputText(String? text) {
@@ -39,7 +37,6 @@ class Validators {
   }
 
   /// Validates template phrase text
-  ///
   /// Returns null if valid, error message string if invalid.
   /// Empty or null input is NOT allowed for template phrases.
   static String? validateTemplatePhrase(String? text) {
@@ -60,7 +57,6 @@ class Validators {
   }
 
   /// Checks if text is convertible by AI
-  ///
   /// Returns true if text has at least [minAiConversionLength] characters
   /// after sanitization.
   static bool canConvertWithAi(String? text) {
@@ -69,7 +65,6 @@ class Validators {
   }
 
   /// Sanitizes input text by removing leading/trailing whitespace
-  ///
   /// Removes: half-width space, full-width space, tabs, newlines
   /// Preserves: whitespace in the middle of text
   static String sanitize(String? text) {

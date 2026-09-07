@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 親計画 §6 Phase 2 の完了条件のうち grep で判定するもの。ここに検出器を育てないこと（ADR-008）。
+# backend の依存・ログ境界の確認。ここに検出器を育てないこと（ADR-008）。
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

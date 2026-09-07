@@ -1,4 +1,4 @@
-"""再試行と締切（B-1 べき等性・時間）。"""
+"""再試行と締切（べき等性・時間）。"""
 
 from __future__ import annotations
 

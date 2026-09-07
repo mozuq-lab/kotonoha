@@ -1,20 +1,13 @@
 /// アプリセッション状態管理プロバイダー
-///
-/// TASK-0079: アプリ状態復元・クラッシュリカバリ実装
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件:
-/// - NFR-302: データ整合性の保持
-/// - EDGE-201: バックグラウンド復帰時の状態復元
-/// - REQ-5003: クラッシュ時のデータ保持
+/// データ整合性の保持
+/// バックグラウンド復帰時の状態復元
+/// クラッシュ時のデータ保持
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// =============================================================================
 // 定数定義
-// =============================================================================
 
 /// SharedPreferencesのキー
 class _SessionKeys {
@@ -30,9 +23,7 @@ class _SessionKeys {
   static const String sessionTimestamp = 'session_timestamp';
 }
 
-// =============================================================================
 // AppSessionState
-// =============================================================================
 
 /// アプリセッション状態
 class AppSessionState {
@@ -77,13 +68,10 @@ class AppSessionState {
   }
 }
 
-// =============================================================================
 // AppSessionNotifier
-// =============================================================================
 
 /// アプリセッション状態管理Notifier
-///
-/// バックグラウンド復帰時の状態復元、入力中テキストの保存、
+/// バックグラウンド復帰時の状態復元、入力中テキストの保存
 /// クラッシュ時のデータ保持を管理する。
 class AppSessionNotifier extends Notifier<AppSessionState> {
   /// 初期状態
@@ -97,8 +85,7 @@ class AppSessionNotifier extends Notifier<AppSessionState> {
   String? get lastRoute => state.lastRoute;
 
   /// 初期化
-  ///
-  /// EDGE-201: バックグラウンド復帰時の状態復元
+  /// バックグラウンド復帰時の状態復元
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -121,8 +108,7 @@ class AppSessionNotifier extends Notifier<AppSessionState> {
   }
 
   /// 入力中のテキストを保存
-  ///
-  /// REQ-5003: クラッシュ時のデータ保持
+  /// クラッシュ時のデータ保持
   Future<void> saveDraftText(String text) async {
     state = state.copyWith(draftText: text);
 
@@ -135,8 +121,7 @@ class AppSessionNotifier extends Notifier<AppSessionState> {
   }
 
   /// 最後に表示したルートを保存
-  ///
-  /// EDGE-201: バックグラウンド復帰時の状態復元
+  /// バックグラウンド復帰時の状態復元
   Future<void> saveLastRoute(String route) async {
     state = state.copyWith(lastRoute: route);
 
@@ -145,8 +130,7 @@ class AppSessionNotifier extends Notifier<AppSessionState> {
   }
 
   /// アプリがバックグラウンドに移行した時の処理
-  ///
-  /// EDGE-201: バックグラウンド移行時の状態保存
+  /// バックグラウンド移行時の状態保存
   Future<void> onAppPaused() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -166,15 +150,13 @@ class AppSessionNotifier extends Notifier<AppSessionState> {
   }
 
   /// アプリがフォアグラウンドに復帰した時の処理
-  ///
-  /// EDGE-201: バックグラウンド復帰時の状態復元
+  /// バックグラウンド復帰時の状態復元
   Future<void> onAppResumed() async {
     // 状態を再読み込み
     await initialize();
   }
 
   /// セッション状態をクリア
-  ///
   /// ログアウトやアプリリセット時に使用
   Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
@@ -187,9 +169,7 @@ class AppSessionNotifier extends Notifier<AppSessionState> {
   }
 }
 
-// =============================================================================
 // Provider定義
-// =============================================================================
 
 /// アプリセッション状態プロバイダー
 final appSessionProvider =

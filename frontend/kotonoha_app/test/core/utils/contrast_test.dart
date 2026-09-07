@@ -1,10 +1,6 @@
 /// コントラスト比ユーティリティの単体テスト
-///
 /// テスト対象: lib/core/utils/contrast.dart
-/// テスト目的: 共通化した算出ロジックが WCAG 2.1 の定義どおりに
 /// 動き、背景色に応じて最良の文字色を選べることを保証する。
-///
-/// 信頼性レベル: 青信号 - NFR（WCAG 2.1 AA）
 library;
 
 import 'package:flutter/material.dart';
@@ -61,7 +57,7 @@ void main() {
     });
 
     test('半透明の背景色を渡すと assert で検出される', () {
-      // computeLuminance() はアルファを無視するため、半透明のまま判定すると
+      // computeLuminance はアルファを無視するため、半透明のまま判定すると
       // 合成後の見え方と食い違う文字色を黙って返してしまう。
       expect(
         () => bestContrastingTextColor(

@@ -1,11 +1,4 @@
 /// AI丁寧さレベル設定ウィジェット テスト
-///
-/// TASK-0074: TTS速度・AI丁寧さレベル設定UI
-/// テストケース: TC-074-002
-///
-/// テスト対象: AI丁寧さレベル設定ウィジェットが正しく表示・動作すること
-///
-/// TDD Redフェーズ: AI丁寧さレベル設定UIのウィジェットテスト
 library;
 
 import 'package:flutter/material.dart';
@@ -22,11 +15,9 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    // =========================================================================
     // 1. UI表示テスト
-    // =========================================================================
     group('UI表示テスト', () {
-      /// TC-074-002: 設定画面でAI丁寧さレベル選択UIが表示される
+      /// 設定画面でAI丁寧さレベル選択UIが表示される
       testWidgets('TC-074-002: 設定画面でAI丁寧さレベル選択UIが表示される',
           (WidgetTester tester) async {
         // Given: ProviderScopeでラップしたウィジェットを構築
@@ -50,9 +41,6 @@ void main() {
       });
 
       /// TC-A11Y-004: SegmentedButtonの最小タップ高さが44px以上である
-      ///
-      /// 関連要件: アクセシビリティ（タップターゲット最小44px）
-      /// 既定の約40pxではAA不足のため、minimumSizeで44pxを保証する。
       testWidgets('TC-A11Y-004: SegmentedButtonの最小高さが44px以上である',
           (WidgetTester tester) async {
         await tester.pumpWidget(

@@ -1,4 +1,4 @@
-"""新 backend のテスト土台。設定は必ず明示して組む（環境や .env に依存しない）。"""
+"""テストでは設定を明示して組む（環境や .env に依存しない）。"""
 
 from __future__ import annotations
 

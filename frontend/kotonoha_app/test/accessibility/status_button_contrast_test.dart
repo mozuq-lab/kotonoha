@@ -1,22 +1,16 @@
 /// 状態ボタンのコントラスト比回帰テスト
-///
-/// テスト対象:
-/// - lib/features/status_buttons/presentation/widgets/status_button.dart
-/// - lib/features/status_buttons/domain/status_button_constants.dart
-/// テスト目的: 3テーマ（ライト／ダーク／高コントラスト）× 全12ボタンで
+/// テスト対象
+/// lib/features/status_buttons/presentation/widgets/status_button.dart
+/// lib/features/status_buttons/domain/status_button_constants.dart
 /// WCAG 2.1 AA を満たし続けることを保証する。
-///
 /// 背景（実障害）: 背景はカテゴリ別の色（オレンジ／青／緑）なのに
 /// 文字色を `Colors.white` 固定にしていたため、いずれのカテゴリでも
 /// WCAG AA(4.5:1)未達だった。
-/// - 身体状態 #FF9800 + 白: 2.16:1
-/// - 要求 #2196F3 + 白: 3.12:1
-/// - 感情 #4CAF50 + 白: 2.78:1
-///
-/// 設計判断: カテゴリ別の色分け（NFR-U003）は識別の手がかりなので
+/// 身体状態 #FF9800 + 白: 2.16:1
+/// 要求 #2196F3 + 白: 3.12:1
+/// 感情 #4CAF50 + 白: 2.78:1
+/// 設計判断: カテゴリ別の色分けは識別の手がかりなので
 /// 変えず、前景を背景輝度から選ぶことで基準を満たす。
-///
-/// 信頼性レベル: 青信号 - NFR（高コントラストモード WCAG 2.1 AA・4.5:1以上）
 library;
 
 import 'package:flutter/material.dart';

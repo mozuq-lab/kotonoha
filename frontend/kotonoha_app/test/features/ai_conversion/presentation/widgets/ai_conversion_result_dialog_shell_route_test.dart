@@ -1,12 +1,10 @@
 /// AI変換結果ダイアログのShellRoute構造下での動作確認テスト（P0回帰防止）
-///
-/// 背景（バグの再現条件）:
-/// showDialogはデフォルトでroot Navigatorにダイアログを積む一方、
+/// 背景（バグの再現条件）
+/// showDialogはデフォルトでroot Navigatorにダイアログを積む一方
 /// 呼び出し元contextはgo_routerのShellRoute配下branch Navigatorに属する。
-/// 旧実装ではコールバック内でNavigator.of(呼び出し元context).pop()していたため、
-/// ダイアログではなくbranch Navigatorの背後ページがpopされ、
+/// 旧実装ではコールバック内でNavigator.of(呼び出し元context).popしていたため
+/// ダイアログではなくbranch Navigatorの背後ページがpopされ
 /// リリースビルドで画面が空白になり再操作不能になっていた。
-///
 /// 本テストはShellRoute（branch Navigator）+ showDialog（root Navigator）の
 /// 実機と同じ二重Navigator構造を再現し、ボタンタップ後に
 /// 「ダイアログが閉じる」「コールバックが正しい引数で1回だけ呼ばれる」
@@ -30,9 +28,8 @@ void main() {
     late String? usedOriginalText;
 
     /// 実機と同じ「単一ShellRoute配下にGoRoute」の構造を構築する。
-    ///
     /// branch Navigator上のページに配置したボタンから
-    /// AIConversionResultDialog.show() を呼び出す。
+    /// AIConversionResultDialog.show を呼び出す。
     Widget buildTestApp() {
       return MaterialApp.router(routerConfig: router);
     }
@@ -44,7 +41,6 @@ void main() {
 
     /// ダイアログのアクションボタンをAlertDialog配下に限定して検索する
     /// （branchページ側にも同名テキストが存在しうるため）。
-    ///
     /// 「採用」「再生成」はElevatedButton、「元の文を使う」はOutlinedButton。
     Finder actionButton(String label) => find.descendant(
           of: find.byType(AlertDialog),

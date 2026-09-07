@@ -1,11 +1,6 @@
 /// オフラインバナーウィジェット
-///
-/// TASK-0077: オフライン時UI表示・AI変換無効化
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件:
-/// - REQ-1002: オフライン状態表示
-/// - NFR-203: ユーザー操作を妨げない通知
+/// オフライン状態表示
+/// ユーザー操作を妨げない通知
 library;
 
 import 'package:flutter/material.dart';
@@ -15,13 +10,10 @@ import '../../domain/models/network_state.dart';
 import '../../providers/network_provider.dart';
 
 /// オフライン時に画面上部に表示されるバナー
-///
 /// オフライン状態の時のみ表示され、基本機能のみ利用可能である
 /// ことをユーザーに通知する。
-///
-/// 関連要件:
-/// - REQ-1002: オフライン状態表示
-/// - REQ-1003: オフライン時も基本機能は動作
+/// オフライン状態表示
+/// オフライン時も基本機能は動作
 class OfflineBanner extends ConsumerWidget {
   /// コンストラクタ
   const OfflineBanner({super.key});
@@ -37,7 +29,7 @@ class OfflineBanner extends ConsumerWidget {
 
     // Material で包む理由: このバナーは AppShell に置かれ、各画面の
     // Scaffold より外側にある。Material 祖先が無い位置の Text は
-    // WidgetsApp の既定スタイル（赤文字＋黄色の二重下線）を継承するため、
+    // WidgetsApp の既定スタイル（赤文字＋黄色の二重下線）を継承するため
     // style を部分指定しただけでは下線が残る。
     // Phase 3 WP-1 で実機（Chrome）の目視から発見した既存不具合。
     return Semantics(

@@ -1,10 +1,6 @@
 /// ダークテーマのプロパティテスト
-///
-/// テストケース: TC-201〜TC-205
-///
+/// テストケース
 /// テスト対象: lib/core/themes/dark_theme.dart (実装済み)
-///
-/// TDD Redフェーズ: テーマのプロパティを検証
 library;
 
 import 'package:flutter/material.dart';
@@ -15,25 +11,21 @@ import 'package:kotonoha_app/core/themes/dark_theme.dart';
 
 void main() {
   group('ダークテーマのプロパティテスト', () {
-    /// TC-201: ダークテーマのbrightnessがdarkである
-    ///
-    /// 前提条件:
-    /// - darkThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - darkTheme.brightnessがBrightness.darkである
+    /// ダークテーマのbrightnessがdarkである
+    /// 前提条件
+    /// darkThemeがインポートされている
+    /// 期待結果
+    /// darkTheme.brightnessがBrightness.darkである
     test('TC-201: ダークテーマのbrightnessがdarkである', () {
       // Assert
       expect(darkTheme.brightness, equals(Brightness.dark));
     });
 
-    /// TC-202: ダークテーマの背景色が暗い灰色系である
-    ///
-    /// 前提条件:
-    /// - darkThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - darkTheme.scaffoldBackgroundColorがAppColors.backgroundDark（#121212）である
+    /// ダークテーマの背景色が暗い灰色系である
+    /// 前提条件
+    /// darkThemeがインポートされている
+    /// 期待結果
+    /// darkTheme.scaffoldBackgroundColorがAppColors.backgroundDark（#121212）である
     test('TC-202: ダークテーマの背景色が暗い灰色系である', () {
       // Assert
       expect(
@@ -42,13 +34,11 @@ void main() {
           darkTheme.scaffoldBackgroundColor, equals(const Color(0xFF121212)));
     });
 
-    /// TC-203: ダークテーマのテキスト色が白系である
-    ///
-    /// 前提条件:
-    /// - darkThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - テキスト色がAppColors.onBackgroundDark（#FFFFFF）である
+    /// ダークテーマのテキスト色が白系である
+    /// 前提条件
+    /// darkThemeがインポートされている
+    /// 期待結果
+    /// テキスト色がAppColors.onBackgroundDark（#FFFFFF）である
     test('TC-203: ダークテーマのテキスト色が白系である', () {
       // Assert
       expect(
@@ -61,13 +51,11 @@ void main() {
       );
     });
 
-    /// TC-204: ダークテーマのElevatedButton最小サイズが60pxである
-    ///
-    /// 前提条件:
-    /// - darkThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - minimumSizeがSize(60.0, 60.0)である
+    /// ダークテーマのElevatedButton最小サイズが60pxである
+    /// 前提条件
+    /// darkThemeがインポートされている
+    /// 期待結果
+    /// minimumSizeがSize(60.0, 60.0)である
     test('TC-204: ダークテーマのElevatedButton最小サイズが60pxである', () {
       // Arrange
       final buttonStyle = darkTheme.elevatedButtonTheme.style;
@@ -85,13 +73,11 @@ void main() {
       expect(minimumSize?.height, greaterThanOrEqualTo(60.0));
     });
 
-    /// TC-205: ダークテーマのIconButton最小サイズが44pxである
-    ///
-    /// 前提条件:
-    /// - darkThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - minimumSizeがSize(44.0, 44.0)である
+    /// ダークテーマのIconButton最小サイズが44pxである
+    /// 前提条件
+    /// darkThemeがインポートされている
+    /// 期待結果
+    /// minimumSizeがSize(44.0, 44.0)である
     test('TC-205: ダークテーマのIconButton最小サイズが44pxである', () {
       // Arrange
       final buttonStyle = darkTheme.iconButtonTheme.style;
@@ -110,9 +96,8 @@ void main() {
     });
 
     /// ダークテーマのプライマリ色が暗い青系である
-    ///
-    /// 期待結果:
-    /// - darkTheme.colorScheme.primaryがAppColors.primaryDark（#1976D2）である
+    /// 期待結果
+    /// darkTheme.colorScheme.primaryがAppColors.primaryDark（#1976D2）である
     test('ダークテーマのプライマリ色が暗い青系である', () {
       // Assert
       expect(darkTheme.colorScheme.primary, equals(AppColors.primaryDark));
@@ -120,9 +105,8 @@ void main() {
     });
 
     /// ダークテーマのフォントサイズがAppSizes.fontSizeMediumである
-    ///
-    /// 期待結果:
-    /// - bodyMediumのfontSizeがAppSizes.fontSizeMedium（20.0）である
+    /// 期待結果
+    /// bodyMediumのfontSizeがAppSizes.fontSizeMedium（20.0）である
     test('ダークテーマのフォントサイズがAppSizes.fontSizeMediumである', () {
       // Assert
       expect(
@@ -136,9 +120,8 @@ void main() {
     });
 
     /// ダークテーマでMaterial3が有効である
-    ///
-    /// 期待結果:
-    /// - useMaterial3がtrueである
+    /// 期待結果
+    /// useMaterial3がtrueである
     test('ダークテーマでMaterial3が有効である', () {
       // Assert
       expect(darkTheme.useMaterial3, isTrue);

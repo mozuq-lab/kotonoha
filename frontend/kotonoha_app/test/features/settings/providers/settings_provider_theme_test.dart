@@ -1,11 +1,4 @@
 /// テーマ設定 Providerテスト
-///
-/// TASK-0073: テーマ切り替えUI・適用
-/// テストケース: TC-073-001〜TC-073-013
-///
-/// テスト対象: テーマ設定がProviderで正しく管理されること
-///
-/// TDD Redフェーズ: テーマ設定の全テストケースを作成
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -29,19 +22,10 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    // =========================================================================
     // 正常系テストケース（基本動作）
-    // =========================================================================
     group('正常系テストケース', () {
-      /// TC-073-002: テーマ「ライト」の選択と適用
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-803
-      /// 検証内容: テーマ「ライト」が正しく選択・適用されること
+      /// テーマ「ライト」の選択と適用
       test('TC-073-002: テーマ「ライト」の選択と適用', () async {
-        // テスト目的: テーマ「ライト」が正しく設定されることを確認
-        // 青信号: REQ-803「ライトモード」
-
         // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
@@ -59,15 +43,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-073-003: テーマ「ダーク」の選択と適用
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-803
-      /// 検証内容: テーマ「ダーク」が正しく選択・適用されること
+      /// テーマ「ダーク」の選択と適用
       test('TC-073-003: テーマ「ダーク」の選択と適用', () async {
-        // テスト目的: テーマ「ダーク」が正しく設定されることを確認
-        // 青信号: REQ-803「ダークモード」
-
         // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
@@ -85,15 +62,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-073-004: テーマ「高コントラスト」の選択と適用
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-803
-      /// 検証内容: テーマ「高コントラスト」が正しく選択・適用されること
+      /// テーマ「高コントラスト」の選択と適用
       test('TC-073-004: テーマ「高コントラスト」の選択と適用', () async {
-        // テスト目的: テーマ「高コントラスト」が正しく設定されることを確認
-        // 青信号: REQ-803「高コントラストモード」
-
         // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
@@ -111,15 +81,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-073-005: テーマ変更が即座に反映される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-2008
-      /// 検証内容: 設定変更後すぐにUIに反映されること
+      /// テーマ変更が即座に反映される
       test('TC-073-005: テーマ変更が即座に反映される', () async {
-        // テスト目的: テーマ変更が楽観的更新で即座に反映されることを確認
-        // 青信号: REQ-2008「テーマ変更時に即座に変更」
-
         // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
@@ -141,15 +104,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-073-006: アプリ再起動後のテーマ設定復元
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-5003
-      /// 検証内容: アプリ再起動後に保存したテーマが復元されること
+      /// アプリ再起動後のテーマ設定復元
       test('TC-073-006: アプリ再起動後のテーマ設定復元', () async {
-        // テスト目的: SharedPreferencesに保存した値が復元されることを確認
-        // 青信号: REQ-5003「アプリ強制終了しても設定を失わない」
-
         // Given: テストデータ準備: SharedPreferencesにダークテーマを保存
         // 後方互換性: 旧形式（enum index int）で保存されたデータでも
         // 正しく復元できることを検証する（マイグレーション対応）
@@ -168,15 +124,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-073-007: currentThemeProviderがテーマ変更に追従する
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-803, REQ-2008
-      /// 検証内容: テーマ変更時にcurrentThemeProviderが正しいThemeDataを返すこと
+      /// currentThemeProviderがテーマ変更に追従する
       test('TC-073-007: currentThemeProviderがテーマ変更に追従する', () async {
-        // テスト目的: currentThemeProviderが設定と連携していることを確認
-        // 青信号: REQ-803、REQ-2008
-
         // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
@@ -206,19 +155,10 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 異常系テストケース（エラーハンドリング）
-    // =========================================================================
     group('異常系テストケース', () {
-      /// TC-073-009: 設定読み込み中のデフォルトテーマ使用
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-301, EDGE-201
-      /// 検証内容: ローディング中もアプリが動作すること
+      /// 設定読み込み中のデフォルトテーマ使用
       test('TC-073-009: 設定読み込み中のデフォルトテーマ使用', () async {
-        // テスト目的: ローディング中もデフォルトテーマで動作することを確認
-        // 黄信号: EDGE-201、NFR-301 から推測
-
         // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
 
@@ -232,15 +172,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-073-010: 不正な保存値のフォールバック
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: NFR-301
-      /// 検証内容: 不正な値が保存されていてもアプリが起動すること
+      /// 不正な保存値のフォールバック
       test('TC-073-010: 不正な保存値のフォールバック', () async {
-        // テスト目的: 不正値でもアプリがクラッシュしないことを確認
-        // 黄信号: NFR-301「基本機能継続」から推測
-
         // Given: テストデータ準備: 範囲外のindex値をSharedPreferencesに保存
         SharedPreferences.setMockInitialValues({
           'theme': 99, // 範囲外（AppTheme enum は 0-2）
@@ -265,19 +198,10 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 境界値テストケース
-    // =========================================================================
     group('境界値テストケース', () {
-      /// TC-073-011: AppTheme enum の最小値（light = 0）
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: REQ-803
-      /// 検証内容: enum最小値でも正常に動作すること
+      /// AppTheme enum の最小値（light = 0）
       test('TC-073-011: AppTheme enum の最小値（light = 0）', () async {
-        // テスト目的: 境界値（最小）で正常動作することを確認
-        // 青信号: REQ-803 の3種類（最小）
-
         // Given: テストデータ準備: SharedPreferencesにindex=0を保存
         SharedPreferences.setMockInitialValues({
           'theme': 0, // AppTheme.light.index
@@ -295,15 +219,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-073-012: AppTheme enum の最大値（highContrast = 2）
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: REQ-803
-      /// 検証内容: enum最大値でも正常に動作すること
+      /// AppTheme enum の最大値（highContrast = 2）
       test('TC-073-012: AppTheme enum の最大値（highContrast = 2）', () async {
-        // テスト目的: 境界値（最大）で正常動作することを確認
-        // 青信号: REQ-803 の3種類（最大）
-
         // Given: テストデータ準備: SharedPreferencesにindex=2を保存
         SharedPreferences.setMockInitialValues({
           'theme': 2, // AppTheme.highContrast.index
@@ -321,15 +238,8 @@ void main() {
         container.dispose();
       });
 
-      /// TC-073-013: 高コントラストモードのコントラスト比検証
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-5006
-      /// 検証内容: WCAG 2.1 AAレベル（4.5:1以上）のコントラスト比を確保
+      /// 高コントラストモードのコントラスト比検証
       test('TC-073-013: 高コントラストモードのコントラスト比検証', () {
-        // テスト目的: WCAG 2.1 AAレベル準拠を確認
-        // 黄信号: REQ-5006「WCAG 2.1 AAレベル」
-
         // Given: テストデータ準備: 高コントラストモードの色定義
         const backgroundColor = AppColors.backgroundHighContrast; // #FFFFFF
         const textColor = AppColors.onBackgroundHighContrast; // #000000
@@ -356,14 +266,10 @@ void main() {
       });
     });
 
-    // =========================================================================
     // テーマ連続切り替えテスト
-    // =========================================================================
     group('テーマ連続切り替えテスト', () {
       /// テーマを連続して切り替えても正常動作すること
       test('テーマを連続切り替えしても正常動作する', () async {
-        // テスト目的: 連続操作でも状態が一貫することを確認
-
         // Given: テストデータ準備: ProviderContainer作成
         final container = ProviderContainer();
         await container.read(settingsNotifierProvider.future);

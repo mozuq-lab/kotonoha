@@ -1,13 +1,10 @@
 /// PresetPhraseScreen お気に入り表示テスト
-///
 /// Phase 3 / WP-2 / Stage 3a: 定型文UIをお気に入りの真実（favoriteProvider）から描く
-///
 /// 背景: ADR-005によりお気に入りの正はfavoriteProvider。定型文UIは
 /// これまでPresetPhrase.isFavoriteという並行真実を読んでいたが、この段で
 /// favoriteProviderを読むように付け替えた。
-///
 /// このテストの狙い: favoriteProviderに定型文由来（sourceType ==
-/// 'preset_phrase'）のお気に入りがあれば星が塗りつぶしで表示されることを、
+/// 'preset_phrase'）のお気に入りがあれば星が塗りつぶしで表示されることを
 /// 描画されたウィジェット（最も外側の境界）で確認する。
 /// Stage 3b で PresetPhrase.isFavorite を削除したので、星の見た目を決められるのは
 /// favoriteProvider しかない。
@@ -26,7 +23,7 @@ import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
-/// build()で任意の初期状態を返すテスト用Notifier
+/// buildで任意の初期状態を返すテスト用Notifier
 /// （他の preset_phrase_screen_*_test.dart と同じパターン）
 class _TestPresetPhraseNotifier extends PresetPhraseNotifier {
   _TestPresetPhraseNotifier(this._initialState);
@@ -37,10 +34,9 @@ class _TestPresetPhraseNotifier extends PresetPhraseNotifier {
   PresetPhraseState build() => _initialState;
 }
 
-/// build()で任意の初期状態を返すテスト用FavoriteNotifier
-///
-/// ハング回避: testWidgets()の中で実Hiveを触らないよう、CRUDメソッドは
-/// 呼ばず、build()が直接FavoriteStateを返す形で状態を作る。
+/// buildで任意の初期状態を返すテスト用FavoriteNotifier
+/// ハング回避: testWidgetsの中で実Hiveを触らないよう、CRUDメソッドは
+/// 呼ばず、buildが直接FavoriteStateを返す形で状態を作る。
 class _TestFavoriteNotifier extends FavoriteNotifier {
   _TestFavoriteNotifier(this._initialState);
 
@@ -169,20 +165,16 @@ void main() {
       },
     );
 
-    // =========================================================================
     // Phase 3 / WP-2 / Stage 3b: 星タップ → favoriteProvider 更新 → 再描画
-    // =========================================================================
-    /// このテストの狙い: 星をタップしてから画面が変わるまでの経路を、
+    /// このテストの狙い: 星をタップしてから画面が変わるまでの経路を
     /// 途中の値を覗かずに**描画結果だけ**で確かめる。
-    ///
     /// PresetPhrase.isFavorite が無くなったので、星の見た目を決められるのは
     /// favoriteProvider しかない。星が塗りつぶしに変わり、お気に入りセクションが
     /// 現れたなら、タップが favoriteProvider に届いて画面が描き直されたということ。
-    ///
     /// 実 Hive を触らない: Hive を初期化していないので
     /// repositoryProvider は null を返し、Notifier はインメモリで動く
     /// （testWidgets の FakeAsync と実ファイル I/O が待ち合うのを避ける）。
-    /// favoriteProvider は差し替えず**本物**を使う。差し替えると、
+    /// favoriteProvider は差し替えず**本物**を使う。差し替えると
     /// 検証したい経路そのものが消える。
     testWidgets(
       '星をタップすると、favoriteProviderが更新され、描画された星が塗りつぶしに変わる',
@@ -231,21 +223,16 @@ void main() {
       },
     );
 
-    // =========================================================================
     // Phase 3 / WP-2 / Stage 3b (fix): お気に入りセクションの「位置」を見る
-    // =========================================================================
-    /// このテストの狙い: REQ-105「お気に入り定型文を一覧上部に優先表示」を、
+    /// このテストの狙い: 「お気に入り定型文を一覧上部に優先表示」を
     /// **画面上の位置**で確かめる。
-    ///
     /// なぜ要るか: この段で notifier 側のお気に入り優先ソート（_sortPhrases）を
     /// displayOrder のみに縮小し、「お気に入りが上に出る」責務を
-    /// PhraseListWidget のセクション分割へ一本化した。その前提を誰も検証していないと、
+    /// PhraseListWidget のセクション分割へ一本化した。その前提を誰も検証していないと
     /// PhraseListWidget.build のセクション追加順が入れ替わっただけで
     /// お気に入りがカテゴリの下に埋もれ、全テスト緑のまま出荷されてしまう。
-    ///
     /// 発話で訂正できない利用者にとって、これは最もよく使う言葉に毎回タップが
     /// 増えることを意味する。
-    ///
     /// 存在ではなく前後関係を見る: 座標の絶対値は固定せず、2つの dy の
     /// 大小関係だけを比較する（レイアウトの寸法変更では落ちない）。
     testWidgets(

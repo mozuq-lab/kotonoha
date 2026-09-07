@@ -1,9 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/utils/logger.dart';
 
-/// Test suite for AppLogger utility (TASK-0018)
-///
-/// TC-LOG-001 to TC-LOG-007: Logger functionality tests
+/// to : Logger functionality tests
 void main() {
   setUp(() {
     // Reset logger state before each test
@@ -11,7 +9,7 @@ void main() {
   });
 
   group('Debug Log Tests', () {
-    // TC-LOG-001: デバッグログ出力テスト
+    // デバッグログ出力テスト
     test('TC-LOG-001: AppLogger.debug should output debug level log', () {
       // Arrange
       const message = 'テストデバッグメッセージ';
@@ -36,7 +34,7 @@ void main() {
   });
 
   group('Info Log Tests', () {
-    // TC-LOG-002: 情報ログ出力テスト
+    // 情報ログ出力テスト
     test('TC-LOG-002: AppLogger.info should output info level log', () {
       // Arrange
       const message = 'アプリケーション起動完了';
@@ -59,7 +57,7 @@ void main() {
   });
 
   group('Warning Log Tests', () {
-    // TC-LOG-003: 警告ログ出力テスト
+    // 警告ログ出力テスト
     test('TC-LOG-003: AppLogger.warning should output warning level log', () {
       // Arrange
       const message = 'ネットワーク接続が不安定です';
@@ -82,7 +80,7 @@ void main() {
   });
 
   group('Error Log Tests', () {
-    // TC-LOG-004: エラーログ出力テスト（例外情報なし）
+    // エラーログ出力テスト（例外情報なし）
     test(
         'TC-LOG-004: AppLogger.error should output error log without exception',
         () {
@@ -105,7 +103,7 @@ void main() {
       );
     });
 
-    // TC-LOG-005: エラーログ出力テスト（例外情報・スタックトレース付き）
+    // エラーログ出力テスト（例外情報・スタックトレース付き）
     test(
         'TC-LOG-005: AppLogger.error should output error log with exception and stack trace',
         () {
@@ -138,7 +136,7 @@ void main() {
   });
 
   group('Release Mode Debug Log Suppression Tests', () {
-    // TC-LOG-006: 本番環境でのデバッグログ抑制テスト
+    // 本番環境でのデバッグログ抑制テスト
     test(
         'TC-LOG-006: debug logs should be suppressed when suppressDebugLogs is true',
         () {
@@ -192,7 +190,7 @@ void main() {
   });
 
   group('Tag-based Log Tests', () {
-    // TC-LOG-007: ログタグ付き出力テスト
+    // ログタグ付き出力テスト
     test('TC-LOG-007: AppLogger should support tag parameter for debug log',
         () {
       // Arrange

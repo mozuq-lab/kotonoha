@@ -1,9 +1,4 @@
 /// StatusButton ウィジェット
-///
-/// TASK-0044: 状態ボタン（「痛い」「トイレ」等8-12個）実装
-/// 要件: FR-001（状態ボタン表示）、FR-004（サイズ保証）、FR-101（TTS読み上げ）
-/// 信頼性レベル: 青信号（要件定義書ベース）
-///
 /// 状態ボタン用のウィジェット。
 /// タップ時にTTS読み上げを実行し、アクセシビリティ要件を満たす。
 library;
@@ -18,16 +13,14 @@ import 'package:kotonoha_app/features/status_buttons/domain/status_button_consta
 import 'package:kotonoha_app/features/status_buttons/domain/status_button_type.dart';
 
 /// 状態ボタンウィジェット
-///
 /// 「痛い」「トイレ」「暑い」等の状態を伝えるボタン。
-/// アクセシビリティ要件（REQ-5001）に準拠した44px以上のタップターゲットを持つ。
-///
-/// 使用例:
+/// アクセシビリティ要件に準拠した44px以上のタップターゲットを持つ。
+/// 使用例
 /// ```dart
 /// StatusButton(
-///   statusType: StatusButtonType.pain,
-///   onPressed: () => print('痛いがタップされました'),
-///   onTTSSpeak: (text) => ttsService.speak(text),
+/// statusType: StatusButtonType.pain
+/// onPressed:  => print('痛いがタップされました')
+/// onTTSSpeak: (text) => ttsService.speak(text)
 /// )
 /// ```
 class StatusButton extends StatefulWidget {
@@ -113,9 +106,8 @@ class _StatusButtonState extends State<StatusButton> with DebounceMixin {
       widget.backgroundColor ?? StatusButtonColors.getColor(widget.statusType);
 
   /// テキスト色を取得
-  ///
   /// AA対応: 背景はカテゴリ別の色（オレンジ／青／緑）なのに文字色を
-  /// Colors.white 固定にしていたため、身体状態 2.16:1 / 要求 3.12:1 /
+  /// Colors.white 固定にしていたため、身体状態 2.16:1 / 要求 3.12:1
   /// 感情 2.78:1 といずれも WCAG AA(4.5:1) 未達だった。
   /// カテゴリ色は識別の手がかり（NFR-U003）なので変えず、実際の背景色の
   /// 輝度から黒・白のうちコントラスト比が高い方を選ぶ。
@@ -161,8 +153,8 @@ class _StatusButtonState extends State<StatusButton> with DebounceMixin {
                     BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
             ),
-            // AA対応: GridViewのセルがaspectRatio 1.0で子サイズを制約するため、
-            // largeフォント時にラベルがoverflowしないようFittedBoxで縮小し、
+            // AA対応: GridViewのセルがaspectRatio 1.0で子サイズを制約するため
+            // largeフォント時にラベルがoverflowしないようFittedBoxで縮小し
             // それでも収まらない場合はellipsisで省略する。
             child: FittedBox(
               fit: BoxFit.scaleDown,

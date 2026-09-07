@@ -1,11 +1,4 @@
 /// HistoryItemCard ウィジェット
-///
-/// TASK-0061: 履歴一覧UI実装
-/// TASK-0066: お気に入り追加・削除・並び替え機能
-/// TDD Refactorフェーズ: 定数抽出・constコンストラクタ・アクセシビリティ改善
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件: FR-061-002, FR-061-003, NFR-061-004, REQ-701
 library;
 
 import 'package:flutter/material.dart';
@@ -16,18 +9,15 @@ import '../constants/history_ui_constants.dart';
 import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
 
 /// 履歴項目カードウィジェット
-///
 /// 各履歴項目を表示するカード形式のウィジェット。
-///
-/// 表示内容:
-/// - 履歴テキスト
-/// - 作成日時（MM/DD HH:mm形式）
-/// - 種類アイコン
-/// - 削除ボタン
-///
-/// アクセシビリティ要件:
-/// - タップターゲット最小44px以上
-/// - スクリーンリーダー対応（Semantics）
+/// 表示内容
+/// 履歴テキスト
+/// 作成日時（MM/DD HH:mm形式）
+/// 種類アイコン
+/// 削除ボタン
+/// アクセシビリティ要件
+/// タップターゲット最小44px以上
+/// スクリーンリーダー対応（Semantics）
 class HistoryItemCard extends StatelessWidget {
   /// コンストラクタ
   const HistoryItemCard({
@@ -61,9 +51,8 @@ class HistoryItemCard extends StatelessWidget {
   final VoidCallback? onLongPress;
 
   /// 既にお気に入り登録済みかどうか
-  ///
-  /// 改善: 履歴からお気に入り追加は従来長押しメニューのみで、
-  /// タップ主体の操作要件（REQ-5005）に反していた。星アイコンによる
+  /// 改善: 履歴からお気に入り追加は従来長押しメニューのみで
+  /// タップ主体の操作要件に反していた。星アイコンによる
   /// 明示的なタップ操作を追加し、長押しメニューは併存させる。
   final bool isFavorited;
 
@@ -133,7 +122,7 @@ class HistoryItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // 星ボタン: 長押し不要でお気に入り追加できるタップ代替（REQ-5005）
+                // 星ボタン: 長押し不要でお気に入り追加できるタップ代替
                 if (onFavoriteTap != null)
                   IconButton(
                     icon: Icon(
@@ -149,7 +138,7 @@ class HistoryItemCard extends StatelessWidget {
                       minHeight: HistoryUIConstants.minTapTargetSize,
                     ),
                   ),
-                // 入力欄へボタン: 履歴の内容を入力欄に入れて編集する動線（REQ-102）
+                // 入力欄へボタン: 履歴の内容を入力欄に入れて編集する動線
                 SendToInputButton(text: history.content),
                 // 読み上げ中は停止ボタン、それ以外は削除ボタン
                 if (isSpeaking && onStop != null)
@@ -181,8 +170,7 @@ class HistoryItemCard extends StatelessWidget {
   }
 
   /// 履歴種類に応じたアイコンを返す
-  ///
-  /// NFR-061-008: 履歴の種類を視覚的に区別
+  /// 履歴の種類を視覚的に区別
   IconData _getIconForType(HistoryType type) {
     return switch (type) {
       HistoryType.manualInput => Icons.keyboard, // 文字盤入力
@@ -193,8 +181,7 @@ class HistoryItemCard extends StatelessWidget {
   }
 
   /// 履歴種類に応じたラベルを返す（アクセシビリティ用）
-  ///
-  /// NFR-061-008: 履歴の種類を音声で区別
+  /// 履歴の種類を音声で区別
   String _getTypeLabel(HistoryType type) {
     return switch (type) {
       HistoryType.manualInput => '文字盤入力',
@@ -205,8 +192,7 @@ class HistoryItemCard extends StatelessWidget {
   }
 
   /// 日時を「MM/DD HH:mm」形式にフォーマット
-  ///
-  /// NFR-061-005: 日時フォーマット要件
+  /// 日時フォーマット要件
   String _formatDateTime(DateTime dateTime) {
     return _dateFormatter.format(dateTime);
   }

@@ -1,21 +1,17 @@
 /// お気に入りの往復テスト（Phase 3 / WP-3）
-///
 /// **UI → provider → repository → 実 Hive box → 再起動相当 → UI** を1本で通す。
 /// 層を飛ばして下だけを叩くテストは単体では合格にしない（是正計画 §Phase 3-3）。
-/// `isFavorite` のバグは Hive アダプタのテストが緑のまま生き残り、
+/// `isFavorite` のバグは Hive アダプタのテストが緑のまま生き残り
 /// バグはその上の変換層にあった——それがこの形のテストを要求する理由である。
-///
 /// 本番の登録経路を使う: アダプタ登録はテストで書き写さず
-/// `registerPersistedTypeAdapters()` を呼ぶ（台帳 L-31。本番にだけ足された
+/// `registerPersistedTypeAdapters` を呼ぶ（台帳 L-31。本番にだけ足された
 /// 永続化面や、`ignoreTypeId` で差し替えられたアダプタを見逃さないため）。
-///
 /// モックは外部 SDK の境界だけ: TTS は `flutter_tts` の**プラットフォーム
 /// チャンネル**で止める。`ttsProvider` を差し替えると自分の provider を patch する
 /// ことになるので採らない。Hive・repository・notifier・ウィジェットは全て実物。
-///
 /// testWidgets と実 Hive: `testWidgets` の FakeAsync は実ファイル I/O の完了を
 /// 待てない（実 I/O の完了は OS スレッド経由で実イベントループへ返る。経緯は
-/// `docs/archive/verification-principles.md` §3）。実 I/O は `tester.runAsync()` の
+/// `docs/archive/verification-principles.md` §3）。実 I/O は `tester.runAsync` の
 /// 中だけで行う。
 library;
 
@@ -105,7 +101,7 @@ void main() {
     // When: 星をタップする（UI → provider → repository → 実 box）
     // runAsync の中でタップする理由: タップの handler は呼び出し元のゾーンで動く。
     // FakeAsync の中でタップすると、handler が始めた実 Hive の書き込みが
-    // FakeAsync のタイマー待ちのまま完了せず、その後の box.close() が
+    // FakeAsync のタイマー待ちのまま完了せず、その後の box.close が
     // 書き込みロックを待って**デッドロックする**（2026-08-31 に実測）。
     await tester.runAsync(() async {
       await tester.tap(find.byIcon(Icons.star_border).first);

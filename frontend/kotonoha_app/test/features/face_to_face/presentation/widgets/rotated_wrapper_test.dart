@@ -1,11 +1,4 @@
 /// RotatedWrapper widget test
-///
-/// TASK-0053: 180 degree screen rotation
-/// Test cases: TC-053-008 to TC-053-011
-///
-/// Test target: lib/features/face_to_face/presentation/widgets/rotated_wrapper.dart
-///
-/// TDD Red phase: RotatedWrapper not implemented, tests should fail
 library;
 
 import 'dart:math' as math;
@@ -15,7 +8,7 @@ import 'package:kotonoha_app/features/face_to_face/presentation/widgets/rotated_
 
 void main() {
   group('RotatedWrapper widget test (TASK-0053)', () {
-    /// TC-053-008: Display child widget as-is when isRotated=false
+    /// Display child widget as-is when isRotated=false
     testWidgets('TC-053-008: Display child widget as-is when isRotated=false',
         (WidgetTester tester) async {
       const testText = 'Test';
@@ -44,7 +37,7 @@ void main() {
       );
     });
 
-    /// TC-053-009: Apply Transform.rotate when isRotated=true
+    /// Apply Transform.rotate when isRotated=true
     testWidgets('TC-053-009: Apply Transform.rotate when isRotated=true',
         (WidgetTester tester) async {
       const testText = 'Test';
@@ -73,7 +66,7 @@ void main() {
       );
     });
 
-    /// TC-053-010: Transform.rotate angle is math.pi (180 degrees)
+    /// Transform.rotate angle is math.pi (180 degrees)
     testWidgets('TC-053-010: Transform.rotate angle is math.pi (180 degrees)',
         (WidgetTester tester) async {
       const testText = 'Test';
@@ -106,7 +99,7 @@ void main() {
       );
     });
 
-    /// TC-053-011: Rotation center is screen center (Alignment.center)
+    /// Rotation center is screen center (Alignment.center)
     testWidgets(
         'TC-053-011: Rotation center is screen center (Alignment.center)',
         (WidgetTester tester) async {

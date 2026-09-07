@@ -1,6 +1,4 @@
 /// テストヘルパー関数
-///
-/// TASK-0061: 履歴一覧UI実装
 library;
 
 import 'package:kotonoha_app/features/history/domain/models/history.dart';
@@ -36,7 +34,7 @@ List<History> createTestHistories(int count, {HistoryType? type}) {
 }
 
 /// テスト用のHistoryNotifierを作成
-/// build()で初期状態を返すことで、Riverpod 3.x互換にする
+/// buildで初期状態を返すことで、Riverpod 3.x互換にする
 class TestHistoryNotifier extends HistoryNotifier {
   final HistoryState _initialState;
   TestHistoryNotifier(this._initialState);

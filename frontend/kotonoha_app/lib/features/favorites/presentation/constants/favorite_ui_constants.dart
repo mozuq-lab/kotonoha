@@ -1,12 +1,8 @@
 /// Favorite UI constants
-///
-/// TASK-0064: お気に入り一覧UI実装
-/// TDD Greenフェーズ: UI定数の集約
 library;
 
 /// お気に入り画面UI定数クラス
-///
-/// マジックナンバー排除とメンテナンス性向上のため、
+/// マジックナンバー排除とメンテナンス性向上のため
 /// お気に入り画面で使用する定数を集約。
 class FavoriteUIConstants {
   FavoriteUIConstants._();

@@ -1,11 +1,4 @@
 /// History screen widget
-///
-/// TASK-0061: 履歴一覧UI実装
-/// TASK-0066: お気に入り追加・削除・並び替え機能
-/// TDD Refactorフェーズ: 定数抽出・ダイアログ分離・アクセシビリティ改善
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件: FR-061-001〜015, AC-061-001〜008, REQ-701
 library;
 
 import 'package:flutter/material.dart';
@@ -21,24 +14,21 @@ import 'constants/history_ui_constants.dart';
 import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 
 /// 履歴画面ウィジェット
-///
 /// 過去の入力履歴を表示・管理する画面。
-///
-/// 機能:
-/// - 履歴一覧表示（新しい順）
-/// - 履歴タップで再読み上げ
-/// - 個別削除機能
-/// - 全削除機能
-/// - 空状態表示
-/// - お気に入り追加機能（REQ-701）
-///
-/// 実装要件:
-/// - FR-061-001: 履歴を時系列順（新しい順）に表示
-/// - FR-061-006: タップで再読み上げ
-/// - FR-061-007〜010: 削除機能（個別・全削除）
-/// - NFR-061-001: 50件を1秒以内に表示
-/// - NFR-061-004: タップターゲット44px以上
-/// - REQ-701: お気に入り追加機能
+/// 機能
+/// 履歴一覧表示（新しい順）
+/// 履歴タップで再読み上げ
+/// 個別削除機能
+/// 全削除機能
+/// 空状態表示
+/// お気に入り追加機能
+/// 実装要件
+/// 履歴を時系列順（新しい順）に表示
+/// タップで再読み上げ
+/// 010: 削除機能（個別・全削除）
+/// 50件を1秒以内に表示
+/// タップターゲット44px以上
+/// お気に入り追加機能
 class HistoryScreen extends ConsumerStatefulWidget {
   /// 履歴画面を作成する。
   const HistoryScreen({super.key});
@@ -49,8 +39,7 @@ class HistoryScreen extends ConsumerStatefulWidget {
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// 現在読み上げ中の履歴項目ID
-  ///
-  /// バグ修正: 以前はTTSのspeaking状態を全カードに一律で渡していたため、
+  /// バグ修正: 以前はTTSのspeaking状態を全カードに一律で渡していたため
   /// 1件を読み上げ中に全カードが停止アイコンに変わっていた。読み上げ対象の
   /// 項目IDを保持し、その項目のみ読み上げ中表示にする。
   String? _speakingId;
@@ -71,7 +60,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     // TTSの状態変更を監視
     ref.listen<TTSServiceState>(ttsProvider, (previous, next) {
-      // エラーメッセージを表示（FR-063-009）
+      // エラーメッセージを表示
       if (next.state == TTSState.error && next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -128,9 +117,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   /// 履歴項目タップ時の処理
-  ///
-  /// FR-061-006: 履歴項目をタップすると再読み上げを実行
-  /// FR-063-008: 空文字列の読み上げを防止
+  /// 履歴項目をタップすると再読み上げを実行
+  /// 空文字列の読み上げを防止
   void _onHistoryTap(String id, String content) {
     // 空文字列の場合は読み上げを実行しない
     if (content.isEmpty) {
@@ -149,8 +137,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   /// 個別削除処理（確認なし・即削除 + Undo）
-  ///
-  /// 改善: 確認ダイアログは「はい」誤タップ時に復元できず、
+  /// 改善: 確認ダイアログは「はい」誤タップ時に復元できず
   /// タップ数も増えるため廃止した。即削除のうえ、SnackBarの
   /// 「元に戻す」操作（8秒間）で誤操作から復元できるようにする。
   void _deleteHistoryWithUndo(BuildContext context, History history) {
@@ -163,14 +150,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   /// 全削除確認ダイアログを表示
-  ///
-  /// FR-061-010: 全削除時に確認ダイアログを表示
-  /// 改善: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ、
+  /// 全削除時に確認ダイアログを表示
+  /// 改善: 全削除は影響範囲が大きいため確認ダイアログは維持しつつ
   /// 実行後にUndo SnackBarを表示し誤操作から復元できるようにする。
   void _showDeleteAllDialog(BuildContext context) {
     showDialog<void>(
       context: context,
-      barrierDismissible: false, // FR-061-010: 誤操作防止
+      barrierDismissible: false, // 誤操作防止
       builder: (BuildContext dialogContext) {
         return _ConfirmDialog(
           title: HistoryUIConstants.confirmDialogTitle,
@@ -192,8 +178,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   /// コンテキストメニューを表示
-  ///
-  /// REQ-701: 履歴からお気に入りに追加
+  /// 履歴からお気に入りに追加
   void _showContextMenu(
       BuildContext context, String historyId, String content) {
     showModalBottomSheet<void>(
@@ -218,8 +203,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   /// お気に入りに追加
-  ///
-  /// REQ-701: お気に入り追加機能
+  /// お気に入り追加機能
   /// 出所記録: 履歴由来であることを sourceType/sourceId として記録する
   /// （Phase 3 / WP-2 / Stage 1）。重複判定は content 一致のまま変えない。
   void _addToFavorite(BuildContext context, String historyId, String content) {
@@ -251,7 +235,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 }
 
 /// 確認ダイアログウィジェット（内部使用）
-///
 /// 重複コード削減のため、共通の確認ダイアログを定義。
 class _ConfirmDialog extends StatelessWidget {
   const _ConfirmDialog({

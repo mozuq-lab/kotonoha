@@ -1,12 +1,6 @@
 /// HomeScreen 配線確認テスト（fix/improvement-p0-p2）
-///
 /// バッチAで達成したレスポンシブ対応を踏襲しつつ、実装済みだが
 /// 画面に配線されていなかった以下の機能をホーム画面へ統合したことを確認する。
-///
-/// - 状態ボタン（TASK-0044, REQ-202〜204）: 横スクロールストリップとして統合
-/// - 音量ゼロ警告のTTS側配線（EDGE-202）
-/// - 履歴種類の小バグ修正（クイック応答・状態ボタンはHistoryType.quickButton）
-/// - クイック応答タップ時にTTS speak()が二重に呼ばれていたバグの修正
 library;
 
 import 'package:flutter/material.dart';
@@ -161,7 +155,7 @@ void main() {
       await tester.tap(find.text('はい'));
       await tester.pumpAndSettle();
 
-      // バグ修正確認: 従来はonTTSSpeakとonResponse双方でspeak()が
+      // バグ修正従来はonTTSSpeakとonResponse双方でspeakが
       // 呼ばれ二重に読み上げられていた。1回のみ呼ばれることを確認する。
       verify(() => mockFlutterTts.speak('はい')).called(1);
 

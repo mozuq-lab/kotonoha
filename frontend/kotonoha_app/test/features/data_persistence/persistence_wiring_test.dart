@@ -1,13 +1,11 @@
 /// 永続化配線テスト（履歴・お気に入り・定型文のHive結線）
-///
-/// fix/frontend-persistence-wiring:
-/// - Notifierの各操作がHive Boxに永続化され、アプリ再起動相当（新しい
-///   ProviderContainer）でデータが復元されることを検証する。
-/// - リポジトリProviderがBox未オープン時にnullを返すことを検証する。
-///
-/// 設計判断（nullフォールバック方式）:
-/// - Hiveを初期化しない素のProviderContainer()では repo==null となり、
-///   Notifierはインメモリ動作にフォールバックする。
+/// fix/frontend-persistence-wiring
+/// Notifierの各操作がHive Boxに永続化され、アプリ再起動相当（新しい
+/// ProviderContainer）でデータが復元されることを検証する。
+/// リポジトリProviderがBox未オープン時にnullを返すことを検証する。
+/// 設計判断（nullフォールバック方式）
+/// Hiveを初期化しない素のProviderContainerでは repo==null となり
+/// Notifierはインメモリ動作にフォールバックする。
 library;
 
 import 'dart:io';
@@ -201,7 +199,7 @@ void main() {
       addTearDown(container.dispose);
       final notifier = container.read(presetPhraseNotifierProvider.notifier);
 
-      // loadPhrases() でHiveから再読込され、stateに反映される
+      // loadPhrases でHiveから再読込され、stateに反映される
       await notifier.loadPhrases();
       final state = container.read(presetPhraseNotifierProvider);
 

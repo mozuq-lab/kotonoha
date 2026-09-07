@@ -1,12 +1,11 @@
 /// Application size constants
-///
 /// Defines sizes for tap targets, fonts, spacing, etc.
-/// Following accessibility guidelines (REQ-5001, REQ-801)
+/// Following accessibility guidelines.
 class AppSizes {
   // Private constructor to prevent instantiation
   AppSizes._();
 
-  // タップターゲット最小サイズ (REQ-5001: Minimum tap target size)
+  // タップターゲット最小サイズ
   // WCAG 2.1: Minimum 44x44 pixels for touch targets
   static const double minTapTarget = 44.0;
 
@@ -14,32 +13,31 @@ class AppSizes {
   // For better accessibility, especially for large buttons and emergency button
   static const double recommendedTapTarget = 60.0;
 
-  // 緊急ボタン (Emergency button / REQ-301, REQ-302, TASK-0045)
+  // 緊急ボタン
   // AppShellが全画面共通で画面下部に配置する緊急ボタンのサイズと余白。
   // 重要: ここの値はAppShellのボタン配置と、緊急ボタンバーが確保する
   // 高さの両方から参照される単一の定義。片方だけを変更すると
-  // 「緊急ボタンが他のUI（文字盤のキー等）を覆う」不具合が再発するため、
+  // 「緊急ボタンが他のUI（文字盤のキー等）を覆う」不具合が再発するため
   // 必ずこの定数経由で扱うこと。
   static const double emergencyButtonSize = recommendedTapTarget;
 
   // 緊急ボタンと画面端・他の操作ボタンとの間隔
-  // TASK-0045 FR-006: 誤タップ防止のため16px以上を確保する
+  // 誤タップ防止のため16px以上を確保する
   static const double emergencyButtonMargin = paddingMedium;
 
   // 緊急ボタンバーの太さ（ボタン60px + 両側マージン16px = 92px）
   // このバーは画面本体（各画面のScaffold）とは別のレイアウト領域として
   // 確保されるため、画面側のUIが緊急ボタンの下に潜り込むことがない
-  // （TASK-0045 FR-005: 他のUI要素と重ならない位置に配置する）。
-  //
-  // 画面の向きによって使われ方が変わるため「高さ」ではなく「太さ」と呼ぶ:
-  // - 縦向き: 画面下部の横帯の「高さ」
-  // - 横向き: 画面右端の縦帯（サイドレール）の「幅」
-  // 横向きで縦方向92pxを消費すると文字盤の可視行数が大きく減るため、
+  // 他のUI要素と重ならない位置に配置する。
+  // 画面の向きによって使われ方が変わるため「高さ」ではなく「太さ」と呼ぶ
+  // 縦向き: 画面下部の横帯の「高さ」
+  // 横向き: 画面右端の縦帯（サイドレール）の「幅」
+  // 横向きで縦方向92pxを消費すると文字盤の可視行数が大きく減るため
   // 相対的に余裕のある横方向から確保する（AppShell参照）。
   static const double emergencyButtonBarThickness =
       emergencyButtonSize + emergencyButtonMargin * 2;
 
-  // フォントサイズ (REQ-801: Font size options - small/medium/large)
+  // フォントサイズ
   static const double fontSizeSmall = 16.0;
   static const double fontSizeMedium = 20.0;
   static const double fontSizeLarge = 24.0;
@@ -87,7 +85,7 @@ class AppSizes {
   // レスポンシブブレークポイント (Responsive breakpoints)
   // この幅未満はスマホ幅とみなし、コンパクトなレイアウトに切り替える
   static const double phoneMaxWidth = 600.0;
-  // 可視高さ（Scaffold body）がこの値未満の場合、
+  // 可視高さ（Scaffold body）がこの値未満の場合
   // 主に横持ちスマホを想定した2ペイン・コンパクトレイアウトに切り替える
   static const double compactHeightThreshold = 500.0;
 
@@ -108,7 +106,7 @@ class AppSizes {
   static const double inputCandidateRowHeight = 48.0;
   // 候補チップ1件あたりの最大幅の絶対上限。
   // 長文候補（履歴文など）でチップが際限なく伸び、後続候補が実質
-  // 表示されなくなることを防ぐための上限（画面幅の約60%と比較し、
+  // 表示されなくなることを防ぐための上限（画面幅の約60%と比較し
   // 小さい方が採用される）。
   static const double candidateChipMaxWidth = 280.0;
 

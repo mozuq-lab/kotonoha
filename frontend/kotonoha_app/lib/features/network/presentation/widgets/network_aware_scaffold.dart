@@ -1,12 +1,7 @@
 /// ネットワーク状態対応Scaffold
-///
-/// TASK-0077: オフライン時UI表示・AI変換無効化
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件:
-/// - REQ-1002: オフライン状態表示
-/// - EDGE-001: ネットワーク復帰時の通知
-/// - NFR-203: ユーザー操作を妨げない通知
+/// オフライン状態表示
+/// ネットワーク復帰時の通知
+/// ユーザー操作を妨げない通知
 library;
 
 import 'package:flutter/material.dart';
@@ -17,13 +12,10 @@ import 'offline_banner.dart';
 import 'online_recovery_notification.dart';
 
 /// ネットワーク状態に応じたUIを自動的に表示するScaffold
-///
 /// オフライン時はバナーを表示し、オンライン復帰時は通知を表示する。
 /// 既存のScaffoldを置き換えるだけで使用可能。
-///
-/// 関連要件:
-/// - REQ-1002: オフライン状態表示
-/// - EDGE-001: ネットワーク復帰時の通知
+/// オフライン状態表示
+/// ネットワーク復帰時の通知
 class NetworkAwareScaffold extends ConsumerWidget {
   /// AppBar
   final PreferredSizeWidget? appBar;
@@ -103,14 +95,11 @@ class NetworkAwareScaffold extends ConsumerWidget {
 }
 
 /// AI変換ボタンがオフライン時に押された場合のダイアログを表示
-///
-/// REQ-1003: オフライン時のフォールバック動作
-/// 信頼性レベル: 青信号
-///
-/// AA対応: アイコン色を Colors.grey[700](#616161) に固定していたため、
+/// オフライン時のフォールバック動作
+/// AA対応: アイコン色を Colors.grey[700](#616161) に固定していたため
 /// 背景を自前で持たずテーマの surface に載るこのダイアログでは
 /// ダークテーマ (#1E1E1E) に対し 2.69:1 と非テキスト基準(3:1)未達だった。
-/// 他の警告アイコンと同じ warningIconColor() を再利用する
+/// 他の警告アイコンと同じ warningIconColor を再利用する
 /// （ライト 5.44:1 / ダーク 9.63:1 / 高コントラスト 5.93:1）。
 Future<void> showOfflineAIConversionDialog(BuildContext context) async {
   return showDialog(

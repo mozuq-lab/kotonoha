@@ -1,9 +1,4 @@
 /// AI変換APIクライアント
-///
-/// TASK-0067: AI変換APIクライアント実装
-///
-/// 信頼性レベル: 青信号（api-endpoints.mdベース）
-/// 関連要件: REQ-901, REQ-902, REQ-903, REQ-904, NFR-002
 library;
 
 import 'package:dio/dio.dart';
@@ -14,7 +9,6 @@ import '../models/ai_conversion_request.dart';
 import '../models/ai_conversion_response.dart';
 
 /// AI変換APIクライアント
-///
 /// バックエンドのAI変換API（/api/v1/ai/convert, /api/v1/ai/regenerate）
 /// を呼び出すHTTPクライアント。
 class AIConversionApiClient {
@@ -22,7 +16,6 @@ class AIConversionApiClient {
   final Dio dio;
 
   /// コンストラクタ
-  ///
   /// [baseUrl] APIのベースURL（例: http://localhost:8000）
   AIConversionApiClient({
     required String baseUrl,
@@ -42,12 +35,10 @@ class AIConversionApiClient {
   AIConversionApiClient.withDio(this.dio);
 
   /// AI変換を実行
-  ///
   /// [inputText] 変換元テキスト（2文字以上500文字以下）
   /// [politenessLevel] 丁寧さレベル
-  ///
-  /// REQ-901: 短い入力を丁寧な文章に変換
-  /// REQ-903: 丁寧さレベル3段階
+  /// 短い入力を丁寧な文章に変換
+  /// 丁寧さレベル3段階
   Future<AIConversionResponse> convert({
     required String inputText,
     required PolitenessLevel politenessLevel,
@@ -70,12 +61,10 @@ class AIConversionApiClient {
   }
 
   /// AI再変換を実行
-  ///
   /// [inputText] 変換元テキスト
   /// [politenessLevel] 丁寧さレベル
   /// [previousResult] 前回の変換結果
-  ///
-  /// REQ-904: 再生成機能
+  /// 再生成機能
   Future<AIConversionResponse> regenerate({
     required String inputText,
     required PolitenessLevel politenessLevel,

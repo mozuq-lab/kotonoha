@@ -1,5 +1,4 @@
 /// Application logging utility
-///
 /// Provides structured logging with different log levels
 /// and optional tag-based categorization.
 library;
@@ -22,7 +21,6 @@ enum LogLevel {
 }
 
 /// Application logger class
-///
 /// Provides methods for logging at different levels with optional tags.
 /// In release mode, debug logs are suppressed.
 class AppLogger {

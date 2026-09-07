@@ -1,9 +1,6 @@
 /// inputCandidatesProvider テスト
-///
 /// fix/improvement-p0-p2: 頻度ベースの入力候補
-///
 /// 対象: lib/features/input_candidates/providers/input_candidates_provider.dart
-///
 /// テスト方針: HiveのBoxをオープンしないプレーンな[ProviderContainer]を
 /// 使用する。repository_providers.dart はBox未オープン時にnullを返す設計
 /// のため、historyProvider/favoriteProvider/presetPhraseNotifierProviderは

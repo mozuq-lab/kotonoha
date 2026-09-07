@@ -1,15 +1,5 @@
-// データ読み込みパフォーマンステスト（TDD Redフェーズ）
-// TASK-0059: データ永続化テスト
-//
 // テストフレームワーク: flutter_test + Hive
 // 対象: 大量データ保存時のアプリ起動速度
-//
-// TDD Redフェーズ: パフォーマンス最適化が未実装のため、このテストは失敗する可能性がある
-//
-// 信頼性レベル凡例:
-// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-// - 黄信号: 要件定義書から妥当な推測によるテスト
-// - 赤信号: 要件定義書にない推測によるテスト
 
 import 'dart:io';
 
@@ -61,10 +51,6 @@ void main() {
     });
 
     test('TC-059-010: 大量データ保存時のアプリ起動速度を検証', () async {
-      // テスト目的: 大量データ保存時のアプリ起動速度を検証
-      // 信頼性レベル: 黄信号 - NFR-004に基づく
-
-      // Given（準備フェーズ）
       // 定型文100件、履歴50件、設定を事前に保存
       presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
       historyBox = await Hive.openBox<HistoryItem>('history');
@@ -114,7 +100,6 @@ void main() {
       // Boxを閉じる（アプリ終了をシミュレート）
       await Hive.close();
 
-      // When（実行フェーズ）
       // アプリを起動し、起動時間を計測
       final stopwatch = Stopwatch()..start();
 
@@ -133,7 +118,6 @@ void main() {
 
       stopwatch.stop();
 
-      // Then（検証フェーズ）
       // すべてのデータが1秒以内に読み込まれる
       final elapsedMs = stopwatch.elapsedMilliseconds;
       expect(elapsedMs, lessThan(1000),
@@ -155,10 +139,6 @@ void main() {
     });
 
     test('TC-059-010-境界値: 200件の定型文読み込みパフォーマンス', () async {
-      // テスト目的: より大量のデータでのパフォーマンスを検証
-      // 信頼性レベル: 黄信号 - NFR-004に基づく
-
-      // Given（準備フェーズ）
       presetBox = await Hive.openBox<PresetPhrase>('large_presetPhrases');
       presetRepository = PresetPhraseRepository(box: presetBox);
 
@@ -178,7 +158,6 @@ void main() {
 
       await Hive.close();
 
-      // When（実行フェーズ）
       final stopwatch = Stopwatch()..start();
 
       presetBox = await Hive.openBox<PresetPhrase>('large_presetPhrases');
@@ -187,7 +166,6 @@ void main() {
 
       stopwatch.stop();
 
-      // Then（検証フェーズ）
       // 200件でも2秒以内に読み込まれる（余裕を持った基準）
       final elapsedMs = stopwatch.elapsedMilliseconds;
       expect(elapsedMs, lessThan(2000),
@@ -206,10 +184,6 @@ void main() {
     });
 
     test('TC-059-010-補足: 非同期処理のUIブロック確認', () async {
-      // テスト目的: データ読み込みが非同期で行われ、UIをブロックしないことを確認
-      // 信頼性レベル: 黄信号 - NFR-004に基づく
-
-      // Given（準備フェーズ）
       presetBox = await Hive.openBox<PresetPhrase>('async_presetPhrases');
       presetRepository = PresetPhraseRepository(box: presetBox);
 
@@ -228,7 +202,6 @@ void main() {
 
       await Hive.close();
 
-      // When（実行フェーズ）
       // 非同期でデータを読み込む
       presetBox = await Hive.openBox<PresetPhrase>('async_presetPhrases');
       presetRepository = PresetPhraseRepository(box: presetBox);
@@ -243,7 +216,6 @@ void main() {
 
       await Future.wait([loadFuture, uiSimulation]);
 
-      // Then（検証フェーズ）
       // UIシミュレーションが完了している（ブロックされていない）
       expect(uiSimulationCompleted, true, reason: 'UIがブロックされていない');
 

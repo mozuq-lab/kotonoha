@@ -1,5 +1,4 @@
 /// 永続化状態の導出テスト（ADR-005 / Phase 3 WP-1）
-///
 /// box のオープン結果から PersistenceState を導く純関数を検証する。
 library;
 

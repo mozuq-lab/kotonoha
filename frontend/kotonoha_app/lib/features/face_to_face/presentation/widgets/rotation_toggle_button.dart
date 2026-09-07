@@ -1,10 +1,7 @@
 /// RotationToggleButton widget
-///
-/// TASK-0053: 180度画面回転機能実装
-/// REQ-502: 画面を180度回転できる機能
-/// REQ-503: シンプルな操作で切り替え
-/// REQ-5001: タップターゲット44px×44px以上
-///
+/// 画面を180度回転できる機能
+/// シンプルな操作で切り替え
+/// タップターゲット44px×44px以上
 /// 180度回転を切り替えるボタンウィジェット
 library;
 
@@ -13,9 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/face_to_face_provider.dart';
 
 /// 180度回転切り替えボタン
-///
-/// REQ-502: 画面を180度回転できる機能
-/// REQ-5001: タップターゲット44px×44px以上
+/// 画面を180度回転できる機能
+/// タップターゲット44px×44px以上
 class RotationToggleButton extends ConsumerWidget {
   /// RotationToggleButtonを作成
   const RotationToggleButton({super.key});

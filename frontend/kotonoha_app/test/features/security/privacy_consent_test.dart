@@ -1,7 +1,3 @@
-/// TASK-0097: NFR-102 AI変換プライバシー通知テスト
-///
-/// 信頼性レベル: 青信号（NFR-102に基づく）
-/// テスト対象: AI変換機能で会話内容を外部に送信する際のプライバシー通知
 library;
 
 import 'package:flutter/material.dart';

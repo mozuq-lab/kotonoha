@@ -1,8 +1,4 @@
 /// タブレット表示テスト
-///
-/// TASK-0095: 実機テスト（iOS/Android/タブレット）
-/// 信頼性レベル: 青信号（NFR-402に基づく、RT-104〜RT-107）
-///
 /// 9.7インチ以上タブレットでの最適表示を検証するE2Eテスト。
 /// タップターゲットサイズ、レイアウト最適化を確認。
 @Tags(['e2e', 'device', 'tablet', 'ios', 'android'])
@@ -18,17 +14,13 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('タブレット最適表示テスト（9.7インチ以上）', () {
-    // ============================================================
     // RT-104: タブレット表示テスト（9.7インチ以上）
-    // ============================================================
     testWidgets(
       'RT-104: 9.7インチ以上のタブレットで最適な表示がされる',
       (tester) async {
-        // テスト目的: タブレットでの最適表示を確認
-        // 関連要件: NFR-402（9.7インチ以上のタブレット最適表示）
+        // （9.7インチ以上のタブレット最適表示）
         // 手順: iPad/タブレットで起動
         // 期待結果: 文字盤・定型文が見やすく表示される
-        // 信頼性レベル: 青信号
 
         // テストデータ準備: アプリを初期化
         await pumpApp(tester);
@@ -44,7 +36,6 @@ void main() {
         expect(find.text('さ'), findsWidgets);
         expect(find.text('た'), findsWidgets);
         expect(find.text('な'), findsWidgets);
-        // 確認内容: タブレットで文字盤が見やすく表示される
 
         await takeScreenshot(binding, 'RT-104_tablet_character_board');
 
@@ -57,7 +48,6 @@ void main() {
 
         // 結果検証: 定型文が見やすく表示される
         // Note: 実機でタブレット表示時に定型文が多数表示されることを手動確認
-        // 確認内容: タブレットで定型文が見やすく配置される
 
         await takeScreenshot(binding, 'RT-104_tablet_presets');
 
@@ -66,23 +56,18 @@ void main() {
         await tester.pumpAndSettle();
 
         // 結果検証: 横向きで定型文が最適化される
-        // 確認内容: タブレット横向きで定型文が複数列で表示される
 
         await takeScreenshot(binding, 'RT-104_tablet_landscape_presets');
       },
     );
 
-    // ============================================================
     // RT-105: スマートフォン表示テスト
-    // ============================================================
     testWidgets(
       'RT-105: スマートフォン（5〜6インチ）で基本機能が動作する',
       (tester) async {
-        // テスト目的: スマートフォンでの基本動作を確認
-        // 関連要件: NFR-402（スマートフォンでも基本機能が動作）
+        // （スマートフォンでも基本機能が動作）
         // 手順: iPhone/スマホで起動
         // 期待結果: 基本機能が動作する（最適化は期待しない）
-        // 信頼性レベル: 黄信号（推測を含む）
 
         await pumpApp(tester);
 
@@ -92,7 +77,6 @@ void main() {
 
         // 結果検証: 文字盤が表示される
         expect(find.text('あ'), findsWidgets);
-        // 確認内容: スマートフォンで文字盤が表示される
 
         await takeScreenshot(binding, 'RT-105_smartphone_layout');
 
@@ -106,23 +90,18 @@ void main() {
 
         // 結果検証: スマートフォンで基本機能が動作する
         // Note: 実機でレイアウトが崩れず、主要ボタンがタップ可能なことを手動確認
-        // 確認内容: スマートフォンで基本機能が動作する
 
         await takeScreenshot(binding, 'RT-105_smartphone_basic_function');
       },
     );
 
-    // ============================================================
     // RT-106: タップターゲットサイズテスト（最小44px × 44px）
-    // ============================================================
     testWidgets(
       'RT-106: 文字盤ボタンのタップターゲットが44px × 44px以上である',
       (tester) async {
-        // テスト目的: タップターゲットサイズの要件を確認
-        // 関連要件: REQ-5001（最小44px × 44px）、NFR-202
+        // （最小44px × 44px）
         // 手順: 文字盤ボタンのサイズ確認
         // 期待結果: 44px × 44px以上
-        // 信頼性レベル: 青信号
 
         await pumpApp(tester);
 
@@ -150,7 +129,6 @@ void main() {
           greaterThanOrEqualTo(44.0),
           reason: '文字盤ボタンの高さが44px未満です（${buttonSize.height}px）',
         );
-        // 確認内容: タップターゲットサイズが44px × 44px以上
 
         await takeScreenshot(binding, 'RT-106_tap_target_size');
 
@@ -176,22 +154,17 @@ void main() {
             greaterThanOrEqualTo(44.0),
             reason: 'スマートフォンでボタンの高さが44px未満です（${buttonSizeSmartphone.height}px）',
           );
-          // 確認内容: スマートフォンでもタップターゲットサイズ要件を満たす
         }
       },
     );
 
-    // ============================================================
     // RT-107: 大ボタンサイズテスト（推奨60px × 60px）
-    // ============================================================
     testWidgets(
       'RT-107: 大ボタン・緊急ボタンのサイズが60px × 60px以上である',
       (tester) async {
-        // テスト目的: 大ボタンサイズの要件を確認
-        // 関連要件: NFR-202（推奨60px × 60px以上）
+        // （推奨60px × 60px以上）
         // 手順: 大ボタン・緊急ボタンのサイズ確認
         // 期待結果: 60px × 60px以上
-        // 信頼性レベル: 青信号
 
         await pumpApp(tester);
 
@@ -223,7 +196,6 @@ void main() {
           if (yesButtonSize.width < 60.0 || yesButtonSize.height < 60.0) {
             debugPrint('⚠️ 警告: 大ボタンのサイズが推奨値（60px × 60px）未満です');
           }
-          // 確認内容: 大ボタンサイズが要件を満たす
         }
 
         await takeScreenshot(binding, 'RT-107_large_button_size');
@@ -251,22 +223,17 @@ void main() {
               emergencyButtonSize.height < 60.0) {
             debugPrint('⚠️ 警告: 緊急ボタンのサイズが推奨値（60px × 60px）未満です');
           }
-          // 確認内容: 緊急ボタンサイズが要件を満たす
         }
       },
     );
 
-    // ============================================================
     // タブレット文字盤配置最適化テスト
-    // ============================================================
     testWidgets(
       'タブレットで文字盤ボタン配置が最適化される',
       (tester) async {
-        // テスト目的: タブレットでの文字盤配置最適化を確認
-        // 関連要件: NFR-402（文字盤ボタンのサイズ・配置最適化）
+        // （文字盤ボタンのサイズ・配置最適化）
         // 手順: タブレットサイズで文字盤を表示
         // 期待結果: 適切なサイズ・配置で表示される
-        // 信頼性レベル: 黄信号（推測を含む）
 
         await pumpApp(tester);
 
@@ -280,7 +247,6 @@ void main() {
         expect(find.text('さ'), findsWidgets);
         expect(find.text('た'), findsWidgets);
         expect(find.text('な'), findsWidgets);
-        // 確認内容: タブレットで文字盤が適切に配置される
 
         await takeScreenshot(binding, 'tablet_character_board_portrait');
 
@@ -290,23 +256,18 @@ void main() {
 
         // 結果検証: 横向きでも文字盤が適切に配置される
         expect(find.text('あ'), findsWidgets);
-        // 確認内容: タブレット横向きで文字盤が最適化される
 
         await takeScreenshot(binding, 'tablet_character_board_landscape');
       },
     );
 
-    // ============================================================
     // タブレット定型文表示最適化テスト
-    // ============================================================
     testWidgets(
       'タブレットで定型文一覧が見やすく表示される',
       (tester) async {
-        // テスト目的: タブレットでの定型文表示最適化を確認
-        // 関連要件: NFR-402（定型文一覧が見やすく表示）
+        // （定型文一覧が見やすく表示）
         // 手順: タブレットサイズで定型文を表示
         // 期待結果: スクロール不要で多数表示される
-        // 信頼性レベル: 黄信号（推測を含む）
 
         await pumpApp(tester);
 
@@ -323,7 +284,6 @@ void main() {
 
         // 結果検証: 定型文が表示される
         // Note: 実機でタブレット表示時に多数の定型文が表示されることを手動確認
-        // 確認内容: タブレットで定型文が見やすく表示される
 
         await takeScreenshot(binding, 'tablet_presets_portrait');
 
@@ -332,23 +292,18 @@ void main() {
         await tester.pumpAndSettle();
 
         // 結果検証: 横向きで定型文が複数列で表示される
-        // 確認内容: タブレット横向きで定型文が複数列で表示される
 
         await takeScreenshot(binding, 'tablet_presets_landscape');
       },
     );
 
-    // ============================================================
     // タブレット大ボタン・緊急ボタン配置テスト
-    // ============================================================
     testWidgets(
       'タブレットで大ボタン・緊急ボタンが誤タップしにくい配置になる',
       (tester) async {
-        // テスト目的: タブレットでのボタン配置を確認
-        // 関連要件: NFR-402（誤タップしにくい配置・サイズ）
+        // （誤タップしにくい配置・サイズ）
         // 手順: タブレットサイズで大ボタン・緊急ボタンを表示
         // 期待結果: 適切な余白・サイズで配置される
-        // 信頼性レベル: 黄信号（推測を含む）
 
         await pumpApp(tester);
 
@@ -370,14 +325,12 @@ void main() {
         if (unknownButtonFinder.evaluate().isNotEmpty) {
           expect(unknownButtonFinder, findsWidgets);
         }
-        // 確認内容: 大ボタンが適切に配置される
 
         // 結果検証: 緊急ボタンが表示される
         final emergencyButtonFinder = find.text('緊急');
         if (emergencyButtonFinder.evaluate().isNotEmpty) {
           expect(emergencyButtonFinder, findsWidgets);
         }
-        // 確認内容: 緊急ボタンが適切に配置される
 
         await takeScreenshot(binding, 'tablet_button_layout');
 
@@ -386,9 +339,7 @@ void main() {
     );
   });
 
-  // ============================================================
   // クリーンアップ
-  // ============================================================
   tearDown(() async {
     // 画面サイズをリセット
     await binding.setSurfaceSize(const Size(800, 600));

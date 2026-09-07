@@ -1,36 +1,26 @@
 // モデル定義: お気に入りエンティティ
 // 実装内容: お気に入り登録したテキストを保持
-// 設計根拠: REQ-701, REQ-702, REQ-703, REQ-704（お気に入り機能）
-// 信頼性レベル: 青信号 - EARS要件定義書に基づく
+// 設計根拠: , , , （お気に入り機能）
 
 /// クラス定義: お気に入りエンティティ
 /// 実装内容: お気に入り登録したテキスト情報を保持
-/// 信頼性レベル: 青信号 - interfaces.dart の Favorite に基づく
 class Favorite {
   /// フィールド定義: 一意識別子（UUID形式）
-  /// 信頼性レベル: 青信号 - interfaces.dart
   final String id;
 
   /// フィールド定義: お気に入り登録したテキスト内容
-  /// 信頼性レベル: 青信号 - REQ-701
   final String content;
 
   /// フィールド定義: 作成日時（お気に入り登録日時）
-  /// 信頼性レベル: 青信号 - interfaces.dart
   final DateTime createdAt;
 
   /// フィールド定義: 並び順（ユーザーがカスタマイズ可能）
-  /// 信頼性レベル: 青信号 - REQ-704（お気に入りの並び替え）
   final int displayOrder;
 
   /// フィールド定義: 元データの種類（'preset_phrase' | 'history' | null）
-  /// テスト対応: TC-SYNC-003, TC-SYNC-103, TC-SYNC-301
-  /// 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件定義に基づく
   final String? sourceType;
 
   /// フィールド定義: 元データのID（定型文IDまたは履歴ID）
-  /// テスト対応: TC-SYNC-003, TC-SYNC-103, TC-SYNC-301, TC-SYNC-302
-  /// 信頼性レベル: 黄信号 - TDD-FAVORITE-SYNC要件定義に基づく
   final String? sourceId;
 
   /// コンストラクタ: 全フィールドを受け取る
@@ -44,8 +34,6 @@ class Favorite {
   });
 
   /// メソッド定義: copyWithパターンでイミュータブルな更新
-  /// テスト対応: TC-SYNC-003, TC-SYNC-301（sourceType, sourceIdの更新対応）
-  /// 信頼性レベル: 黄信号 - 既存パターンに基づく拡張
   Favorite copyWith({
     String? id,
     String? content,

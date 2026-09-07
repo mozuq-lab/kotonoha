@@ -1,7 +1,4 @@
 /// ヘルプセクションウィジェットテスト
-///
-/// TASK-0075: ヘルプ画面・初回チュートリアル実装
-/// 信頼性レベル: 青信号（要件定義書ベース）
 library;
 
 import 'package:flutter/material.dart';

@@ -1,4 +1,4 @@
-"""B-3-2（記号入りキーで起動し /health 200 ＋ AI 変換1往復）、ADR-004 の import smoke、ADR-002 の起動ガード。
+"""記号入りキーでの起動・health応答・AI変換、ADR-004 の import smoke、ADR-002 の起動ガード。
 
 AI 変換の往復は SDK 標準の ANTHROPIC_BASE_URL で偽プロバイダ（このテスト内の HTTP サーバー）へ向ける（計画 D7）。
 """
@@ -86,7 +86,7 @@ def _spawn(port: int, env: dict[str, str], *args: str) -> subprocess.Popen[str]:
             "uvicorn",
             "app.main:create_app",
             "--factory",
-            "--no-proxy-headers",  # I-2: XFF の解釈は app/ratelimit.py の1箇所に閉じる
+            "--no-proxy-headers",  # XFF の解釈は app/ratelimit.py の1箇所に閉じる
             "--port",
             str(port),
             *args,
@@ -147,7 +147,7 @@ def test_symbol_keys_health_and_conversion_round_trip(fake_provider: FakeAnthrop
         ANTHROPIC_API_KEY=PROVIDER_KEY,
         ANTHROPIC_BASE_URL=f"http://127.0.0.1:{fake_provider.server_address[1]}",
         CORS_ORIGINS="http://localhost:3000",
-        # .env の RATE_LIMIT_* に依存しない（I-2 のテストが1リクエスト目で使い切る前提）
+        # .env の RATE_LIMIT_* に依存しない（1リクエスト目で制限に達する設定）
         RATE_LIMIT_TIMES="1",
         RATE_LIMIT_SECONDS="60",
     )
@@ -166,7 +166,7 @@ def test_symbol_keys_health_and_conversion_round_trip(fake_provider: FakeAnthrop
         assert reply.status_code == 200
         assert reply.json()["converted_text"] == "お水をぬるめでお願いします"
         assert fake_provider.seen_api_keys == [PROVIDER_KEY]
-        # I-2: TRUSTED_PROXY_COUNT 未設定（=0）なので XFF は信頼しないはず。接続元は
+        # TRUSTED_PROXY_COUNT 未設定（=0）なので XFF は信頼しないはず。接続元は
         # 127.0.0.1 なので、--no-proxy-headers が無いと uvicorn が scope["client"] を
         # XFF の値（spoof-a / spoof-b）へ書き換えてしまい、レート制限が別バケットとして
         # 素通しする（[200, 200] になる）。

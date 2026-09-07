@@ -1,4 +1,4 @@
-"""公開ルート3本。想定外の例外は型名だけ拾って SafeError にする（計画 D5）。"""
+"""公開ルート3本。想定外の例外は型名だけ拾って SafeError にする。"""
 
 from __future__ import annotations
 

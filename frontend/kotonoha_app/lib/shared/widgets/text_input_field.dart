@@ -1,9 +1,5 @@
 /// TextInputField ウィジェット
-///
-/// TASK-0017: 共通UIコンポーネント実装（大ボタン・入力欄・緊急ボタン）
-/// 要件: EDGE-101（1000文字制限）、REQ-801（フォントサイズ）
-/// 信頼性レベル: 青信号（要件定義書ベース）
-///
+/// 要件: （1000文字制限）、（フォントサイズ）
 /// 文字盤入力やテキスト入力に使用するカスタムテキストフィールド。
 /// 最大1000文字制限、クリアボタン対応、大きなフォントサイズ。
 library;
@@ -12,18 +8,15 @@ import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
 /// テキスト入力欄ウィジェット
-///
 /// コミュニケーション支援アプリ用にカスタマイズされたテキスト入力フィールド。
 /// 大きなフォントサイズ（24px）、1000文字制限、クリアボタン対応。
-///
-/// 使用例:
+/// 使用例
 /// ```dart
-/// final controller = TextEditingController();
-///
+/// final controller = TextEditingController;
 /// TextInputField(
-///   controller: controller,
-///   hintText: 'ここに入力してください',
-///   onClear: () => controller.clear(),
+/// controller: controller
+/// hintText: 'ここに入力してください'
+/// onClear:  => controller.clear
 /// )
 /// ```
 class TextInputField extends StatelessWidget {
@@ -47,7 +40,6 @@ class TextInputField extends StatelessWidget {
   final bool readOnly;
 
   /// TextInputFieldを作成する
-  ///
   /// [controller] - テキスト編集コントローラー（必須）
   /// [hintText] - ヒントテキスト（オプション）
   /// [maxLength] - 最大文字数（デフォルト: 1000）

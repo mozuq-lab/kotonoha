@@ -1,7 +1,4 @@
 /// チュートリアルオーバーレイウィジェットテスト
-///
-/// TASK-0075: ヘルプ画面・初回チュートリアル実装
-/// 信頼性レベル: 黄信号（REQ-3001から推測）
 library;
 
 import 'package:flutter/material.dart';

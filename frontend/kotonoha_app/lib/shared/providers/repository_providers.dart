@@ -1,19 +1,6 @@
-/// Provider定義: Hiveリポジトリの提供（永続化配線）
-///
-/// 設計判断: nullフォールバック方式
-/// - 対応するHive Boxがオープン済みの場合のみRepositoryインスタンスを返す。
-/// - Hive未初期化・Box未オープンの場合はnullを返す。
-/// - これにより、Hiveを初期化しない素のProviderContainer()を使う既存テスト
-///   （例: favorite_sync_test）は repo==null となり、Notifierが従来どおり
-///   インメモリ動作にフォールバックできる。
-/// - Hive.isBoxOpen() は Hive.init 未実行でも例外を投げずに false を返す。
-///
-/// box の provider を分けている理由: Hive の [Box] は外部 SDK の境界であり、
-/// テストで差し替えてよい唯一の層。ここに seam を置くことで、
-/// repository・notifier・provider・ウィジェットは実物のまま検証できる
-/// （書き込み失敗の注入など）。
-///
-/// 信頼性レベル: 青信号 - architecture.mdのローカルストレージ設計に基づく
+/// 開いているHive BoxからRepositoryを提供し、未初期化・未オープンならnullを返す。
+/// Notifierはnull時にインメモリ動作へ切り替える。永続化の可否の通知は別の状態で扱う。
+/// Boxのproviderを分離し、RepositoryやNotifierを実物のまま書き込み失敗を注入できるようにする。
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,7 +19,6 @@ Box<T>? _openedBox<T>(PersistedArea area) =>
     Hive.isBoxOpen(area.boxName) ? Hive.box<T>(area.boxName) : null;
 
 /// 内部ヘルパ: 書き込み結果を [writeFailureProvider] へ報告する関数を作る
-///
 /// ガード: provider が破棄された後にコールバックが発火しても
 /// 落ちないようにする（プロバイダ間の相互参照は ref の生存確認が要る）。
 void Function(bool) _reporterFor(Ref ref, PersistedArea area) {

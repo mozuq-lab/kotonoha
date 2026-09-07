@@ -1,9 +1,5 @@
 /// preset_phrase ウィジェットのエクスポート
-///
-/// TASK-0040: 定型文一覧UI実装
-/// TASK-0041: 定型文CRUD機能実装（追加・編集・削除ダイアログ）
-///
-/// このファイルから全てのpreset_phraseウィジェットをインポートできます：
+/// このファイルから全てのpreset_phraseウィジェットをインポートできます
 /// ```dart
 /// import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/widgets.dart';
 /// ```
