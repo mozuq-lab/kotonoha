@@ -1,17 +1,10 @@
 /// 設定セクションウィジェット
-///
-/// TASK-0071: 設定画面UI実装
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件: FR-071-005
 library;
 
 import 'package:flutter/material.dart';
 
 /// 設定セクションウィジェット
-///
 /// セクションヘッダーと子ウィジェットをまとめて表示する。
-///
 /// [title] セクションのタイトル（例: 「表示設定」「音声設定」）
 /// [children] セクション内の設定項目ウィジェット
 class SettingsSectionWidget extends StatelessWidget {

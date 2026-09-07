@@ -1,9 +1,4 @@
 /// テーマ設定ウィジェット
-///
-/// TASK-0071: 設定画面UI実装
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件: REQ-803, REQ-2008
 library;
 
 import 'package:flutter/material.dart';
@@ -13,11 +8,9 @@ import '../../models/app_theme.dart';
 import '../../providers/settings_provider.dart';
 
 /// テーマ設定ウィジェット
-///
 /// テーマを3種類（ライト/ダーク/高コントラスト）から選択するUI。
-///
-/// REQ-803: 3つのテーマを提供
-/// REQ-2008: テーマ変更時に即座に反映
+/// 3つのテーマを提供
+/// テーマ変更時に即座に反映
 class ThemeSettingsWidget extends ConsumerWidget {
   /// コンストラクタ
   const ThemeSettingsWidget({super.key});
