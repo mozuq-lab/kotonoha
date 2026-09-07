@@ -1,11 +1,4 @@
 /// PhraseEditDialog ウィジェットテスト
-///
-/// TASK-0041: 定型文CRUD機能実装
-/// テストケース: TC-041-022〜TC-041-027
-///
-/// テスト対象: lib/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart
-///
-/// TDD Redフェーズ: ダイアログが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';
@@ -14,9 +7,7 @@ import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
 void main() {
-  // ==========================================================================
   // テストデータ準備
-  // ==========================================================================
 
   /// テストデータ準備: テスト用の定型文データを生成するヘルパー関数
   PresetPhrase createTestPhrase({
@@ -39,18 +30,8 @@ void main() {
   }
 
   group('PhraseEditDialog - 正常系テスト', () {
-    // =========================================================================
-    // TC-041-022: 編集ダイアログが現在の内容で表示される
-    // =========================================================================
-    /// TC-041-022: PhraseEditDialogが現在の定型文内容を初期表示する
-    ///
-    /// テスト目的: 初期表示の確認
-    /// テスト内容: 編集ダイアログの初期表示
-    /// 期待される動作: 既存の内容とカテゴリが入力済みで表示される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: CRUD-004, CRUD-005, AC-003
-    /// 優先度: P0 必須
+    // 編集ダイアログが現在の内容で表示される
+    /// PhraseEditDialogが現在の定型文内容を初期表示する
     testWidgets('TC-041-022: PhraseEditDialogが現在の定型文内容を初期表示する', (tester) async {
       final phrase =
           createTestPhrase(id: '1', content: 'こんにちは', category: 'daily');
@@ -78,25 +59,15 @@ void main() {
       await tester.pumpAndSettle();
 
       // 結果検証: 初期値が表示されていることを確認
-      expect(find.text('定型文を編集'), findsOneWidget); // 確認内容: タイトル
+      expect(find.text('定型文を編集'), findsOneWidget);
       // TextFieldに初期値が設定されていることを確認
       final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.controller?.text, equals('こんにちは')); // 確認内容: 内容の初期値
-      expect(find.text('日常'), findsOneWidget); // 確認内容: カテゴリの初期値
+      expect(textField.controller?.text, equals('こんにちは'));
+      expect(find.text('日常'), findsOneWidget);
     });
 
-    // =========================================================================
-    // TC-041-023: 定型文を編集して保存できる
-    // =========================================================================
-    /// TC-041-023: 定型文を編集して保存ボタンで更新できる
-    ///
-    /// テスト目的: 編集操作の確認
-    /// テスト内容: 編集操作の基本フロー
-    /// 期待される動作: 編集→保存→ダイアログ閉じる→コールバック発火
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: AC-004
-    /// 優先度: P0 必須
+    // 定型文を編集して保存できる
+    /// 定型文を編集して保存ボタンで更新できる
     testWidgets('TC-041-023: 定型文を編集して保存ボタンで更新できる', (tester) async {
       final phrase =
           createTestPhrase(id: '1', content: 'こんにちは', category: 'daily');
@@ -138,23 +109,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // 結果検証: 更新されたデータでコールバックが呼び出されることを確認
-      expect(savedPhrase, isNotNull); // 確認内容: コールバック発火
-      expect(savedPhrase?.content, equals('こんばんは')); // 確認内容: 内容が更新されている
-      expect(savedPhrase?.id, equals('1')); // 確認内容: IDは変更されない
+      expect(savedPhrase, isNotNull);
+      expect(savedPhrase?.content, equals('こんばんは'));
+      expect(savedPhrase?.id, equals('1'));
     });
 
-    // =========================================================================
-    // TC-041-024: カテゴリを変更して保存できる
-    // =========================================================================
-    /// TC-041-024: カテゴリを変更して保存できる
-    ///
-    /// テスト目的: カテゴリ変更の確認
-    /// テスト内容: カテゴリ変更機能
-    /// 期待される動作: カテゴリ変更が反映される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: CRUD-004
-    /// 優先度: P0 必須
+    // カテゴリを変更して保存できる
+    /// カテゴリを変更して保存できる
     testWidgets('TC-041-024: カテゴリを変更して保存できる', (tester) async {
       final phrase =
           createTestPhrase(id: '1', content: 'テスト', category: 'daily');
@@ -196,22 +157,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // 結果検証: カテゴリが更新されていることを確認
-      expect(
-          savedPhrase?.category, equals('health')); // 確認内容: コールバックのcategory引数
+      expect(savedPhrase?.category, equals('health'));
     });
 
-    // =========================================================================
-    // TC-041-025: 編集時にupdatedAtが更新される
-    // =========================================================================
-    /// TC-041-025: 編集保存時にupdatedAtタイムスタンプが更新される
-    ///
-    /// テスト目的: タイムスタンプ更新の確認
-    /// テスト内容: タイムスタンプ更新
-    /// 期待される動作: updatedAtが現在時刻に更新される
-    ///
-    /// 信頼性レベル: 黄信号
-    /// 関連要件: CRUD-008
-    /// 優先度: P1 重要
+    // 編集時にupdatedAtが更新される
+    /// 編集保存時にupdatedAtタイムスタンプが更新される
     testWidgets('TC-041-025: 編集保存時にupdatedAtタイムスタンプが更新される', (tester) async {
       final oldDate = DateTime(2023, 1, 1);
       final phrase = createTestPhrase(
@@ -259,25 +209,14 @@ void main() {
       await tester.pumpAndSettle();
 
       // 結果検証: updatedAtが更新されていることを確認
-      expect(
-          savedPhrase?.updatedAt.isAfter(oldDate), isTrue); // 確認内容: updatedAtの値
-      expect(savedPhrase?.createdAt, equals(oldDate)); // 確認内容: createdAtは変更されない
+      expect(savedPhrase?.updatedAt.isAfter(oldDate), isTrue);
+      expect(savedPhrase?.createdAt, equals(oldDate));
     });
   });
 
   group('PhraseEditDialog - 異常系テスト', () {
-    // =========================================================================
-    // TC-041-026: 編集時に空にするとエラー表示
-    // =========================================================================
-    /// TC-041-026: 既存の内容を空にして保存しようとするとエラー表示
-    ///
-    /// テスト目的: 編集時バリデーションの確認
-    /// テスト内容: 編集時の空入力チェック
-    /// 期待される動作: エラーメッセージ表示
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: CRUD-105
-    /// 優先度: P0 必須
+    // 編集時に空にするとエラー表示
+    /// 既存の内容を空にして保存しようとするとエラー表示
     testWidgets('TC-041-026: 既存の内容を空にして保存しようとするとエラー表示', (tester) async {
       final phrase =
           createTestPhrase(id: '1', content: 'テスト', category: 'daily');
@@ -313,21 +252,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // 結果検証: エラーメッセージが表示されることを確認
-      expect(find.text('定型文を入力してください'), findsOneWidget); // 確認内容: エラーメッセージ
+      expect(find.text('定型文を入力してください'), findsOneWidget);
     });
 
-    // =========================================================================
-    // TC-041-027: 編集キャンセル時に変更が破棄される
-    // =========================================================================
-    /// TC-041-027: 編集中にキャンセルすると変更が破棄される
-    ///
-    /// テスト目的: キャンセル時の動作確認
-    /// テスト内容: キャンセル時の状態復元
-    /// 期待される動作: 元の内容が維持される
-    ///
-    /// 信頼性レベル: 青信号
-    /// 関連要件: EDGE-014
-    /// 優先度: P0 必須
+    // 編集キャンセル時に変更が破棄される
+    /// 編集中にキャンセルすると変更が破棄される
     testWidgets('TC-041-027: 編集中にキャンセルすると変更が破棄される', (tester) async {
       final phrase =
           createTestPhrase(id: '1', content: 'テスト', category: 'daily');
@@ -369,8 +298,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // 結果検証: コールバックが呼び出されていないことを確認
-      expect(saveCallbackCalled, isFalse); // 確認内容: コールバック未発火
-      expect(find.byType(PhraseEditDialog), findsNothing); // 確認内容: ダイアログが閉じている
+      expect(saveCallbackCalled, isFalse);
+      expect(find.byType(PhraseEditDialog), findsNothing);
     });
   });
 }
