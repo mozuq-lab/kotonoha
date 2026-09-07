@@ -1,10 +1,3 @@
-/// TASK-0058: オフライン動作確認 - UIコンポーネントテスト
-///
-/// 関連要件: REQ-1002, REQ-3004, EDGE-001
-/// フェーズ: TDD Red（失敗するテストの作成）
-///
-/// このテストは、オフライン状態のUI表示（インジケーター、通知）と
-/// AI変換ボタンの視覚的無効化を検証します。
 library;
 
 import 'package:flutter/material.dart';
@@ -15,18 +8,10 @@ import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
 
 void main() {
   group('TASK-0058: オフライン動作確認 - UIコンポーネントテスト', () {
-    // =========================================================================
     // 4. オフライン表示インジケーターテスト
-    // =========================================================================
 
     group('4. オフライン表示インジケーターテスト', () {
-      /// TC-058-032: オフライン時に「オフライン」インジケーターが表示される
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002, EDGE-001
-      /// 信頼性レベル:
-      ///
-      /// 注: このテストは実際のインジケーターウィジェット実装後に動作します
+      /// オフライン時に「オフライン」インジケーターが表示される
       testWidgets('TC-058-032: オフライン時に「オフライン」インジケーターが表示される',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -43,9 +28,7 @@ void main() {
                   builder: (context, ref, child) {
                     final networkState = ref.watch(networkProvider);
 
-                    // 注: 実際のOfflineIndicatorウィジェットの実装後、
-                    // ここでOfflineIndicatorウィジェットを使用する予定
-                    // 現時点では、ネットワーク状態をTextで表示するだけ
+                    // 実際のOfflineIndicatorウィジェットは使用せず、テスト内で組み立てたUIを確認する。
                     return Center(
                       child: Text(
                         networkState == NetworkState.offline
@@ -69,11 +52,7 @@ void main() {
         container.dispose();
       });
 
-      /// TC-058-033: オフライン時に「基本機能のみ利用可能」メッセージが表示される
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002
-      /// 信頼性レベル:
+      /// オフライン時に「基本機能のみ利用可能」メッセージが表示される
       testWidgets('TC-058-033: オフライン時に「基本機能のみ利用可能」メッセージが表示される',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -113,11 +92,7 @@ void main() {
         container.dispose();
       });
 
-      /// TC-058-034: オンライン時にオフラインインジケーターが非表示
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002
-      /// 信頼性レベル:
+      /// オンライン時にオフラインインジケーターが非表示
       testWidgets('TC-058-034: オンライン時にオフラインインジケーターが非表示',
           (WidgetTester tester) async {
         // Given: NetworkStateがonlineのProviderContainer
@@ -157,11 +132,7 @@ void main() {
         container.dispose();
       });
 
-      /// TC-058-035: オフライン通知がユーザー操作を妨げない
-      ///
-      /// 優先度: P0
-      /// 関連要件: NFR-203
-      /// 信頼性レベル:
+      /// オフライン通知がユーザー操作を妨げない
       testWidgets('TC-058-035: オフライン通知がユーザー操作を妨げない',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -226,18 +197,10 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 5. オンライン復帰通知テスト
-    // =========================================================================
 
     group('5. オンライン復帰通知テスト', () {
-      /// TC-058-036: オンライン復帰時に「オンラインに戻りました」通知が表示される
-      ///
-      /// 優先度: P1
-      /// 関連要件: EDGE-001
-      /// 信頼性レベル:
-      ///
-      /// 注: このテストは実際の通知ウィジェット実装後に動作します
+      /// オンライン復帰時に「オンラインに戻りました」通知が表示される
       testWidgets('TC-058-036: オンライン復帰時に「オンラインに戻りました」通知が表示される',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -270,11 +233,7 @@ void main() {
         container.dispose();
       });
 
-      /// TC-058-037: オンライン復帰時に「AI変換が利用可能です」メッセージが表示される
-      ///
-      /// 優先度: P1
-      /// 関連要件: EDGE-001
-      /// 信頼性レベル:
+      /// オンライン復帰時に「AI変換が利用可能です」メッセージが表示される
       testWidgets('TC-058-037: オンライン復帰時に「AI変換が利用可能です」メッセージが表示される',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -307,11 +266,7 @@ void main() {
         container.dispose();
       });
 
-      /// TC-058-038: オンライン復帰通知がユーザー操作を妨げない
-      ///
-      /// 優先度: P1
-      /// 関連要件: NFR-203
-      /// 信頼性レベル:
+      /// オンライン復帰通知がユーザー操作を妨げない
       testWidgets('TC-058-038: オンライン復帰通知がユーザー操作を妨げない',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -357,18 +312,10 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 7. AI変換ボタンの視覚的無効化テスト
-    // =========================================================================
 
     group('7. AI変換ボタンの視覚的無効化テスト', () {
-      /// TC-058-AI-001: オフライン時にAI変換ボタンの視覚的無効化（カスタムテスト）
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002, REQ-3004
-      /// 信頼性レベル:
-      ///
-      /// 注: このテストは実際のAI変換ボタンウィジェット実装後に動作します
+      /// オフライン時にAI変換ボタンの視覚的無効化（カスタムテスト）
       testWidgets('TC-058-AI-001: オフライン時にAI変換ボタンの視覚的無効化（カスタムテスト）',
           (WidgetTester tester) async {
         // Given: NetworkStateがofflineのProviderContainer
@@ -389,9 +336,7 @@ void main() {
                       final isAIAvailable =
                           networkNotifier.isAIConversionAvailable;
 
-                      // 注: 実際のAI変換ボタンウィジェットの実装後、
-                      // ここでAIConversionButtonウィジェットを使用する予定
-                      // 現時点では、シンプルなElevatedButtonで代用
+                      // 実際のAI変換ボタンウィジェットは使用せず、テスト内で組み立てたUIを確認する。
                       return ElevatedButton(
                         key: const Key('ai_conversion_button'),
                         onPressed: isAIAvailable ? () {} : null,
@@ -420,11 +365,7 @@ void main() {
         container.dispose();
       });
 
-      /// TC-058-AI-002: オンライン時にAI変換ボタンの視覚的有効化（カスタムテスト）
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002
-      /// 信頼性レベル:
+      /// オンライン時にAI変換ボタンの視覚的有効化（カスタムテスト）
       testWidgets('TC-058-AI-002: オンライン時にAI変換ボタンの視覚的有効化（カスタムテスト）',
           (WidgetTester tester) async {
         // Given: NetworkStateがonlineのProviderContainer
@@ -440,7 +381,7 @@ void main() {
                 body: Center(
                   child: Consumer(
                     builder: (context, ref, child) {
-                      // ref.watch()を使用してNetworkStateの変更を監視
+                      // ref.watchを使用してNetworkStateの変更を監視
                       final networkState = ref.watch(networkProvider);
                       final isAIAvailable = networkState == NetworkState.online;
 
@@ -472,11 +413,7 @@ void main() {
         container.dispose();
       });
 
-      /// TC-058-AI-003: ネットワーク状態変更でボタンが動的に更新（カスタムテスト）
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002
-      /// 信頼性レベル:
+      /// ネットワーク状態変更でボタンが動的に更新（カスタムテスト）
       testWidgets('TC-058-AI-003: ネットワーク状態変更でボタンが動的に更新（カスタムテスト）',
           (WidgetTester tester) async {
         // Given: NetworkStateがonlineのProviderContainer
@@ -493,7 +430,7 @@ void main() {
                 body: Center(
                   child: Consumer(
                     builder: (context, ref, child) {
-                      // ref.watch()を使用してNetworkStateの変更を監視
+                      // ref.watchを使用してNetworkStateの変更を監視
                       final networkState = ref.watch(networkProvider);
                       final isAIAvailable = networkState == NetworkState.online;
 

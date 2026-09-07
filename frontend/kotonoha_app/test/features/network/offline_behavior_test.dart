@@ -1,10 +1,3 @@
-/// TASK-0058: オフライン動作確認テスト
-///
-/// 関連要件: REQ-1001, REQ-1002, REQ-1003, NFR-303
-/// フェーズ: TDD Red（失敗するテストの作成）
-///
-/// このテストは、オフライン環境における基本機能の動作確認と、
-/// AI変換機能の適切な無効化を検証します。
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -24,16 +17,10 @@ void main() {
       container.dispose();
     });
 
-    // =========================================================================
     // 1. ネットワーク状態管理テスト（NetworkProvider統合）
-    // =========================================================================
 
     group('1. ネットワーク状態管理テスト', () {
-      /// TC-058-001: NetworkProviderがアプリ全体で利用可能
-      ///
-      /// 優先度: P0（最優先）
-      /// 関連要件: REQ-1001, REQ-1002
-      /// 信頼性レベル: 青信号
+      /// NetworkProviderがアプリ全体で利用可能
       test('TC-058-001: NetworkProviderがアプリ全体で利用可能', () {
         // Given: ProviderScopeでNetworkProviderを初期化
         // When: NetworkProviderにアクセス
@@ -44,16 +31,12 @@ void main() {
         expect(state, NetworkState.checking, reason: '初期状態はcheckingである必要がある');
       });
 
-      /// TC-058-002: NetworkStateがonline状態に遷移
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1001, REQ-1002
-      /// 信頼性レベル:
+      /// NetworkStateがonline状態に遷移
       test('TC-058-002: NetworkStateがonline状態に遷移', () async {
         // Given: NetworkProviderが初期化されている
         final notifier = container.read(networkProvider.notifier);
 
-        // When: setOnline()を呼び出し
+        // When: setOnlineを呼び出し
         await notifier.setOnline();
 
         // Then: NetworkStateがonlineに変更される
@@ -66,16 +49,12 @@ void main() {
             reason: 'オンライン時はAI変換が利用可能である必要がある');
       });
 
-      /// TC-058-003: NetworkStateがoffline状態に遷移
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1001, REQ-1002
-      /// 信頼性レベル:
+      /// NetworkStateがoffline状態に遷移
       test('TC-058-003: NetworkStateがoffline状態に遷移', () async {
         // Given: NetworkProviderが初期化されている
         final notifier = container.read(networkProvider.notifier);
 
-        // When: setOffline()を呼び出し
+        // When: setOfflineを呼び出し
         await notifier.setOffline();
 
         // Then: NetworkStateがofflineに変更される
@@ -88,11 +67,7 @@ void main() {
             reason: 'オフライン時はAI変換が利用不可である必要がある');
       });
 
-      /// TC-058-004: ネットワーク状態変更時にUIがリビルドされる
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002
-      /// 信頼性レベル:
+      /// ネットワーク状態変更時にUIがリビルドされる
       test('TC-058-004: ネットワーク状態変更時にUIがリビルドされる', () async {
         // Given: NetworkProviderを監視するリスナーを設定
         final notifier = container.read(networkProvider.notifier);
@@ -118,11 +93,7 @@ void main() {
         expect(states[2], NetworkState.online);
       });
 
-      /// TC-058-005: 複数回のネットワーク切り替えが正常動作
-      ///
-      /// 優先度: P0
-      /// 関連要件: NFR-303
-      /// 信頼性レベル:
+      /// 複数回のネットワーク切り替えが正常動作
       test('TC-058-005: 複数回のネットワーク切り替えが正常動作', () async {
         // Given: NetworkProviderが初期化されている
         final notifier = container.read(networkProvider.notifier);
@@ -139,11 +110,7 @@ void main() {
             reason: '最後の切り替え後はoffline状態である必要がある');
       });
 
-      /// TC-058-006: NetworkState.checkingでAI変換が無効
-      ///
-      /// 優先度: P1
-      /// 関連要件: REQ-1002
-      /// 信頼性レベル:
+      /// NetworkState.checkingでAI変換が無効
       test('TC-058-006: NetworkState.checkingでAI変換が無効', () {
         // Given: NetworkProviderが初期化されたばかり（checking状態）
         final notifier = container.read(networkProvider.notifier);
@@ -155,16 +122,12 @@ void main() {
         expect(isAvailable, false, reason: 'checking状態ではAI変換が無効である必要がある');
       });
 
-      /// TC-058-007: NetworkProviderのDispose処理が正常動作
-      ///
-      /// 優先度: P1
-      /// 関連要件: NFR-303
-      /// 信頼性レベル:
+      /// NetworkProviderのDispose処理が正常動作
       test('TC-058-007: NetworkProviderのDispose処理が正常動作', () {
         // Given: NetworkProviderがProviderContainerに登録されている
         final testContainer = ProviderContainer();
 
-        // When: ProviderContainer.dispose()を呼び出し
+        // When: ProviderContainer.disposeを呼び出し
         testContainer.dispose();
 
         // Then: メモリリークが発生しない（テストが正常完了）
@@ -174,18 +137,10 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2. オフライン時の基本機能動作テスト（モック前提）
-    // =========================================================================
 
     group('2. オフライン時の基本機能動作テスト', () {
-      /// TC-058-008: オフライン時も文字盤タップで文字入力可能（統合テスト）
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1001, NFR-003
-      /// 信頼性レベル:
-      ///
-      /// 注: このテストは実際のウィジェット実装後に動作します（TDD Red）
+      /// オフライン時も文字盤タップで文字入力可能（統合テスト）
       test('TC-058-008: オフライン時も文字盤タップで文字入力可能（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -194,16 +149,10 @@ void main() {
         // When/Then: オフライン状態であることを確認
         expect(container.read(networkProvider), NetworkState.offline);
 
-        // 注: 実際の文字盤ウィジェットの実装後、
-        // testWidgetsでウィジェットテストを追加する予定
-        // 現時点ではネットワーク状態の確認のみ
+        // ここではネットワーク状態のみを確認し、UI・TTS・永続化の動作は検証していない。
       });
 
-      /// TC-058-012: オフライン時も定型文一覧が表示される（統合テスト）
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1001, REQ-101
-      /// 信頼性レベル:
+      /// オフライン時も定型文一覧が表示される（統合テスト）
       test('TC-058-012: オフライン時も定型文一覧が表示される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -212,15 +161,10 @@ void main() {
         // When/Then: オフライン状態であることを確認
         expect(container.read(networkProvider), NetworkState.offline);
 
-        // 注: 実際の定型文ウィジェットの実装後、
-        // testWidgetsでウィジェットテストを追加する予定
+        // ここではネットワーク状態のみを確認し、UI・TTS・永続化の動作は検証していない。
       });
 
-      /// TC-058-023: オフライン時もTTS読み上げが1秒以内に開始される（統合テスト）
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1001, REQ-401, NFR-001
-      /// 信頼性レベル:
+      /// オフライン時もTTS読み上げが1秒以内に開始される（統合テスト）
       test('TC-058-023: オフライン時もTTS読み上げが1秒以内に開始される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -229,21 +173,14 @@ void main() {
         // When/Then: オフライン状態であることを確認
         expect(container.read(networkProvider), NetworkState.offline);
 
-        // 注: 実際のTTSプロバイダーの実装後、
-        // TTSServiceをモックしてテストを追加する予定
+        // ここではネットワーク状態のみを確認し、UI・TTS・永続化の動作は検証していない。
       });
     });
 
-    // =========================================================================
     // 3. AI変換ボタン無効化テスト（統合テスト）
-    // =========================================================================
 
     group('3. AI変換ボタン無効化テスト', () {
-      /// TC-058-026: オフライン時にAI変換ボタンがグレーアウト表示（統合テスト）
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002, REQ-3004
-      /// 信頼性レベル:
+      /// オフライン時にAI変換ボタンがグレーアウト表示（統合テスト）
       test('TC-058-026: オフライン時にAI変換ボタンがグレーアウト表示（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -253,15 +190,10 @@ void main() {
         expect(notifier.isAIConversionAvailable, false,
             reason: 'オフライン時はAI変換が利用不可である必要がある');
 
-        // 注: 実際のAI変換ボタンウィジェットの実装後、
-        // testWidgetsでボタンの視覚的状態をテストする予定
+        // ここではネットワーク状態のみを確認し、UI・TTS・永続化の動作は検証していない。
       });
 
-      /// TC-058-027: オフライン時にAI変換ボタンがタップ不可（統合テスト）
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002, REQ-3004
-      /// 信頼性レベル:
+      /// オフライン時にAI変換ボタンがタップ不可（統合テスト）
       test('TC-058-027: オフライン時にAI変換ボタンがタップ不可（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -271,15 +203,10 @@ void main() {
         expect(notifier.isAIConversionAvailable, false,
             reason: 'オフライン時はAI変換が利用不可である必要がある');
 
-        // 注: 実際のAI変換ボタンウィジェットの実装後、
-        // testWidgetsでボタンのタップ不可状態をテストする予定
+        // ここではネットワーク状態のみを確認し、UI・TTS・永続化の動作は検証していない。
       });
 
-      /// TC-058-030: オンライン時にAI変換ボタンが有効化される
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002
-      /// 信頼性レベル:
+      /// オンライン時にAI変換ボタンが有効化される
       test('TC-058-030: オンライン時にAI変換ボタンが有効化される', () async {
         // Given: NetworkStateがonline
         final notifier = container.read(networkProvider.notifier);
@@ -290,11 +217,7 @@ void main() {
             reason: 'オンライン時はAI変換が利用可能である必要がある');
       });
 
-      /// TC-058-031: ネットワーク状態切り替えでAI変換ボタンが動的に有効/無効化
-      ///
-      /// 優先度: P0
-      /// 関連要件: REQ-1002
-      /// 信頼性レベル:
+      /// ネットワーク状態切り替えでAI変換ボタンが動的に有効/無効化
       test('TC-058-031: ネットワーク状態切り替えでAI変換ボタンが動的に有効/無効化', () async {
         // Given: NetworkStateがonline
         final notifier = container.read(networkProvider.notifier);
@@ -317,16 +240,10 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 4. ローカルストレージ動作確認テスト（統合テスト）
-    // =========================================================================
 
     group('4. ローカルストレージ動作確認テスト', () {
-      /// TC-058-039: オフライン時も定型文がHiveに保存される（統合テスト）
-      ///
-      /// 優先度: P1
-      /// 関連要件: REQ-1001, REQ-5003, NFR-101
-      /// 信頼性レベル:
+      /// オフライン時も定型文がHiveに保存される（統合テスト）
       test('TC-058-039: オフライン時も定型文がHiveに保存される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -335,15 +252,10 @@ void main() {
         // When/Then: オフライン状態であることを確認
         expect(container.read(networkProvider), NetworkState.offline);
 
-        // 注: 実際のHive保存処理の実装後、
-        // Hiveモックを使用してテストを追加する予定
+        // ここではネットワーク状態のみを確認し、UI・TTS・永続化の動作は検証していない。
       });
 
-      /// TC-058-040: オフライン時も設定がshared_preferencesに保存される（統合テスト）
-      ///
-      /// 優先度: P1
-      /// 関連要件: REQ-1001, NFR-101
-      /// 信頼性レベル:
+      /// オフライン時も設定がshared_preferencesに保存される（統合テスト）
       test('TC-058-040: オフライン時も設定がshared_preferencesに保存される（統合テスト）', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -352,21 +264,14 @@ void main() {
         // When/Then: オフライン状態であることを確認
         expect(container.read(networkProvider), NetworkState.offline);
 
-        // 注: 実際の設定保存処理の実装後、
-        // shared_preferencesモックを使用してテストを追加する予定
+        // ここではネットワーク状態のみを確認し、UI・TTS・永続化の動作は検証していない。
       });
     });
 
-    // =========================================================================
     // 5. エラーハンドリングテスト
-    // =========================================================================
 
     group('5. エラーハンドリングテスト', () {
-      /// TC-058-046: オフライン状態でもアプリがクラッシュしない
-      ///
-      /// 優先度: P0
-      /// 関連要件: NFR-303
-      /// 信頼性レベル:
+      /// オフライン状態でもアプリがクラッシュしない
       test('TC-058-046: オフライン状態でもアプリがクラッシュしない', () async {
         // Given: NetworkStateがoffline
         final notifier = container.read(networkProvider.notifier);
@@ -379,11 +284,7 @@ void main() {
         expect(state, NetworkState.offline);
       });
 
-      /// TC-058-047: ネットワーク切り替えが連続5回以上でも正常動作
-      ///
-      /// 優先度: P0
-      /// 関連要件: NFR-303
-      /// 信頼性レベル:
+      /// ネットワーク切り替えが連続5回以上でも正常動作
       test('TC-058-047: ネットワーク切り替えが連続5回以上でも正常動作', () async {
         // Given: NetworkProviderが初期化されている
         final notifier = container.read(networkProvider.notifier);
@@ -400,16 +301,10 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 6. 境界値・異常系テスト
-    // =========================================================================
 
     group('6. 境界値・異常系テスト', () {
-      /// TC-058-052: NetworkState.checking状態でAI変換ボタンが無効化
-      ///
-      /// 優先度: P1
-      /// 関連要件: REQ-1002
-      /// 信頼性レベル:
+      /// NetworkState.checking状態でAI変換ボタンが無効化
       test('TC-058-052: NetworkState.checking状態でAI変換ボタンが無効化', () async {
         // Given: アプリが起動したばかり（NetworkState.checking）
         final notifier = container.read(networkProvider.notifier);
