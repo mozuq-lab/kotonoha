@@ -1,5 +1,4 @@
 /// PresetPhraseScreen デバウンステスト
-///
 /// 改善: 定型文タップは即時TTS読み上げ+履歴保存を行うが、DebounceMixinが
 /// 未適用だったため誤タップの連続発話（同じ定型文が何度も読み上げられる）
 /// リスクがあった。他画面（クイック応答ボタン等）と同様にデバウンスを
@@ -17,9 +16,8 @@ import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
-/// build()で初期状態を返すテスト用Notifier
-///
-/// initializeDefaultPhrases()はphrasesが空の場合のみ動作するため、
+/// buildで初期状態を返すテスト用Notifier
+/// initializeDefaultPhrasesはphrasesが空の場合のみ動作するため
 /// 非空の初期状態を与えることで実データ投入をスキップさせる。
 class _TestPresetPhraseNotifier extends PresetPhraseNotifier {
   final PresetPhraseState _initialState;
@@ -126,7 +124,7 @@ void main() {
       await tester.pump();
 
       // デバウンス期間（300ms）より長く実時間を待つ
-      // checkDebounce()はDateTime.now()（実時間）で判定するため、
+      // checkDebounceはDateTime.now（実時間）で判定するため
       // 仮想時間を進めるpump(duration)ではなくrunAsyncで実待機する。
       await tester.runAsync(() async {
         await Future<void>.delayed(const Duration(milliseconds: 400));

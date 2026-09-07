@@ -1,14 +1,10 @@
 /// PresetPhraseScreen エラー復帰テスト（回帰テスト）
-///
 /// 改善対応: copyWith のエラー引数パターン統一に伴う退行の修正
-///
-/// 背景: `_buildBody()` は `state.error != null` のときリスト全体を
+/// 背景: `_buildBody` は `state.error != null` のときリスト全体を
 /// 「エラーが発生しました: …」に差し替える。エラーを消す経路は
-///
-/// - `loadPhrases()` … lib/ に呼び出し元が無い
-/// - `resetToDefaults()` … lib/ に呼び出し元が無い
-/// - `initializeDefaultPhrases()` … `phrases` が非空だと早期returnする
-///
+/// `loadPhrases` … lib/ に呼び出し元が無い
+/// `resetToDefaults` … lib/ に呼び出し元が無い
+/// `initializeDefaultPhrases` … `phrases` が非空だと早期returnする
 /// の3つしかないため、「初期化に失敗 → 定型文が1件でも増える」と
 /// エラー表示がプロセス終了まで解除できなくなる。
 /// 成功したCRUD操作で `clearError: true` を立てることで画面が復帰する。
@@ -25,7 +21,7 @@ import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
-/// build()で任意の初期状態を返すテスト用Notifier（CRUDは実装をそのまま使う）
+/// buildで任意の初期状態を返すテスト用Notifier（CRUDは実装をそのまま使う）
 class _TestPresetPhraseNotifier extends PresetPhraseNotifier {
   _TestPresetPhraseNotifier(this._initialState);
 
@@ -62,7 +58,7 @@ PresetPhrase _createTestPhrase({required String id, required String content}) {
 void main() {
   group('PresetPhraseScreen エラー表示からの復帰', () {
     /// 「初期化失敗 → 1件追加済み」で固着した状態を初期状態として与える。
-    /// phrases が非空なので initState の initializeDefaultPhrases() は
+    /// phrases が非空なので initState の initializeDefaultPhrases は
     /// 早期returnし、エラーは自力では解除されない。
     const stuckError = '初期データの読み込みに失敗しました: Exception';
 
