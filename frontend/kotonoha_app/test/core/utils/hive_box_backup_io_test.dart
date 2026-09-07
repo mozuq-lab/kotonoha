@@ -1,29 +1,20 @@
 // Hive Box破損バックアップ（dart:io実装）のパス構築・検証テスト
-// fix/improvement-p0-p2: Codexレビュー指摘（P1）対応
-//   - HiveはBox名を内部で小文字化してからファイル名を組み立てる
-//     （hive 2.2.3 hive_impl.dart `_openBox`の`name.toLowerCase()`）ため、
-//     `backupCorruptBoxFile`が呼び出し元から渡された大小文字のまま
-//     パスを組み立てると、Android/Linux等の大小文字を区別する
-//     ファイルシステムでは実際のBoxファイルを発見できず、
-//     「元ファイル不存在→バックアップ不要（true）」と誤判定してしまう。
-//   - この誤判定により、後続の`Hive.deleteBoxFromDisk`がバックアップなしで
-//     実ファイルを削除してしまう不具合を防ぐため、Hiveと同じ小文字化規則で
-//     パスを構築する`resolveBoxFilePath`/`resolveBoxBackupFilePath`を検証する。
-//
+// HiveはBox名を内部で小文字化してからファイル名を組み立てる
+// （hive 2.2.3 hive_impl.dart `_openBox`の`name.toLowerCase`）ため
+// `backupCorruptBoxFile`が呼び出し元から渡された大小文字のまま
+// パスを組み立てると、Android/Linux等の大小文字を区別する
+// ファイルシステムでは実際のBoxファイルを発見できず
+// 「元ファイル不存在→バックアップ不要（true）」と誤判定してしまう。
+// この誤判定により、後続の`Hive.deleteBoxFromDisk`がバックアップなしで
+// 実ファイルを削除してしまう不具合を防ぐため、Hiveと同じ小文字化規則で
+// パスを構築する`resolveBoxFilePath`/`resolveBoxBackupFilePath`を検証する。
 // 重要: resolveBoxFilePath/resolveBoxBackupFilePathの期待値は、本テストでは
 // 実装を呼び出さずリテラル文字列で直接記述する。macOS等の大小文字を区別しない
 // ファイルシステムでは、パス構築ロジックに大小文字関連のバグがあっても
-// 偶然ファイルが見つかってテストが green になってしまうため、
+// 偶然ファイルが見つかってテストが green になってしまうため
 // ファイルシステムに依存しないユニットレベルでの検証が必須となる
-// （Codexレビュー指摘 4(c)）。
-//
 // テストフレームワーク: flutter_test + dart:io
 // 対象: lib/core/utils/hive_box_backup_io.dart
-//
-// 信頼性レベル凡例:
-// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-// - 黄信号: 要件定義書から妥当な推測によるテスト
-// - 赤信号: 要件定義書にない推測によるテスト
 
 import 'dart:io';
 
@@ -32,9 +23,7 @@ import 'package:kotonoha_app/core/utils/hive_box_backup_io.dart';
 
 void main() {
   group('resolveBoxFilePath / resolveBoxBackupFilePath: パス構築の純粋関数テスト', () {
-    // テスト目的: Hiveの小文字化規則（name.toLowerCase()）と同じ規則で
     // パスが構築されることを、ファイルシステムに依存せず検証する
-    // 信頼性レベル: 青信号 - hive 2.2.3のソースコードで確認済み
 
     test('camelCaseのBox名は小文字化された.hiveファイルパスに解決される', () {
       final path = resolveBoxFilePath('/tmp/hive_home', 'presetPhrases');
@@ -67,11 +56,9 @@ void main() {
   });
 
   group('backupCorruptBoxFile: 大小文字を区別するファイルシステムを想定した実ファイル検証', () {
-    // テスト目的: camelCaseのBox名（例: presetPhrases）でopenBoxWithRecoveryに
     // 相当する呼び出しを行った際、実際にHiveが読み書きする小文字ファイル名
     // （presetphrases.hive）が正しく発見・バックアップされ、かつバックアップの
     // 内容が元の破損データと一致することを検証する
-    // 信頼性レベル: 青信号 - Codexレビュー指摘（P1）に基づく
 
     late Directory tempDir;
 

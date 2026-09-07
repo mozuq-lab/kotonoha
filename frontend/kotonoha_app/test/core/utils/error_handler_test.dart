@@ -2,12 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/utils/error_handler.dart';
 import 'package:kotonoha_app/core/utils/exceptions.dart';
 
-/// Test suite for ErrorHandler utility (TASK-0018)
-///
-/// TC-ERR-005 to TC-ERR-016: Error handling functionality tests
+/// to : Error handling functionality tests
 void main() {
   group('User-Friendly Error Message Tests', () {
-    // TC-ERR-005: ネットワークエラーメッセージ生成テスト
+    // ネットワークエラーメッセージ生成テスト
     test('TC-ERR-005: should generate network error message in Japanese', () {
       // Arrange
       final error = NetworkException('接続エラー');
@@ -20,7 +18,7 @@ void main() {
       expect(message, contains('インターネット接続を確認'));
     });
 
-    // TC-ERR-006: タイムアウトエラーメッセージ生成テスト
+    // タイムアウトエラーメッセージ生成テスト
     test('TC-ERR-006: should generate timeout error message in Japanese', () {
       // Arrange
       final error = AppTimeoutException('タイムアウト');
@@ -33,7 +31,7 @@ void main() {
       expect(message, contains('もう一度お試しください'));
     });
 
-    // TC-ERR-007: AI変換エラーメッセージ生成テスト
+    // AI変換エラーメッセージ生成テスト
     test('TC-ERR-007: should generate AI conversion error message in Japanese',
         () {
       // Arrange
@@ -47,7 +45,7 @@ void main() {
       expect(message, contains('元の文'));
     });
 
-    // TC-ERR-008: 汎用エラーメッセージ生成テスト
+    // 汎用エラーメッセージ生成テスト
     test('TC-ERR-008: should generate generic error message for unknown errors',
         () {
       // Arrange
@@ -60,7 +58,7 @@ void main() {
       expect(message, contains('予期しないエラー'));
     });
 
-    // TC-ERR-009: ValidationExceptionメッセージ生成テスト
+    // ValidationExceptionメッセージ生成テスト
     test('TC-ERR-009: should return validation error message directly', () {
       // Arrange
       final error = ValidationException('入力値が無効です');
@@ -74,7 +72,7 @@ void main() {
   });
 
   group('Error Handling with Logging Tests', () {
-    // TC-ERR-010: エラーハンドリング時のログ記録テスト
+    // エラーハンドリング時のログ記録テスト
     test('TC-ERR-010: handleError should return user-friendly message and log',
         () {
       // Arrange
@@ -112,7 +110,7 @@ void main() {
   });
 
   group('Retryable Error Tests', () {
-    // TC-ERR-011: エラー再試行可能判定テスト（ネットワークエラー）
+    // エラー再試行可能判定テスト（ネットワークエラー）
     test('TC-ERR-011: NetworkException should be retryable', () {
       // Arrange
       final error = NetworkException('接続エラー');
@@ -124,7 +122,7 @@ void main() {
       expect(isRetryable, isTrue, reason: 'Network errors should be retryable');
     });
 
-    // TC-ERR-012: エラー再試行可能判定テスト（タイムアウト）
+    // エラー再試行可能判定テスト（タイムアウト）
     test('TC-ERR-012: AppTimeoutException should be retryable', () {
       // Arrange
       final error = AppTimeoutException('タイムアウト');
@@ -136,7 +134,7 @@ void main() {
       expect(isRetryable, isTrue, reason: 'Timeout errors should be retryable');
     });
 
-    // TC-ERR-013: エラー再試行可能判定テスト（バリデーションエラー）
+    // エラー再試行可能判定テスト（バリデーションエラー）
     test('TC-ERR-013: ValidationException should NOT be retryable', () {
       // Arrange
       final error = ValidationException('入力値が無効');
@@ -175,7 +173,7 @@ void main() {
   });
 
   group('SnackBar Data Tests', () {
-    // TC-ERR-014: SnackBar表示用データ生成テスト
+    // SnackBar表示用データ生成テスト
     test('TC-ERR-014: should generate SnackBar data with message', () {
       // Arrange
       final error = NetworkException('接続エラー');
@@ -214,7 +212,7 @@ void main() {
   });
 
   group('App Continuity Tests', () {
-    // TC-ERR-015: エラー発生時のアプリ継続動作テスト
+    // エラー発生時のアプリ継続動作テスト
     test('TC-ERR-015: handleError should not crash the app', () {
       // Arrange
       final error = Exception('テストエラー');
@@ -254,7 +252,7 @@ void main() {
   });
 
   group('Null Error Handling Tests', () {
-    // TC-ERR-016: nullエラーオブジェクト処理テスト
+    // nullエラーオブジェクト処理テスト
     test('TC-ERR-016: getUserMessage should handle null error', () {
       // Arrange
       const Object? error = null;

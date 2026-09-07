@@ -1,10 +1,6 @@
 /// ライトテーマのプロパティテスト
-///
-/// テストケース: TC-101〜TC-105
-///
+/// テストケース
 /// テスト対象: lib/core/themes/light_theme.dart (実装済み)
-///
-/// TDD Redフェーズ: テーマのプロパティを検証
 library;
 
 import 'package:flutter/material.dart';
@@ -15,25 +11,21 @@ import 'package:kotonoha_app/core/themes/light_theme.dart';
 
 void main() {
   group('ライトテーマのプロパティテスト', () {
-    /// TC-101: ライトテーマのbrightnessがlightである
-    ///
-    /// 前提条件:
-    /// - lightThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - lightTheme.brightnessがBrightness.lightである
+    /// ライトテーマのbrightnessがlightである
+    /// 前提条件
+    /// lightThemeがインポートされている
+    /// 期待結果
+    /// lightTheme.brightnessがBrightness.lightである
     test('TC-101: ライトテーマのbrightnessがlightである', () {
       // Assert
       expect(lightTheme.brightness, equals(Brightness.light));
     });
 
-    /// TC-102: ライトテーマの背景色が白系である
-    ///
-    /// 前提条件:
-    /// - lightThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - lightTheme.scaffoldBackgroundColorがAppColors.backgroundLight（#FFFFFF）である
+    /// ライトテーマの背景色が白系である
+    /// 前提条件
+    /// lightThemeがインポートされている
+    /// 期待結果
+    /// lightTheme.scaffoldBackgroundColorがAppColors.backgroundLight（#FFFFFF）である
     test('TC-102: ライトテーマの背景色が白系である', () {
       // Assert
       expect(lightTheme.scaffoldBackgroundColor,
@@ -42,26 +34,22 @@ void main() {
           lightTheme.scaffoldBackgroundColor, equals(const Color(0xFFFFFFFF)));
     });
 
-    /// TC-103: ライトテーマのプライマリ色が青系である
-    ///
-    /// 前提条件:
-    /// - lightThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - lightTheme.colorScheme.primaryがAppColors.primaryLight（#2196F3）である
+    /// ライトテーマのプライマリ色が青系である
+    /// 前提条件
+    /// lightThemeがインポートされている
+    /// 期待結果
+    /// lightTheme.colorScheme.primaryがAppColors.primaryLight（#2196F3）である
     test('TC-103: ライトテーマのプライマリ色が青系である', () {
       // Assert
       expect(lightTheme.colorScheme.primary, equals(AppColors.primaryLight));
       expect(lightTheme.colorScheme.primary, equals(const Color(0xFF2196F3)));
     });
 
-    /// TC-104: ライトテーマのElevatedButton最小サイズが60pxである
-    ///
-    /// 前提条件:
-    /// - lightThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - minimumSizeがSize(60.0, 60.0)である
+    /// ライトテーマのElevatedButton最小サイズが60pxである
+    /// 前提条件
+    /// lightThemeがインポートされている
+    /// 期待結果
+    /// minimumSizeがSize(60.0, 60.0)である
     test('TC-104: ライトテーマのElevatedButton最小サイズが60pxである', () {
       // Arrange
       final buttonStyle = lightTheme.elevatedButtonTheme.style;
@@ -79,13 +67,11 @@ void main() {
       expect(minimumSize?.height, greaterThanOrEqualTo(60.0));
     });
 
-    /// TC-105: ライトテーマのIconButton最小サイズが44pxである
-    ///
-    /// 前提条件:
-    /// - lightThemeがインポートされている
-    ///
-    /// 期待結果:
-    /// - minimumSizeがSize(44.0, 44.0)である
+    /// ライトテーマのIconButton最小サイズが44pxである
+    /// 前提条件
+    /// lightThemeがインポートされている
+    /// 期待結果
+    /// minimumSizeがSize(44.0, 44.0)である
     test('TC-105: ライトテーマのIconButton最小サイズが44pxである', () {
       // Arrange
       final buttonStyle = lightTheme.iconButtonTheme.style;
@@ -104,8 +90,7 @@ void main() {
     });
 
     /// ライトテーマのonPrimaryが黒である（WCAG AA対応）
-    ///
-    /// primary(#2196F3)上の白文字は約3.1:1でAA不足のため、
+    /// primary(#2196F3)上の白文字は約3.1:1でAA不足のため
     /// onPrimaryを黒(#000000, 約6.7:1)に設定してAAを満たす。
     test('ライトテーマのonPrimaryが黒（AA適合）である', () {
       expect(
@@ -114,9 +99,8 @@ void main() {
     });
 
     /// ライトテーマのテキスト色が黒系である
-    ///
-    /// 期待結果:
-    /// - bodyLargeの色がAppColors.onBackgroundLight（#000000）である
+    /// 期待結果
+    /// bodyLargeの色がAppColors.onBackgroundLight（#000000）である
     test('ライトテーマのテキスト色が黒系である', () {
       // Assert
       expect(
@@ -130,9 +114,8 @@ void main() {
     });
 
     /// ライトテーマのフォントサイズがAppSizes.fontSizeMediumである
-    ///
-    /// 期待結果:
-    /// - bodyMediumのfontSizeがAppSizes.fontSizeMedium（20.0）である
+    /// 期待結果
+    /// bodyMediumのfontSizeがAppSizes.fontSizeMedium（20.0）である
     test('ライトテーマのフォントサイズがAppSizes.fontSizeMediumである', () {
       // Assert
       expect(
@@ -146,9 +129,8 @@ void main() {
     });
 
     /// ライトテーマでMaterial3が有効である
-    ///
-    /// 期待結果:
-    /// - useMaterial3がtrueである
+    /// 期待結果
+    /// useMaterial3がtrueである
     test('ライトテーマでMaterial3が有効である', () {
       // Assert
       expect(lightTheme.useMaterial3, isTrue);
