@@ -1,8 +1,6 @@
 /// CharacterBoardWidget fit-to-height ウィジェットテスト
-///
 /// スマホレイアウト修正（fix/improvement-p0-p2）
 /// 対象: lib/features/character_board/presentation/widgets/character_board_widget.dart
-///
 /// 可視高さが乏しい場合でも、セルの実高さが44px未満に縮小されないこと
 /// （下回る場合はGridView標準のスクロールに委ねる）を検証する。
 library;

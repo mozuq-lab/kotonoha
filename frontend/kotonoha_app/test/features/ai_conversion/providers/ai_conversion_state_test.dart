@@ -1,10 +1,4 @@
 /// AI変換状態クラス テスト
-///
-/// TASK-0070: AI変換Provider・状態管理
-/// TDD Redフェーズ: 失敗するテスト
-///
-/// 信頼性レベル: 青信号（interfaces.dartベース）
-/// 関連要件: REQ-901, REQ-902, REQ-903, REQ-904
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -14,7 +8,7 @@ import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_stat
 
 void main() {
   group('AIConversionStatus', () {
-    // TC-070-022: ステータスの種類確認
+    // ステータスの種類確認
     test('should have 4 status values', () {
       expect(AIConversionStatus.values.length, 4);
       expect(AIConversionStatus.values, contains(AIConversionStatus.idle));
@@ -27,7 +21,7 @@ void main() {
 
   group('AIConversionState', () {
     group('初期状態', () {
-      // TC-070-001: 初期状態がidleである
+      // 初期状態がidleである
       test('should have idle status by default', () {
         const state = AIConversionState();
 
@@ -38,7 +32,7 @@ void main() {
         expect(state.error, isNull);
       });
 
-      // TC-070-002: AIConversionState.initialと等しい
+      // AIConversionState.initialと等しい
       test('should equal AIConversionState.initial', () {
         const state = AIConversionState();
 
@@ -48,7 +42,7 @@ void main() {
     });
 
     group('ヘルパープロパティ', () {
-      // TC-070-022: isConvertingプロパティ
+      // isConvertingプロパティ
       test('isConverting should return true only when status is converting',
           () {
         expect(const AIConversionState().isConverting, false);
@@ -73,7 +67,7 @@ void main() {
         );
       });
 
-      // TC-070-023: hasResultプロパティ
+      // hasResultプロパティ
       test('hasResult should return true only when status is success', () {
         expect(const AIConversionState().hasResult, false);
         expect(
@@ -95,7 +89,7 @@ void main() {
         );
       });
 
-      // TC-070-024: hasErrorプロパティ
+      // hasErrorプロパティ
       test('hasError should return true only when status is error', () {
         expect(const AIConversionState().hasError, false);
         expect(

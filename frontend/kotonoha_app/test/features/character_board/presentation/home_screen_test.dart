@@ -1,14 +1,3 @@
-// HomeScreen表示確認 TDDテスト（Redフェーズ）
-// TASK-0015: go_routerナビゲーション設定・ルーティング実装
-//
-// テストフレームワーク: flutter_test + flutter_riverpod
-// 対象: HomeScreen（文字盤画面）
-//
-// 信頼性レベル凡例:
-// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-// - 黄信号: 要件定義書から妥当な推測によるテスト
-// - 赤信号: 要件定義書にない推測によるテスト
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,11 +7,10 @@ import 'package:kotonoha_app/features/character_board/presentation/home_screen.d
 
 void main() {
   group('HomeScreen表示テスト', () {
-    // TC-006: HomeScreen表示確認テスト
+    // HomeScreen表示確認テスト
     // テストカテゴリ: Widget Test
-    // 対応要件: FR-005（画面スケルトン作成）
+    // 対応要件: （画面スケルトン作成）
     // 対応受け入れ基準: AC-002
-    // 青信号: タスクファイルでHomeScreen作成が明示
     testWidgets('TC-006: HomeScreenが正常に表示される', (WidgetTester tester) async {
       // Given（準備フェーズ）
       // ProviderScope内でHomeScreenをラップ
@@ -70,7 +58,6 @@ void main() {
     });
 
     // HomeScreenがconstコンストラクタを持つことを確認
-    // 青信号: CLAUDE.mdで「constコンストラクタを可能な限り使用」が明示
     testWidgets('HomeScreenはconstコンストラクタを持つ', (WidgetTester tester) async {
       // Given/When（準備・実行フェーズ）
       // constコンストラクタでHomeScreenを生成
@@ -91,7 +78,6 @@ void main() {
     });
 
     // HomeScreenがkeyパラメータを受け取れることを確認
-    // 青信号: CLAUDE.mdで「ウィジェットはkeyパラメータを持つ」が明示
     testWidgets('HomeScreenはkeyパラメータを受け取れる', (WidgetTester tester) async {
       // Given（準備フェーズ）
       const testKey = Key('home_screen_test_key');
@@ -117,10 +103,6 @@ void main() {
     });
 
     /// TC-A11Y-005: 入力表示テキストがliveRegionで囲まれている
-    ///
-    /// 関連要件: アクセシビリティ（スクリーンリーダーへの入力変化の通知）
-    /// 入力中テキストの変化が自動読み上げされるよう、Semantics.liveRegion=true
-    /// が入力表示Textに付与されていることを確認する。
     testWidgets('TC-A11Y-005: 入力表示がliveRegionで読み上げ対象になっている',
         (WidgetTester tester) async {
       await tester.pumpWidget(

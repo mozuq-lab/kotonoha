@@ -1,17 +1,4 @@
 /// AppLifecycleObserver 入力ドラフト保存・復元 統合テスト
-///
-/// TASK-0079: アプリ状態復元・クラッシュリカバリ実装
-/// 対象: AppLifecycleObserverによる入力バッファ(inputBufferProvider)と
-/// セッション状態(appSessionProvider)の配線
-///
-/// 関連要件:
-/// - EDGE-201: バックグラウンド復帰時の状態復元
-/// - REQ-5003: クラッシュ時のデータ保持（入力中ドラフトの保存・復元）
-///
-/// テスト方針: ProviderContainerを直接操作しつつ、実際に配線される
-/// AppLifecycleObserverウィジェットをUncontrolledProviderScope経由でマウントし、
-/// 実装コードそのものを通して検証する。flutter_testのFakeAsyncゾーンにより、
-/// デバウンス用Timerは実時間を待たずtester.pump(duration)で進められる。
 library;
 
 import 'package:flutter/material.dart';
