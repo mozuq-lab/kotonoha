@@ -1,8 +1,4 @@
 /// モックAPIサーバー設定
-///
-/// TASK-0081: E2Eテスト環境構築
-/// 信頼性レベル: 黄信号（テスト戦略は要件定義書から推測）
-///
 /// AI変換APIのモックレスポンスを提供。
 library;
 
@@ -10,11 +6,9 @@ import 'package:dio/dio.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 
 /// モックAPIサーバー
-///
 /// E2Eテスト用のAI変換APIモックを提供。
 class MockApiServer {
   /// モックアダプターを作成
-  ///
   /// [dio]: Dioインスタンス
   static DioAdapter createMockAdapter(Dio dio) {
     final dioAdapter = DioAdapter(dio: dio);
@@ -118,18 +112,18 @@ class MockTestData {
 
 /// パフォーマンス要件定数
 class PerformanceThresholds {
-  /// 文字盤タップ応答時間（ミリ秒）- NFR-003
+  /// 文字盤タップ応答時間（ミリ秒）
   static const int characterBoardTap = 100;
 
-  /// TTS読み上げ開始時間（ミリ秒）- NFR-001
+  /// TTS読み上げ開始時間（ミリ秒）
   static const int ttsStart = 1000;
 
-  /// 定型文一覧表示時間（ミリ秒）- NFR-004
+  /// 定型文一覧表示時間（ミリ秒）
   static const int phraseListDisplay = 1000;
 
-  /// AI変換応答時間（ミリ秒）- NFR-002
+  /// AI変換応答時間（ミリ秒）
   static const int aiConversion = 3000;
 
-  /// ローディング表示開始時間（ミリ秒）- REQ-2006
+  /// ローディング表示開始時間（ミリ秒）
   static const int loadingDisplayThreshold = 3000;
 }
