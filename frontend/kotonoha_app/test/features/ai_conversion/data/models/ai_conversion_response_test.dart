@@ -1,10 +1,4 @@
 /// AI変換レスポンスモデル テスト
-///
-/// TASK-0067: AI変換APIクライアント実装
-/// TDD Redフェーズ: TC-067-005
-///
-/// 信頼性レベル: 青信号（api-endpoints.mdベース）
-/// 関連要件: REQ-901, REQ-902
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -13,16 +7,9 @@ import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_lev
 
 void main() {
   group('AI変換レスポンスモデル テスト', () {
-    // =========================================================================
-    // TC-067-005: レスポンスのJSONパースが正しく行われる
-    // =========================================================================
+    // レスポンスのJSONパースが正しく行われる
 
     group('TC-067-005: レスポンスのJSONパースが正しく行われる', () {
-      // テスト目的: JSONレスポンスからモデルオブジェクトへの変換が正しいことを確認
-      // テスト内容: fromJsonメソッドがsnake_case JSONを正しくパースする
-      // 期待される動作: 全フィールドが正しく設定される
-      // 青信号: api-endpoints.mdに明確に定義
-
       test('politeレベルのレスポンスが正しくパースされる', () {
         // テストデータ準備: バックエンドAPIの典型的なレスポンス形式
         // 初期条件設定: snake_case形式のJSON
