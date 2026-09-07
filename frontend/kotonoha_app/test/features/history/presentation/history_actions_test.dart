@@ -1,16 +1,4 @@
 /// HistoryScreen 再読み上げ・削除アクションテスト
-///
-/// TASK-0063: 履歴再読み上げ・削除機能
-/// テストフレームワーク: flutter_test + mocktail
-///
-/// 対象: HistoryScreen（履歴再読み上げ・削除機能）
-///
-/// TDD Redフェーズ: 機能が未実装、テストが失敗するはず
-///
-/// 信頼性レベル凡例:
-/// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-/// - 黄信号: 要件定義書から妥当な推測によるテスト
-/// - 赤信号: 要件定義書にない推測によるテスト
 library;
 
 import 'package:flutter/material.dart';
@@ -25,12 +13,9 @@ import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 
-// =========================================================================
 // テストヘルパー関数
-// =========================================================================
 
 /// テストデータ準備: テスト用の履歴データを生成するヘルパー関数
-/// 信頼性レベル: 青信号 - テストケース定義書に基づく
 History createTestHistory({
   required String id,
   required String content,
@@ -46,7 +31,6 @@ History createTestHistory({
 }
 
 /// テストデータ準備: 複数件の履歴データを生成
-/// 信頼性レベル: 青信号 - テストケース定義書に基づく
 List<History> createTestHistories(int count, {HistoryType? type}) {
   return List.generate(
     count,
@@ -59,9 +43,7 @@ List<History> createTestHistories(int count, {HistoryType? type}) {
   );
 }
 
-// =========================================================================
 // モッククラス
-// =========================================================================
 
 /// HistoryNotifierのモック
 class MockHistoryNotifier extends HistoryNotifier with Mock {
@@ -141,11 +123,9 @@ class MockTTSNotifier extends TTSNotifier with Mock {
       Future<void>.value();
 }
 
-// =========================================================================
 // テスト用Notifierサブクラス
-// =========================================================================
 
-/// build()で初期状態を返すHistoryNotifierのテスト用サブクラス
+/// buildで初期状態を返すHistoryNotifierのテスト用サブクラス
 class _TestHistoryNotifier extends HistoryNotifier {
   final HistoryState _initialState;
   _TestHistoryNotifier(this._initialState);
@@ -153,7 +133,7 @@ class _TestHistoryNotifier extends HistoryNotifier {
   HistoryState build() => _initialState;
 }
 
-/// build()で初期状態を返すTTSNotifierのテスト用サブクラス
+/// buildで初期状態を返すTTSNotifierのテスト用サブクラス
 class _TestTTSNotifier extends TTSNotifier {
   final TTSServiceState _initialState;
   _TestTTSNotifier(this._initialState);
@@ -161,9 +141,7 @@ class _TestTTSNotifier extends TTSNotifier {
   TTSServiceState build() => _initialState;
 }
 
-// =========================================================================
 // テストヘルパー - プロバイダーオーバーライド
-// =========================================================================
 
 /// テストヘルパー: HistoryProviderをモック状態でオーバーライド
 historyProviderOverride(HistoryState mockState) {
@@ -175,9 +153,7 @@ ttsProviderOverride(TTSServiceState mockState) {
   return ttsProvider.overrideWith(() => _TestTTSNotifier(mockState));
 }
 
-// =========================================================================
 // テストスイート
-// =========================================================================
 
 void main() {
   setUpAll(() {
@@ -186,21 +162,11 @@ void main() {
   });
 
   group('HistoryScreen 再読み上げ・削除機能テスト (TASK-0063)', () {
-    // =========================================================================
     // 2.1 再読み上げ機能テスト
-    // =========================================================================
     group('再読み上げ機能', () {
-      /// TC-063-001: TTSProvider.speak() 呼び出しテスト
-      ///
-      /// 優先度: P0 必須
-      /// 関連要件: FR-063-001, AC-063-001
-      /// 検証内容: 履歴タップ時にTTSプロバイダーのspeak()メソッドが正しく呼ばれること
+      /// TTSProvider.speak 呼び出しテスト
       testWidgets('TC-063-001: 履歴タップ時にTTSProvider.speak()が呼ばれる',
           (WidgetTester tester) async {
-        // テスト目的: 履歴タップ時にTTSプロバイダーのspeak()メソッドが正しく呼ばれることを検証
-        // テスト内容: TTSProviderのspeak("こんにちは")が1回呼ばれること
-        // 期待される動作: 引数として履歴のcontentが正しく渡される
-
         // Given: 履歴データを準備する
         final testHistory = createTestHistory(
           id: 'test_1',
@@ -234,17 +200,9 @@ void main() {
         verify(() => mockTTSNotifier.speak('こんにちは')).called(1);
       });
 
-      /// TC-063-018: 空文字列の読み上げ防止テスト
-      ///
-      /// 優先度: P1 重要
-      /// 関連要件: FR-063-008
-      /// 検証内容: 履歴の内容が空文字列の場合、読み上げが実行されないこと
+      /// 空文字列の読み上げ防止テスト
       testWidgets('TC-063-018: 空文字列の履歴をタップしても読み上げが実行されない',
           (WidgetTester tester) async {
-        // テスト目的: 空文字列の読み上げ防止を検証
-        // テスト内容: TTSProvider.speak()が呼ばれないこと
-        // 期待される動作: エラーが発生しない
-
         // Given: 空文字列の履歴を作成する
         final testHistory = createTestHistory(
           id: 'test_empty',
@@ -280,28 +238,18 @@ void main() {
           await tester.tap(cardFinder);
           await tester.pumpAndSettle();
 
-          // Then: TTSProvider.speak()が呼び出されない
+          // Then: TTSProvider.speakが呼び出されない
           verifyNever(() => mockTTSNotifier.speak(''));
           verifyNever(() => mockTTSNotifier.speak(any()));
         }
       });
     });
 
-    // =========================================================================
     // 2.2 読み上げ中の状態表示テスト
-    // =========================================================================
     group('読み上げ中の状態表示', () {
-      /// TC-063-004: 読み上げ中の視覚的インジケーター表示テスト
-      ///
-      /// 優先度: P0 必須
-      /// 関連要件: FR-063-002, AC-063-001
-      /// 検証内容: 読み上げ中に視覚的インジケーター（ハイライト等）が表示されること
+      /// 読み上げ中の視覚的インジケーター表示テスト
       testWidgets('TC-063-004: 読み上げ中の履歴項目がハイライト表示される',
           (WidgetTester tester) async {
-        // テスト目的: 読み上げ中の視覚的インジケーターが表示されることを検証
-        // テスト内容: 現在読み上げ中の履歴項目がハイライト表示される
-        // 期待される動作: 他の履歴項目は通常表示のまま
-
         // Given: 履歴データを準備する
         final testHistory = createTestHistory(
           id: 'test_1',
@@ -346,16 +294,8 @@ void main() {
         );
       });
 
-      /// TC-063-005: 読み上げ中の停止ボタン表示テスト
-      ///
-      /// 優先度: P1 重要
-      /// 関連要件: FR-063-002
-      /// 検証内容: 読み上げ中に停止ボタンが表示されること
+      /// 読み上げ中の停止ボタン表示テスト
       testWidgets('TC-063-005: 読み上げ中に停止ボタンが表示される', (WidgetTester tester) async {
-        // テスト目的: 読み上げ中に停止ボタンが表示されることを検証
-        // テスト内容: TTSState.speakingの場合に停止ボタンが表示される
-        // 期待される動作: アイドル状態では停止ボタンが非表示または無効
-
         // Given: 履歴データを準備する
         final testHistory = createTestHistory(
           id: 'test_1',
@@ -397,8 +337,7 @@ void main() {
         );
       });
 
-      /// TC-063-006: 読み上げ中表示は対象項目のみ（per-item）テスト
-      ///
+      /// 読み上げ中表示は対象項目のみ（per-item）テスト
       /// 検証内容: 複数履歴で1件を読み上げ中にしたとき、その項目だけが
       /// 読み上げ中表示（停止アイコン）になり、他の項目は通常表示のままであること。
       /// （以前はTTSのspeaking状態を全カードに渡しており、全カードが停止表示になっていた）
@@ -456,20 +395,13 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.3 削除・Undo機能テスト
-    // =========================================================================
     group('削除・Undo機能', () {
-      /// TC-063-012: 個別削除の即時実行とUndoテスト（改訂）
-      ///
+      /// 個別削除の即時実行とUndoテスト（改訂）
       /// 改善: 個別削除の確認ダイアログは、誤タップで「はい」を選んでしまうと
       /// 復元できないという問題があったため廃止した。削除ボタンタップで
-      /// 確認ダイアログなしに即座にdeleteHistory()が呼ばれ、代わりに表示される
-      /// 「元に戻す」SnackBarアクションでrestoreLastDeleted()が呼ばれることを検証する。
-      ///
-      /// 優先度: P0 必須
-      /// 関連要件: FR-063-005(改訂), AC-063-004(改訂)
-      /// 検証内容: 個別削除ボタンタップで確認ダイアログが表示されず即削除、Undoが機能する
+      /// 確認ダイアログなしに即座にdeleteHistoryが呼ばれ、代わりに表示される
+      /// 「元に戻す」SnackBarアクションでrestoreLastDeletedが呼ばれることを検証する。
       testWidgets(
           'TC-063-012: 個別削除ボタンタップで確認ダイアログなしに即削除され、「元に戻す」でrestoreLastDeletedが呼ばれる',
           (WidgetTester tester) async {
@@ -516,21 +448,13 @@ void main() {
         await tester.tap(find.text('元に戻す'));
         await tester.pumpAndSettle();
 
-        // Then: restoreLastDeleted()が呼ばれる
+        // Then: restoreLastDeletedが呼ばれる
         verify(() => mockHistoryNotifier.restoreLastDeleted()).called(1);
       });
 
-      /// TC-063-015: 全削除ダイアログの「キャンセル」ボタンテスト
-      ///
-      /// 優先度: P0 必須
-      /// 関連要件: FR-063-006, AC-063-005
-      /// 検証内容: 全削除確認ダイアログで「キャンセル」を選択すると削除されないこと
+      /// 全削除ダイアログの「キャンセル」ボタンテスト
       testWidgets('TC-063-015: 全削除ダイアログで「キャンセル」選択時に削除されない',
           (WidgetTester tester) async {
-        // テスト目的: キャンセル選択時に全削除が実行されないことを検証
-        // テスト内容: ダイアログが閉じ、履歴が削除されない（5件のまま）
-        // 期待される動作: HistoryRepository.deleteAll()が呼ばれない
-
         // Given: 5件の履歴データを準備する
         final testHistories = createTestHistories(5);
         final mockState = HistoryState(histories: testHistories);
@@ -571,26 +495,16 @@ void main() {
         // Then: ダイアログが閉じる
         expect(find.byType(AlertDialog), findsNothing);
 
-        // HistoryNotifier.clearAllHistories()が呼ばれない
+        // HistoryNotifier.clearAllHistoriesが呼ばれない
         verifyNever(() => mockHistoryNotifier.clearAllHistories());
       });
     });
 
-    // =========================================================================
     // 2.4 削除後のリスト自動更新テスト
-    // =========================================================================
     group('削除後のリスト自動更新', () {
-      /// TC-063-016: 削除後のリスト自動更新テスト
-      ///
-      /// 優先度: P0 必須
-      /// 関連要件: FR-063-007, AC-063-006
-      /// 検証内容: 個別削除後にリストが自動的に更新されること
+      /// 削除後のリスト自動更新テスト
       testWidgets('TC-063-016: 個別削除後にリストが自動的に更新される',
           (WidgetTester tester) async {
-        // テスト目的: 削除後にリストが自動更新されることを検証
-        // テスト内容: 削除後、表示される履歴が4件になる
-        // 期待される動作: 削除した履歴が表示されない、リストの順序は変わらない
-
         // Given: 5件の履歴データを準備する
         final testHistories = createTestHistories(5);
         var currentState = HistoryState(histories: testHistories);
@@ -637,20 +551,12 @@ void main() {
         verify(() => mockHistoryNotifier.deleteHistory('test_0')).called(1);
 
         // 表示される履歴が4件になることを確認（要再構築）
-        // 実装後は状態変更により自動再構築される
+        // このテストでは削除の呼び出しを確認し、状態変更後の再描画は検証していない。
       });
 
-      /// TC-063-017: 全削除後の空リスト表示テスト
-      ///
-      /// 優先度: P0 必須
-      /// 関連要件: FR-063-007, AC-063-006
-      /// 検証内容: 全削除後に空リストメッセージが表示されること
+      /// 全削除後の空リスト表示テスト
       testWidgets('TC-063-017: 全削除後に「履歴がありません」メッセージが表示される',
           (WidgetTester tester) async {
-        // テスト目的: 全削除後の空リスト表示を検証
-        // テスト内容: リストが空になり、「履歴がありません」メッセージが表示される
-        // 期待される動作: 全削除ボタンが非表示になる
-
         // Given: 5件の履歴データを準備する
         final testHistories = createTestHistories(5);
         var currentState = HistoryState(histories: testHistories);
@@ -695,25 +601,15 @@ void main() {
         verify(() => mockHistoryNotifier.clearAllHistories()).called(1);
 
         // 「履歴がありません」メッセージが表示される（要再構築）
-        // 実装後は状態変更により自動再構築される
+        // このテストでは削除の呼び出しを確認し、状態変更後の再描画は検証していない。
       });
     });
 
-    // =========================================================================
     // 2.5 読み上げエラー処理テスト
-    // =========================================================================
     group('読み上げエラー処理', () {
-      /// TC-063-019: 読み上げエラー時のエラーメッセージ表示テスト
-      ///
-      /// 優先度: P1 重要
-      /// 関連要件: FR-063-009, AC-063-007
-      /// 検証内容: 読み上げエラー時にエラーメッセージが表示されること
+      /// 読み上げエラー時のエラーメッセージ表示テスト
       testWidgets('TC-063-019: 読み上げエラー時にエラーメッセージが表示される',
           (WidgetTester tester) async {
-        // テスト目的: エラー時の適切な表示を検証
-        // テスト内容: エラーメッセージが表示される（スナックバーまたはダイアログ）
-        // 期待される動作: アプリが継続動作する（クラッシュしない）
-
         // Given: 履歴データを準備する
         final testHistory = createTestHistory(
           id: 'test_1',
@@ -722,7 +618,7 @@ void main() {
         );
         final mockState = HistoryState(histories: [testHistory]);
 
-        // TTSプロバイダーをモック化し、speak()実行時にエラー状態にする
+        // TTSプロバイダーをモック化し、speak実行時にエラー状態にする
         final mockTTSNotifier = MockTTSNotifier();
         const errorState = TTSServiceState(
           state: TTSState.error,
@@ -730,7 +626,7 @@ void main() {
           errorMessage: '読み上げに失敗しました',
         );
         when(() => mockTTSNotifier.speak(any())).thenAnswer((_) async {
-          // speak()が呼ばれたときにエラー状態に変更
+          // speakが呼ばれたときにエラー状態に変更
           mockTTSNotifier.state = errorState;
         });
         when(() => mockTTSNotifier.stop()).thenAnswer((_) async {});
@@ -762,17 +658,9 @@ void main() {
         expect(find.byType(HistoryScreen), findsOneWidget);
       });
 
-      /// TC-063-020: 読み上げエラー後の操作継続テスト
-      ///
-      /// 優先度: P1 重要
-      /// 関連要件: FR-063-009, NFR-063-003
-      /// 検証内容: 読み上げエラー後も他の操作が可能であること
+      /// 読み上げエラー後の操作継続テスト
       testWidgets('TC-063-020: 読み上げエラー後も他の履歴の読み上げが可能',
           (WidgetTester tester) async {
-        // テスト目的: エラー後の操作継続性を検証
-        // テスト内容: 1件目のエラー後も2件目の読み上げが正常に実行される
-        // 期待される動作: 削除操作も正常に動作する
-
         // Given: 2件の履歴データを準備する
         final testHistories = [
           createTestHistory(
@@ -788,7 +676,7 @@ void main() {
         ];
         final mockState = HistoryState(histories: testHistories);
 
-        // TTSプロバイダーをモック化し、1回目のspeak()でエラー、2回目は成功とする
+        // TTSプロバイダーをモック化し、1回目のspeakでエラー、2回目は成功とする
         final mockTTSNotifier = MockTTSNotifier();
         var callCount = 0;
         when(() => mockTTSNotifier.speak(any())).thenAnswer((_) async {

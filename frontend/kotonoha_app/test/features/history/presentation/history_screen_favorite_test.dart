@@ -1,10 +1,4 @@
 /// 履歴画面からお気に入り追加機能テスト
-///
-/// TASK-0066: お気に入り追加・削除・並び替え機能
-/// TDD Redフェーズ: 失敗するテストを作成
-///
-/// 信頼性レベル: 青信号（要件定義書ベース）
-/// 関連要件: REQ-701, REQ-2002
 library;
 
 import 'package:flutter/material.dart';
@@ -22,9 +16,7 @@ import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 
-// =========================================================================
 // テストヘルパー関数
-// =========================================================================
 
 /// テスト用の履歴データを生成
 History createTestHistory({
@@ -41,9 +33,7 @@ History createTestHistory({
   );
 }
 
-// =========================================================================
 // モッククラス
-// =========================================================================
 
 /// TTSNotifierのモック
 class MockTTSNotifier extends TTSNotifier with Mock {
@@ -82,11 +72,9 @@ class MockTTSNotifier extends TTSNotifier with Mock {
       Future<void>.value();
 }
 
-// =========================================================================
 // テスト用Notifierサブクラス
-// =========================================================================
 
-/// build()で初期状態を返すHistoryNotifierのテスト用サブクラス
+/// buildで初期状態を返すHistoryNotifierのテスト用サブクラス
 class _TestHistoryNotifier extends HistoryNotifier {
   final HistoryState _initialState;
   _TestHistoryNotifier(this._initialState);
@@ -94,7 +82,7 @@ class _TestHistoryNotifier extends HistoryNotifier {
   HistoryState build() => _initialState;
 }
 
-/// build()で初期状態を返すFavoriteNotifierのテスト用サブクラス
+/// buildで初期状態を返すFavoriteNotifierのテスト用サブクラス
 class _TestFavoriteNotifier extends FavoriteNotifier {
   final FavoriteState _initialState;
   _TestFavoriteNotifier(this._initialState);
@@ -102,32 +90,20 @@ class _TestFavoriteNotifier extends FavoriteNotifier {
   FavoriteState build() => _initialState;
 }
 
-// =========================================================================
 // テストヘルパー - プロバイダーオーバーライド
-// =========================================================================
 
 /// HistoryProviderをモック状態でオーバーライド
 historyProviderOverride(HistoryState mockState) {
   return historyProvider.overrideWith(() => _TestHistoryNotifier(mockState));
 }
 
-// =========================================================================
 // テストスイート
-// =========================================================================
 
 void main() {
   group('履歴画面 お気に入り追加機能テスト', () {
-    /// TC-066-010: 履歴画面 長押しメニュー表示
-    ///
-    /// 優先度: P0 必須
-    /// 関連要件: REQ-701
-    /// 検証内容: 履歴項目を長押しするとコンテキストメニューが表示される
+    /// 履歴画面 長押しメニュー表示
     testWidgets('TC-066-010: 履歴項目を長押しするとコンテキストメニューが表示される',
         (WidgetTester tester) async {
-      // テスト目的: 長押しによるコンテキストメニュー表示の確認
-      // テスト内容: 履歴項目を長押しすると「お気に入りに追加」オプションが表示される
-      // 期待される動作: コンテキストメニューに「お気に入りに追加」が表示される
-
       // Given: 履歴データを準備する
       final testHistory = createTestHistory(
         id: 'test_1',
@@ -163,17 +139,9 @@ void main() {
       );
     });
 
-    /// TC-066-011: 履歴画面 お気に入り追加成功
-    ///
-    /// 優先度: P0 必須
-    /// 関連要件: REQ-701
-    /// 検証内容: 「お気に入りに追加」タップでお気に入りに追加される
+    /// 履歴画面 お気に入り追加成功
     testWidgets('TC-066-011: 「お気に入りに追加」タップでお気に入りに追加される',
         (WidgetTester tester) async {
-      // テスト目的: お気に入り追加機能の確認
-      // テスト内容: メニューから「お気に入りに追加」をタップするとお気に入りに追加される
-      // 期待される動作: スナックバーに成功メッセージが表示される
-
       // Given: 履歴データを準備する
       final testHistory = createTestHistory(
         id: 'test_1',
@@ -211,17 +179,9 @@ void main() {
       );
     });
 
-    /// TC-066-012: 履歴画面 重複追加エラーメッセージ
-    ///
-    /// 優先度: P0 必須
-    /// 関連要件: REQ-701
-    /// 検証内容: 既に登録済みの場合エラーメッセージが表示される
+    /// 履歴画面 重複追加エラーメッセージ
     testWidgets('TC-066-012: 既に登録済みの場合「既にお気に入りに登録されています」が表示される',
         (WidgetTester tester) async {
-      // テスト目的: 重複追加防止の確認
-      // テスト内容: 同一内容が既にお気に入りに存在する場合、エラーメッセージが表示される
-      // 期待される動作: スナックバーに重複メッセージが表示される
-
       // Given: 履歴データとお気に入りに同じテキストを準備する
       final testHistory = createTestHistory(
         id: 'history_1',
@@ -274,9 +234,8 @@ void main() {
     });
 
     /// TC-A11Y-STAR-001: 履歴カードの星ボタン（長押し不要のタップ代替）
-    ///
-    /// 改善: 履歴からのお気に入り追加が長押しメニューのみだったため、
-    /// タップ主体の操作要件（REQ-5005）に反していた。星アイコンによる
+    /// 改善: 履歴からのお気に入り追加が長押しメニューのみだったため
+    /// タップ主体の操作要件に反していた。星アイコンによる
     /// 明示的なタップ操作を追加する（長押しメニューは併存）。
     testWidgets('TC-A11Y-STAR-001: 星ボタンタップでお気に入りに追加され、成功メッセージが表示される',
         (WidgetTester tester) async {
@@ -359,7 +318,6 @@ void main() {
     });
 
     /// Stage 1（Phase 3 / WP-2）: 履歴由来のお気に入りに出所（sourceId）が記録される
-    ///
     /// 検証は描画されたウィジェットを操作した結果として行う（providerを直接叩かない）。
     testWidgets('履歴の星をタップして作られたお気に入りは、その履歴のidをsourceIdに持つ',
         (WidgetTester tester) async {

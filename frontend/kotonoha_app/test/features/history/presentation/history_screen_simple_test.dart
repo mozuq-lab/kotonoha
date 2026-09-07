@@ -1,7 +1,4 @@
 /// HistoryScreen 簡易テスト
-///
-/// TASK-0061: 履歴一覧UI実装（TDD Redフェーズ）
-/// 優先度P0のテストのみを実装
 library;
 
 import 'package:flutter/material.dart';
@@ -28,7 +25,7 @@ History createTestHistory({
 }
 
 // テスト用Notifier
-/// build()で初期状態を返すことで、Riverpod 3.x互換にする
+/// buildで初期状態を返すことで、Riverpod 3.x互換にする
 class TestHistoryNotifier extends HistoryNotifier {
   final HistoryState _initialState;
   TestHistoryNotifier(this._initialState);
