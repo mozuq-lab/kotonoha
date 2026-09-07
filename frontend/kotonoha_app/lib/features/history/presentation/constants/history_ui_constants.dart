@@ -1,12 +1,8 @@
 /// History UI constants
-///
-/// TASK-0061: 履歴一覧UI実装
-/// TDD Refactorフェーズ: UI定数の集約
 library;
 
 /// 履歴画面UI定数クラス
-///
-/// マジックナンバー排除とメンテナンス性向上のため、
+/// マジックナンバー排除とメンテナンス性向上のため
 /// 履歴画面で使用する定数を集約。
 class HistoryUIConstants {
   HistoryUIConstants._();

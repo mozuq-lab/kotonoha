@@ -1,7 +1,6 @@
 // Provider定義: 履歴管理プロバイダー
 // 実装内容: 履歴のCRUD操作、検索機能を提供
-// 設計根拠: REQ-601, REQ-602, REQ-603, REQ-604（履歴機能）
-// 信頼性レベル: 青信号 - EARS要件定義書に基づく
+// 設計根拠: , , , （履歴機能）
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
@@ -11,7 +10,6 @@ import '../domain/models/history.dart';
 import '../domain/models/history_type.dart';
 
 /// 状態クラス定義: 履歴一覧の状態
-/// 信頼性レベル: 青信号 - Riverpod標準パターン
 class HistoryState {
   /// 履歴一覧
   final List<History> histories;
@@ -29,7 +27,6 @@ class HistoryState {
   });
 
   /// 状態コピー: 指定したフィールドのみを更新した新しい状態を返す
-  ///
   /// エラーの扱い: `error` を省略した場合は現在のエラーを保持する。
   /// 明示的に消したい場合は `clearError: true` を指定すること。
   /// AIConversionState.copyWith と同じ「clearXxxフラグ方式」に統一している。
@@ -49,7 +46,6 @@ class HistoryState {
 
 /// Notifier定義: 履歴状態管理Notifier
 /// 実装内容: 履歴のCRUD操作を提供
-/// 信頼性レベル: 青信号 - REQ-601〜604に基づく
 class HistoryNotifier extends Notifier<HistoryState> {
   @override
   HistoryState build() {
@@ -66,8 +62,7 @@ class HistoryNotifier extends Notifier<HistoryState> {
   static const _uuid = Uuid();
 
   /// Undo用: 直近に個別削除した履歴を一時保持する
-  ///
-  /// 改善: 個別削除は確認ダイアログを廃止し即削除としたため、
+  /// 改善: 個別削除は確認ダイアログを廃止し即削除としたため
   /// 誤タップからの復元手段として「元に戻す」操作を提供する。
   History? _lastDeletedHistory;
 
@@ -92,7 +87,6 @@ class HistoryNotifier extends Notifier<HistoryState> {
 
   /// メソッド定義: 履歴を追加する
   /// 実装内容: テキストと種類を受け取り、新しい履歴を追加
-  /// 信頼性レベル: 青信号 - REQ-601（履歴の自動保存）
   Future<void> addHistory(String content, HistoryType type) async {
     // 空文字は追加しない
     if (content.isEmpty) return;
@@ -122,7 +116,6 @@ class HistoryNotifier extends Notifier<HistoryState> {
 
   /// メソッド定義: 履歴を削除する
   /// 実装内容: 指定IDの履歴を削除
-  /// 信頼性レベル: 青信号 - REQ-603（履歴の削除）
   Future<void> deleteHistory(String id) async {
     final index = state.histories.indexWhere((h) => h.id == id);
     if (index == -1) return;
@@ -146,8 +139,7 @@ class HistoryNotifier extends Notifier<HistoryState> {
   }
 
   /// メソッド定義: 直近に削除した履歴を復元する（Undo）
-  /// 実装内容: deleteHistory()で退避しておいた履歴を再度保存する
-  /// 信頼性レベル: 黄信号 - 誤操作防止のための改善（削除確認ダイアログ廃止に伴う代替手段）
+  /// 実装内容: deleteHistoryで退避しておいた履歴を再度保存する
   Future<void> restoreLastDeleted() async {
     final target = _lastDeletedHistory;
     if (target == null) return;
@@ -169,7 +161,6 @@ class HistoryNotifier extends Notifier<HistoryState> {
 
   /// メソッド定義: 履歴を検索する
   /// 実装内容: キーワードを含む履歴を返す
-  /// 信頼性レベル: 青信号 - REQ-604（履歴の検索）
   List<History> searchHistory(String query) {
     if (query.isEmpty) return state.histories;
 
@@ -178,7 +169,6 @@ class HistoryNotifier extends Notifier<HistoryState> {
 
   /// メソッド定義: 履歴を読み込む
   /// 実装内容: ローカルストレージから履歴を読み込み
-  /// 信頼性レベル: 黄信号 - 将来的にHiveから読み込み
   Future<void> loadHistories() async {
     final repo = ref.read(historyRepositoryProvider);
     if (repo != null) {
@@ -195,7 +185,6 @@ class HistoryNotifier extends Notifier<HistoryState> {
 
   /// メソッド定義: 全履歴をクリアする
   /// 実装内容: 全ての履歴を削除
-  /// 信頼性レベル: 青信号 - REQ-603（履歴の削除）
   Future<void> clearAllHistories() async {
     // Undo用: 復元できるよう削除前の一覧を退避しておく
     _lastClearedHistories = List<History>.from(state.histories);
@@ -209,7 +198,6 @@ class HistoryNotifier extends Notifier<HistoryState> {
   }
 
   /// メソッド定義: 直近の全削除を取り消し、履歴を復元する（Undo）
-  /// 信頼性レベル: 黄信号 - 誤操作防止のための改善
   Future<void> restoreClearedHistories() async {
     final cleared = _lastClearedHistories;
     if (cleared == null || cleared.isEmpty) return;
@@ -231,7 +219,6 @@ class HistoryNotifier extends Notifier<HistoryState> {
 }
 
 /// Provider定義: HistoryNotifierのProvider
-/// 信頼性レベル: 青信号 - Riverpodパターンに基づく
 final historyProvider = NotifierProvider<HistoryNotifier, HistoryState>(
   HistoryNotifier.new,
 );

@@ -1,17 +1,11 @@
 /// チュートリアル状態管理プロバイダー
-///
-/// TASK-0075: ヘルプ画面・初回チュートリアル実装
-///
-/// 信頼性レベル: 黄信号（REQ-3001から推測）
-/// 関連要件:
-/// - REQ-3001: 初回起動時の簡易チュートリアル表示
+/// 初回起動時の簡易チュートリアル表示
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// チュートリアル状態
-///
 /// チュートリアルの完了状態と表示フラグを管理する。
 class TutorialState {
   /// チュートリアル完了フラグ
@@ -50,7 +44,6 @@ class TutorialNotifier extends Notifier<TutorialState> {
   TutorialState build() => const TutorialState();
 
   /// 初期化
-  ///
   /// shared_preferencesからチュートリアル完了フラグを読み込む。
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
@@ -63,7 +56,6 @@ class TutorialNotifier extends Notifier<TutorialState> {
   }
 
   /// チュートリアルを完了としてマーク
-  ///
   /// shared_preferencesにフラグを保存する。
   Future<void> completeTutorial() async {
     final prefs = await SharedPreferences.getInstance();
@@ -73,7 +65,6 @@ class TutorialNotifier extends Notifier<TutorialState> {
   }
 
   /// チュートリアルをリセット（テスト用）
-  ///
   /// shared_preferencesからフラグを削除する。
   Future<void> resetTutorial() async {
     final prefs = await SharedPreferences.getInstance();
@@ -84,7 +75,6 @@ class TutorialNotifier extends Notifier<TutorialState> {
 }
 
 /// チュートリアルプロバイダー
-///
 /// アプリ全体でチュートリアル状態を共有する。
 final tutorialProvider = NotifierProvider<TutorialNotifier, TutorialState>(
   TutorialNotifier.new,
