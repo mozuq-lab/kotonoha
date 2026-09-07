@@ -1,16 +1,3 @@
-// データ永続化統合テスト（TDD Redフェーズ）
-// TASK-0059: データ永続化テスト
-//
-// テストフレームワーク: flutter_test + integration_test
-// 対象: アプリ強制終了・クラッシュ時のデータ永続性
-//
-// TDD Redフェーズ: 永続化機能が未実装のため、このテストは失敗する
-//
-// 信頼性レベル凡例:
-// - 青信号: 要件定義書・テストケース定義書に基づく確実なテスト
-// - 黄信号: 要件定義書から妥当な推測によるテスト
-// - 赤信号: 要件定義書にない推測によるテスト
-
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -59,9 +46,6 @@ void main() {
     });
 
     test('TC-059-001: アプリ強制終了後も定型文・設定・履歴がすべて保持される', () async {
-      // テスト目的: アプリ強制終了後も定型文・設定・履歴がすべて保持されることを検証
-      // 信頼性レベル: 青信号 - REQ-5003、NFR-301に基づく
-
       // Given（準備フェーズ）
       // ボックスを開く
       presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
@@ -200,9 +184,6 @@ void main() {
     });
 
     test('TC-059-002: アプリクラッシュ時の入力バッファが復元される', () async {
-      // テスト目的: アプリクラッシュ時の入力バッファが復元されることを検証
-      // 信頼性レベル: 青信号 - NFR-302、EDGE-201に基づく
-
       // Given（準備フェーズ）
       container = ProviderContainer();
       final prefs = await SharedPreferences.getInstance();
@@ -249,9 +230,6 @@ void main() {
     });
 
     test('TC-059-004: バックグラウンドから復帰した際に前回の状態が復元される', () async {
-      // テスト目的: アプリがバックグラウンドから復帰した際に前回の状態が復元されることを検証
-      // 信頼性レベル: 黄信号 - NFR-302、EDGE-201に基づく
-
       // Given（準備フェーズ）
       container = ProviderContainer();
       final prefs = await SharedPreferences.getInstance();
@@ -297,9 +275,6 @@ void main() {
     });
 
     test('TC-059-007: 入力バッファの境界値（1000文字）でのクラッシュ復元', () async {
-      // テスト目的: 入力バッファの境界値（1000文字）でのクラッシュ復元を検証
-      // 信頼性レベル: 青信号 - NFR-302、EDGE-101に基づく
-
       // Given（準備フェーズ）
       container = ProviderContainer();
       final prefs = await SharedPreferences.getInstance();
@@ -365,9 +340,6 @@ void main() {
     });
 
     test('TC-059-009: 実際のユーザー操作を再現し、すべてのデータ永続化機能が統合的に動作する', () async {
-      // テスト目的: 実際のユーザー操作を再現し、すべてのデータ永続化機能が統合的に動作することを検証
-      // 信頼性レベル: 青信号 - REQ-5003、REQ-104、REQ-601、REQ-801、NFR-301、NFR-302に基づく
-
       // Given（準備フェーズ）
       // アプリを初回起動（すべてのデータが空）
       presetBox = await Hive.openBox<PresetPhrase>('presetPhrases');
