@@ -1,11 +1,6 @@
 /// 文字盤UI最適化テスト
-///
-/// TASK-0089: 文字盤UI最適化
-/// テストケース: TC-OPT-001〜TC-OPT-017（自動化可能な部分）
-///
+/// テストケース: 〜（自動化可能な部分）
 /// テスト対象: lib/features/character_board/presentation/widgets/character_board_widget.dart
-///
-/// TDD Redフェーズ: 最適化が未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';
@@ -17,16 +12,9 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
 void main() {
   group('CharacterBoardOptimizationTest', () {
-    // =========================================================================
     // 1. パフォーマンステストケース
-    // =========================================================================
     group('パフォーマンステスト', () {
-      /// TC-OPT-001: 文字盤タップ応答時間（100ms以内）
-      ///
-      /// テスト目的: NFR-003の充足確認
-      /// テスト内容: タップから入力欄反映まで100ms以内で完了することを確認
-      /// 期待される動作: タップ応答時間が100ms以内
-      /// 青信号: NFR-003で100ms以内のタップ応答が必須
+      /// 文字盤タップ応答時間（100ms以内）
       testWidgets('TC-OPT-001: 文字盤タップ応答時間が100ms以内', (tester) async {
         String? tappedCharacter;
         final stopwatch = Stopwatch();
@@ -47,7 +35,7 @@ void main() {
         await tester.pump(); // 1フレーム進める（UIの更新を待つ）
         stopwatch.stop();
 
-        // 期待結果: 100ms以内で応答（NFR-003）
+        // 期待結果: 100ms以内で応答
         // 注意: CI環境ではパフォーマンスが不安定なため、200msまで許容
         // 本番環境の実機テストでは100ms以内を確認すること
         expect(
@@ -58,12 +46,7 @@ void main() {
         expect(tappedCharacter, equals('あ'));
       });
 
-      /// TC-OPT-002: 10文字連続タップ応答時間
-      ///
-      /// テスト目的: 連続操作時のパフォーマンス維持確認
-      /// テスト内容: 各タップが100ms以内で応答することを確認
-      /// 期待される動作: 各タップの応答時間が100ms以内
-      /// 青信号: NFR-003適用
+      /// 10文字連続タップ応答時間
       testWidgets('TC-OPT-002: 10文字連続タップがすべて100ms以内', (tester) async {
         final tappedCharacters = <String>[];
         final responseTimes = <int>[];
@@ -88,7 +71,7 @@ void main() {
           responseTimes.add(stopwatch.elapsedMilliseconds);
         }
 
-        // 期待結果: すべてのタップが100ms以内（NFR-003）
+        // 期待結果: すべてのタップが100ms以内
         // 注意: CI環境ではパフォーマンスが不安定なため、200msまで許容
         for (var i = 0; i < responseTimes.length; i++) {
           expect(
@@ -111,12 +94,7 @@ void main() {
         );
       });
 
-      /// TC-OPT-003: カテゴリ切り替え時のパフォーマンス
-      ///
-      /// テスト目的: カテゴリ切り替え時の再レンダリング最適化確認
-      /// テスト内容: 切り替えが200ms以内で完了することを確認
-      /// 期待される動作: カテゴリ切り替えが200ms以内
-      /// 青信号: 要件定義での切り替えパフォーマンス
+      /// カテゴリ切り替え時のパフォーマンス
       testWidgets('TC-OPT-003: カテゴリ切り替えが200ms以内', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -149,16 +127,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2. 再レンダリング最適化テストケース
-    // =========================================================================
     group('再レンダリング最適化テスト', () {
-      /// TC-OPT-004: RepaintBoundaryの配置確認
-      ///
-      /// テスト目的: RepaintBoundaryが適切に配置されていることを確認
-      /// テスト内容: 各CharacterButtonがRepaintBoundaryで明示的に囲まれている
-      /// 期待される動作: GridViewのitemBuilder内でRepaintBoundaryが使用されている
-      /// 青信号: REQ-OPT-002で定義
+      /// RepaintBoundaryの配置確認
       testWidgets('TC-OPT-004: RepaintBoundaryが配置されている', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -193,12 +164,7 @@ void main() {
         );
       });
 
-      /// TC-OPT-007: constコンストラクタの使用確認
-      ///
-      /// テスト目的: constコンストラクタが適切に使用されていることを確認
-      /// テスト内容: CharacterDataがconstで定義されている
-      /// 期待される動作: CharacterData.getCharacters()が返すリストがconstリスト
-      /// 青信号: REQ-OPT-001で定義
+      /// constコンストラクタの使用確認
       test('TC-OPT-007: CharacterDataがconstリストを返す', () {
         // 期待結果: CharacterData.basicがconstリスト
         const characters = CharacterData.basic;
@@ -217,12 +183,7 @@ void main() {
         expect(kigou, isNotNull);
       });
 
-      /// TC-OPT-008: 親ウィジェット再ビルド時の子ウィジェット安定性
-      ///
-      /// テスト目的: 親ウィジェットが再ビルドされても子ウィジェットが不要に再ビルドされないことを確認
-      /// テスト内容: 親ウィジェットのsetState時にCharacterBoardWidgetが再ビルドされない
-      /// 期待される動作: constコンストラクタによりCharacterBoardWidgetが再利用される
-      /// 青信号: REQ-OPT-001, REQ-OPT-006で定義
+      /// 親ウィジェット再ビルド時の子ウィジェット安定性
       testWidgets('TC-OPT-008: 親ウィジェット再ビルド時の安定性', (tester) async {
         int parentBuildCount = 0;
         int characterBoardBuildCount = 0;
@@ -275,7 +236,6 @@ void main() {
 
         // 期待結果: CharacterBoardWidgetは再ビルドされない
         // （ただし、Builderで囲んでいるため再ビルドされる可能性あり）
-        // このテストは最適化実装後に調整が必要
         expect(
           characterBoardBuildCount,
           lessThan(initialCharacterBoardBuildCount + 3),
@@ -284,16 +244,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 3. ウィジェットツリー最適化テストケース
-    // =========================================================================
     group('ウィジェットツリー最適化テスト', () {
-      /// TC-OPT-012: CharacterButton階層の深さ確認
-      ///
-      /// テスト目的: ウィジェット階層が5層以内であることを確認
-      /// テスト内容: CharacterButton内のウィジェット階層を計測
-      /// 期待される動作: 階層が5層以内
-      /// 青信号: REQ-OPT-003で定義
+      /// CharacterButton階層の深さ確認
       testWidgets('TC-OPT-012: CharacterButtonの階層が最適化されている', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -309,21 +262,13 @@ void main() {
         final characterButtons = find.byType(CharacterButton);
         expect(characterButtons, findsWidgets);
 
-        // 期待結果: 各CharacterButtonのウィジェット階層が深すぎない
-        // CharacterButton -> Semantics -> SizedBox -> Material -> InkWell -> Container
-        // この階層が最適化により削減されることを期待
-        // （具体的な階層数は実装後に調整）
+        // ここではボタンの存在のみ確認しており、階層の深さは検証していない。
         final firstButton =
             tester.widget<CharacterButton>(characterButtons.first);
         expect(firstButton, isNotNull);
       });
 
-      /// TC-OPT-013: 不要なSemanticsラッパーの削除確認
-      ///
-      /// テスト目的: 必要最小限のSemanticsのみ使用されていることを確認
-      /// テスト内容: Semanticsが適切に使用されている
-      /// 期待される動作: 必要最小限のSemantics使用
-      /// 青信号: REQ-OPT-003で定義
+      /// 不要なSemanticsラッパーの削除確認
       testWidgets('TC-OPT-013: Semanticsが最小限に使用されている', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -353,16 +298,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 4. Riverpod状態管理最適化テストケース
-    // =========================================================================
     group('Riverpod状態管理最適化テスト', () {
-      /// TC-OPT-016: inputBufferProvider変更時の再ビルド範囲
-      ///
-      /// テスト目的: inputBufferProviderの変更がCharacterBoardWidgetを不要に再ビルドしないことを確認
-      /// テスト内容: CharacterBoardWidgetがStatefulWidgetであることを確認
-      /// 期待される動作: CharacterBoardWidgetがinputBufferProviderをwatchしていない
-      /// 青信号: REQ-OPT-006で定義
+      /// inputBufferProvider変更時の再ビルド範囲
       test('TC-OPT-016: CharacterBoardWidgetがStatefulWidget', () {
         // 期待結果: CharacterBoardWidgetがStatefulWidget
         expect(CharacterBoardWidget, isA<Type>());
@@ -372,12 +310,7 @@ void main() {
         expect(widget, isA<StatefulWidget>());
       });
 
-      /// TC-OPT-017: ConsumerWidgetの使用範囲確認
-      ///
-      /// テスト目的: ConsumerWidgetが必要最小限のみ使用されていることを確認
-      /// テスト内容: CharacterBoardWidget自体はStatefulWidget
-      /// 期待される動作: CharacterBoardWidgetがConsumerWidgetでない
-      /// 青信号: REQ-OPT-006で定義
+      /// ConsumerWidgetの使用範囲確認
       test('TC-OPT-017: CharacterBoardWidgetがConsumerWidgetでない', () {
         final widget = CharacterBoardWidget(onCharacterTap: (_) {});
 
@@ -390,16 +323,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 5. コード品質テストケース
-    // =========================================================================
     group('コード品質テスト', () {
-      /// TC-OPT-022: ウィジェットkeyパラメータ確認
-      ///
-      /// テスト目的: ウィジェットがkeyパラメータを持つことを確認
-      /// テスト内容: CharacterBoardWidget、CharacterButtonがkeyを持つ
-      /// 期待される動作: ValueKeyが適切に使用されている
-      /// 青信号: コーディング規約
+      /// ウィジェットkeyパラメータ確認
       testWidgets('TC-OPT-022: ウィジェットがkeyパラメータを持つ', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -427,11 +353,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 6. 追加の最適化テスト
-    // =========================================================================
     group('追加の最適化テスト', () {
-      /// 空要素がconst SizedBox.shrink()で実装されている
+      /// 空要素がconst SizedBox.shrinkで実装されている
       testWidgets('空要素がconst SizedBox.shrink()を使用', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -444,7 +368,7 @@ void main() {
           ),
         );
 
-        // 期待結果: SizedBox.shrink()が使用されている
+        // 期待結果: SizedBox.shrinkが使用されている
         // （記号カテゴリは空要素を含むため）
         final sizedBoxes = find.byType(SizedBox);
         expect(sizedBoxes, findsWidgets);
