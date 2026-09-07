@@ -1,11 +1,8 @@
 /// シンプルモード設定 永続化テスト
-///
 /// fix/improvement-p0-p2: シンプルモード（疲労時・症状進行時の簡易画面）
-///
 /// テスト対象: lib/features/settings/providers/settings_provider.dart
-///   `SettingsNotifier.setSimpleMode` / build()でのsimpleMode復元
-///
-/// 検証内容:
+/// `SettingsNotifier.setSimpleMode` / buildでのsimpleMode復元
+/// 検証内容
 /// 1. デフォルト値はfalse（通常モード）
 /// 2. setSimpleMode(true)で即座にstateへ反映される（楽観的更新）
 /// 3. SharedPreferencesへbool値として永続化される

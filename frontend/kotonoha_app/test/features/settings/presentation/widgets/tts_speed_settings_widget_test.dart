@@ -1,11 +1,4 @@
 /// TTS速度設定UIウィジェットテスト
-///
-/// TASK-0049: TTS速度設定（遅い/普通/速い）
-/// テストケース: TC-049-018〜TC-049-020
-///
-/// テスト対象: lib/features/settings/presentation/widgets/tts_speed_settings_widget.dart
-///
-/// TDD Redフェーズ: TTS速度設定UIウィジェットが未実装、テストが失敗するはず
 library;
 
 import 'package:flutter/material.dart';
@@ -24,22 +17,11 @@ void main() {
       // SharedPreferencesのモックを初期化
       SharedPreferences.setMockInitialValues({});
     });
-    // =========================================================================
     // UIテストケース
-    // =========================================================================
     group('UI表示テスト', () {
-      /// TTC-VS-004: UIに「とても遅い」ボタンが表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: TDD-TTS-SLOWER-SPEED要件定義書
-      /// 検証内容: 設定画面に「とても遅い」選択肢が表示されること
+      /// UIに「とても遅い」ボタンが表示される
       testWidgets('TTC-VS-004: 設定画面に「とても遅い」選択肢が表示されることを確認',
           (WidgetTester tester) async {
-        // テスト目的: 設定画面に「とても遅い」ボタンが存在することを確認
-        // テスト内容: 設定画面をレンダリングし、4つの速度選択肢が表示されることを検証
-        // 期待される動作: 「とても遅い」「遅い」「普通」「速い」の4つのボタンが表示される
-        // 青信号: 要件定義書のUI仕様に基づく
-
         // Given: テストデータ準備: ProviderScopeでラップした設定画面を構築
         // 初期条件設定: ユーザーが設定画面を開いた場合を模擬
         await tester.pumpWidget(
@@ -54,26 +36,16 @@ void main() {
         await tester.pumpAndSettle();
 
         // Then: 結果検証: 「とても遅い」選択肢が表示されていることを確認
-        // 期待値確認: 要件定義書のUI仕様に基づく
+        // 要件定義書のUI仕様に基づく
         // 品質保証: ユーザーが「とても遅い」速度を選択できることを保証
-        expect(find.text('とても遅い'),
-            findsOneWidget); // 確認内容: 「とても遅い」選択肢が表示されていることを確認
+        expect(find.text('とても遅い'), findsOneWidget);
 
         // 確認ポイント: アクセシビリティ要件（最小タップサイズ44px）も維持されていること
       });
 
-      /// TC-049-018: TTS速度設定UIが表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-404
-      /// 検証内容: 設定画面にTTS速度設定セクションが表示されること
+      /// TTS速度設定UIが表示される
       testWidgets('TC-049-018: 設定画面にTTS速度設定セクションが表示されることを確認',
           (WidgetTester tester) async {
-        // テスト目的: 設定画面にTTS速度設定のウィジェットが含まれることを確認
-        // テスト内容: 設定画面をレンダリングし、TTS速度設定のUI要素が表示されることを検証
-        // 期待される動作: 「読み上げ速度」ラベルと4つの選択肢（とても遅い/遅い/普通/速い）が表示される
-        // 青信号: requirements.md（96-101行目）のUI表示仕様に基づく（4段階に拡張）
-
         // Given: テストデータ準備: ProviderScopeでラップした設定画面を構築
         // 初期条件設定: ユーザーが設定画面を開いた場合を模擬
         await tester.pumpWidget(
@@ -88,37 +60,26 @@ void main() {
         await tester.pumpAndSettle();
 
         // Then: 結果検証: TTS速度設定のUI要素が表示されていることを確認
-        // 期待値確認: requirements.md（96-101行目）のUI表示仕様に基づく
+        // requirements.md（96-101行目）のUI表示仕様に基づく
         // 品質保証: ユーザーが速度を選択できることを保証
 
         // 検証項目: 「読み上げ速度」ラベルが表示されていること
-        expect(
-            find.text('読み上げ速度'), findsOneWidget); // 確認内容: セクションラベルが表示されていることを確認
+        expect(find.text('読み上げ速度'), findsOneWidget);
 
         // 検証項目: 4つの選択肢（とても遅い/遅い/普通/速い）が表示されていること
-        expect(find.text('とても遅い'),
-            findsOneWidget); // 確認内容: 「とても遅い」選択肢が表示されていることを確認
-        expect(find.text('遅い'), findsOneWidget); // 確認内容: 「遅い」選択肢が表示されていることを確認
+        expect(find.text('とても遅い'), findsOneWidget);
+        expect(find.text('遅い'), findsOneWidget);
         // Note: 「普通」はAI丁寧さレベル設定にも存在するため、findsWidgetsで検証
-        expect(find.text('普通'), findsWidgets); // 確認内容: 「普通」選択肢が表示されていることを確認
-        expect(find.text('速い'), findsOneWidget); // 確認内容: 「速い」選択肢が表示されていることを確認
+        expect(find.text('普通'), findsWidgets);
+        expect(find.text('速い'), findsOneWidget);
 
         // 確認ポイント: すべての選択肢が表示されている
         // 確認ポイント: アクセシビリティを考慮した表示（最小タップサイズ44px以上）
       });
 
-      /// TTC-VS-005: 「とても遅い」ボタンをタップすると速度が変更される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: TDD-TTS-SLOWER-SPEED要件定義書
-      /// 検証内容: ユーザー操作に対するUI応答
+      /// 「とても遅い」ボタンをタップすると速度が変更される
       testWidgets('TTC-VS-005: ユーザーが「とても遅い」ボタンをタップすると、速度が変更されることを確認',
           (WidgetTester tester) async {
-        // テスト目的: ユーザー操作（タップ）に対する応答を確認
-        // テスト内容: 「とても遅い」ボタンをタップし、AppSettings状態が更新されることを検証
-        // 期待される動作: タップ後、AppSettings.ttsSpeedがTTSSpeed.verySlowに更新される
-        // 青信号: 既存テスト（TC-049-020）のパターンに基づく
-
         // Given: テストデータ準備: ProviderScopeでラップした設定画面を構築
         // 初期条件設定: デフォルト速度（normal）の状態
         final container = ProviderContainer();
@@ -141,30 +102,20 @@ void main() {
         await tester.pumpAndSettle();
 
         // Then: 結果検証: 状態が更新されたことを確認
-        // 期待値確認: REQ-2007（即座反映）を参考にしたUI応答性
+        // （即座反映）を参考にしたUI応答性
         // 品質保証: ユーザー操作が正しく処理されることを確認
 
         // 検証項目: AppSettings.ttsSpeedがverySlowに更新されたこと
         final state = container.read(settingsNotifierProvider);
-        expect(state.requireValue.ttsSpeed,
-            TTSSpeed.verySlow); // 確認内容: 状態がverySlowに更新されたことを確認
+        expect(state.requireValue.ttsSpeed, TTSSpeed.verySlow);
 
         // 確認ポイント: タップ応答が100ms以内（パフォーマンス要件）
         // 確認ポイント: 状態更新がUIに即座に反映される
       });
 
-      /// TTC-VS-006: 「とても遅い」選択時のハイライト表示
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: TDD-TTS-SLOWER-SPEED要件定義書
-      /// 検証内容: 現在の設定がUI上でハイライト表示されること
+      /// 「とても遅い」選択時のハイライト表示
       testWidgets('TTC-VS-006: 「とても遅い」が選択状態で視覚的に区別されることを確認',
           (WidgetTester tester) async {
-        // テスト目的: 現在の速度設定（verySlow）がUI上で選択状態として表示されることを確認
-        // テスト内容: 速度を「とても遅い」に設定した状態で設定画面をレンダリングし、選択状態が視覚的に区別されることを検証
-        // 期待される動作: 「とても遅い」ボタンが視覚的に区別される（背景色、ボーダー等）
-        // 青信号: 既存テスト（TC-049-019）のパターンに基づく
-
         // Given: テストデータ準備: 速度を「とても遅い」に設定した状態のProviderをオーバーライド
         // 初期条件設定: ユーザーが既に速度を「とても遅い」に設定している状態を模擬
         final container = ProviderContainer(
@@ -189,29 +140,12 @@ void main() {
         // すべてのウィジェットがレンダリングされるまで待機
         await tester.pumpAndSettle();
 
-        // Then: 結果検証: 「とても遅い」ボタンが選択状態で表示されていることを確認
-        // 期待値確認: ユーザーが現在の設定を視覚的に確認できる必要がある
-        // 品質保証: 現在の設定が視覚的に明確であることを確認
-
-        // Note: 実装により検証方法が異なるため、ウィジェットの種類に応じて適切な検証を行う
-        // 実装後に具体的な検証ロジックを追加
-
-        // 確認ポイント: 選択状態が視覚的に明確
-        // 確認ポイント: WCAG 2.1 AAレベル準拠のコントラスト
+        // 描画の完了のみ確認しており、選択状態やコントラストのassertionはない。
       });
 
-      /// TC-049-019: 現在選択されている速度がハイライト表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-404
-      /// 検証内容: 現在のTTS速度設定がUIでハイライト表示されること
+      /// 現在選択されている速度がハイライト表示される
       testWidgets('TC-049-019: 現在のTTS速度設定がUIでハイライト表示されることを確認',
           (WidgetTester tester) async {
-        // テスト目的: 現在の速度設定（fast）がUI上で選択状態として表示されることを確認
-        // テスト内容: 速度を「速い」に設定した状態で設定画面をレンダリングし、選択状態が視覚的に区別されることを検証
-        // 期待される動作: 「速い」ボタンが視覚的に区別される（背景色、ボーダー等）
-        // 青信号: 既存ウィジェットテスト（settings_screen_test.dart）のパターン、アクセシビリティ要件に基づく
-
         // Given: テストデータ準備: 速度を「速い」に設定した状態のProviderをオーバーライド
         // 初期条件設定: ユーザーが既に速度を「速い」に設定している状態を模擬
         final container = ProviderContainer(
@@ -237,7 +171,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Then: 結果検証: 「速い」ボタンが選択状態で表示されていることを確認
-        // 期待値確認: ユーザーが現在の設定を視覚的に確認できる必要がある
+        // ユーザーが現在の設定を視覚的に確認できる必要がある
         // 品質保証: 現在の設定が視覚的に明確であることを確認
 
         // Note: 実装により検証方法が異なるため、ウィジェットの種類に応じて適切な検証を行う
@@ -251,18 +185,9 @@ void main() {
         // 確認ポイント: アクセシビリティ（WCAG 2.1 AAレベル準拠）
       });
 
-      /// TC-049-020: 速度ボタンをタップすると速度が変更される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: REQ-2007, REQ-404
-      /// 検証内容: ユーザー操作に対する応答
+      /// 速度ボタンをタップすると速度が変更される
       testWidgets('TC-049-020: ユーザーが「遅い」ボタンをタップすると、速度が変更されることを確認',
           (WidgetTester tester) async {
-        // テスト目的: ユーザー操作（タップ）に対する応答を確認
-        // テスト内容: 「遅い」ボタンをタップし、AppSettings状態が更新されることを検証
-        // 期待される動作: タップ後、AppSettings.ttsSpeedがTTSSpeed.slowに更新される
-        // 青信号: REQ-2007（即座反映）を参考、既存ウィジェットテスト（settings_screen_test.dart）のパターンに基づく
-
         // Given: テストデータ準備: ProviderScopeでラップした設定画面を構築
         // 初期条件設定: デフォルト速度（normal）の状態
         final container = ProviderContainer();
@@ -285,13 +210,12 @@ void main() {
         await tester.pumpAndSettle();
 
         // Then: 結果検証: 状態が更新されたことを確認
-        // 期待値確認: REQ-2007（即座反映）を参考にしたUI応答性
+        // （即座反映）を参考にしたUI応答性
         // 品質保証: ユーザー操作が正しく処理されることを確認
 
         // 検証項目: AppSettings.ttsSpeedがslowに更新されたこと
         final state = container.read(settingsNotifierProvider);
-        expect(
-            state.requireValue.ttsSpeed, TTSSpeed.slow); // 確認内容: 状態が更新されたことを確認
+        expect(state.requireValue.ttsSpeed, TTSSpeed.slow);
 
         // 検証項目: UIが更新され、「遅い」が選択状態になること
         // Note: 実装により検証方法が異なるため、ウィジェットの種類に応じて適切な検証を行う
@@ -301,13 +225,10 @@ void main() {
       });
     });
 
-    // =========================================================================
     // アクセシビリティ（コントラスト）テスト
-    // =========================================================================
     group('コントラスト（WCAG AA）テスト', () {
-      /// TC-049-A11Y: 非選択ボタンのテキスト色がsurfaceに対しAAを満たす
-      ///
-      /// 検証内容: 非選択の速度ボタンは onSurface 文字（surface背景）を使い、
+      /// 非選択ボタンのテキスト色がsurfaceに対しAAを満たす
+      /// 検証内容: 非選択の速度ボタンは onSurface 文字（surface背景）を使い
       /// primary文字をsurfaceへ載せる（約2.87:1でAA不足）構成になっていないこと。
       testWidgets('TC-049-A11Y: 非選択ボタンはonSurface、選択ボタンはonPrimaryの文字色',
           (WidgetTester tester) async {
@@ -350,7 +271,6 @@ void main() {
 }
 
 /// テスト用のFakeSettingsNotifier
-///
 /// ウィジェットテストで特定の状態を設定するために使用
 class FakeSettingsNotifier extends SettingsNotifier {
   final AppSettings _settings;
