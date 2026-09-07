@@ -1,11 +1,4 @@
 /// StatusButton ウィジェットテスト
-///
-/// TASK-0044: 状態ボタン（「痛い」「トイレ」等8-12個）実装
-/// テストケース: TC-SB-001〜TC-SB-027, TC-TH-001〜TC-TH-005, TC-A11Y-001〜TC-A11Y-006
-///
-/// テスト対象: lib/features/status_buttons/presentation/widgets/status_button.dart
-///
-/// TDD Redフェーズ: ウィジェットが未実装のため、このテストは失敗する
 library;
 
 import 'package:flutter/material.dart';
@@ -20,14 +13,9 @@ import 'package:kotonoha_app/features/settings/models/font_size.dart';
 
 void main() {
   group('StatusButton', () {
-    // =========================================================================
     // 2.1 レンダリングテスト
-    // =========================================================================
     group('レンダリングテスト', () {
-      /// TC-SB-001: 「痛い」ボタンが正しいラベルで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001, FR-005
+      /// 「痛い」ボタンが正しいラベルで表示される
       testWidgets('TC-SB-001: 「痛い」ボタンが正しいラベルで表示される', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
@@ -45,10 +33,7 @@ void main() {
         expect(find.text('痛い'), findsOneWidget);
       });
 
-      /// TC-SB-002: 「トイレ」ボタンが正しいラベルで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001, FR-005
+      /// 「トイレ」ボタンが正しいラベルで表示される
       testWidgets('TC-SB-002: 「トイレ」ボタンが正しいラベルで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -64,10 +49,7 @@ void main() {
         expect(find.text('トイレ'), findsOneWidget);
       });
 
-      /// TC-SB-003: 「暑い」ボタンが正しいラベルで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001, FR-005
+      /// 「暑い」ボタンが正しいラベルで表示される
       testWidgets('TC-SB-003: 「暑い」ボタンが正しいラベルで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -83,10 +65,7 @@ void main() {
         expect(find.text('暑い'), findsOneWidget);
       });
 
-      /// TC-SB-004: 「寒い」ボタンが正しいラベルで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001, FR-005
+      /// 「寒い」ボタンが正しいラベルで表示される
       testWidgets('TC-SB-004: 「寒い」ボタンが正しいラベルで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -102,10 +81,7 @@ void main() {
         expect(find.text('寒い'), findsOneWidget);
       });
 
-      /// TC-SB-005: 「水」ボタンが正しいラベルで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001, FR-005
+      /// 「水」ボタンが正しいラベルで表示される
       testWidgets('TC-SB-005: 「水」ボタンが正しいラベルで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -121,10 +97,7 @@ void main() {
         expect(find.text('水'), findsOneWidget);
       });
 
-      /// TC-SB-006: 「眠い」ボタンが正しいラベルで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001, FR-005
+      /// 「眠い」ボタンが正しいラベルで表示される
       testWidgets('TC-SB-006: 「眠い」ボタンが正しいラベルで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -140,10 +113,7 @@ void main() {
         expect(find.text('眠い'), findsOneWidget);
       });
 
-      /// TC-SB-007: 「助けて」ボタンが正しいラベルで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001, FR-005
+      /// 「助けて」ボタンが正しいラベルで表示される
       testWidgets('TC-SB-007: 「助けて」ボタンが正しいラベルで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -159,10 +129,7 @@ void main() {
         expect(find.text('助けて'), findsOneWidget);
       });
 
-      /// TC-SB-008: 「待って」ボタンが正しいラベルで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-001, FR-005
+      /// 「待って」ボタンが正しいラベルで表示される
       testWidgets('TC-SB-008: 「待って」ボタンが正しいラベルで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -179,14 +146,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.2 サイズテスト（アクセシビリティ）
-    // =========================================================================
     group('サイズテスト', () {
-      /// TC-SB-009: ボタン高さがデフォルトで44px以上である
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-004, FR-201
+      /// ボタン高さがデフォルトで44px以上である
       testWidgets('TC-SB-009: ボタン高さがデフォルトで44px以上である', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -203,10 +165,7 @@ void main() {
         expect(size.height, greaterThanOrEqualTo(AppSizes.minTapTarget));
       });
 
-      /// TC-SB-010: ボタン幅がデフォルトで44px以上である
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-004, FR-201
+      /// ボタン幅がデフォルトで44px以上である
       testWidgets('TC-SB-010: ボタン幅がデフォルトで44px以上である', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -223,10 +182,7 @@ void main() {
         expect(size.width, greaterThanOrEqualTo(AppSizes.minTapTarget));
       });
 
-      /// TC-SB-011: ボタン高さが44px未満に設定できない（最小保証）
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-201
+      /// ボタン高さが44px未満に設定できない（最小保証）
       testWidgets('TC-SB-011: ボタン高さが44px未満に設定できない', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -244,10 +200,7 @@ void main() {
         expect(size.height, greaterThanOrEqualTo(AppSizes.minTapTarget));
       });
 
-      /// TC-SB-012: ボタン幅が44px未満に設定できない（最小保証）
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-201
+      /// ボタン幅が44px未満に設定できない（最小保証）
       testWidgets('TC-SB-012: ボタン幅が44px未満に設定できない', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -265,10 +218,7 @@ void main() {
         expect(size.width, greaterThanOrEqualTo(AppSizes.minTapTarget));
       });
 
-      /// TC-SB-013: カスタムサイズ指定時も最小サイズが保証される
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-201
+      /// カスタムサイズ指定時も最小サイズが保証される
       testWidgets('TC-SB-013: カスタムサイズ指定時も最小サイズが保証される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -289,14 +239,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.3 イベントテスト
-    // =========================================================================
     group('イベントテスト', () {
-      /// TC-SB-014: タップ時にonPressedコールバックが呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-203
+      /// タップ時にonPressedコールバックが呼ばれる
       testWidgets('TC-SB-014: タップ時にonPressedコールバックが呼ばれる', (tester) async {
         bool tapped = false;
 
@@ -317,10 +262,7 @@ void main() {
         expect(tapped, isTrue);
       });
 
-      /// TC-SB-015: タップ時にonTTSSpeakコールバックが正しいラベルで呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
+      /// タップ時にonTTSSpeakコールバックが正しいラベルで呼ばれる
       testWidgets('TC-SB-015: タップ時にonTTSSpeakコールバックが正しいラベルで呼ばれる',
           (tester) async {
         String? spokenText;
@@ -343,9 +285,7 @@ void main() {
         expect(spokenText, equals('痛い'));
       });
 
-      /// TC-SB-016: onPressed: nullで無効状態になる
-      ///
-      /// 優先度: P1（高優先度）
+      /// onPressed: nullで無効状態になる
       testWidgets('TC-SB-016: onPressed: nullで無効状態になる', (tester) async {
         await tester.pumpWidget(
           const MaterialApp(
@@ -363,10 +303,7 @@ void main() {
         expect(button.onPressed, isNull);
       });
 
-      /// TC-SB-017: タップ時に視覚的フィードバック（InkWell/リップル）が発生する
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: FR-102
+      /// タップ時に視覚的フィードバック（InkWell/リップル）が発生する
       testWidgets('TC-SB-017: タップ時に視覚的フィードバックが発生する', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -388,10 +325,7 @@ void main() {
         expect(inkWell, findsWidgets);
       });
 
-      /// TC-SB-018: 「痛い」タップでonTTSSpeakが「痛い」で呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
+      /// 「痛い」タップでonTTSSpeakが「痛い」で呼ばれる
       testWidgets('TC-SB-018: 「痛い」タップでonTTSSpeakが「痛い」で呼ばれる', (tester) async {
         String? spokenText;
 
@@ -413,10 +347,7 @@ void main() {
         expect(spokenText, equals('痛い'));
       });
 
-      /// TC-SB-019: 「トイレ」タップでonTTSSpeakが「トイレ」で呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
+      /// 「トイレ」タップでonTTSSpeakが「トイレ」で呼ばれる
       testWidgets('TC-SB-019: 「トイレ」タップでonTTSSpeakが「トイレ」で呼ばれる', (tester) async {
         String? spokenText;
 
@@ -438,10 +369,7 @@ void main() {
         expect(spokenText, equals('トイレ'));
       });
 
-      /// TC-SB-020: 「助けて」タップでonTTSSpeakが「助けて」で呼ばれる
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-101
+      /// 「助けて」タップでonTTSSpeakが「助けて」で呼ばれる
       testWidgets('TC-SB-020: 「助けて」タップでonTTSSpeakが「助けて」で呼ばれる', (tester) async {
         String? spokenText;
 
@@ -464,14 +392,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.4 デバウンステスト
-    // =========================================================================
     group('デバウンステスト', () {
-      /// TC-SB-021: 連続タップ時にデバウンスが機能する
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: EDGE-004
+      /// 連続タップ時にデバウンスが機能する
       testWidgets('TC-SB-021: 連続タップ時にデバウンスが機能する', (tester) async {
         int callCount = 0;
 
@@ -499,18 +422,7 @@ void main() {
         expect(callCount, equals(1));
       });
 
-      /// TC-SB-022: デバウンス期間経過後は再度タップが有効になる
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: EDGE-004
-      ///
-      /// 注: このテストはDateTime.now()を使用したデバウンスロジックをテストするため、
-      /// 実際の時間経過を待つ必要があります。
-      /// しかし、Flutter widget testのtester.binding.delayed()は実際のDateTime.now()の
-      /// 時間を進めないため、このテストは信頼性が低くなります。
-      /// デバウンス機能自体はTC-SB-021で検証されています。
-      // Skip理由: DateTime.now()ベースのデバウンスはFlutter widget testで信頼性高くテストできない。
-      // デバウンス機能はTC-SB-021で検証済み。
+      /// デバウンス期間経過後は再度タップが有効になる
       testWidgets(
         'TC-SB-022: デバウンス期間経過後は再度タップが有効になる',
         skip: true,
@@ -533,8 +445,8 @@ void main() {
           await tester.tap(find.byType(StatusButton));
           await tester.pump();
 
-          // 実際の時間経過を待つ（DateTime.now()ベースのデバウンス）
-          // Flutter test frameworkでは、tester.binding.delayed()を使用して
+          // 実際の時間経過を待つ（DateTime.nowベースのデバウンス）
+          // Flutter test frameworkでは、tester.binding.delayedを使用して
           // 実際のシステム時間を経過させる
           // 注: CI環境でのタイミング問題を避けるため、デバウンス期間(300ms)より
           // 十分に長い時間（600ms）を待機する
@@ -550,10 +462,7 @@ void main() {
         },
       );
 
-      /// TC-SB-023: 連続タップでonTTSSpeakが1回だけ呼ばれる
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: EDGE-004
+      /// 連続タップでonTTSSpeakが1回だけ呼ばれる
       testWidgets('TC-SB-023: 連続タップでonTTSSpeakが1回だけ呼ばれる', (tester) async {
         int callCount = 0;
 
@@ -581,14 +490,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 2.5 フォントサイズ対応テスト
-    // =========================================================================
     group('フォントサイズ対応テスト', () {
-      /// TC-SB-024: フォントサイズ「小」でラベルが適切なサイズで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-006
+      /// フォントサイズ「小」でラベルが適切なサイズで表示される
       testWidgets('TC-SB-024: フォントサイズ「小」でラベルが適切なサイズで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -606,10 +510,7 @@ void main() {
         expect(text.style?.fontSize, equals(AppSizes.fontSizeSmall));
       });
 
-      /// TC-SB-025: フォントサイズ「中」でラベルが適切なサイズで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-006
+      /// フォントサイズ「中」でラベルが適切なサイズで表示される
       testWidgets('TC-SB-025: フォントサイズ「中」でラベルが適切なサイズで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -627,10 +528,7 @@ void main() {
         expect(text.style?.fontSize, equals(AppSizes.fontSizeMedium));
       });
 
-      /// TC-SB-026: フォントサイズ「大」でラベルが適切なサイズで表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-006
+      /// フォントサイズ「大」でラベルが適切なサイズで表示される
       testWidgets('TC-SB-026: フォントサイズ「大」でラベルが適切なサイズで表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -649,14 +547,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // テーマテスト
-    // =========================================================================
     group('テーマテスト', () {
-      /// TC-TH-001: ライトモードで適切な配色で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-103
+      /// ライトモードで適切な配色で表示される
       testWidgets('TC-TH-001: ライトモードで適切な配色で表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -674,10 +567,7 @@ void main() {
         expect(Theme.of(context).brightness, equals(Brightness.light));
       });
 
-      /// TC-TH-002: ダークモードで適切な配色で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-103
+      /// ダークモードで適切な配色で表示される
       testWidgets('TC-TH-002: ダークモードで適切な配色で表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -695,10 +585,7 @@ void main() {
         expect(Theme.of(context).brightness, equals(Brightness.dark));
       });
 
-      /// TC-TH-003: 高コントラストモードで適切な配色で表示される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-103, FR-202
+      /// 高コントラストモードで適切な配色で表示される
       testWidgets('TC-TH-003: 高コントラストモードで適切な配色で表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -717,14 +604,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // アクセシビリティテスト
-    // =========================================================================
     group('アクセシビリティテスト', () {
       /// TC-A11Y-001: 各ボタンにSemanticsラベルが設定される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-A003
       testWidgets('TC-A11Y-001: Semanticsラベルが設定される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -742,9 +624,6 @@ void main() {
       });
 
       /// TC-A11Y-002: 「痛い」ボタンにSemantics(label: '痛い')が設定される
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-A003
       testWidgets('TC-A11Y-002: 「痛い」ボタンにSemantics(label: \'痛い\')が設定される',
           (tester) async {
         await tester.pumpWidget(
@@ -763,9 +642,6 @@ void main() {
       });
 
       /// TC-A11Y-003: 各ボタンがボタンセマンティクスを持つ
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-A003
       testWidgets('TC-A11Y-003: ボタンセマンティクスを持つ', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -783,9 +659,6 @@ void main() {
       });
 
       /// TC-A11Y-004: 色だけでなくラベルテキストで状態を識別可能
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: NFR-A001
       testWidgets('TC-A11Y-004: ラベルテキストで状態を識別可能', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -817,9 +690,6 @@ void main() {
       });
 
       /// TC-A11Y-005: タップターゲットが44x44px以上を常に満たす
-      ///
-      /// 優先度: P0（必須）
-      /// 関連要件: FR-201
       testWidgets('TC-A11Y-005: タップターゲットが44x44px以上', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -838,14 +708,9 @@ void main() {
       });
     });
 
-    // =========================================================================
     // エッジケーステスト
-    // =========================================================================
     group('エッジケーステスト', () {
-      /// TC-EDGE-009: TTSサービスがnull/未初期化でもボタンタップが動作する
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: EDGE-003
+      /// TC-: TTSサービスがnull/未初期化でもボタンタップが動作する
       testWidgets('TC-EDGE-009: onTTSSpeakがnullでもボタンタップが動作する', (tester) async {
         bool tapped = false;
 
@@ -867,10 +732,7 @@ void main() {
         expect(tapped, isTrue);
       });
 
-      /// TC-EDGE-011: onTTSSpeak未設定でもonPressedは動作する
-      ///
-      /// 優先度: P1（高優先度）
-      /// 関連要件: EDGE-003
+      /// TC-: onTTSSpeak未設定でもonPressedは動作する
       testWidgets('TC-EDGE-011: onTTSSpeak未設定でもonPressedは動作する', (tester) async {
         bool onPressedCalled = false;
 
