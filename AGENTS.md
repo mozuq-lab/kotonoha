@@ -45,7 +45,7 @@ ADR が引く層番号: 層 1 前段（着手前。規律 4。**「存在すべ�
 ## 文書（ADR-010）
 
 核はこの 1 本。決定は `docs/adr/`（各 60 行、未卒業 5 本）。**正本は読者ごとに 1 つで、同じ内容を 2 箇所に書かない**: 開発者は README、利用者・審査者は `docs/privacy-policy.md` と `docs/support.md`、仕様は `docs/spec/kotonoha-requirements.md`、API は `backend/tests/contract/openapi_baseline.json`。
-使い捨ては `docs/plans/`（冒頭に破棄条件 1 行）と PR 本文。倉庫 `docs/archive/` は更新しない・現在の仕様として読まない。台帳 `docs/ledger.md` は 1 問題 1 行＋出所。**コードと文書が食い違ったらコードが正。** OpenSpec は使い捨て（openspec/changes は追跡しない）。
+使い捨ては `docs/plans/`（冒頭に破棄条件 1 行）と PR 本文。倉庫 `docs/archive/` は更新しない・現在の仕様として読まない。台帳 `docs/ledger.md` は 1 問題 1 行＋出所。**コードと文書が食い違ったらコードが正。** OpenSpec は使い捨て（openspec/ は追跡しない）。
 
 ## コマンド（リポジトリルートから。セットアップ・前提・トラブルシューティングは README）
 

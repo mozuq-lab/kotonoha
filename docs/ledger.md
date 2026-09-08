@@ -31,6 +31,8 @@
 - [ ] L-76 NFR-502（backend の重要なビジネスロジック・API エンドポイントで 90% 以上のカバレッジ）が未測定。CI の `fail_under` は全体閾値（NFR-501） — docs/spec/kotonoha-requirements.md:166（L-55 と同形）
 - [ ] L-77 `showOfflineAIConversionDialog`（frontend/kotonoha_app/lib/features/network/presentation/widgets/network_aware_scaffold.dart:115）と `TextInputField`（frontend/kotonoha_app/lib/shared/widgets/text_input_field.dart:29）は lib からの呼び出しゼロで、テストだけが呼ぶ — PR #114 の突き合わせ（棚卸し観点 1）
 - [ ] L-78 README.md:82 の `curl -s localhost:8000/api/v1/health` は、localhost が ::1 に解決される環境で timeout する（uvicorn は 127.0.0.1 で待つ）。127.0.0.1 に直すか注記する — Task 6 の実測（2026-09-06）
+- [ ] L-84 開発者登録（Apple Developer Program / Google Play）が未着手。外部律速で、他の作業を待つ理由が無い — ADR-007 条件 4（人が動かす。旧 remaining-work.md から移記）
+- [ ] L-85 ストア掲載文（`frontend/kotonoha_app/fastlane/metadata/ja-JP`・`en-US`）を「医療・治療効果を謳わない」観点で点検していない — ADR-007 条件 4（旧 remaining-work.md から移記）
 
 ## 判断待ち
 - [ ] L-83 SharedPreferences の設定保存失敗を利用者へ通知する扱いが未実装。`setFontSize` 等は例外を捕捉して UI 状態を保持するだけで、通知しない（ソース確認。失敗注入は未実行）。コメントの「将来実装」から移記し、対応方法は別途判断する — frontend/kotonoha_app/lib/features/settings/providers/settings_provider.dart:130、ADR-005
@@ -42,6 +44,10 @@
 - [ ] L-80 `frontend/kotonoha_app/pubspec.lock` は Flutter 3.41.5 で解決したまま。`.fvmrc`／CI の 3.38.1 で `flutter pub get` すると `characters` が 1.4.1→1.4.0 に下がり `js` 0.7.2 が加わる。lock を 3.38.1 で作り直すか SDK を上げるか（依存の決定、規律 8） — Task 4 の実測（2026-09-06）
 - [ ] L-81 `backend/tests/contract/openapi_baseline.json` は正規化ダンプで、単体では現行 API の形しか示さない（enum の値や説明文を含まない）。ADR-010:28 と AGENTS.md 文書節が「API の正本」と呼ぶ記述の限界。呼び方を変えるか、ダンプに補うか — ADR-010「限界」
 - [ ] L-82 ADR-007 条件 1 の括弧書き 4 項目が定義か要約か（限界節に「まだ決めていない」と明記） — docs/adr/ADR-007-release-criteria.md:47
+- [ ] L-86 プライバシーポリシーの公開先が GitHub の blob URL のまま（`frontend/kotonoha_app/fastlane/metadata/*/privacy_url.txt`。#91 で 200 を実測）。ストア提出の公開先としてこれでよいか — ADR-007 条件 4（旧 remaining-work.md から移記）
+- [ ] L-87 dependabot の PR 15 本が滞留（actions #66〜#70、pip #55〜#59、pub #60・#62〜#65）。frontend の `flutter_riverpod` #62・`go_router` #60 はリリース前に上げるか決める。backend の 5 本は Phase 2 で requirements.txt が変わりずれており、`sqlalchemy` #57 は依存自体が無い。close して作り直させるか — .github/dependabot.yml（旧 remaining-work.md から移記）
+- [ ] L-88 `fix/backend-production-hardening` はローカルにしか無い（#86 で「証拠として残す」と決定）。push して保全するか、ローカル限りとするか — Issue #86（旧 remaining-work.md から移記）
+- [ ] L-89 AGENTS.md の索引は卒業済み ADR も 1 行残す規則のため、ADR が増えると増え続ける。5 行に抑えるか（層 2 が卒業済み ADR を引用しなくなる）、別の上限を置くか。2026-09-08 に保留 — ADR-010:33、scripts/adr-touch.sh:21
 
 ## 計測（棚卸しの記録。最新の 1 回だけ残す）
 | 日付 | 核 | 未卒業 ADR | 台帳 未対応/対応済/却下 | 出力ゼロの仕組み | 実在しないパス参照 | kill rate |
