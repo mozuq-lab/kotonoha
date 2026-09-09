@@ -117,7 +117,6 @@ git diff --name-only origin/main...HEAD | scripts/adr-touch.sh          # 層 2 
 - `flutter.yml` — frontend の analyze・format・test・ビルドを `main` / `develop` への push・PR で実行
 - `adr-touch.yml` — PR の変更ファイルを AGENTS.md 規律 8（負債を作る 7 行為）に当て、関わる ADR の索引行を
   コメントで貼る（止めない）
-- `openspec-guard.yml` — `openspec/changes/` 配下にファイルを追跡させない（恒久成果物は置かない。ADR-010: OpenSpec は使い捨て）
 - `inventory-reminder.yml` — 毎月 1 日に棚卸しの Issue を立てる
 - `release.yml` — タグ push でストア配布物（Android AAB 等）を作る
 
