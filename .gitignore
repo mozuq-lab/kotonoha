@@ -86,8 +86,8 @@ coverage.xml
 # 完了時に削除する一時的な成果物。
 .superpowers/
 
-# OpenSpec の change とその archive は一時的な工程記録なので追跡しない（ADR-010）。
-openspec/changes/
+# OpenSpec は使い捨て（ADR-010）。config.yaml を含め openspec/ 全体を追跡しない（2026-09-08）。
+openspec/
 
 # adr-rubber-duck の壁打ちセッション記録（工程記録。恒久成果物は ADR 本体のみ）
 docs/adr/.sessions/
