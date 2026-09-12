@@ -21,7 +21,7 @@ Hive が開けないと黙ってインメモリで動き続けた（`frontend/ko
 ## 決定
 
 - お気に入りは案 3。UI が実際に使っている `favoriteProvider` が真実。キーは内容テキストではなく id で（同文の定型文で衝突しない）、`FavoriteItem` のレコード同一性と、定型文連動の同期キー `sourceId` に適用する
-- **お気に入りは定型文の削除で消えない**（2026-09-13、L-39 解消）。`deletePhrase()` は `deleteFavoriteBySourceId()` を呼ばず、`TC-SYNC-202` は「残る」を固定する。定型文の編集がお気に入りに追随しない実装と整合し、案 2 却下の理由（寿命は独立）どおり。削除確認ダイアログの「お気に入りからも削除されます」は消した
+- **お気に入りは定型文の削除で消えない**（2026-09-13、L-39 解消）。`deletePhrase()` は `deleteFavoriteBySourceId()` を呼ばず、`TC-SYNC-202` は「残る」を固定する。**お気に入りは作った時点の写し**で、定型文を編集しても追随しない（既存の挙動を決定として明記）。案 2 却下の理由（寿命は独立）どおり。削除確認ダイアログの「お気に入りからも削除されます」は消した
 - **真実は 1 つ、射影は用途ごとに決めてよい。** 履歴画面の星は content 照合のまま（sourceId 照合にすると、定型文由来の同文に星が付かない／同じ文言を再発話すると付かない／履歴 50 件上限でアンカーの履歴が消えると二度と付かなくなる。「キーは id」の理由が名指しした衝突は「同文の**定型文どうし**」で、`addFavoriteFromPresetPhrase` の sourceId 重複判定で解決済み）。`input_candidate_scorer` はテキスト射影のまま（`computeCandidates` は `List<String>` しか受けず、集計は候補テキストがキー、出力は `InputCandidate(text:, score:)` で、id を持てる場所が型の上に存在しない）
 - `isFavorite` は `HistoryItem`・`PresetPhrase` の両方から削除済み。Hive migration は実装してレビューまで通したうえで撤回した（`f761afc`）。守る価値のあるデータが検証端末に無く、残すと (1) お気に入り画面から削除したものが再起動で復活する（UI から到達可能）(2) 移行は `PresetPhrase.isFavorite` を読むのでそのフィールドを消すビルドと共存できない、の 2 つが避けられなかった
 - 永続化は案 c。`sealed class PersistenceState { Ready / RecoverableFailure / Unavailable }` とし、保存されない状態を利用者に通知する。**Hive の破損で退避して作り直したときも同じ経路で領域名つきで伝える**（退避ファイル `<box>.hive.corrupt.bak` は端末内に残すだけで、戻す手段は持たない）。**SharedPreferences の設定保存の失敗も同じ報告に流す**（2026-09-13 決定。実装は L-90）
@@ -40,6 +40,7 @@ Hive が開けないと黙ってインメモリで動き続けた（`frontend/ko
 許可リスト検査が守るのは起動時の共有登録経路だけで、共有関数を経由しない直接の `Hive.registerAdapter` / `Hive.openBox` は守れない。Dart には「この API を他所で呼ばせない」構造が無く、開かれている box を列挙する公開 API も Hive に無い。**自作の検出器は作らない**（AGENTS.md 規律 8 ／ADR-008）。受け皿は AGENTS.md 規律 8 と層 1・3・5。
 「トップレベル可変変数の禁止」は analyzer では実現できない（`avoid_top_level_mutable_variables` も `avoid_global_state` も Dart に存在しない。`undefined_lint`、2026-08-31 実測）。記録して受け入れた。
 Hive が報告しない書き込み失敗（box が開いたままのディスクフル。hive 2.2.3 `box_impl.dart:82`）は伝えられない。EDGE-003（容量不足の警告）は未達のまま受け入れる（L-13。自作の検出器も空き容量の事前測定も作らない、AGENTS.md 規律 8）。退避したデータを利用者が戻す手段は持たない（支援者が端末を調べるときの保険）。
+定型文由来のお気に入りの重複判定は `sourceId` だけなので、★付きの定型文を削除して同じ文言の定型文を作り直し★を押すと、同文のお気に入りが 2 件並ぶ（L-99。お気に入り画面から消せる。content でも判定するかは判断待ち）。
 
 ## 検査
 

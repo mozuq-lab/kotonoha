@@ -151,7 +151,7 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
   }
 
   /// メソッド: 定型文を削除する
-  /// 実装内容: 指定IDの定型文を削除し、お気に入りの場合はFavoriteからも削除
+  /// 実装内容: 指定 ID の定型文だけを削除する（お気に入りは残る。ADR-005）
   Future<void> deletePhrase(String id) async {
     // 対象の定型文を検索 (対応)
     final index = state.phrases.indexWhere((p) => p.id == id);

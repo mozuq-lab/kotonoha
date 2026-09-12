@@ -26,6 +26,7 @@ import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/features/favorites/presentation/favorites_screen.dart';
 import 'package:kotonoha_app/features/history/presentation/history_screen.dart';
+import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
@@ -133,5 +134,39 @@ void main() {
 
     expect(find.text(seedContent), findsOneWidget,
         reason: '再起動後の UI が、保存された値から描かれていること');
+  });
+  test('定型文を削除しても、お気に入りは実 box に残り、開き直しても読める（ADR-005、L-39）', () async {
+    // Given: 実 box を見る ProviderContainer（repository_providers は Hive.isBoxOpen で判定する）
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final presets = container.read(presetPhraseNotifierProvider.notifier);
+    const content = 'ありがとう';
+    await presets.addPhrase(content, 'daily');
+    final phraseId = container
+        .read(presetPhraseNotifierProvider)
+        .phrases
+        .firstWhere((p) => p.content == content)
+        .id;
+    await presets.toggleFavorite(phraseId);
+
+    // When: 定型文を削除する
+    await presets.deletePhrase(phraseId);
+
+    // Then: box を閉じて開き直しても（＝アプリ再起動相当）お気に入りが残っている
+    await Hive.box<FavoriteItem>(PersistedArea.favorites.boxName).close();
+    final reopened =
+        await Hive.openBox<FavoriteItem>(PersistedArea.favorites.boxName);
+    final persisted = reopened.values.toList();
+    expect(persisted.map((f) => f.content), contains(content),
+        reason: '定型文を消してもお気に入りは実 box に残ること');
+    expect(persisted.single.sourceId, phraseId,
+        reason: '削除済み定型文の id を持ったまま残ること');
+    expect(
+      Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName)
+          .values
+          .where((p) => p.id == phraseId),
+      isEmpty,
+      reason: '定型文の側は実 box から消えていること',
+    );
   });
 }

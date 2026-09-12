@@ -248,6 +248,8 @@ void main() {
       favoriteState = container.read(favoriteProvider);
       expect(favoriteState.favorites.length, equals(1));
       expect(favoriteState.favorites.first.content, equals(content));
+      // 削除済み定型文の id を持ったまま残る（宙に浮いた sourceId ごと残す）
+      expect(favoriteState.favorites.first.sourceId, equals(phraseId));
     });
 
     // 全削除後に定型文をお気に入りにできる

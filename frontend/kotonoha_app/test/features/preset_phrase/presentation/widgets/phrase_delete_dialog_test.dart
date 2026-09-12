@@ -197,7 +197,7 @@ void main() {
     testWidgets('お気に入りに関する文言は出ない', (tester) async {
       final phrase = createTestPhrase(
         id: 'phrase-1',
-        content: 'お気に入り登録済みの定型文',
+        content: 'こんにちは',
       );
       await tester.pumpWidget(
         MaterialApp(
