@@ -19,14 +19,6 @@ class PhraseDeleteDialog extends StatelessWidget {
   /// パラメータ定義: 削除対象の定型文
   final PresetPhrase phrase;
 
-  /// パラメータ定義: この定型文がお気に入り登録済みかどうか
-  /// Phase 3 / WP-2: 定型文の削除はお気に入りも連動削除する
-  /// （deletePhrase → deleteFavoriteBySourceId）。お気に入りの正は
-  /// favoriteProvider（ADR-005）で PresetPhrase 自体からは分からないため
-  /// 呼び出し側（PresetPhraseScreen）が favoriteProvider から判定して渡す。
-  /// true のときだけ、お気に入りも消えることを確認文に足す。
-  final bool isFavorite;
-
   /// パラメータ定義: 削除確認時のコールバック
   final VoidCallback? onConfirm;
 
@@ -37,7 +29,6 @@ class PhraseDeleteDialog extends StatelessWidget {
   const PhraseDeleteDialog({
     super.key,
     required this.phrase,
-    this.isFavorite = false,
     this.onConfirm,
     this.onCancel,
   });
@@ -53,20 +44,9 @@ class PhraseDeleteDialog extends StatelessWidget {
 
     return AlertDialog(
       title: const Text('定型文の削除'),
-      content: isFavorite
-          // 告知: お気に入り登録済みのときだけ、連動削除を確認文で伝える
-          // （利用者は発話で訂正できず、端末内にしかデータが無いため）。
-          // 未登録の定型文では出さない（無用な不安を与えないため）。
-          ? const Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('この定型文を削除しますか？'),
-                SizedBox(height: 8),
-                Text('お気に入りからも削除されます'),
-              ],
-            )
-          : const Text('この定型文を削除しますか？'),
+      // 定型文を削除してもお気に入りは残る（ADR-005、2026-09-13）ので、
+      // お気に入りに関する告知は出さない。
+      content: const Text('この定型文を削除しますか？'),
       actions: [
         // キャンセルボタン
         TextButton(

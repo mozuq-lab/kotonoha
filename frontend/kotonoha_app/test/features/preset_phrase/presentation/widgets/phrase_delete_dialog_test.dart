@@ -191,71 +191,34 @@ void main() {
     });
   });
 
-  group('PhraseDeleteDialog - お気に入り連動削除の告知', () {
-    // Phase 3 / WP-2: 定型文削除でお気に入りも消えることを確認文で伝える
-    /// お気に入り登録済みの定型文を削除しようとすると、お気に入りからも
-    /// 消えることを示す文言が確認ダイアログに出る。
-    testWidgets('お気に入り登録済みの定型文では、お気に入りが消える旨の文言が出る', (tester) async {
-      final phrase = createTestPhrase(id: '1', content: 'テスト定型文');
-
+  group('PhraseDeleteDialog - お気に入りへの影響の告知', () {
+    // ADR-005（2026-09-13）: 定型文を削除してもお気に入りは残るので、
+    /// 削除確認ダイアログはお気に入りに関する文言を出さない
+    testWidgets('お気に入りに関する文言は出ない', (tester) async {
+      final phrase = createTestPhrase(
+        id: 'phrase-1',
+        content: 'こんにちは',
+      );
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => PhraseDeleteDialog(
-                      phrase: phrase,
-                      isFavorite: true,
-                    ),
-                  );
-                },
-                child: const Text('ダイアログを開く'),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => PhraseDeleteDialog(phrase: phrase),
+                ),
+                child: const Text('開く'),
               ),
             ),
           ),
         ),
       );
-
-      await tester.tap(find.text('ダイアログを開く'));
+      await tester.tap(find.text('開く'));
       await tester.pumpAndSettle();
 
-      // 結果検証: お気に入りが消える旨の文言が出ること（完全一致にしない）
-      expect(find.textContaining('お気に入り'), findsOneWidget);
-    });
-
-    /// 未登録の定型文を削除しようとしても、お気に入りが消える旨の文言は
-    /// 出ない（無用に利用者を不安にさせないため）。
-    testWidgets('未登録の定型文では、お気に入りが消える旨の文言は出ない', (tester) async {
-      final phrase = createTestPhrase(id: '1', content: 'テスト定型文');
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => PhraseDeleteDialog(
-                      phrase: phrase,
-                      isFavorite: false,
-                    ),
-                  );
-                },
-                child: const Text('ダイアログを開く'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('ダイアログを開く'));
-      await tester.pumpAndSettle();
-
-      // 結果検証: お気に入りに関する文言が出ないこと
+      expect(find.text('この定型文を削除しますか？'), findsOneWidget);
+      // 結果検証: お気に入りに関する文言が出ないこと（残るので告知しない）
       expect(find.textContaining('お気に入り'), findsNothing);
     });
   });
