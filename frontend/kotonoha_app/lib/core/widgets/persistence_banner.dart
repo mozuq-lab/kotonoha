@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state_provider.dart';
+import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 
 /// バナーの前景色と背景色の組
 /// コントラスト比を測るテストが参照するため公開している。
@@ -73,16 +74,26 @@ class PersistenceBanner extends ConsumerWidget {
     // Hive が全滅しても入力内容は残るため、「入力内容は消えます」は誤報である。
     // 1文字に分単位かかる利用者に「急げ・アプリを閉じるな」という誤った行動を
     // 強いることになる。
-    final (colors, failedAreas) = switch (state) {
-      PersistenceReady() => (null, const <PersistedArea>{}),
+    final dismissed = ref.watch(recreatedNoticeDismissedProvider);
+    const none = <PersistedArea>{};
+    final (colors, failedAreas, recreatedAreas) = switch (state) {
+      PersistenceReady() => (null, none, none),
       PersistenceUnavailable() => (
           unavailableBannerColors(scheme),
           PersistedArea.values.toSet(),
+          none,
         ),
       PersistenceRecoverableFailure(:final failedAreas) => (
           recoverableBannerColors(),
           failedAreas,
+          none,
         ),
+      // 破損で退避して作り直した告知（ADR-005、L-90）。利用者が閉じるまで残る
+      // 空の集合は「作り直し無し」と同じ扱い（失敗の文言で誤報しない）
+      PersistenceRecreated(:final recreatedAreas) =>
+        dismissed || recreatedAreas.isEmpty
+            ? (null, none, none)
+            : (recoverableBannerColors(), none, recreatedAreas),
     };
     // フェイルセーフ: ADR-005 は「保存されないことは**必ず**伝える」と
     // 定めている。failure 状態で無音になる経路を作ってはならない。
@@ -92,9 +103,11 @@ class PersistenceBanner extends ConsumerWidget {
     // **沈黙は、文言が多少不自然であることより悪い。**
     final message = colors == null
         ? null
-        : failedAreas.isEmpty
-            ? '保存できません。アプリを閉じると消えます'
-            : '${_areaNames(failedAreas)}を保存できません。アプリを閉じると消えます';
+        : recreatedAreas.isNotEmpty
+            ? '${_areaNames(recreatedAreas)}を読み込めなかったため、空の状態で開始しました。元のデータは端末内に退避しています'
+            : failedAreas.isEmpty
+                ? '保存できません。アプリを閉じると消えます'
+                : '${_areaNames(failedAreas)}を保存できません。アプリを閉じると消えます';
 
     if (colors == null || message == null) return const SizedBox.shrink();
 
@@ -104,9 +117,12 @@ class PersistenceBanner extends ConsumerWidget {
     // style を部分指定しただけでは下線が残る（実機の Chrome で確認した）。
     // excludeSemantics: 付けないと、この label と子 Text のラベルが
     // 同一ノードに連結され、スクリーンリーダーが同じ文を2回読む。
+    // 読み上げの二重化を避けるため、本文はバナーの根の 1 ノード（label）にまとめ、
+    // Icon と Text は個別ノードから除く。「閉じる」は除かない（excludeSemantics で
+    // 子ごと捨てると支援技術から見えなくなる）。
     return Semantics(
       label: message,
-      excludeSemantics: true,
+      container: true,
       child: Material(
         color: colors.background,
         child: Container(
@@ -115,15 +131,30 @@ class PersistenceBanner extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.warning_amber_rounded,
-                  size: 18, color: colors.foreground),
+              ExcludeSemantics(
+                child: Icon(Icons.warning_amber_rounded,
+                    size: 18, color: colors.foreground),
+              ),
               const SizedBox(width: 8),
               Flexible(
-                child: Text(
-                  message,
-                  style: TextStyle(color: colors.foreground, fontSize: 14),
+                child: ExcludeSemantics(
+                  child: Text(
+                    message,
+                    style: TextStyle(color: colors.foreground, fontSize: 14),
+                  ),
                 ),
               ),
+              // 作り直しの告知だけ閉じられる（保存できない状態の告知は閉じられない）
+              if (recreatedAreas.isNotEmpty)
+                TextButton(
+                  onPressed: () => ref
+                      .read(recreatedNoticeDismissedProvider.notifier)
+                      .dismiss(),
+                  child: Text(
+                    '閉じる',
+                    style: TextStyle(color: colors.foreground),
+                  ),
+                ),
             ],
           ),
         ),

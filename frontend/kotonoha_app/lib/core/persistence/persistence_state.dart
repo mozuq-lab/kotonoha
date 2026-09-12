@@ -43,7 +43,7 @@ extension PersistedAreaNames on PersistedArea {
 }
 
 /// 永続化の状態
-/// 状態は3つしかない。sealed にしてあるので、利用側で switch を書けば
+/// 状態は 4 つしかない。sealed にしてあるので、利用側で switch を書けば
 /// 分岐漏れはコンパイルエラーになる。
 sealed class PersistenceState {
   /// 既定のコンストラクタ
@@ -78,6 +78,17 @@ final class PersistenceUnavailable extends PersistenceState {
   const PersistenceUnavailable();
 }
 
+/// 破損した box を `<box>.hive.corrupt.bak` に退避して空で作り直した状態。
+/// 保存はできるが、作り直した領域の以前のデータは無い。
+/// 「黙って消える」を避けるため、領域名つきで利用者に伝える（ADR-005、L-90）。
+final class PersistenceRecreated extends PersistenceState {
+  /// 作り直した領域
+  final Set<PersistedArea> recreatedAreas;
+
+  /// Recreated 状態を作る
+  const PersistenceRecreated(this.recreatedAreas);
+}
+
 /// 開いている box の集合から永続化の状態を導く
 /// [openedAreas] は保存が効いている領域。`Hive.initFlutter` 自体が
 /// 失敗した場合は box が1つも開かないため、空集合として渡ってきて
@@ -85,9 +96,15 @@ final class PersistenceUnavailable extends PersistenceState {
 /// 同じ事実の出所が2つになるので受け取らない。
 PersistenceState resolvePersistenceState({
   required Set<PersistedArea> openedAreas,
+  Set<PersistedArea> recreatedAreas = const {},
 }) {
   final failedAreas = PersistedArea.values.toSet().difference(openedAreas);
-  if (failedAreas.isEmpty) return const PersistenceReady();
+  if (failedAreas.isEmpty) {
+    // 開けない領域が無くても、破損で作り直した領域があれば利用者に伝える（ADR-005）
+    return recreatedAreas.isEmpty
+        ? const PersistenceReady()
+        : PersistenceRecreated(recreatedAreas);
+  }
   if (failedAreas.length == PersistedArea.values.length) {
     return const PersistenceUnavailable();
   }

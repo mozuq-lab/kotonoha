@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state_provider.dart';
+import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/favorite_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
@@ -108,6 +109,23 @@ void main() {
         (state as PersistenceRecoverableFailure).failedAreas,
         equals({PersistedArea.favorites}),
       );
+    });
+
+    test('全 box が開いていて作り直した領域があれば Recreated になる（起動時に initHive が報告する）',
+        () async {
+      await Hive.openBox<HistoryItem>(PersistedArea.history.boxName);
+      await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      await Hive.openBox<FavoriteItem>(PersistedArea.favorites.boxName);
+      final container = ProviderContainer(
+        overrides: [
+          recreatedAreasProvider.overrideWithValue({PersistedArea.history}),
+        ],
+      );
+      addTearDown(container.dispose);
+      final state = container.read(persistenceStateProvider);
+      expect(state, isA<PersistenceRecreated>());
+      expect((state as PersistenceRecreated).recreatedAreas,
+          {PersistedArea.history});
     });
 
     test('nullを返すrepositoryの領域と、状態が報告する失敗領域が一致する', () async {

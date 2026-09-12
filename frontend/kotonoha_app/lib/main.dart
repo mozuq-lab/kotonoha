@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kotonoha_app/app.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state.dart';
+import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 
 /// アプリケーションのエントリーポイント
@@ -24,8 +26,10 @@ void main() async {
   // アプリがrunAppへ到達できるようにtry/catchで保護する。
   // Hiveが利用不可でもrepository_providersのnullフォールバックにより
   // 文字盤・TTS等の基本機能はインメモリ動作で継続できる。
+  // 破損で退避して空で作り直した領域。永続化状態として利用者に伝える（ADR-005、L-90）
+  var recreatedAreas = const <PersistedArea>{};
   try {
-    await initHive();
+    recreatedAreas = await initHive();
   } catch (error, stackTrace) {
     debugPrint('[main] Hive初期化に失敗しました。インメモリ動作で起動を継続します: $error');
     debugPrintStack(stackTrace: stackTrace);
@@ -33,8 +37,9 @@ void main() async {
 
   // アプリ起動: ProviderScopeでKotonohaAppをラップして起動
   runApp(
-    const ProviderScope(
-      child: KotonohaApp(),
+    ProviderScope(
+      overrides: [recreatedAreasProvider.overrideWithValue(recreatedAreas)],
+      child: const KotonohaApp(),
     ),
   );
 }

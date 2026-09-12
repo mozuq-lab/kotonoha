@@ -51,6 +51,34 @@ void main() {
     });
   });
 
+  group('PersistenceRecreated（Hive の破損で退避して作り直した領域）', () {
+    test('作り直した領域があり失敗が無ければ Recreated で、領域を保持する', () {
+      final state = resolvePersistenceState(
+        openedAreas: PersistedArea.values.toSet(),
+        recreatedAreas: {PersistedArea.history},
+      );
+      expect(state, isA<PersistenceRecreated>());
+      expect((state as PersistenceRecreated).recreatedAreas,
+          {PersistedArea.history});
+    });
+
+    test('作り直した領域があっても、開けない領域があれば失敗の状態が優先する', () {
+      final state = resolvePersistenceState(
+        openedAreas: {PersistedArea.history, PersistedArea.favorites},
+        recreatedAreas: {PersistedArea.history},
+      );
+      expect(state, isA<PersistenceRecoverableFailure>());
+    });
+
+    test('作り直した領域が無ければ Ready のまま', () {
+      final state = resolvePersistenceState(
+        openedAreas: PersistedArea.values.toSet(),
+        recreatedAreas: const {},
+      );
+      expect(state, isA<PersistenceReady>());
+    });
+  });
+
   group('PersistedArea', () {
     test('boxNameは領域ごとに異なる', () {
       final names = PersistedArea.values.map((a) => a.boxName).toSet();

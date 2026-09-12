@@ -7,6 +7,7 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
@@ -243,5 +244,52 @@ void main() {
         );
       });
     }
+  });
+  group('PersistenceRecreated（破損で退避して作り直した）の告知', () {
+    testWidgets('空の状態で開始したことと、元のデータを退避したことを領域名つきで伝える', (tester) async {
+      await _pumpBanner(
+        tester,
+        const PersistenceRecreated(
+            {PersistedArea.history, PersistedArea.presetPhrases}),
+      );
+      expect(find.textContaining('空の状態で開始'), findsOneWidget);
+      expect(find.textContaining('退避'), findsOneWidget);
+      expect(find.textContaining('履歴'), findsOneWidget);
+      expect(find.textContaining('定型文'), findsOneWidget);
+      expect(find.textContaining('お気に入り'), findsNothing,
+          reason: '作り直していない領域の名前は出さない');
+    });
+
+    testWidgets('「閉じる」は支援技術から見え、タップの操作を持つ（読み上げ利用者も閉じられる）', (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pumpBanner(
+        tester,
+        const PersistenceRecreated({PersistedArea.favorites}),
+      );
+      // ウィジェット木ではなくセマンティクス木を見る（excludeSemantics の内側だと存在しない）
+      final node = tester.getSemantics(find.text('閉じる'));
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue,
+          reason: '閉じるがボタンとして支援技術に露出していること');
+      expect(node.getSemanticsData().label, contains('閉じる'));
+      handle.dispose();
+    });
+
+    testWidgets('空の集合の Recreated は何も表示しない（失敗の文言で誤報しない）', (tester) async {
+      await _pumpBanner(tester, const PersistenceRecreated({}));
+      expect(find.textContaining('保存できません'), findsNothing);
+      expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
+    });
+
+    testWidgets('告知は「閉じる」で消え、高さを取らなくなる', (tester) async {
+      await _pumpBanner(
+        tester,
+        const PersistenceRecreated({PersistedArea.favorites}),
+      );
+      expect(find.text('閉じる'), findsOneWidget);
+      await tester.tap(find.text('閉じる'));
+      await tester.pump();
+      expect(find.textContaining('空の状態で開始'), findsNothing);
+      expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
+    });
   });
 }

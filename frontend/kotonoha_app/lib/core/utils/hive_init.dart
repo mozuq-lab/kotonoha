@@ -81,6 +81,7 @@ Future<Box<T>?> openBoxWithRecovery<T>(
   String name, {
   bool crashRecovery = true,
   String? hivePath,
+  void Function()? onRecreated,
 }) async {
   try {
     return await Hive.openBox<T>(name, crashRecovery: crashRecovery);
@@ -143,6 +144,8 @@ Future<Box<T>?> openBoxWithRecovery<T>(
       // 復旧処理: 再オープン: 削除後にBoxを再オープンする
       final recovered = await Hive.openBox<T>(name);
       debugPrint('[hive_init] Box "$name" の復旧に成功しました');
+      // 空で作り直したことを呼び出し元（initHive → 永続化状態）に伝える（ADR-005、L-90）
+      onRecreated?.call();
       return recovered;
     } catch (recoveryError, recoveryStackTrace) {
       // 復旧失敗: 再オープンも失敗した場合はnullを返し、インメモリフォールバックへ委ねる
@@ -217,7 +220,7 @@ void registerPersistedTypeAdapters({
 /// 破損時の継続動作: 各Boxのオープンは個別にtry/catchされ、復旧不可能な場合でも
 /// 例外を外部に投げない。該当するBoxは未オープンのまま扱われ
 /// `repository_providers`側のnullフォールバックによりインメモリ動作で継続する。
-Future<void> initHive() async {
+Future<Set<PersistedArea>> initHive() async {
   // Hive初期化: Flutter環境用のHive初期化
   // 実装内容: ローカルストレージのパス設定とHive環境の準備
   await Hive.initFlutter();
@@ -249,24 +252,46 @@ Future<void> initHive() async {
   // 永続化面を見逃す（台帳 L-31）。
   registerPersistedTypeAdapters();
 
-  // ボックスオープン: historyボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
-  // 実装内容: 'history'という名前でHistoryItem用のボックスをオープン
-  await openBoxWithRecovery<HistoryItem>(
-    PersistedArea.history.boxName,
-    hivePath: hivePath,
-  );
+  return openPersistedBoxes(hivePath: hivePath);
+}
 
-  // ボックスオープン: presetPhrasesボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
-  // 実装内容: 'presetPhrases'という名前でPresetPhrase用のボックスをオープン
-  await openBoxWithRecovery<PresetPhrase>(
-    PersistedArea.presetPhrases.boxName,
-    hivePath: hivePath,
-  );
-
-  // ボックスオープン: favoritesボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
-  // 実装内容: 'favorites'という名前でFavoriteItem用のボックスをオープン
-  await openBoxWithRecovery<FavoriteItem>(
-    PersistedArea.favorites.boxName,
-    hivePath: hivePath,
-  );
+/// 3 つの永続化領域の box を順に開き、破損で退避して空で作り直した領域を返す
+///
+/// box 名と領域は同じ [PersistedArea] から導くので、「history の箱を作り直して
+/// presetPhrases と告げる」形は書けない。[initHive] が呼ぶ。テストは
+/// `Hive.init(tempDir)` の後に直接呼べる（`Hive.initFlutter` を通らない）。
+/// [crashRecovery] は本番では既定の true。Hive 自身の自動復旧で開ける破損は
+/// 自前経路（退避＋告知）を通らない（台帳 L-101）。テストは false で自前経路を通す。
+Future<Set<PersistedArea>> openPersistedBoxes({
+  required String? hivePath,
+  bool crashRecovery = true,
+}) async {
+  final recreated = <PersistedArea>{};
+  for (final area in PersistedArea.values) {
+    void mark() => recreated.add(area);
+    switch (area) {
+      case PersistedArea.history:
+        await openBoxWithRecovery<HistoryItem>(
+          area.boxName,
+          crashRecovery: crashRecovery,
+          hivePath: hivePath,
+          onRecreated: mark,
+        );
+      case PersistedArea.presetPhrases:
+        await openBoxWithRecovery<PresetPhrase>(
+          area.boxName,
+          crashRecovery: crashRecovery,
+          hivePath: hivePath,
+          onRecreated: mark,
+        );
+      case PersistedArea.favorites:
+        await openBoxWithRecovery<FavoriteItem>(
+          area.boxName,
+          crashRecovery: crashRecovery,
+          hivePath: hivePath,
+          onRecreated: mark,
+        );
+    }
+  }
+  return Set.unmodifiable(recreated);
 }
