@@ -15,6 +15,7 @@ import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state_provider.dart';
 import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
+import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.dart';
 
 /// バナーの前景色と背景色の組
 /// コントラスト比を測るテストが参照するため公開している。
@@ -66,57 +67,55 @@ class PersistenceBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(persistenceStateProvider);
     final scheme = Theme.of(context).colorScheme;
-
-    // 文言は失われる領域から作る: バナーが「消える」と言ってよい対象は
-    // PersistenceState が実際に把握している領域（＝PersistedArea）に限る。
-    // 「入力内容」と書いてはいけない: 下書き（入力バッファ）は Hive では
-    // なく SharedPreferences に保存され、AppLifecycleObserver が復元する。
-    // Hive が全滅しても入力内容は残るため、「入力内容は消えます」は誤報である。
-    // 1文字に分単位かかる利用者に「急げ・アプリを閉じるな」という誤った行動を
-    // 強いることになる。
     final dismissed = ref.watch(recreatedNoticeDismissedProvider);
+    final settingsFailed = ref.watch(settingsWriteFailureProvider).isNotEmpty;
     const none = <PersistedArea>{};
-    final (colors, failedAreas, recreatedAreas) = switch (state) {
-      PersistenceReady() => (null, none, none),
+
+    // 保存できない状態（閉じられない）と作り直しの告知（閉じられる）は別々に組み、
+    // 両方あれば 1 つの文に並べる。どちらかで他方を隠さない（ADR-005、L-83／L-90）。
+    final (failureColors, failedAreas, isFailureState) = switch (state) {
+      PersistenceReady() => (null, none, false),
+      PersistenceRecreated() => (null, none, false),
       PersistenceUnavailable() => (
           unavailableBannerColors(scheme),
           PersistedArea.values.toSet(),
-          none,
+          true,
         ),
       PersistenceRecoverableFailure(:final failedAreas) => (
           recoverableBannerColors(),
           failedAreas,
-          none,
+          true,
         ),
-      // 破損で退避して作り直した告知（ADR-005、L-90）。利用者が閉じるまで残る
-      // 空の集合は「作り直し無し」と同じ扱い（失敗の文言で誤報しない）
-      PersistenceRecreated(:final recreatedAreas) =>
-        dismissed || recreatedAreas.isEmpty
-            ? (null, none, none)
-            : (recoverableBannerColors(), none, recreatedAreas),
     };
-    // フェイルセーフ: ADR-005 は「保存されないことは**必ず**伝える」と
-    // 定めている。failure 状態で無音になる経路を作ってはならない。
-    // resolvePersistenceState は空集合の RecoverableFailure を作らないが
-    // コンストラクタは公開されており、型が空集合を禁じてもいない。
-    // 領域名が得られないときは、対象を特定しない文言に倒す。
-    // **沈黙は、文言が多少不自然であることより悪い。**
-    final message = colors == null
-        ? null
-        : recreatedAreas.isNotEmpty
-            ? '${_areaNames(recreatedAreas)}を読み込めなかったため、空の状態で開始しました。元のデータは端末内に退避しています'
-            : failedAreas.isEmpty
-                ? '保存できません。アプリを閉じると消えます'
-                : '${_areaNames(failedAreas)}を保存できません。アプリを閉じると消えます';
+    // 空の集合は「作り直し無し」と同じ扱い（失敗の文言で誤報しない）
+    final recreatedAreas = switch (state) {
+      PersistenceRecreated(:final recreatedAreas) when !dismissed =>
+        recreatedAreas,
+      _ => none,
+    };
 
-    if (colors == null || message == null) return const SizedBox.shrink();
+    // 設定（SharedPreferences）の保存失敗は Hive の領域と同じ告知に名前を並べる
+    final failedNames = [
+      ..._areaNames(failedAreas),
+      if (settingsFailed) '設定',
+    ];
+    // 失敗の領域が分からないときは対象を特定しない文言に倒す（設定の失敗が重なっても同じ）
+    final failureText = isFailureState && failedAreas.isEmpty
+        ? '保存できません。アプリを閉じると消えます'
+        : failedNames.isNotEmpty
+            ? '${failedNames.join('、')}を保存できません。アプリを閉じると消えます'
+            : null;
+    final recreatedText = recreatedAreas.isNotEmpty
+        ? '${_areaNames(recreatedAreas).join('、')}を読み込めなかったため、空の状態で開始しました。元のデータは端末内に退避しています'
+        : null;
+    if (failureText == null && recreatedText == null) {
+      return const SizedBox.shrink();
+    }
+    final colors = failureColors ?? recoverableBannerColors();
+    final message = [failureText, recreatedText].whereType<String>().join(' ');
+    // 「閉じる」は作り直しの文が実際に出ているときだけ（見えない告知を捨てない）
+    final showRecreated = recreatedText != null;
 
-    // Material で包む理由: このバナーは AppShell に置かれ、各画面の
-    // Scaffold より外側にある。Material 祖先が無い位置の Text は
-    // WidgetsApp の既定スタイル（赤文字＋黄色の二重下線）を継承するため
-    // style を部分指定しただけでは下線が残る（実機の Chrome で確認した）。
-    // excludeSemantics: 付けないと、この label と子 Text のラベルが
-    // 同一ノードに連結され、スクリーンリーダーが同じ文を2回読む。
     // 読み上げの二重化を避けるため、本文はバナーの根の 1 ノード（label）にまとめ、
     // Icon と Text は個別ノードから除く。「閉じる」は除かない（excludeSemantics で
     // 子ごと捨てると支援技術から見えなくなる）。
@@ -145,7 +144,7 @@ class PersistenceBanner extends ConsumerWidget {
                 ),
               ),
               // 作り直しの告知だけ閉じられる（保存できない状態の告知は閉じられない）
-              if (recreatedAreas.isNotEmpty)
+              if (showRecreated)
                 TextButton(
                   onPressed: () => ref
                       .read(recreatedNoticeDismissedProvider.notifier)
@@ -165,8 +164,8 @@ class PersistenceBanner extends ConsumerWidget {
   /// 保存できない領域の名前を、宣言順で読点区切りにする
   /// Set の反復順に依存すると文言が実行ごとに変わるため
   /// [PersistedArea] の宣言順に並べ直す。
-  String _areaNames(Set<PersistedArea> areas) => PersistedArea.values
+  List<String> _areaNames(Set<PersistedArea> areas) => PersistedArea.values
       .where(areas.contains)
       .map((area) => area.label)
-      .join('、');
+      .toList();
 }
