@@ -116,6 +116,8 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
       // 再保存に失敗しても、今回復元した値は返す。
       try {
+        // 対象外（ADR-005、L-83）: 起動時の書き戻し。失敗しても旧形式が残り次回に再試行される。
+        // 起動時に閉じられないバナーを出さない。
         await _prefs!.setString(key, migrated.name);
       } catch (_) {
         // 再保存失敗時もアプリはクラッシュさせない
@@ -129,14 +131,27 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
   }
 
   /// 保存の結果を報告する（ADR-005、L-83）。失敗しても UI 状態は保ち、
-  /// 利用者には常設バナーで「設定を保存できません」と伝える（NFR-301: 使い続けられる）
-  Future<void> _persist(Future<void> Function() write) async {
-    try {
-      await write();
-      ref.read(settingsWriteFailureProvider.notifier).record(succeeded: true);
-    } catch (_) {
-      ref.read(settingsWriteFailureProvider.notifier).record(succeeded: false);
+  /// 利用者には常設バナーで「設定を保存できません」と伝える（NFR-301: 使い続けられる）。
+  /// 失敗と数えるもの: SharedPreferences が使えない（[_prefs] が無い）／
+  /// 書き込みが false を返す（Android の commit() の失敗）／例外（iOS・Web のチャネル）。
+  /// 報告は try の外で行い、dispose 後は報告しない（報告の失敗を保存の失敗にしない）。
+  Future<void> _persist(
+    String key,
+    Future<bool> Function(SharedPreferences prefs) write,
+  ) async {
+    var succeeded = false;
+    final prefs = _prefs;
+    if (prefs != null) {
+      try {
+        succeeded = await write(prefs);
+      } catch (_) {
+        succeeded = false;
+      }
     }
+    if (!ref.mounted) return;
+    ref
+        .read(settingsWriteFailureProvider.notifier)
+        .record(key: key, succeeded: succeeded);
   }
 
   Future<void> setFontSize(FontSize fontSize) async {
@@ -145,9 +160,10 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
     state = AsyncValue.data(currentSettings.copyWith(fontSize: fontSize));
 
-    await _persist(() async {
-      await _prefs?.setString('fontSize', fontSize.name);
-    });
+    await _persist(
+      'fontSize',
+      (prefs) => prefs.setString('fontSize', fontSize.name),
+    );
   }
 
   Future<void> setTheme(AppTheme theme) async {
@@ -156,9 +172,10 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
     state = AsyncValue.data(currentSettings.copyWith(theme: theme));
 
-    await _persist(() async {
-      await _prefs?.setString('theme', theme.name);
-    });
+    await _persist(
+      'theme',
+      (prefs) => prefs.setString('theme', theme.name),
+    );
   }
 
   Future<void> setTTSSpeed(TTSSpeed speed) async {
@@ -174,9 +191,10 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       // TTS反映に失敗しても、設定状態と保存処理は継続する。
     }
 
-    await _persist(() async {
-      await _prefs?.setString('tts_speed', speed.name);
-    });
+    await _persist(
+      'tts_speed',
+      (prefs) => prefs.setString('tts_speed', speed.name),
+    );
   }
 
   Future<void> setAIPoliteness(PolitenessLevel level) async {
@@ -185,9 +203,10 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
     state = AsyncValue.data(currentSettings.copyWith(aiPoliteness: level));
 
-    await _persist(() async {
-      await _prefs?.setString('ai_politeness', level.name);
-    });
+    await _persist(
+      'ai_politeness',
+      (prefs) => prefs.setString('ai_politeness', level.name),
+    );
   }
 
   Future<void> setAIPrivacyConsent(bool accepted) async {
@@ -198,9 +217,10 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       currentSettings.copyWith(hasAcceptedAIPrivacyPolicy: accepted),
     );
 
-    await _persist(() async {
-      await _prefs?.setBool('ai_privacy_consent', accepted);
-    });
+    await _persist(
+      'ai_privacy_consent',
+      (prefs) => prefs.setBool('ai_privacy_consent', accepted),
+    );
   }
 
   /// 背景: 疲労時・症状進行時に文字盤なしの大ボタン画面へ切り替えるための設定。
@@ -212,8 +232,9 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
     state = AsyncValue.data(currentSettings.copyWith(simpleMode: enabled));
 
-    await _persist(() async {
-      await _prefs?.setBool('simple_mode', enabled);
-    });
+    await _persist(
+      'simple_mode',
+      (prefs) => prefs.setBool('simple_mode', enabled),
+    );
   }
 }

@@ -318,7 +318,7 @@ void main() {
       expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
       container
           .read(settingsWriteFailureProvider.notifier)
-          .record(succeeded: false);
+          .record(key: 'fontSize', succeeded: false);
       await tester.pump();
       expect(find.textContaining('設定を保存できません'), findsOneWidget);
       expect(find.text('閉じる'), findsNothing, reason: '保存できない状態の告知は閉じられない');
@@ -331,18 +331,54 @@ void main() {
       );
       container
           .read(settingsWriteFailureProvider.notifier)
-          .record(succeeded: false);
+          .record(key: 'fontSize', succeeded: false);
       await tester.pump();
       expect(find.textContaining('履歴、設定を保存できません'), findsOneWidget);
+    });
+
+    testWidgets('作り直しと設定の失敗が同時なら、両方を 1 つの告知に出し、閉じるは作り直しの文だけを消す',
+        (tester) async {
+      final container = await pumpWithContainer(
+        tester,
+        const PersistenceRecreated({PersistedArea.history}),
+      );
+      container
+          .read(settingsWriteFailureProvider.notifier)
+          .record(key: 'fontSize', succeeded: false);
+      await tester.pump();
+      expect(find.textContaining('設定を保存できません'), findsOneWidget);
+      expect(find.textContaining('空の状態で開始'), findsOneWidget,
+          reason: '作り直しの事実が設定の失敗に隠れないこと');
+      expect(find.text('閉じる'), findsOneWidget);
+
+      await tester.tap(find.text('閉じる'));
+      await tester.pump();
+      expect(find.textContaining('空の状態で開始'), findsNothing);
+      expect(find.textContaining('設定を保存できません'), findsOneWidget,
+          reason: '閉じられるのは作り直しの文だけ');
+      expect(find.text('閉じる'), findsNothing);
+    });
+
+    testWidgets('保存できない領域が分からない失敗と設定の失敗が同時なら、対象を特定しない文言のまま', (tester) async {
+      final container = await pumpWithContainer(
+        tester,
+        const PersistenceRecoverableFailure(<PersistedArea>{}),
+      );
+      container
+          .read(settingsWriteFailureProvider.notifier)
+          .record(key: 'theme', succeeded: false);
+      await tester.pump();
+      expect(find.text('保存できません。アプリを閉じると消えます'), findsOneWidget,
+          reason: '「設定だけ」と読める文言に倒さない');
     });
 
     testWidgets('保存が成功に戻ったら設定の告知は消える', (tester) async {
       final container =
           await pumpWithContainer(tester, const PersistenceReady());
       final notifier = container.read(settingsWriteFailureProvider.notifier);
-      notifier.record(succeeded: false);
+      notifier.record(key: 'fontSize', succeeded: false);
       await tester.pump();
-      notifier.record(succeeded: true);
+      notifier.record(key: 'fontSize', succeeded: true);
       await tester.pump();
       expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
     });

@@ -47,6 +47,7 @@
 - [ ] L-100 `resetToDefaults()` は lib からの呼び出しゼロの死蔵コードで、呼ばれると定型文由来のお気に入りを全件 dangling にする — frontend/kotonoha_app/lib/features/preset_phrase/providers/preset_phrase_notifier.dart:292（#125 の独立監査、棚卸し観点 1）
 - [ ] L-102 作り直しと保存失敗が同時だと作り直しの告知が失敗の告知に置き換わる／退避→削除の後に再オープンが失敗すると削除の事実が伝わらない — frontend/kotonoha_app/lib/core/persistence/persistence_state.dart:101-111、lib/core/utils/hive_init.dart:150-157（#126 の独立監査）
 - [ ] L-103 常設バナーの文字はアプリ設定の 3 段階フォントに追随しない（`fontSize: 14` 固定。OS の文字拡大は効く） — frontend/kotonoha_app/lib/core/widgets/persistence_banner.dart（#126 の独立監査。L-74 と同系）
+- [ ] L-104 下書き（`draft_text`）とチュートリアル完了フラグの SharedPreferences 書き込みは失敗しても報告されない（try も無く未処理の非同期エラーになる）。下書きは NFR-302 の対象で「最もコストの高い損失」とコード自身が書く — frontend/kotonoha_app/lib/features/app_state/providers/app_session_provider.dart:112-150、lib/features/help/providers/tutorial_provider.dart:60-71（#127 の独立監査）
 
 ## 判断待ち
 - [x] L-39 ADR-005 の却下理由と連鎖削除の矛盾 — docs/adr/ADR-005。Phase 5 の後に扱う。解消（2026-09-13、ADR-005 改訂: 連鎖削除を外し TC-SYNC-202 を「残る」に）
