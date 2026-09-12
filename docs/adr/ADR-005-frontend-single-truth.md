@@ -1,6 +1,6 @@
 # ADR-005: frontend は 1 概念 1 真実。永続化の失敗は利用者に伝える
 
-状態: 承認済み（2026-08-29 決定、2026-08-30/31 の Phase 3 実装で確定、2026-09-06 書き直し。2 系統レビュー反映済み。署名: mozuq）／ 実装は PR #88（main へマージ済み）
+状態: 承認済み（2026-08-29 決定、2026-08-30/31 の Phase 3 実装で確定、2026-09-06 書き直し、2026-09-13 改訂: お気に入りは定型文の削除で消えない／作り直しと設定の失敗も伝える／ディスクフルは限界。2 系統レビュー反映済み。署名: mozuq）／ 実装は PR #88 と 2026-09-13 の 2 PR
 
 ## 背景と課題
 
@@ -21,9 +21,10 @@ Hive が開けないと黙ってインメモリで動き続けた（`frontend/ko
 ## 決定
 
 - お気に入りは案 3。UI が実際に使っている `favoriteProvider` が真実。キーは内容テキストではなく id で（同文の定型文で衝突しない）、`FavoriteItem` のレコード同一性と、定型文連動の同期キー `sourceId` に適用する
+- **お気に入りは定型文の削除で消えない**（2026-09-13、L-39 解消）。`deletePhrase()` は `deleteFavoriteBySourceId()` を呼ばず、`TC-SYNC-202` は「残る」を固定する。定型文の編集がお気に入りに追随しない実装と整合し、案 2 却下の理由（寿命は独立）どおり。削除確認ダイアログの「お気に入りからも削除されます」は消した
 - **真実は 1 つ、射影は用途ごとに決めてよい。** 履歴画面の星は content 照合のまま（sourceId 照合にすると、定型文由来の同文に星が付かない／同じ文言を再発話すると付かない／履歴 50 件上限でアンカーの履歴が消えると二度と付かなくなる。「キーは id」の理由が名指しした衝突は「同文の**定型文どうし**」で、`addFavoriteFromPresetPhrase` の sourceId 重複判定で解決済み）。`input_candidate_scorer` はテキスト射影のまま（`computeCandidates` は `List<String>` しか受けず、集計は候補テキストがキー、出力は `InputCandidate(text:, score:)` で、id を持てる場所が型の上に存在しない）
 - `isFavorite` は `HistoryItem`・`PresetPhrase` の両方から削除済み。Hive migration は実装してレビューまで通したうえで撤回した（`f761afc`）。守る価値のあるデータが検証端末に無く、残すと (1) お気に入り画面から削除したものが再起動で復活する（UI から到達可能）(2) 移行は `PresetPhrase.isFavorite` を読むのでそのフィールドを消すビルドと共存できない、の 2 つが避けられなかった
-- 永続化は案 c。`sealed class PersistenceState { Ready / RecoverableFailure / Unavailable }` とし、保存されない状態を利用者に通知する
+- 永続化は案 c。`sealed class PersistenceState { Ready / RecoverableFailure / Unavailable }` とし、保存されない状態を利用者に通知する。**Hive の破損で退避して作り直したときも同じ経路で領域名つきで伝える**（退避ファイル `<box>.hive.corrupt.bak` は端末内に残すだけで、戻す手段は持たない）。**SharedPreferences の設定保存の失敗も同じ報告に流す**（2026-09-13 決定。実装は L-90）
 - 1 概念 1 真実は**最も外側の境界**で確かめる。UI → provider → repository → 実 box → 再起動相当 → UI を通す往復テストを history / preset_phrase / favorite / settings の 4 feature に置く（定型文の往復は presetPhrases box と favorites box の 2 つをまたぐので、定型文側にフラグが残っていたら通らない）
 
 ## 決定理由と却下案
@@ -38,15 +39,16 @@ Hive が開けないと黙ってインメモリで動き続けた（`frontend/ko
 永続フィールドを伴わない「UI ロジックだけの重複」は許可リストで捕まえられない。ロジックの `frontend/kotonoha_app/lib/features/favorite/` と UI の `frontend/kotonoha_app/lib/features/favorites/` の分裂は現存する（L-67、Phase 5（文書）の後）。
 許可リスト検査が守るのは起動時の共有登録経路だけで、共有関数を経由しない直接の `Hive.registerAdapter` / `Hive.openBox` は守れない。Dart には「この API を他所で呼ばせない」構造が無く、開かれている box を列挙する公開 API も Hive に無い。**自作の検出器は作らない**（AGENTS.md 規律 8 ／ADR-008）。受け皿は AGENTS.md 規律 8 と層 1・3・5。
 「トップレベル可変変数の禁止」は analyzer では実現できない（`avoid_top_level_mutable_variables` も `avoid_global_state` も Dart に存在しない。`undefined_lint`、2026-08-31 実測）。記録して受け入れた。
-**却下理由と実装が矛盾している（未解決）**: 案 2 の却下理由は「項目の削除・保持上限と独立に生きるべき」だが、`deletePhrase()` は `deleteFavoriteBySourceId()` を呼び、定型文を消すとお気に入りも消える。`TC-SYNC-202`（要件定義 3.2「孤立データ防止」由来）が**それを正解として固定している**ため、全テスト緑はこの不適合を反証しない（L-39）。2026-08-30 の対応は振る舞いを変えず、削除確認ダイアログに「お気に入りからも削除されます」を出すだけ（登録済みのときだけ）。解くには本 ADR か要件定義 3.2 の改訂が要る。
+Hive が報告しない書き込み失敗（box が開いたままのディスクフル。hive 2.2.3 `box_impl.dart:82`）は伝えられない。EDGE-003（容量不足の警告）は未達のまま受け入れる（L-13。自作の検出器も空き容量の事前測定も作らない、AGENTS.md 規律 8）。退避したデータを利用者が戻す手段は持たない（支援者が端末を調べるときの保険）。
 
 ## 検査
 
 (i) 層 2 — 永続化（`scripts/adr-touch.sh` が `lib/shared/models/*_adapter.dart` と `frontend/kotonoha_app/lib/core/utils/hive_init.dart` を拾って索引行を貼る）。
 (ii) `frontend/kotonoha_app/test/core/persistence/hive_schema_allowlist_test.dart`（`typeId`・永続フィールド）。検査は `initHive()` が呼ぶのと同じ `registerPersistedTypeAdapters()` を呼び、**その関数が登録した実体だけ**を見る（検査側が一覧を書き写すと、本番にだけ足された永続化面を見逃す。L-31）。当初の実装は「typeId が増えたら赤」だが、赤いメッセージが許可リストの更新を指示するため、指示どおり足すとそのアダプタのフィールド番号・型を以後どの検査も見ない状態で緑に戻った（2026-08-31 の 2 系統レビュー）。検査を足すのではなく、登録の観測点を 1 つにする**構造の変更**で塞いだ。
 (ii) 往復テスト 4 本（`frontend/kotonoha_app/test/features/*/*_round_trip_test.dart`）。守る対象が文書に名指しされている 4 つの lint（`unawaited_futures` / `avoid_dynamic_calls` / `cancel_subscriptions` / `close_sinks`）を、CI で実際に落ちる強さ（warning）まで昇格してある——既定の info は `flutter analyze --no-fatal-infos` を通過して一度も発火しない。
+(ii) `frontend/kotonoha_app/test/features/favorite_sync/favorite_sync_test.dart` の TC-SYNC-202 が「定型文を削除してもお気に入りが残る」を固定する（2026-09-13 に赤→緑で確認）。作り直しの通知と設定保存の失敗は、破損ファイルと保存失敗の注入で赤を見てから緑にする（L-90）。
 (iii) UI ロジックだけの重複は層 3（差分レビュー）と月 1 の棚卸しだけ。
 
 ## 再訪条件
 
-利用者・支援者からの実フィードバックで通知の形が使えないと分かったとき。判定手段は月 1 の巡回でストアレビューとサポート窓口への報告を確認すること（非クラッシュ不具合はクラッシュ報告に映らない——独立レビューの指摘。受付経路はストア掲載のサポート連絡先。ADR-007）。L-39 を解くとき。
+利用者・支援者からの実フィードバックで通知の形が使えないと分かったとき。判定手段は月 1 の巡回でストアレビューとサポート窓口への報告を確認すること（非クラッシュ不具合はクラッシュ報告に映らない——独立レビューの指摘。受付経路はストア掲載のサポート連絡先。ADR-007）。容量不足による消失の報告が 1 件出たとき（L-13）。退避したデータを取り出したい場面が実際に出たとき。

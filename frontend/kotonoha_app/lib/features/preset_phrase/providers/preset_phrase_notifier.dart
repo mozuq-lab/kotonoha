@@ -160,11 +160,9 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       return;
     }
 
-    // 連動処理: 定型文を削除したら、対応するお気に入りも消す
-    // 無条件で呼ぶ理由: Phase 3 / WP-2 / Stage 3b で PresetPhrase.isFavorite が
-    // 無くなったので、お気に入りかどうかは favoriteProvider しか知らない。
-    // deleteFavoriteBySourceId は該当が無ければ何もしないため、無条件でよい。
-    await _favoriteNotifier.deleteFavoriteBySourceId(id);
+    // お気に入りは消さない（ADR-005、2026-09-13）。お気に入りは利用者が選んだ
+    // 独立のコレクションで、定型文の寿命に従属しない。定型文を編集しても
+    // お気に入りの文言は追随しないので、削除だけ連動させる理由も無い。
 
     final updatedPhrases = List<PresetPhrase>.from(state.phrases);
     updatedPhrases.removeAt(index);

@@ -87,7 +87,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
       onPhraseSelected: _onPhraseSelected,
       onFavoriteToggle: _onFavoriteToggle,
       onEdit: _onEdit,
-      onDelete: (phrase) => _onDelete(phrase, favoritePresetIds),
+      onDelete: _onDelete,
     );
   }
 
@@ -133,16 +133,14 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
   }
 
   /// メソッド: 削除処理
-  /// Phase 3 / WP-2: 定型文の削除はお気に入りも連動削除する
-  /// （deletePhrase → deleteFavoriteBySourceId、振る舞いは変更しない）。
-  /// お気に入り登録済みのときだけ、確認ダイアログにその旨を足す。
-  void _onDelete(PresetPhrase phrase, Set<String> favoritePresetIds) {
+  /// 定型文を削除してもお気に入りは残る（ADR-005、2026-09-13）ので、
+  /// 確認ダイアログにお気に入りの告知は出さない。
+  void _onDelete(PresetPhrase phrase) {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => PhraseDeleteDialog(
         phrase: phrase,
-        isFavorite: favoritePresetIds.contains(phrase.id),
         onConfirm: () {
           ref
               .read(presetPhraseNotifierProvider.notifier)

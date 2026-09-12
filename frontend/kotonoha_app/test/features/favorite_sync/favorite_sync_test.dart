@@ -222,9 +222,9 @@ void main() {
       expect(favoriteState.favorites.length, equals(1));
     });
 
-    // お気に入り済み定型文を削除した場合、Favoriteからも削除される
-    /// 定型文削除時の連動Favorite削除
-    test('TC-SYNC-202: お気に入り済み定型文を削除した場合、Favoriteからも削除される', () async {
+    // お気に入り済み定型文を削除しても、お気に入りは残る（ADR-005、2026-09-13 改訂）
+    /// お気に入りは利用者が選んだ独立のコレクションで、定型文の寿命に従属しない
+    test('TC-SYNC-202: お気に入り済み定型文を削除しても、Favoriteは残る', () async {
       // テストデータ準備: 定型文を追加してお気に入りにする
       const content = '削除テスト';
       await presetPhraseNotifier.addPhrase(content, 'daily');
@@ -244,10 +244,10 @@ void main() {
       final updatedPresetState = container.read(presetPhraseNotifierProvider);
       expect(updatedPresetState.phrases.length, equals(0));
 
-      // 結果検証: Favoriteからも削除されていること
-      // 孤立データを防止するための連動削除
+      // 結果検証: Favoriteは残っていること（連動削除しない。L-39）
       favoriteState = container.read(favoriteProvider);
-      expect(favoriteState.favorites.length, equals(0));
+      expect(favoriteState.favorites.length, equals(1));
+      expect(favoriteState.favorites.first.content, equals(content));
     });
 
     // 全削除後に定型文をお気に入りにできる
