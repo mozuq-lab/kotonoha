@@ -24,7 +24,7 @@ Hive が開けないと黙ってインメモリで動き続けた（`frontend/ko
 - **お気に入りは定型文の削除で消えない**（2026-09-13、L-39 解消）。`deletePhrase()` は `deleteFavoriteBySourceId()` を呼ばず、`TC-SYNC-202` は「残る」を固定する。**お気に入りは作った時点の写し**で、定型文を編集しても追随しない（既存の挙動を決定として明記）。案 2 却下の理由（寿命は独立）どおり。削除確認ダイアログの「お気に入りからも削除されます」は消した
 - **真実は 1 つ、射影は用途ごとに決めてよい。** 履歴画面の星は content 照合のまま（sourceId 照合にすると、定型文由来の同文に星が付かない／同じ文言を再発話すると付かない／履歴 50 件上限でアンカーの履歴が消えると二度と付かなくなる。「キーは id」の理由が名指しした衝突は「同文の**定型文どうし**」で、`addFavoriteFromPresetPhrase` の sourceId 重複判定で解決済み）。`input_candidate_scorer` はテキスト射影のまま（`computeCandidates` は `List<String>` しか受けず、集計は候補テキストがキー、出力は `InputCandidate(text:, score:)` で、id を持てる場所が型の上に存在しない）
 - `isFavorite` は `HistoryItem`・`PresetPhrase` の両方から削除済み。Hive migration は実装してレビューまで通したうえで撤回した（`f761afc`）。守る価値のあるデータが検証端末に無く、残すと (1) お気に入り画面から削除したものが再起動で復活する（UI から到達可能）(2) 移行は `PresetPhrase.isFavorite` を読むのでそのフィールドを消すビルドと共存できない、の 2 つが避けられなかった
-- 永続化は案 c。`sealed class PersistenceState { Ready / RecoverableFailure / Unavailable }` とし、保存されない状態を利用者に通知する。**Hive の破損で退避して作り直したときも同じ経路で領域名つきで伝える**（退避ファイル `<box>.hive.corrupt.bak` は端末内に残すだけで、戻す手段は持たない）。**SharedPreferences の設定保存の失敗も同じ報告に流す**（2026-09-13 決定。実装は L-90）
+- 永続化は案 c。`sealed class PersistenceState { Ready / RecoverableFailure / Unavailable / Recreated }` とし、保存されない状態を利用者に通知する（作り直しの告知だけは利用者が閉じられる。閉じたことはセッション内でしか持たない）。**Hive の破損で退避して作り直したときも同じ経路で領域名つきで伝える**（退避ファイル `<box>.hive.corrupt.bak` は端末内に残すだけで、戻す手段は持たない）。**SharedPreferences の設定保存の失敗も同じ報告に流す**（2026-09-13 決定。実装は L-90）
 - 1 概念 1 真実は**最も外側の境界**で確かめる。UI → provider → repository → 実 box → 再起動相当 → UI を通す往復テストを history / preset_phrase / favorite / settings の 4 feature に置く（定型文の往復は presetPhrases box と favorites box の 2 つをまたぐので、定型文側にフラグが残っていたら通らない）
 
 ## 決定理由と却下案

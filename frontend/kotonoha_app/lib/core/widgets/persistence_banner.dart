@@ -89,9 +89,11 @@ class PersistenceBanner extends ConsumerWidget {
           none,
         ),
       // 破損で退避して作り直した告知（ADR-005、L-90）。利用者が閉じるまで残る
-      PersistenceRecreated(:final recreatedAreas) => dismissed
-          ? (null, none, none)
-          : (recoverableBannerColors(), none, recreatedAreas),
+      // 空の集合は「作り直し無し」と同じ扱い（失敗の文言で誤報しない）
+      PersistenceRecreated(:final recreatedAreas) =>
+        dismissed || recreatedAreas.isEmpty
+            ? (null, none, none)
+            : (recoverableBannerColors(), none, recreatedAreas),
     };
     // フェイルセーフ: ADR-005 は「保存されないことは**必ず**伝える」と
     // 定めている。failure 状態で無音になる経路を作ってはならない。
@@ -115,9 +117,12 @@ class PersistenceBanner extends ConsumerWidget {
     // style を部分指定しただけでは下線が残る（実機の Chrome で確認した）。
     // excludeSemantics: 付けないと、この label と子 Text のラベルが
     // 同一ノードに連結され、スクリーンリーダーが同じ文を2回読む。
+    // 読み上げの二重化を避けるため、本文はバナーの根の 1 ノード（label）にまとめ、
+    // Icon と Text は個別ノードから除く。「閉じる」は除かない（excludeSemantics で
+    // 子ごと捨てると支援技術から見えなくなる）。
     return Semantics(
       label: message,
-      excludeSemantics: true,
+      container: true,
       child: Material(
         color: colors.background,
         child: Container(
@@ -126,13 +131,17 @@ class PersistenceBanner extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.warning_amber_rounded,
-                  size: 18, color: colors.foreground),
+              ExcludeSemantics(
+                child: Icon(Icons.warning_amber_rounded,
+                    size: 18, color: colors.foreground),
+              ),
               const SizedBox(width: 8),
               Flexible(
-                child: Text(
-                  message,
-                  style: TextStyle(color: colors.foreground, fontSize: 14),
+                child: ExcludeSemantics(
+                  child: Text(
+                    message,
+                    style: TextStyle(color: colors.foreground, fontSize: 14),
+                  ),
                 ),
               ),
               // 作り直しの告知だけ閉じられる（保存できない状態の告知は閉じられない）

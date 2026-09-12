@@ -45,6 +45,8 @@
 - [ ] L-83 SharedPreferences の設定保存の失敗を利用者へ伝える。方式は決定済み（2026-09-13、ADR-005: Hive と同じ書き込み失敗の報告に流す）。実装は L-90 と同じ PR — frontend/kotonoha_app/lib/features/settings/providers/settings_provider.dart:130
 - [ ] L-99 定型文由来のお気に入りの重複判定が `sourceId` だけなので、★付きの定型文を削除して同文を作り直し★を押すと同文のお気に入りが 2 件並ぶ（#125 で連鎖削除を外して開いた経路）。content でも判定するかは判断待ち — frontend/kotonoha_app/lib/features/favorite/providers/favorite_provider.dart:242、ADR-005 限界
 - [ ] L-100 `resetToDefaults()` は lib からの呼び出しゼロの死蔵コードで、呼ばれると定型文由来のお気に入りを全件 dangling にする — frontend/kotonoha_app/lib/features/preset_phrase/providers/preset_phrase_notifier.dart:292（#125 の独立監査、棚卸し観点 1）
+- [ ] L-102 作り直しと保存失敗が同時だと作り直しの告知が失敗の告知に置き換わる／退避→削除の後に再オープンが失敗すると削除の事実が伝わらない — frontend/kotonoha_app/lib/core/persistence/persistence_state.dart:101-111、lib/core/utils/hive_init.dart:150-157（#126 の独立監査）
+- [ ] L-103 常設バナーの文字はアプリ設定の 3 段階フォントに追随しない（`fontSize: 14` 固定。OS の文字拡大は効く） — frontend/kotonoha_app/lib/core/widgets/persistence_banner.dart（#126 の独立監査。L-74 と同系）
 
 ## 判断待ち
 - [x] L-39 ADR-005 の却下理由と連鎖削除の矛盾 — docs/adr/ADR-005。Phase 5 の後に扱う。解消（2026-09-13、ADR-005 改訂: 連鎖削除を外し TC-SYNC-202 を「残る」に）
@@ -59,6 +61,7 @@
 - [ ] L-87 dependabot の PR 15 本が滞留（actions #66〜#70、pip #55〜#59、pub #60・#62〜#65）。frontend の `flutter_riverpod` #62・`go_router` #60 はリリース前に上げるか決める。backend の 5 本は Phase 2 で requirements.txt が変わりずれており、`sqlalchemy` #57 は依存自体が無い。close して作り直させるか — .github/dependabot.yml（旧 remaining-work.md から移記）
 - [ ] L-88 `fix/backend-production-hardening` はローカルにしか無い（#86 で「証拠として残す」と決定）。push して保全するか、ローカル限りとするか — Issue #86（旧 remaining-work.md から移記）
 - [x] L-89 AGENTS.md の索引は卒業済み ADR も 1 行残す規則のため、ADR が増えると増え続ける。5 行に抑えるか（層 2 が卒業済み ADR を引用しなくなる）、別の上限を置くか。2026-09-08 に保留 — ADR-010:33、scripts/adr-touch.sh:21。卒業済みの索引を `docs/adr/README.md` に分けると決定（2026-09-12）
+- [ ] L-101 Hive 自身の自動復旧（本番既定 `crashRecovery: true`）は末尾の破損を黙って切り捨てて開くため、最も起きやすい形の破損では退避も告知も無い。`crashRecovery: false` に倒して全破損を自前経路（退避＋告知）に集約するか（部分救出を捨てる）、受け入れるか — frontend/kotonoha_app/lib/core/utils/hive_init.dart:86、hive 2.2.3 storage_backend_vm.dart:91-96（#126 の独立監査）
 
 ## 計測（棚卸しの記録。最新の 1 回だけ残す）
 | 日付 | 核 | 未卒業 ADR | 台帳 未対応/対応済/却下 | 出力ゼロの仕組み | 実在しないパス参照 | kill rate | 製品/全体（30 日） |

@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:kotonoha_app/app.dart';
+import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
@@ -58,7 +59,8 @@ Future<void> pumpApp(
     });
   }
 
-  await initHive();
+  // main.dart と同型: 作り直した領域を ProviderScope に渡す（ADR-005、L-90）
+  final recreatedAreas = await initHive();
 
   // テスト用にデータをクリア
   if (clearData) {
@@ -67,7 +69,10 @@ Future<void> pumpApp(
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: overrides ?? [],
+      overrides: [
+        recreatedAreasProvider.overrideWithValue(recreatedAreas),
+        ...?(overrides as List<dynamic>?),
+      ],
       child: const KotonohaApp(),
     ),
   );

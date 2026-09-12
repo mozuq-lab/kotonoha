@@ -252,32 +252,46 @@ Future<Set<PersistedArea>> initHive() async {
   // 永続化面を見逃す（台帳 L-31）。
   registerPersistedTypeAdapters();
 
-  // 破損で退避して空で作り直した領域。戻り値で main → ProviderScope へ渡し、
-  // 永続化状態（PersistenceRecreated）として利用者に伝える（ADR-005、L-90）
+  return openPersistedBoxes(hivePath: hivePath);
+}
+
+/// 3 つの永続化領域の box を順に開き、破損で退避して空で作り直した領域を返す
+///
+/// box 名と領域は同じ [PersistedArea] から導くので、「history の箱を作り直して
+/// presetPhrases と告げる」形は書けない。[initHive] が呼ぶ。テストは
+/// `Hive.init(tempDir)` の後に直接呼べる（`Hive.initFlutter` を通らない）。
+/// [crashRecovery] は本番では既定の true。Hive 自身の自動復旧で開ける破損は
+/// 自前経路（退避＋告知）を通らない（台帳 L-101）。テストは false で自前経路を通す。
+Future<Set<PersistedArea>> openPersistedBoxes({
+  required String? hivePath,
+  bool crashRecovery = true,
+}) async {
   final recreated = <PersistedArea>{};
-
-  // ボックスオープン: historyボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
-  // 実装内容: 'history'という名前でHistoryItem用のボックスをオープン
-  await openBoxWithRecovery<HistoryItem>(
-    PersistedArea.history.boxName,
-    hivePath: hivePath,
-    onRecreated: () => recreated.add(PersistedArea.history),
-  );
-
-  // ボックスオープン: presetPhrasesボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
-  // 実装内容: 'presetPhrases'という名前でPresetPhrase用のボックスをオープン
-  await openBoxWithRecovery<PresetPhrase>(
-    PersistedArea.presetPhrases.boxName,
-    hivePath: hivePath,
-    onRecreated: () => recreated.add(PersistedArea.presetPhrases),
-  );
-
-  // ボックスオープン: favoritesボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
-  // 実装内容: 'favorites'という名前でFavoriteItem用のボックスをオープン
-  await openBoxWithRecovery<FavoriteItem>(
-    PersistedArea.favorites.boxName,
-    hivePath: hivePath,
-    onRecreated: () => recreated.add(PersistedArea.favorites),
-  );
-  return recreated;
+  for (final area in PersistedArea.values) {
+    void mark() => recreated.add(area);
+    switch (area) {
+      case PersistedArea.history:
+        await openBoxWithRecovery<HistoryItem>(
+          area.boxName,
+          crashRecovery: crashRecovery,
+          hivePath: hivePath,
+          onRecreated: mark,
+        );
+      case PersistedArea.presetPhrases:
+        await openBoxWithRecovery<PresetPhrase>(
+          area.boxName,
+          crashRecovery: crashRecovery,
+          hivePath: hivePath,
+          onRecreated: mark,
+        );
+      case PersistedArea.favorites:
+        await openBoxWithRecovery<FavoriteItem>(
+          area.boxName,
+          crashRecovery: crashRecovery,
+          hivePath: hivePath,
+          onRecreated: mark,
+        );
+    }
+  }
+  return Set.unmodifiable(recreated);
 }

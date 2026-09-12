@@ -43,7 +43,7 @@ extension PersistedAreaNames on PersistedArea {
 }
 
 /// 永続化の状態
-/// 状態は3つしかない。sealed にしてあるので、利用側で switch を書けば
+/// 状態は 4 つしかない。sealed にしてあるので、利用側で switch を書けば
 /// 分岐漏れはコンパイルエラーになる。
 sealed class PersistenceState {
   /// 既定のコンストラクタ
