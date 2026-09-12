@@ -15,6 +15,7 @@ import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state_provider.dart';
 import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
+import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.dart';
 
 /// バナーの前景色と背景色の組
 /// コントラスト比を測るテストが参照するため公開している。
@@ -75,6 +76,7 @@ class PersistenceBanner extends ConsumerWidget {
     // 1文字に分単位かかる利用者に「急げ・アプリを閉じるな」という誤った行動を
     // 強いることになる。
     final dismissed = ref.watch(recreatedNoticeDismissedProvider);
+    final settingsFailed = ref.watch(settingsWriteFailureProvider);
     const none = <PersistedArea>{};
     final (colors, failedAreas, recreatedAreas) = switch (state) {
       PersistenceReady() => (null, none, none),
@@ -101,15 +103,24 @@ class PersistenceBanner extends ConsumerWidget {
     // コンストラクタは公開されており、型が空集合を禁じてもいない。
     // 領域名が得られないときは、対象を特定しない文言に倒す。
     // **沈黙は、文言が多少不自然であることより悪い。**
-    final message = colors == null
+    // 設定（SharedPreferences）の保存失敗は Hive の領域と同じ告知に名前を並べる（ADR-005、L-83）
+    final bannerColors =
+        colors ?? (settingsFailed ? recoverableBannerColors() : null);
+    final failedNames = [
+      ..._areaNames(failedAreas),
+      if (settingsFailed) '設定',
+    ];
+    final message = bannerColors == null
         ? null
-        : recreatedAreas.isNotEmpty
-            ? '${_areaNames(recreatedAreas)}を読み込めなかったため、空の状態で開始しました。元のデータは端末内に退避しています'
-            : failedAreas.isEmpty
-                ? '保存できません。アプリを閉じると消えます'
-                : '${_areaNames(failedAreas)}を保存できません。アプリを閉じると消えます';
+        : failedNames.isNotEmpty
+            ? '${failedNames.join('、')}を保存できません。アプリを閉じると消えます'
+            : recreatedAreas.isNotEmpty
+                ? '${_areaNames(recreatedAreas).join('、')}を読み込めなかったため、空の状態で開始しました。元のデータは端末内に退避しています'
+                : '保存できません。アプリを閉じると消えます';
 
-    if (colors == null || message == null) return const SizedBox.shrink();
+    if (bannerColors == null || message == null) {
+      return const SizedBox.shrink();
+    }
 
     // Material で包む理由: このバナーは AppShell に置かれ、各画面の
     // Scaffold より外側にある。Material 祖先が無い位置の Text は
@@ -124,7 +135,7 @@ class PersistenceBanner extends ConsumerWidget {
       label: message,
       container: true,
       child: Material(
-        color: colors.background,
+        color: bannerColors.background,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -152,7 +163,7 @@ class PersistenceBanner extends ConsumerWidget {
                       .dismiss(),
                   child: Text(
                     '閉じる',
-                    style: TextStyle(color: colors.foreground),
+                    style: TextStyle(color: bannerColors.foreground),
                   ),
                 ),
             ],
@@ -165,8 +176,8 @@ class PersistenceBanner extends ConsumerWidget {
   /// 保存できない領域の名前を、宣言順で読点区切りにする
   /// Set の反復順に依存すると文言が実行ごとに変わるため
   /// [PersistedArea] の宣言順に並べ直す。
-  String _areaNames(Set<PersistedArea> areas) => PersistedArea.values
+  List<String> _areaNames(Set<PersistedArea> areas) => PersistedArea.values
       .where(areas.contains)
       .map((area) => area.label)
-      .join('、');
+      .toList();
 }

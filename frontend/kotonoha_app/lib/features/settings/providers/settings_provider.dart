@@ -1,6 +1,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_settings.dart';
 import '../models/font_size.dart';
@@ -127,17 +128,26 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     return defaultValue;
   }
 
+  /// 保存の結果を報告する（ADR-005、L-83）。失敗しても UI 状態は保ち、
+  /// 利用者には常設バナーで「設定を保存できません」と伝える（NFR-301: 使い続けられる）
+  Future<void> _persist(Future<void> Function() write) async {
+    try {
+      await write();
+      ref.read(settingsWriteFailureProvider.notifier).record(succeeded: true);
+    } catch (_) {
+      ref.read(settingsWriteFailureProvider.notifier).record(succeeded: false);
+    }
+  }
+
   Future<void> setFontSize(FontSize fontSize) async {
     final currentSettings = state.asData?.value;
     if (currentSettings == null) return;
 
     state = AsyncValue.data(currentSettings.copyWith(fontSize: fontSize));
 
-    try {
+    await _persist(() async {
       await _prefs?.setString('fontSize', fontSize.name);
-    } catch (e) {
-      // 保存に失敗しても、現在のUI状態は維持する。
-    }
+    });
   }
 
   Future<void> setTheme(AppTheme theme) async {
@@ -146,11 +156,9 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
     state = AsyncValue.data(currentSettings.copyWith(theme: theme));
 
-    try {
+    await _persist(() async {
       await _prefs?.setString('theme', theme.name);
-    } catch (e) {
-      // 保存に失敗しても、現在のUI状態は維持する。
-    }
+    });
   }
 
   Future<void> setTTSSpeed(TTSSpeed speed) async {
@@ -166,11 +174,9 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       // TTS反映に失敗しても、設定状態と保存処理は継続する。
     }
 
-    try {
+    await _persist(() async {
       await _prefs?.setString('tts_speed', speed.name);
-    } catch (e) {
-      // 保存に失敗しても、現在のUI状態は維持する。
-    }
+    });
   }
 
   Future<void> setAIPoliteness(PolitenessLevel level) async {
@@ -179,11 +185,9 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
     state = AsyncValue.data(currentSettings.copyWith(aiPoliteness: level));
 
-    try {
+    await _persist(() async {
       await _prefs?.setString('ai_politeness', level.name);
-    } catch (e) {
-      // 保存に失敗しても、現在のUI状態は維持する。
-    }
+    });
   }
 
   Future<void> setAIPrivacyConsent(bool accepted) async {
@@ -194,11 +198,9 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       currentSettings.copyWith(hasAcceptedAIPrivacyPolicy: accepted),
     );
 
-    try {
+    await _persist(() async {
       await _prefs?.setBool('ai_privacy_consent', accepted);
-    } catch (e) {
-      // 保存失敗時も現在セッションでは同意状態を保持する。
-    }
+    });
   }
 
   /// 背景: 疲労時・症状進行時に文字盤なしの大ボタン画面へ切り替えるための設定。
@@ -210,10 +212,8 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
     state = AsyncValue.data(currentSettings.copyWith(simpleMode: enabled));
 
-    try {
+    await _persist(() async {
       await _prefs?.setBool('simple_mode', enabled);
-    } catch (e) {
-      // 保存に失敗しても、現在のUI状態は維持する。
-    }
+    });
   }
 }

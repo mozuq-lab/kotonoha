@@ -56,6 +56,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # 設定保存の失敗注入（テストだけ）。外部 SDK の境界でのモック（AGENTS.md 規律 5、ADR-005 検査）
+  shared_preferences_platform_interface: ^2.4.1
 
   # E2E/統合テスト
   integration_test:
