@@ -20,10 +20,10 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
-
-import 'hive_open_leak_guard.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
+
+import 'hive_open_leak_guard.dart';
 
 void main() {
   group('TC-059-006: Hive Box破損時の復旧処理', () {

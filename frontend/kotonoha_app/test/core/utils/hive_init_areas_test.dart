@@ -14,6 +14,7 @@ import 'package:hive/hive.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
+import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
 import 'hive_open_leak_guard.dart';
@@ -80,5 +81,15 @@ void main() {
       () => openPersistedBoxes(hivePath: tempDir.path, crashRecovery: false),
     );
     expect(recreated, {PersistedArea.presetPhrases});
+  });
+
+  test('favorites の box が壊れていれば、作り直した領域は {favorites} だけ', () async {
+    await (await Hive.openBox<FavoriteItem>(PersistedArea.favorites.boxName))
+        .close();
+    await corrupt(PersistedArea.favorites);
+    final recreated = await runGuardingHiveOpenLeak(
+      () => openPersistedBoxes(hivePath: tempDir.path, crashRecovery: false),
+    );
+    expect(recreated, {PersistedArea.favorites});
   });
 }
