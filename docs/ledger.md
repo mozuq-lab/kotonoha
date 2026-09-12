@@ -33,7 +33,7 @@
 - [ ] L-96 `frontend/kotonoha_app/web/.env.example` の設定（ENABLE_AI_CONVERSION 等）は lib から参照ゼロで、ビルド出力に複製される死んだ設定 — 2026-09-12 の監査
 - [ ] L-97 pytest が third-party 由来の非推奨警告 2 件を出す（fastapi/starlette の TestClient、anyio の別名）。出力が静かでない — backend、#120
 - [ ] L-98 ストア提出の前に独立監査（規律 9、棚卸しスキルの付録）を 1 回行い、結果を台帳へ書く。条件 4 の充足判定の前 — AGENTS.md 規律 9、ADR-007 条件 4
-- [ ] L-99 定型文由来のお気に入りの重複判定が `sourceId` だけなので、★付きの定型文を削除して同文を作り直し★を押すと同文のお気に入りが 2 件並ぶ（#125 で連鎖削除を外して開いた経路）。content でも判定するかは判断待ち — frontend/kotonoha_app/lib/features/favorite/providers/favorite_provider.dart:242、ADR-005 限界
+- [ ] L-99 定型文由来のお気に入りの重複判定が `sourceId` だけなので、★付きの定型文を削除して同文を作り直し★を押すと同文のお気に入りが 2 件並ぶ（#125 で連鎖削除を外して開いた経路。お気に入り画面から消せる）。content でも判定するかは判断待ち — frontend/kotonoha_app/lib/features/favorite/providers/favorite_provider.dart:242、ADR-005 限界
 - [ ] L-100 `resetToDefaults()` は lib からの呼び出しゼロの死蔵コードで、呼ばれると定型文由来のお気に入りを全件 dangling にする — frontend/kotonoha_app/lib/features/preset_phrase/providers/preset_phrase_notifier.dart:292（#125 の独立監査、棚卸し観点 1）
 - [ ] L-102 作り直しと保存失敗が同時だと作り直しの告知が失敗の告知に置き換わる／退避→削除の後に再オープンが失敗すると削除の事実が伝わらない — frontend/kotonoha_app/lib/core/persistence/persistence_state.dart:101-111、lib/core/utils/hive_init.dart:150-157（#126 の独立監査）
 - [ ] L-103 常設バナーの文字はアプリ設定の 3 段階フォントに追随しない（`fontSize: 14` 固定。OS の文字拡大は効く） — frontend/kotonoha_app/lib/core/widgets/persistence_banner.dart（#126 の独立監査。L-74 と同系）
