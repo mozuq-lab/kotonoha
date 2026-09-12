@@ -38,6 +38,7 @@
 - [ ] L-102 作り直しと保存失敗が同時だと作り直しの告知が失敗の告知に置き換わる／退避→削除の後に再オープンが失敗すると削除の事実が伝わらない — frontend/kotonoha_app/lib/core/persistence/persistence_state.dart:101-111、lib/core/utils/hive_init.dart:150-157（#126 の独立監査）
 - [ ] L-103 常設バナーの文字はアプリ設定の 3 段階フォントに追随しない（`fontSize: 14` 固定。OS の文字拡大は効く） — frontend/kotonoha_app/lib/core/widgets/persistence_banner.dart（#126 の独立監査。L-74 と同系）
 - [ ] L-104 下書き（`draft_text`）とチュートリアル完了フラグの SharedPreferences 書き込みは失敗しても報告されない（try も無く未処理の非同期エラーになる）。下書きは NFR-302 の対象で「最もコストの高い損失」とコード自身が書く — frontend/kotonoha_app/lib/features/app_state/providers/app_session_provider.dart:112-150、lib/features/help/providers/tutorial_provider.dart:60-71（#127 の独立監査）
+- [ ] L-106 ADR-005 が #125〜#127 で 55 行まで肥大化した（挙動の細部・日付・台帳番号を追記）。60 行上限も「改訂は追記せず書き直す」の規則も 2 系統レビューも捕まえず、利用者が adr-touch のコメントで気づいた。#128 で構造を変えた（ADR-010:34 の 1 句、規律 7 のレンズ）。10 月の棚卸し観点 6 で、以後の ADR 差分に細部が入らなかったかを見て、効かなければ数字（上限）を見直す — docs/adr/ADR-010-document-framework.md:34、AGENTS.md 規律 7
 
 ## 判断待ち
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。Web 成果物に鍵を焼かない（#121 で外した）
