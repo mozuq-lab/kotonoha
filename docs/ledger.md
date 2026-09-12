@@ -36,11 +36,12 @@
 - [ ] L-90 ADR-005 の改訂: L-39（却下理由と連鎖削除の矛盾）／Hive 破損時に退避して作り直すことを利用者に伝える経路が無い（`frontend/kotonoha_app/lib/core/utils/hive_init.dart:59-60,108`）／退避ファイル `<box>.hive.corrupt.bak` を戻す手段の有無 — ADR-005、2026-09-12 の監査（Q9・Q13）
 - [ ] L-91 コードや CI が守っているのに ADR に無い決定: `/health` の無認証・無レート制限（`backend/app/routes.py:68-75`、`backend/tests/contract/test_health_docs.py`）、環境名による認証省略と `/docs` 公開（`backend/app/config.py:106-117`）、CORS の形（`backend/app/main.py:187-193`）、`patch('app.` 禁止（`backend/scripts/gates.sh:15-16`）、lint の設定値（`backend/pyproject.toml`）。次の棚卸しで作成条件 3 つに照らして ADR にするか決める — 2026-09-12 の監査（第二線）
 - [ ] L-92 GitHub Actions 12 種が可変メジャータグ（`@v2` 等）で固定され SHA ピン留めが無い。秘密（AI_API_KEY・VERCEL_TOKEN・ANDROID_*・APPLE_*）を扱う job で走る — .github/workflows/*.yml（2026-09-12 の監査）
-- [ ] L-93 Stop フックが直近 3 件のコミット件名と変更ファイル名を `claude -p` へ渡し（外部送信先）、`.git/` 配下に印ファイルを書く — .claude/hooks/activity-value-check.sh:49-52,87-88（2026-09-12 の監査。L-79 と一緒に判断）
+- [x] L-93 Stop フックが直近 3 件のコミット件名と変更ファイル名を `claude -p` へ渡し（外部送信先）、`.git/` 配下に印ファイルを書く — .claude/hooks/activity-value-check.sh:49-52,87-88（2026-09-12 の監査。L-79 と一緒に判断）。フックの削除で消滅（2026-09-12）
 - [ ] L-94 `release.yml` が署名鍵・証明書・p12 パスワードを workspace のファイルに書き出す（`:100-121`、`:181-186`）。層 2 の照合に workflow を足したのは 2026-09-12 — .github/workflows/release.yml
 - [ ] L-95 Hive の box 名の正が `frontend/kotonoha_app/lib/core/persistence/persistence_state.dart:31-35` にあり、`hive_init.dart` を触らずに変えられる（層 2 の永続化の照合外） — 2026-09-12 の監査
 - [ ] L-96 `frontend/kotonoha_app/web/.env.example` の設定（ENABLE_AI_CONVERSION 等）は lib から参照ゼロで、ビルド出力に複製される死んだ設定 — 2026-09-12 の監査
 - [ ] L-97 pytest が third-party 由来の非推奨警告 2 件を出す（fastapi/starlette の TestClient、anyio の別名）。出力が静かでない — backend、#120
+- [ ] L-98 ストア提出の前に独立監査（規律 9、棚卸しスキルの付録）を 1 回行い、結果を台帳へ書く。条件 4 の充足判定の前 — AGENTS.md 規律 9、ADR-007 条件 4
 
 ## 判断待ち
 - [ ] L-83 SharedPreferences の設定保存失敗を利用者へ通知する扱いが未実装。`setFontSize` 等は例外を捕捉して UI 状態を保持するだけで、通知しない（ソース確認。失敗注入は未実行）。コメントの「将来実装」から移記し、対応方法は別途判断する — frontend/kotonoha_app/lib/features/settings/providers/settings_provider.dart:130、ADR-005
@@ -48,7 +49,7 @@
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。Web 成果物に鍵を焼かない（#121 で外した）
 - [x] L-64 Phase 5 の完了条件「実在しないパス参照 0 件」は README の Swagger URL（/docs）や ADR-007 のアプリ route 名が数に入るため到達不能。核＋台帳に絞るか観測値扱いにする（除外規則は足さない） — Phase 5 計画書 A5（破棄済み）。観測値にすると決定（2026-09-06、ADR-010 の限界）
 - [ ] L-70 道具表の 4 目的（影響範囲・ADR の引き出し・状態遷移・仕様乖離の逆生成）が未割当になった。tsumiki を有効に戻すか、別の道具を割り当てるか — AGENTS.md 道具表（棚卸し 2026-09 で降ろした）
-- [ ] L-79 Stop フック `.claude/hooks/activity-value-check.sh` は廃棄条件「発火ゼロで 1 か月」に 2026-09-30 で到達する（2026-08-30 設置、痕跡なし）。到達していれば削除するか、条件を書き直すか — AGENTS.md 規律 9。棚卸しの観点 6 が同じ問いを月 1 で立てるので廃棄候補
+- [x] L-79 Stop フック `.claude/hooks/activity-value-check.sh` は廃棄条件「発火ゼロで 1 か月」に 2026-09-30 で到達する（2026-08-30 設置、痕跡なし）。到達していれば削除するか、条件を書き直すか — AGENTS.md 規律 9。棚卸しの観点 6 が同じ問いを月 1 で立てるので廃棄候補。廃棄した（2026-09-12。役目は棚卸し観点 6 と規律 9 の独立監査へ）
 - [ ] L-80 `frontend/kotonoha_app/pubspec.lock` は Flutter 3.41.5 で解決したまま。`.fvmrc`／CI の 3.38.1 で `flutter pub get` すると `characters` が 1.4.1→1.4.0 に下がり `js` 0.7.2 が加わる。lock を 3.38.1 で作り直すか SDK を上げるか（依存の決定、規律 8） — Task 4 の実測（2026-09-06）
 - [ ] L-81 `backend/tests/contract/openapi_baseline.json` は正規化ダンプで、単体では現行 API の形しか示さない（enum の値や説明文を含まない）。ADR-010:28 と AGENTS.md 文書節が「API の正本」と呼ぶ記述の限界。呼び方を変えるか、ダンプに補うか — ADR-010「限界」
 - [ ] L-82 ADR-007 条件 1 の括弧書き 4 項目が定義か要約か（限界節に「まだ決めていない」と明記） — docs/adr/ADR-007-release-criteria.md:47

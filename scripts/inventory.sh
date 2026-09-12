@@ -18,15 +18,12 @@ else echo "docs/ledger.md が無い"; fi
 h "直近 30 日のコミット（製品: frontend/kotonoha_app/lib・backend/app を変えたもの / 全体）"
 printf '%s / %s\n' "$(git log --since='30 days ago' --format=%h -- frontend/kotonoha_app/lib backend/app | wc -l | tr -d ' ')" "$(git log --since='30 days ago' --format=%h | wc -l | tr -d ' ')"
 
-h "出力ゼロの仕組み（90 日で実行 0 回の workflow、痕跡の無いフック）"
+h "出力ゼロの仕組み（90 日で実行 0 回の workflow）"
 since=$(date -u -d '90 days ago' +%F 2>/dev/null || date -u -v-90d +%F)
 for w in .github/workflows/*.yml; do
   n=$(gh run list --workflow="$(basename "$w")" --created ">=$since" --limit 1 --json databaseId --jq 'length' 2>/dev/null || echo '?')
   [ "$n" = "0" ] && printf '  実行 0: %s\n' "$w"
 done
-marker=$(grep -m1 -o 'MARKER=.*' .claude/hooks/activity-value-check.sh | cut -d= -f2- | tr -d '"')
-REPO="$(git rev-parse --show-toplevel 2>/dev/null)"
-[ -n "$marker" ] && { eval "m=$marker"; [ -e "$m" ] && echo "  Stop フック: 痕跡あり ($m)" || echo "  Stop フック: 痕跡なし（廃棄条件: 発火ゼロで 1 か月）"; }
 
 h "道具の実在（AGENTS.md に載る plugin:skill）"
 for t in $(grep -o '`[a-z-]*:[a-z:_-]*`' AGENTS.md | tr -d '`' | sort -u); do
