@@ -1,7 +1,7 @@
 # プライバシーポリシー / Privacy Policy
 
-最終更新日: 2026年9月2日
-Last Updated: September 2, 2026
+最終更新日: 2026年9月12日
+Last Updated: September 12, 2026
 
 ---
 
@@ -15,7 +15,7 @@ Last Updated: September 2, 2026
 
 #### 1. ローカルに保存されるデータ
 
-本アプリは、以下のデータをお使いの端末内にのみ保存します。これらのデータは外部サーバーに送信されません。
+本アプリは、以下のデータをお使いの端末内に保存します。本アプリがこれらのデータを外部サーバーへ送信することはありません。
 
 - **入力履歴**: 文字盤で入力した内容（最大50件）
 - **定型文**: ユーザーが追加したカスタム定型文
@@ -63,7 +63,7 @@ AI変換機能（オプション）を使用する場合のみ、以下のデー
 
 ### データの保管
 
-- **ローカルデータ**: お使いの端末内に保存され、クラウドへの自動同期は行いません
+- **ローカルデータ**: お使いの端末内に保存されます。本アプリ自身がクラウドへ同期することはありません。端末の OS のバックアップ機能（Android の自動バックアップ、iOS の iCloud バックアップ）を有効にしている場合は、他のアプリのデータと同様に OS によってバックアップされ、機種変更時に復元されることがあります
 - **AI変換データ**: 変換処理後、サーバーに保存されません
 
 ### データの削除
@@ -104,7 +104,7 @@ This Privacy Policy explains how "Kotonoha" (hereinafter "the App") handles pers
 
 #### 1. Data Stored Locally
 
-The App stores the following data only on your device. This data is not sent to external servers.
+The App stores the following data on your device. The App itself never sends this data to external servers.
 
 - **Input History**: Content entered via the keyboard (up to 50 entries)
 - **Preset Phrases**: Custom phrases added by the user
@@ -153,7 +153,7 @@ The collected data is used only for the following purposes:
 
 ### Data Storage
 
-- **Local Data**: Stored on your device only; no automatic cloud synchronization
+- **Local Data**: Stored on your device. The App itself does not synchronize it to any cloud. If you have enabled your device's OS backup (Android Auto Backup or iCloud Backup), the OS may back it up and restore it on a new device, as it does for other apps
 - **AI Conversion Data**: Not stored on servers after processing
 
 ### Data Deletion
