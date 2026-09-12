@@ -244,4 +244,31 @@ void main() {
       });
     }
   });
+  group('PersistenceRecreated（破損で退避して作り直した）の告知', () {
+    testWidgets('空の状態で開始したことと、元のデータを退避したことを領域名つきで伝える', (tester) async {
+      await _pumpBanner(
+        tester,
+        const PersistenceRecreated(
+            {PersistedArea.history, PersistedArea.presetPhrases}),
+      );
+      expect(find.textContaining('空の状態で開始'), findsOneWidget);
+      expect(find.textContaining('退避'), findsOneWidget);
+      expect(find.textContaining('履歴'), findsOneWidget);
+      expect(find.textContaining('定型文'), findsOneWidget);
+      expect(find.textContaining('お気に入り'), findsNothing,
+          reason: '作り直していない領域の名前は出さない');
+    });
+
+    testWidgets('告知は「閉じる」で消え、高さを取らなくなる', (tester) async {
+      await _pumpBanner(
+        tester,
+        const PersistenceRecreated({PersistedArea.favorites}),
+      );
+      expect(find.text('閉じる'), findsOneWidget);
+      await tester.tap(find.text('閉じる'));
+      await tester.pump();
+      expect(find.textContaining('空の状態で開始'), findsNothing);
+      expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
+    });
+  });
 }

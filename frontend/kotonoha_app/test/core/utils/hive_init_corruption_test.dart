@@ -86,10 +86,15 @@ void main() {
         await boxFile.writeAsString('INVALID_DATA_CORRUPTION_TEST');
       }
 
+      var recreatedByUs = false;
+
       box = (await openBoxWithRecovery<PresetPhrase>(
         'presetPhrases',
         hivePath: tempDir.path,
+        onRecreated: () => recreatedByUs = true,
       ))!;
+      expect(recreatedByUs, isFalse,
+          reason: 'Hive 自身の自動復旧で開けたときは「作り直した」とは言わない');
 
       expect(Hive.isBoxOpen('presetPhrases'), true, reason: 'Boxが自動復旧により開かれる');
       expect(box, isNotNull, reason: 'アプリが正常に動作する');
@@ -122,16 +127,19 @@ void main() {
       // 既知の制約: crashRecovery: falseで意図的に例外を発生させると
       // Hiveパッケージ内部の既知の非同期リーク（runGuardingHiveOpenLeakの
       // ドキュメント参照）が発生するため、テストヘルパーで吸収する。
+      var recreated = false;
       final recovered = await runGuardingHiveOpenLeak(
         () => openBoxWithRecovery<PresetPhrase>(
           'presetPhrases',
           crashRecovery: false,
           hivePath: tempDir.path,
+          onRecreated: () => recreated = true,
         ),
       );
 
       // 復旧処理が実行され、初期化が成功する
       expect(recovered, isNotNull, reason: '復旧処理が実行され、Boxが再オープンされる');
+      expect(recreated, isTrue, reason: '空で作り直したことを呼び出し元に伝える（ADR-005、L-90）');
       expect(Hive.isBoxOpen('presetPhrases'), true, reason: '復旧後Boxがオープンされている');
       expect(recovered!.isEmpty, true, reason: '復旧後のBoxは空の状態（破損データは失われる）');
 

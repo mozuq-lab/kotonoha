@@ -17,6 +17,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
+import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/persistence/write_failure_provider.dart';
 import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 
@@ -33,5 +34,8 @@ final persistenceStateProvider = Provider<PersistenceState>((ref) {
     if (ref.watch(favoriteRepositoryProvider) != null) PersistedArea.favorites,
   }..removeAll(failedWrites);
 
-  return resolvePersistenceState(openedAreas: usableAreas);
+  return resolvePersistenceState(
+    openedAreas: usableAreas,
+    recreatedAreas: ref.watch(recreatedAreasProvider),
+  );
 });

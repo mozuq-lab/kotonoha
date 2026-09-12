@@ -33,7 +33,7 @@
 - [ ] L-78 README.md:82 の `curl -s localhost:8000/api/v1/health` は、localhost が ::1 に解決される環境で timeout する（uvicorn は 127.0.0.1 で待つ）。127.0.0.1 に直すか注記する — Task 6 の実測（2026-09-06）
 - [ ] L-84 開発者登録（Apple Developer Program / Google Play）が未着手。外部律速で、他の作業を待つ理由が無い — ADR-007 条件 4（人が動かす。旧 remaining-work.md から移記）
 - [ ] L-85 ストア掲載文（`frontend/kotonoha_app/fastlane/metadata/ja-JP`・`en-US`）を「医療・治療効果を謳わない」観点で点検していない — ADR-007 条件 4（旧 remaining-work.md から移記）
-- [ ] L-90 ADR-005 の改訂: L-39（却下理由と連鎖削除の矛盾）／Hive 破損時に退避して作り直すことを利用者に伝える経路が無い（`frontend/kotonoha_app/lib/core/utils/hive_init.dart:59-60,108`）／退避ファイル `<box>.hive.corrupt.bak` を戻す手段の有無 — ADR-005、2026-09-12 の監査（Q9・Q13）。L-39 は解消済み（2026-09-13）。残りは作り直しの通知・設定保存の失敗の通知（次の PR）
+- [ ] L-90 ADR-005 の改訂: L-39（却下理由と連鎖削除の矛盾）／Hive 破損時に退避して作り直すことを利用者に伝える経路が無い（`frontend/kotonoha_app/lib/core/utils/hive_init.dart:59-60,108`）／退避ファイル `<box>.hive.corrupt.bak` を戻す手段の有無 — ADR-005、2026-09-12 の監査（Q9・Q13）。L-39 は解消済み（2026-09-13）。作り直しの通知は実装済み（2026-09-13、PersistenceRecreated）。残りは設定保存の失敗の通知（L-83）
 - [ ] L-91 コードや CI が守っているのに ADR に無い決定: `/health` の無認証・無レート制限（`backend/app/routes.py:68-75`、`backend/tests/contract/test_health_docs.py`）、環境名による認証省略と `/docs` 公開（`backend/app/config.py:106-117`）、CORS の形（`backend/app/main.py:187-193`）、`patch('app.` 禁止（`backend/scripts/gates.sh:15-16`）、lint の設定値（`backend/pyproject.toml`）。次の棚卸しで作成条件 3 つに照らして ADR にするか決める — 2026-09-12 の監査（第二線）
 - [ ] L-92 GitHub Actions 12 種が可変メジャータグ（`@v2` 等）で固定され SHA ピン留めが無い。秘密（AI_API_KEY・VERCEL_TOKEN・ANDROID_*・APPLE_*）を扱う job で走る — .github/workflows/*.yml（2026-09-12 の監査）
 - [x] L-93 Stop フックが直近 3 件のコミット件名と変更ファイル名を `claude -p` へ渡し（外部送信先）、`.git/` 配下に印ファイルを書く — .claude/hooks/activity-value-check.sh:49-52,87-88（2026-09-12 の監査。L-79 と一緒に判断）。フックの削除で消滅（2026-09-12）

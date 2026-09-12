@@ -81,6 +81,7 @@ Future<Box<T>?> openBoxWithRecovery<T>(
   String name, {
   bool crashRecovery = true,
   String? hivePath,
+  void Function()? onRecreated,
 }) async {
   try {
     return await Hive.openBox<T>(name, crashRecovery: crashRecovery);
@@ -143,6 +144,8 @@ Future<Box<T>?> openBoxWithRecovery<T>(
       // 復旧処理: 再オープン: 削除後にBoxを再オープンする
       final recovered = await Hive.openBox<T>(name);
       debugPrint('[hive_init] Box "$name" の復旧に成功しました');
+      // 空で作り直したことを呼び出し元（initHive → 永続化状態）に伝える（ADR-005、L-90）
+      onRecreated?.call();
       return recovered;
     } catch (recoveryError, recoveryStackTrace) {
       // 復旧失敗: 再オープンも失敗した場合はnullを返し、インメモリフォールバックへ委ねる
@@ -217,7 +220,7 @@ void registerPersistedTypeAdapters({
 /// 破損時の継続動作: 各Boxのオープンは個別にtry/catchされ、復旧不可能な場合でも
 /// 例外を外部に投げない。該当するBoxは未オープンのまま扱われ
 /// `repository_providers`側のnullフォールバックによりインメモリ動作で継続する。
-Future<void> initHive() async {
+Future<Set<PersistedArea>> initHive() async {
   // Hive初期化: Flutter環境用のHive初期化
   // 実装内容: ローカルストレージのパス設定とHive環境の準備
   await Hive.initFlutter();
@@ -249,11 +252,16 @@ Future<void> initHive() async {
   // 永続化面を見逃す（台帳 L-31）。
   registerPersistedTypeAdapters();
 
+  // 破損で退避して空で作り直した領域。戻り値で main → ProviderScope へ渡し、
+  // 永続化状態（PersistenceRecreated）として利用者に伝える（ADR-005、L-90）
+  final recreated = <PersistedArea>{};
+
   // ボックスオープン: historyボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
   // 実装内容: 'history'という名前でHistoryItem用のボックスをオープン
   await openBoxWithRecovery<HistoryItem>(
     PersistedArea.history.boxName,
     hivePath: hivePath,
+    onRecreated: () => recreated.add(PersistedArea.history),
   );
 
   // ボックスオープン: presetPhrasesボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
@@ -261,6 +269,7 @@ Future<void> initHive() async {
   await openBoxWithRecovery<PresetPhrase>(
     PersistedArea.presetPhrases.boxName,
     hivePath: hivePath,
+    onRecreated: () => recreated.add(PersistedArea.presetPhrases),
   );
 
   // ボックスオープン: favoritesボックスのオープン（破損時は復旧を試み、失敗時はnull継続）
@@ -268,5 +277,7 @@ Future<void> initHive() async {
   await openBoxWithRecovery<FavoriteItem>(
     PersistedArea.favorites.boxName,
     hivePath: hivePath,
+    onRecreated: () => recreated.add(PersistedArea.favorites),
   );
+  return recreated;
 }
