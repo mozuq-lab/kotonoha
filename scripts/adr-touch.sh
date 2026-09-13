@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 変更ファイルを AGENTS.md 規律 8「負債を作る 8 行為」に当て、関わる ADR の索引行（核と docs/adr/README.md）を印字する。
-# 保存・送信の経路に当たれば規律 9（独立監査）の行も印字する。止めない。例外を持たない。パターンを足さない（足すのは AGENTS.md の一覧が変わったときだけ）。
+# 保存・送信の経路に当たれば規律 9（独立監査）の行も印字する。着手前に手元で流す（CI には置かない。ADR-010）。例外を持たない。パターンを足さない（足すのは AGENTS.md の一覧が変わったときだけ）。
 # 廃棄条件: 30 行を超えた／ADR の増減と無関係な変更 commit が 3 回／半年間、判断が変わった実例ゼロ。
 # 使い方: git diff --name-only origin/<base>...HEAD | scripts/adr-touch.sh
 set -euo pipefail
