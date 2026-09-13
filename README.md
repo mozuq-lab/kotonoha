@@ -108,7 +108,6 @@ fvm dart format --output=none --set-exit-if-changed .
 
 ```bash
 scripts/inventory.sh                                                    # 月 1 の棚卸し。数えるだけ
-git diff --name-only origin/main...HEAD | scripts/adr-touch.sh          # 着手前に、触るパスが当たる ADR 索引行を印字
 ```
 
 ## CI（`.github/workflows/`）
