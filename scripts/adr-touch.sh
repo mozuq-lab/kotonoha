@@ -21,7 +21,7 @@ while IFS= read -r f; do
   esac
 done
 [ -z "$acts" ] && exit 0
-case " $acts " in *永続化*|*外部送信先*|*権限*) echo '| 規律 9 | 保存・送信の経路（永続化・外部送信先・権限）に当たる。独立監査の対象 | — | — | — |' ;; esac
+case " $acts " in *永続化*|*外部送信先*|*権限*) echo '| 規律 9 | 保存・送信の経路（永続化・外部送信先・権限）に当たる。独立監査の対象 | — | — | — | — |' ;; esac
 for a in $(printf '%s\n' $acts | sort -u); do
-  cat $INDEX | grep -E '^\| ADR-[0-9]+ \|' | awk -F'|' -v a="$a" '$5 ~ a { print }'
+  cat $INDEX | grep -E '^\| ADR-[0-9]+ \|' | awk -F'|' -v a="$a" '$5 ~ a { print (NF == 7 ? $0 " — |" : $0) }'
 done | sort -u

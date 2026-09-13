@@ -36,10 +36,10 @@ jobs:
         run: |
           {
             echo '<!-- adr-touch -->'
-            echo 'この差分は次の決定に触れています（AGENTS.md の ADR 索引。止めません。改訂するなら本文を読んで書き直すこと）:'
+            echo 'この差分は次の決定に触れています（AGENTS.md と docs/adr/README.md の ADR 索引。止めません。改訂するなら本文を読んで書き直すこと）。「検査」は決定を破ったとき何が赤くなるか（無し＝レビューが読んで守る）、「赤の見方」は卒業済みだけ:'
             echo
-            echo '| ADR | 決めたこと | 却下した案 | 関わる行為 | 検査 |'
-            echo '|---|---|---|---|---|'
+            echo '| ADR | 決めたこと | 却下した案 | 関わる行為 | 検査 | 赤の見方 |'
+            echo '|---|---|---|---|---|---|'
             cat touched.txt
           } > body.md
           id=$(gh api --paginate "repos/$REPO/issues/$PR/comments" --jq '[.[] | select(.body | startswith("<!-- adr-touch -->"))][0].id // empty' | head -n1)
