@@ -50,7 +50,7 @@
 - [ ] L-87 dependabot の PR 15 本が滞留（actions #66〜#70、pip #55〜#59、pub #60・#62〜#65）。frontend の `flutter_riverpod` #62・`go_router` #60 はリリース前に上げるか決める。backend の 5 本は Phase 2 で requirements.txt が変わりずれており、`sqlalchemy` #57 は依存自体が無い。close して作り直させるか — .github/dependabot.yml（旧 remaining-work.md から移記）
 - [ ] L-88 `fix/backend-production-hardening` はローカルにしか無い（#86 で「証拠として残す」と決定）。push して保全するか、ローカル限りとするか — Issue #86（旧 remaining-work.md から移記）
 - [ ] L-101 Hive 自身の自動復旧（本番既定 `crashRecovery: true`）は末尾の破損を黙って切り捨てて開くため、最も起きやすい形の破損では退避も告知も無い。`crashRecovery: false` に倒して全破損を自前経路（退避＋告知）に集約するか（部分救出を捨てる）、受け入れるか — frontend/kotonoha_app/lib/core/utils/hive_init.dart:86、hive 2.2.3 storage_backend_vm.dart:91-96（#126 の独立監査）
-- [ ] L-105 `EmergencyStateNotifier.startEmergency()` / `resetEmergency()` が音声再生の await の後に state を書き、headless web の E2E（`large_emergency_buttons_test.dart` TC-E2E-084-013）がテスト完了後の UnmountedRefException で時々赤になる（2026-09-12 の #125 CI、同一コミットの再実行で緑）。await 後に `ref.mounted` を確かめる修正を、遅い FakeAudioService で赤を先に見る単体テスト付きで入れるか、フレークとして残すか — frontend/kotonoha_app/lib/features/emergency/presentation/providers/emergency_state_provider.dart:80
+- [x] L-105 `EmergencyStateNotifier.startEmergency()` / `resetEmergency()` が音声再生の await の後に state を書き、headless web の E2E（`large_emergency_buttons_test.dart` TC-E2E-084-013）がテスト完了後の UnmountedRefException で時々赤になる（2026-09-12 の #125 CI、同一コミットの再実行で緑）。await 後に `ref.mounted` を確かめる修正を、遅い FakeAudioService で赤を先に見る単体テスト付きで入れるか、フレークとして残すか。解消（2026-09-13: await 後に `ref.mounted` を確かめる。遅い音声サービスで赤→緑） — frontend/kotonoha_app/lib/features/emergency/presentation/providers/emergency_state_provider.dart
 
 ## 計測（棚卸しの記録。最新の 1 回だけ残す）
 | 日付 | 核 | 未卒業 ADR | 台帳 未対応/対応済/却下 | 出力ゼロの仕組み | 実在しないパス参照 | kill rate | 製品/全体（30 日） |

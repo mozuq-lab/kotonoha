@@ -1,6 +1,8 @@
 /// EmergencyStateNotifier テスト
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -511,6 +513,56 @@ void main() {
 
         // Assert
         expect(stopwatch.elapsedMilliseconds, lessThanOrEqualTo(500));
+      });
+    });
+
+    // ライフサイクル: 音声再生の await 中に provider が破棄される
+    // （headless web の E2E はテスト終了時に ProviderScope を破棄するので、
+    //   audioplayers の play() が遅いとここを通る。台帳 L-105）
+    group('ライフサイクル（L-105）', () {
+      /// 再生の完了前に破棄されても startEmergency は例外を投げない
+      test('音声再生の途中で破棄されても startEmergency は例外を投げない', () async {
+        // Arrange: 再生を手動で完了させる
+        final playing = Completer<void>();
+        when(() => mockAudioService.startEmergencySound())
+            .thenAnswer((_) => playing.future);
+        final local = ProviderContainer(
+          overrides: [
+            emergencyAudioServiceProvider.overrideWithValue(mockAudioService),
+          ],
+        );
+        final notifier = local.read(emergencyStateProvider.notifier);
+
+        // Act: 再生中に破棄し、その後で再生が終わる
+        final pending = notifier.startEmergency();
+        local.dispose();
+        playing.complete();
+
+        // Assert: 破棄後の状態書き込みで落ちない
+        await expectLater(pending, completes);
+      });
+
+      /// 停止の完了前に破棄されても resetEmergency は例外を投げない
+      test('音声停止の途中で破棄されても resetEmergency は例外を投げない', () async {
+        // Arrange: 緊急状態にしてから、停止を手動で完了させる
+        final stopping = Completer<void>();
+        when(() => mockAudioService.stopEmergencySound())
+            .thenAnswer((_) => stopping.future);
+        final local = ProviderContainer(
+          overrides: [
+            emergencyAudioServiceProvider.overrideWithValue(mockAudioService),
+          ],
+        );
+        final notifier = local.read(emergencyStateProvider.notifier);
+        await notifier.startEmergency();
+
+        // Act: 停止中に破棄し、その後で停止が終わる
+        final pending = notifier.resetEmergency();
+        local.dispose();
+        stopping.complete();
+
+        // Assert
+        await expectLater(pending, completes);
       });
     });
   });

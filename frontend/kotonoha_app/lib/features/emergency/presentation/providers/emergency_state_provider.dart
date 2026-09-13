@@ -67,6 +67,7 @@ class EmergencyStateNotifier extends Notifier<EmergencyStateEnum> {
   /// 例外発生時
   /// 音声再生が失敗しても状態は alertActive に変更
   /// （視覚的な緊急表示は継続）
+  /// 再生の await 中に provider が破棄された場合は何もしない
   Future<void> startEmergency() async {
     if (state == EmergencyStateEnum.alertActive) return;
 
@@ -77,6 +78,8 @@ class EmergencyStateNotifier extends Notifier<EmergencyStateEnum> {
       // 音声再生エラーは無視し、画面表示は継続
     }
 
+    // 再生の await 中に provider が破棄されていたら書かない（台帳 L-105）
+    if (!ref.mounted) return;
     state = EmergencyStateEnum.alertActive;
   }
 
@@ -96,6 +99,8 @@ class EmergencyStateNotifier extends Notifier<EmergencyStateEnum> {
       // 停止エラーは無視
     }
 
+    // 停止の await 中に provider が破棄されていたら書かない（台帳 L-105）
+    if (!ref.mounted) return;
     state = EmergencyStateEnum.normal;
   }
 }
