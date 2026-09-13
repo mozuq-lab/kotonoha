@@ -43,7 +43,7 @@ uvicorn は `--no-proxy-headers` で起動し、XFF の解釈は `backend/app/ra
 
 ## 検査
 
-(i) 層 2 — 依存・設定キー・外部送信先（`scripts/adr-touch.sh` が索引行を貼る。`redis` を足す変更は依存の行に当たる）。
+(i) 層 1 — 依存・設定キー・外部送信先（着手前に `scripts/adr-touch.sh` が索引行を示す。`redis` を足す変更は依存の行に当たる）。
 (ii) 起動ガード `STARTUP_MULTIPLE_WORKERS`（同一コンテナ内 worker>1 で起動失敗）。外部契約（429 レスポンス・`X-RateLimit-*` / `Retry-After` ヘッダー）は `backend/tests/contract/test_ratelimit.py` が固定している。
 **未検査**: デプロイ側契約と、プロバイダ支出上限。支出上限は backend 公開（AI 変換の有効化）の必須ゲートで、対象プロバイダアカウントにハードリミットを設定し、確認日・上限額・確認手段（管理画面のスクリーンショット等）を本 ADR に書き足してから端末 API キーを配布する（責任者: mozuq。「設定したつもり」と設定済みを機械的に区別するための証跡。台帳 L-58）。
 
