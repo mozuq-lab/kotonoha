@@ -42,7 +42,7 @@ Hive が報告しない書き込み失敗（box が開いたままのディス�
 
 ## 検査
 
-(i) 層 2 — 永続化（`scripts/adr-touch.sh` が `lib/shared/models/*_adapter.dart` と `frontend/kotonoha_app/lib/core/utils/hive_init.dart` を拾って索引行を貼る）。
+(i) 層 1 — 永続化（着手前に `scripts/adr-touch.sh` が `lib/shared/models/*_adapter.dart` と `frontend/kotonoha_app/lib/core/utils/hive_init.dart` を拾って索引行を示す）。
 (ii) `frontend/kotonoha_app/test/core/persistence/hive_schema_allowlist_test.dart`（`typeId`・永続フィールド。本番と同じ `registerPersistedTypeAdapters()` が登録した実体だけを見る。設計の経緯はファイル冒頭）／往復テスト 4 本（`frontend/kotonoha_app/test/features/*/*_round_trip_test.dart`。守る lint 4 つは `analysis_options.yaml` で warning に昇格）／`favorite_sync_test.dart` の TC-SYNC-202（削除しても残る）／破損と保存失敗の注入テスト（`test/core/utils/hive_init_*_test.dart`、`test/features/settings/providers/settings_write_failure_test.dart`）。
 (iii) UI ロジックだけの重複は層 3（差分レビュー）と月 1 の棚卸しだけ。
 

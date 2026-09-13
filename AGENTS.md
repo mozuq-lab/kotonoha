@@ -19,11 +19,11 @@ MVP 外: クラウド同期・アカウント・視線入力やスイッチ・�
 5. **修正の前にテストを書き、赤を見る。** 後に書くと、修正が効く観測点を無意識に選ぶ（`str(exc)` だけを見るテストで、生きている漏えいを「対処済み」と証明した）。完全一致アサーションを書かない。モックは外部 SDK とネットワーク境界にだけ置き、自分の関数を patch しない。検証は最も外側（stdout/stderr・実 box・HTTP ボディ・描画されたウィジェット）で行う
 6. **テストは 2 系統。** A 仕様テストは受入基準から TDD（赤 → 緑 → リファクタ）で書く。B リスクテストは要件に無い所を当てる。源は 3 つ: 境界値・往復・失敗注入・べき等性・ライフサイクル・時間・設定の組み合わせ・リソース枯渇の固定リスト／「**この利用者にとって何が起きたら最悪か**」（黙って消える・誤発報・取り消せない誤操作）／過去に起きた欠陥の形。実効性は本数ではなく mutation kill rate で測る
 7. **P0（到達経路を示せて、かつ実際に赤を見せた）は直す。** 片方だけなら P0 ではない。格下げ・繰り延べを実装者が単独で決めない（直すか、決定として人に出すか）。「指摘ゼロ」を完了条件にしない——十分な探索予算のレビューは必ず何かを見つける。レビューは種類の違う 2 系統を当てる（AI レビュアーの盲点は相関する）。ADR を触る差分には「テスト名か対応箇所のコメントで指せる細部が入っていないか、追記になっていないか」も問う（ADR-005 は 3 PR で 55 行まで膨らみ、誰も気づかなかった）。残りは台帳へ
-8. **負債を作る 8 行為には理由（ADR の引用）が要る**: 依存の追加（`requirements*.txt` `pubspec.yaml` `pubspec.lock` `pyproject.toml` `Podfile` `build.gradle.kts`）、永続化面（Hive の adapter・field・box、OS バックアップ規則、新しいファイル出力先）、秘密を持つ設定キー（`URI` / `URL` / `DSN` で終わる名前を含む。workflow の secrets も）、モジュールレベルの可変グローバル、公開ルート、外部送信先、モバイル権限、検査・フック・workflow・スクリプトの自作（`.github/workflows/` `.claude/hooks/` `scripts/`）。**機械は止めない**（`scripts/adr-touch.sh` が索引行を PR に貼るだけ。ADR-008）
+8. **負債を作る 8 行為には理由（ADR の引用）が要る**: 依存の追加（`requirements*.txt` `pubspec.yaml` `pubspec.lock` `pyproject.toml` `Podfile` `build.gradle.kts`）、永続化面（Hive の adapter・field・box、OS バックアップ規則、新しいファイル出力先）、秘密を持つ設定キー（`URI` / `URL` / `DSN` で終わる名前を含む。workflow の secrets も）、モジュールレベルの可変グローバル、公開ルート、外部送信先、モバイル権限、検査・フック・workflow・スクリプトの自作（`.github/workflows/` `.claude/hooks/` `scripts/`）。**機械は止めない**（`scripts/adr-touch.sh` は着手前に手元で索引行を印字するだけ。ADR-008）
    **レビュー指摘に応えて検査・ゲート・サニタイザを作る前に、① 構造を変えて危険を表現不可能にできないか ② 既存の権威（パーサ・型検査・リンタ・lock）の出力を消費できないか を問う。どちらも無ければ記録して受け入れる。自作の検出器は選択肢に入れない**（ADR-008 は 3 周・約 4,600 行で発火ゼロ、Phase 3 WP-1 の grep 検査は 3 周を費やした。同種の仕組みを作る前に `docs/archive/adr/` の ADR-008 を読む）
 9. **保存・送信の経路を変える PR と、ストア提出の前には、文脈を持たないレビュアーがコードから文書へ読む独立監査を通す。** 四半期に 1 回も同じ（棚卸し観点 6）。行を貼るのではなくデータの流れを追う（何を、どこに保存し、どこから端末の外へ出るか）。手順は `.claude/skills/inventory/SKILL.md` の付録。守るのは人で、守られたかは観点 6 で月 1 に振り返る（前身の Stop フックは発火ゼロで 2026-09-12 に廃棄。2026-09-12 の監査は常設の仕組みが見逃した事故 4 件を見つけた）
 
-ADR が引く層番号: 層 1 前段（着手前。規律 4。**「存在すべきか」はここでしか問えない**）／層 2 機械（`scripts/adr-touch.sh`・import-linter・mypy --strict。**差分の外を見るのはこれだけ**）／層 3 差分レビュー（PR ごと。規律 7）／層 4 反証可能な検査（未割当）／層 5 全体（月 1 の棚卸し）。
+ADR が引く層番号: 層 1 前段（着手前。規律 4 と `scripts/adr-touch.sh`。**「存在すべきか」はここでしか問えない**）／層 2 機械（import-linter・mypy --strict と CI の検査。**差分の外を見るのはこれだけ**）／層 3 差分レビュー（PR ごと。規律 7）／層 4 反証可能な検査（未割当）／層 5 全体（月 1 の棚卸し）。
 
 ## 決定の索引（未卒業 5 本。卒業済み 5 本の索引と赤の見方は `docs/adr/README.md`。列順は `scripts/adr-touch.sh` が読むので変えない）
 
@@ -51,7 +51,7 @@ ADR が引く層番号: 層 1 前段（着手前。規律 4。**「存在すべ�
 (cd frontend/kotonoha_app && fvm flutter run -d chrome)                      # 接続先は --dart-define=API_BASE_URL=…（空文字は defaultValue を打ち消す）
 (cd frontend/kotonoha_app && fvm flutter analyze --no-fatal-infos && fvm flutter test && fvm dart format --output=none --set-exit-if-changed .)
 scripts/inventory.sh                                                         # 月 1 の棚卸しの計測。数えるだけ
-git diff --name-only origin/main...HEAD | scripts/adr-touch.sh               # 層 2 を手元で（PR では adr-touch.yml が貼る）
+git diff --name-only origin/main...HEAD | scripts/adr-touch.sh               # 着手前に、触るパスが当たる索引行を印字（規律 4。CI には置かない）
 ```
 
 ## 道具（目的は固定、道具は差し替え可能。実在は月 1 の棚卸しで点検する）
