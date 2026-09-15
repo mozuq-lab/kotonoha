@@ -7,7 +7,7 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
@@ -16,7 +16,21 @@ import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.da
 import 'package:kotonoha_app/core/themes/dark_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
+import 'package:kotonoha_app/core/themes/theme_provider.dart';
 import 'package:kotonoha_app/core/widgets/persistence_banner.dart';
+import 'package:kotonoha_app/features/settings/models/app_settings.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
+
+/// 設定を固定して返す Notifier（SharedPreferences を読まない）
+/// テーマ倍率テスト（theme_provider_font_size_test.dart）と同じもの
+class _FixedSettings extends SettingsNotifier {
+  _FixedSettings(this._settings);
+  final AppSettings _settings;
+
+  @override
+  Future<AppSettings> build() async => _settings;
+}
 
 /// WCAG 2.1 の相対輝度
 double _relativeLuminance(Color color) {
@@ -381,6 +395,42 @@ void main() {
       notifier.record(key: 'fontSize', succeeded: true);
       await tester.pump();
       expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
+    });
+
+    testWidgets('バナーの文字がフォント設定「大」に追従する（L-103）', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          persistenceStateProvider.overrideWithValue(const PersistenceReady()),
+          settingsNotifierProvider.overrideWith(
+            () => _FixedSettings(const AppSettings(fontSize: FontSize.large)),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(settingsNotifierProvider.future);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: Consumer(
+            builder: (context, ref, _) => MaterialApp(
+              theme: ref.watch(currentThemeProvider),
+              home: const Scaffold(body: PersistenceBanner()),
+            ),
+          ),
+        ),
+      );
+      container
+          .read(settingsWriteFailureProvider.notifier)
+          .record(key: 'fontSize', succeeded: false);
+      await tester.pump();
+
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.textContaining('保存できません'),
+      );
+      expect(
+        paragraph.text.style!.fontSize,
+        closeTo(lightTheme.textTheme.bodyMedium!.fontSize! * 1.2, 0.01),
+      );
     });
   });
 
