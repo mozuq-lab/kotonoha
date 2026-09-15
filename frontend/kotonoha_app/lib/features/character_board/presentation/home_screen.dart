@@ -437,46 +437,48 @@ class HomeScreen extends ConsumerWidget {
     final contentPadding =
         compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;
 
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
-      padding: EdgeInsets.all(contentPadding),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline,
-        ),
-        borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-      ),
-      constraints: BoxConstraints(minHeight: minHeight, maxHeight: maxHeight),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Flexible(
-            // アクセシビリティ対応: liveRegionで入力中テキストの変化を
-            // スクリーンリーダーが自動読み上げできるようにする。
-            child: Semantics(
-              liveRegion: true,
-              child: SingleChildScrollView(
-                reverse: true,
-                child: Text(
-                  inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: _getFontSizeValue(fontSize),
-                        color: inputBuffer.isEmpty
-                            ? Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withAlpha(128)
-                            : Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          width: double.infinity,
+          margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
+          padding: EdgeInsets.all(contentPadding),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline,
+            ),
+            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+          ),
+          constraints:
+              BoxConstraints(minHeight: minHeight, maxHeight: maxHeight),
+          // アクセシビリティ対応: liveRegionで入力中テキストの変化を
+          // スクリーンリーダーが自動読み上げできるようにする。
+          child: Semantics(
+            liveRegion: true,
+            child: SingleChildScrollView(
+              reverse: true,
+              child: Text(
+                inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontSize: _getFontSizeValue(fontSize),
+                      color: inputBuffer.isEmpty
+                          ? Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withAlpha(128)
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
               ),
             ),
           ),
-          const InputLimitNotice(),
-        ],
-      ),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalMargin),
+          child: const InputLimitNotice(),
+        ),
+      ],
     );
   }
 
