@@ -13,8 +13,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/input_limit_notice.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
@@ -164,5 +166,59 @@ void main() {
         },
       );
     }
+
+    /// (e) compact横向き（幅800x高さ400、compactHeightThreshold=500未満）で
+    /// 入力上限の告知が出ても、入力テキストの表示域（Flexible）が実質0に
+    /// 潰れないことを確認する（#133 リスクレビュー）。
+    /// 告知はRenderFlexのoverflowエラーを起こさないため、(a)〜(d)の
+    /// takeException()検証だけではこの劣化を検出できない。
+    testWidgets(
+      '800x400(compact横向き)で告知表示時も入力テキスト表示域が潰れない（#133）',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: HomeScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final fullText = 'あ' * InputBufferNotifier.maxLength;
+        container.read(inputBufferProvider.notifier).setText(fullText);
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text(InputLimitNotice.message), findsOneWidget);
+
+        // 入力テキストのTextウィジェット自体は、SingleChildScrollView配下では
+        // ビューポートに関わらず内容に応じた自然な高さでレンダリングされる
+        // （クリップされて見えなくなるだけ）ため、find.text()のRenderBoxの
+        // 高さでは「ビューポートが実質0に潰れている」ことを検出できない。
+        // 実際に潰れるのは入力テキストを囲むSingleChildScrollView自身
+        // （reverse: trueで一意に識別できる）のRenderBoxの高さなので、
+        // そちらを見る。
+        final scrollViewFinder = find.byWidgetPredicate(
+          (widget) => widget is SingleChildScrollView && widget.reverse,
+        );
+        expect(scrollViewFinder, findsOneWidget);
+        final viewportSize = tester.getSize(scrollViewFinder);
+        expect(
+          viewportSize.height,
+          greaterThanOrEqualTo(AppSizes.fontSizeMedium),
+          reason: '告知表示時も入力テキストの表示域（ビューポート）が1行分は確保されている必要がある'
+              '（compact横向き, #133リスクレビュー）',
+        );
+      },
+    );
   });
 }
