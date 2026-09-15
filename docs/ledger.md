@@ -39,6 +39,8 @@
 - [ ] L-103 常設バナーの文字はアプリ設定の 3 段階フォントに追随しない（`fontSize: 14` 固定。OS の文字拡大は効く） — frontend/kotonoha_app/lib/core/widgets/persistence_banner.dart（#126 の独立監査。L-74 と同系）
 - [ ] L-104 下書き（`draft_text`）とチュートリアル完了フラグの SharedPreferences 書き込みは失敗しても報告されない（try も無く未処理の非同期エラーになる）。下書きは NFR-302 の対象で「最もコストの高い損失」とコード自身が書く — frontend/kotonoha_app/lib/features/app_state/providers/app_session_provider.dart:112-150、lib/features/help/providers/tutorial_provider.dart:60-71（#127 の独立監査）
 - [ ] L-106 ADR-005 が #125〜#127 で 55 行まで肥大化した（挙動の細部・日付・台帳番号を追記）。60 行上限も「改訂は追記せず書き直す」の規則も 2 系統レビューも捕まえず、利用者が adr-touch のコメントで気づいた。#128 で構造を変えた（ADR-010:34 の 1 句、規律 7 のレンズ）。10 月の棚卸し観点 6 で、以後の ADR 差分に細部が入らなかったかを見て、効かなければ数字（上限）を見直す — docs/adr/ADR-010-document-framework.md:34、AGENTS.md 規律 7
+- [ ] L-109 入力上限の告知（#133）の持ち越し: (1) `setText` 経由（AI 変換結果）の 1000 文字超は切り詰められ、告知は「達した」と「切り詰めた」を区別しない（定型文は上限 500、候補は短文なので現実の経路は AI 変換結果だけ）(2) `substring` は UTF-16 単位で切るためサロゲートペアを壊しうる（文字盤から絵文字は入力できない）(3) 告知文がフォント設定に追随しない（テーマ倍率の PR で解消する見込み）(4) 標準レイアウトで告知表示時のレイアウトテストが無い — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:84、#133 の 2 系統レビュー
+- [ ] L-110 緊急ボタンの E2E（`large_emergency_buttons_test.dart` TC-E2E-084-021）が headless web で時々「はい」の直後に緊急画面を見つけられない（#133 の CI run 34997386337。main の直近 3 回は緑）。`startEmergency()` が音声再生の await の後に `alertActive` を書くため、再生が遅いと緊急表示が遅れる。視覚を先（state を先に書く）にして音声を後にすれば利用者にも E2E にも効くが、決定として出す — frontend/kotonoha_app/lib/features/emergency/presentation/providers/emergency_state_provider.dart:71-82
 
 ## 判断待ち
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。Web 成果物に鍵を焼かない（#121 で外した）
