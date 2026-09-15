@@ -139,7 +139,12 @@ class PersistenceBanner extends ConsumerWidget {
                 child: ExcludeSemantics(
                   child: Text(
                     message,
-                    style: TextStyle(color: colors.foreground, fontSize: 14),
+                    // フォントサイズ設定に追従させるため、固定値ではなく
+                    // テーマの bodyMedium を使う（REQ-802・REQ-2007、台帳 L-103）。
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: colors.foreground),
                   ),
                 ),
               ),

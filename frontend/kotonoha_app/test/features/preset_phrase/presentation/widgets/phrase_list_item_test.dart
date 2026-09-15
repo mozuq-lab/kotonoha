@@ -2,10 +2,27 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/themes/light_theme.dart';
+import 'package:kotonoha_app/core/themes/theme_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_list_item.dart';
+import 'package:kotonoha_app/features/settings/models/app_settings.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+
+/// 設定を固定して返す Notifier（SharedPreferences を読まない）
+/// テーマ倍率テスト（theme_provider_font_size_test.dart）と同じもの
+class _FixedSettings extends SettingsNotifier {
+  _FixedSettings(this._settings);
+  final AppSettings _settings;
+
+  @override
+  Future<AppSettings> build() async => _settings;
+}
 
 void main() {
   // テストデータ準備
@@ -265,6 +282,40 @@ void main() {
 
       // 結果検証: コールバックが呼び出されたことを確認
       expect(favoriteToggled, isTrue);
+    });
+  });
+
+  group('PhraseListItem - フォントサイズ追従テスト', () {
+    testWidgets('本文の文字サイズがフォント設定「大」に追従する（REQ-802、L-74）', (tester) async {
+      final phrase = createTestPhrase(id: '1', content: 'こんにちは');
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsNotifierProvider.overrideWith(
+              () => _FixedSettings(const AppSettings(fontSize: FontSize.large)),
+            ),
+          ],
+          child: Consumer(
+            builder: (context, ref, _) => MaterialApp(
+              theme: ref.watch(currentThemeProvider),
+              home: Scaffold(
+                body: PhraseListItem(
+                  phrase: phrase,
+                  isFavorite: false,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final paragraph =
+          tester.renderObject<RenderParagraph>(find.text('こんにちは'));
+      expect(
+        paragraph.text.style!.fontSize,
+        closeTo(lightTheme.textTheme.bodyLarge!.fontSize! * 1.2, 0.01),
+      );
     });
   });
 }
