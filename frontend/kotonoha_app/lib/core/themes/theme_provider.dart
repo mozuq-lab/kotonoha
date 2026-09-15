@@ -48,10 +48,29 @@ ThemeData _scaled(ThemeData base, double factor) {
   return base.copyWith(
     textTheme: _scaledTextTheme(base.textTheme, factor),
     primaryTextTheme: _scaledTextTheme(base.primaryTextTheme, factor),
+    // ボタンラベル（REQ-802「ボタンラベル」もフォントサイズ設定の対象）。
+    // ElevatedButton はテーマが textStyle を明示しているのでそれに倍率を掛け、
+    // TextButton/OutlinedButton/FilledButton はテーマに textStyle の明示が無く
+    // Material の実効既定値（14px、_defaultButtonLabelFontSize）で描かれているため
+    // その既定値を基準に倍率を掛けた textStyle を新たに与える。
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: _scaledButtonStyle(base.elevatedButtonTheme.style, factor),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: _scaledButtonStyle(base.textButtonTheme.style, factor),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: _scaledButtonStyle(base.outlinedButtonTheme.style, factor),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: _scaledButtonStyle(base.filledButtonTheme.style, factor),
+    ),
   );
 }
 
-/// [TextTheme] の各スタイルに [_scaledStyle] を適用する
+/// [TextTheme] の 15 フィールドすべてを列挙している。フィールドを漏らすと
+/// そのスタイルだけフォント設定に追従しなくなるため、[TextTheme] にフィールドが
+/// 増えたらここにも追加すること。各スタイルに [_scaledStyle] を適用する。
 TextTheme _scaledTextTheme(TextTheme theme, double factor) {
   return TextTheme(
     displayLarge: _scaledStyle(theme.displayLarge, factor),
@@ -77,4 +96,40 @@ TextStyle? _scaledStyle(TextStyle? style, double factor) {
   final fontSize = style?.fontSize;
   if (style == null || fontSize == null) return style;
   return style.copyWith(fontSize: fontSize * factor);
+}
+
+/// テーマがボタンの textStyle を明示していないときに描画される実効フォントサイズ。
+/// [TextButton]・[OutlinedButton]・[FilledButton] はいずれもテーマ側に textStyle を
+/// 明示していない。この場合 Material 3 のボタン既定スタイルは `Theme.of(context)`
+/// の `textTheme` ではなく Flutter 組込みの Typography（englishLike 等）の
+/// labelLarge をそのまま使うため、本アプリの `textTheme.labelLarge`（本アプリでは
+/// fontSize が null）には影響されず、常にこの既定値で描かれる。
+/// 実測（`RenderParagraph` で測定、3 テーマ・3 ボタン種すべて一致）して確認済み。
+const double _defaultButtonLabelFontSize = 14.0;
+
+/// ボタン種ごとの [ButtonStyle] にフォント設定の倍率を掛ける。
+/// テーマが `textStyle` を明示していればその `fontSize` に倍率を掛ける
+/// （[TextStyle.copyWith] を使うので `fontWeight` 等の他の属性は保たれる）。
+/// 明示が無いボタン種は [_defaultButtonLabelFontSize] を基準に倍率を掛けた
+/// `textStyle` を新たに与える。呼び出し元の [_scaled] が `factor == 1.0` で
+/// 早期リターンするため、ここに来る時点で必ず `factor != 1.0`
+/// （「中」では呼ばれず、実効サイズは 1px も変わらない）。
+///
+/// `inherit: false` を明示する理由: Material 3 のボタン既定スタイルの
+/// `TextStyle` は `inherit: false`（Typography 由来の完結したスタイル）。
+/// `ButtonStyleButton` はボタンの状態変化時に `AnimatedDefaultTextStyle` で
+/// 直前のスタイルからここのスタイルへ補間するため、`inherit` が食い違うと
+/// `TextStyle.lerp` が「Failed to interpolate TextStyles with different
+/// inherit values」で例外を投げる（実際に踏んだ: 設定読み込み中は
+/// `currentThemeProvider` が未倍率の既定スタイル [inherit: false] を返し、
+/// 設定確定後にここで作るスタイルへ遷移する瞬間に再現した）。
+ButtonStyle _scaledButtonStyle(ButtonStyle? style, double factor) {
+  final currentTextStyle = style?.textStyle?.resolve(const <WidgetState>{});
+  final scaledTextStyle = currentTextStyle != null
+      ? _scaledStyle(currentTextStyle, factor)
+      : TextStyle(
+          fontSize: _defaultButtonLabelFontSize * factor, inherit: false);
+  return (style ?? const ButtonStyle()).copyWith(
+    textStyle: WidgetStatePropertyAll(scaledTextStyle),
+  );
 }
