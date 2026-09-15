@@ -546,4 +546,42 @@ void main() {
       expect(container.read(inputBufferProvider), '');
     });
   });
+
+  group('上限到達の派生状態（L-73、EDGE-101）', () {
+    test('999 文字では上限に達していない', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container.read(inputBufferProvider.notifier).setText('あ' * 999);
+      expect(container.read(inputLimitReachedProvider), isFalse);
+    });
+
+    test('1000 文字で上限に達し、さらに追加しても 1000 文字のまま', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('あ' * InputBufferNotifier.maxLength);
+      notifier.addCharacter('い');
+      expect(container.read(inputBufferProvider).length,
+          InputBufferNotifier.maxLength);
+      expect(container.read(inputLimitReachedProvider), isTrue);
+    });
+
+    test('上限を超える setText は 1000 文字に切り詰められ、上限到達になる', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container.read(inputBufferProvider.notifier).setText('あ' * 1200);
+      expect(container.read(inputBufferProvider).length,
+          InputBufferNotifier.maxLength);
+      expect(container.read(inputLimitReachedProvider), isTrue);
+    });
+
+    test('1 文字消すと上限到達が解ける', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(inputBufferProvider.notifier);
+      notifier.setText('あ' * InputBufferNotifier.maxLength);
+      notifier.deleteLastCharacter();
+      expect(container.read(inputLimitReachedProvider), isFalse);
+    });
+  });
 }
