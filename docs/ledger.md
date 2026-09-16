@@ -18,7 +18,7 @@
 - [ ] L-67 お気に入りが `frontend/kotonoha_app/lib/features/favorite/`（ロジック）と `frontend/kotonoha_app/lib/features/favorites/`（UI）の 2 ディレクトリに分かれたまま — ADR-005（棚卸し 2026-09 で現存を確認、Phase 5（文書）の後）
 - [ ] L-68 要件 ID 107 件のうち 14 件が、テストにも openspec にも 1 度も現れない（追跡性の穴。挙動は別 ID で試験済みのものを含む） — docs/spec/kotonoha-requirements.md（一覧は棚卸し 2026-09 の PR 本文）
 - [ ] L-69 `expect(widget.runtimeType.toString(), equals('CharacterBoardWidget'))` はクラス名を固定するだけで挙動を検査しない — frontend/kotonoha_app/test/widgets/character_board_optimization_test.dart:389（棚卸し 2026-09、観点 4）
-- [ ] L-73 入力欄の 1000 文字上限に警告表示が無く、超過分を黙って捨てる（EDGE-101 の未達） — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:65,89（PR #114 の突き合わせ）
+- [x] L-73 入力欄の 1000 文字上限に警告表示が無く、超過分を黙って捨てる（EDGE-101 の未達） — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:65,89（PR #114 の突き合わせ）。解消（2026-09-16、#133: 入力欄の直下に告知。持ち越しは L-109）
 - [ ] L-74 フォントサイズ設定が home_screen 配下にしか届かず、定型文一覧が追従しない（REQ-802・REQ-2007 の未達） — frontend/kotonoha_app/lib/features/preset_phrase/presentation/widgets/phrase_list_item.dart:98、frontend/kotonoha_app/lib/app.dart:47-56（PR #114 の突き合わせ）
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
 - [ ] L-76 NFR-502（backend の重要なビジネスロジック・API エンドポイントで 90% 以上のカバレッジ）が未測定。CI の `fail_under` は全体閾値（NFR-501） — docs/spec/kotonoha-requirements.md:166（L-55 と同形）。基準が 3 か所にある（pyproject の fail_under 80、flutter.yml の THRESHOLD 80、codecov.yml の python 90% と存在しないパスの除外）
