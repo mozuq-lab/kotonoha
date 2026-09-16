@@ -15,6 +15,18 @@ import 'package:kotonoha_app/core/themes/dark_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 
+/// 「同じテーマが選ばれたか」を検証する。完全一致（`==`）は使わない:
+/// `currentThemeProvider` はフォント設定の倍率がけ（`_scaled`、P0 修正で
+/// 「中」でも常にボタンテーマの textStyle を明示するようになった）を通すため、
+/// 「中」設定でも `lightTheme`/`darkTheme`/`highContrastTheme` の定数そのものとは
+/// もう等しくない（値としては同じ見た目になるが、オブジェクトとしては別）。
+/// テーマ選択が正しいことは、見た目に直結する brightness と
+/// scaffoldBackgroundColor で確認する。
+void expectSameTheme(ThemeData actual, ThemeData expected) {
+  expect(actual.brightness, expected.brightness);
+  expect(actual.scaffoldBackgroundColor, expected.scaffoldBackgroundColor);
+}
+
 void main() {
   group('TASK-0073: テーマ適用 統合テスト', () {
     setUp(() async {
@@ -142,7 +154,7 @@ void main() {
 
         // currentThemeProviderがdarkThemeを返すことを確認
         final currentTheme = container.read(currentThemeProvider);
-        expect(currentTheme, darkTheme);
+        expectSameTheme(currentTheme, darkTheme);
 
         await tester.pumpWidget(
           UncontrolledProviderScope(
@@ -203,7 +215,7 @@ void main() {
 
         // currentThemeProviderも確認
         var currentTheme = container.read(currentThemeProvider);
-        expect(currentTheme, lightTheme);
+        expectSameTheme(currentTheme, lightTheme);
 
         // When: 実際の処理実行: テーマを「ダーク」に変更
         final notifier = container.read(settingsNotifierProvider.notifier);
@@ -215,7 +227,7 @@ void main() {
 
         // currentThemeProviderも更新される
         currentTheme = container.read(currentThemeProvider);
-        expect(currentTheme, darkTheme);
+        expectSameTheme(currentTheme, darkTheme);
 
         container.dispose();
       });
