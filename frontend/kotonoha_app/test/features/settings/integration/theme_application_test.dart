@@ -15,17 +15,7 @@ import 'package:kotonoha_app/core/themes/dark_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 
-/// 「同じテーマが選ばれたか」を検証する。完全一致（`==`）は使わない:
-/// `currentThemeProvider` はフォント設定の倍率がけ（`_scaled`、P0 修正で
-/// 「中」でも常にボタンテーマの textStyle を明示するようになった）を通すため、
-/// 「中」設定でも `lightTheme`/`darkTheme`/`highContrastTheme` の定数そのものとは
-/// もう等しくない（値としては同じ見た目になるが、オブジェクトとしては別）。
-/// テーマ選択が正しいことは、見た目に直結する brightness と
-/// scaffoldBackgroundColor で確認する。
-void expectSameTheme(ThemeData actual, ThemeData expected) {
-  expect(actual.brightness, expected.brightness);
-  expect(actual.scaffoldBackgroundColor, expected.scaffoldBackgroundColor);
-}
+import '../../../support/theme_helpers.dart';
 
 void main() {
   group('TASK-0073: テーマ適用 統合テスト', () {
