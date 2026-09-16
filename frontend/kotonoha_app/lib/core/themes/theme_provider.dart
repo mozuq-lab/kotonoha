@@ -26,10 +26,13 @@ final currentThemeProvider = Provider<ThemeData>((ref) {
       };
       return _scaled(base, settings.fontSize.scaleFactor);
     },
-    // ローディング中: デフォルトでlightThemeを返す
-    loading: () => lightTheme,
-    // エラー時: デフォルトでlightThemeを返す（: 基本機能継続）
-    error: (_, __) => lightTheme,
+    // ローディング中: デフォルトでlightThemeを返す（倍率 1.0。_scaled を通す理由は
+    // 下記 _scaled のコメント参照——ボタンテーマの textStyle を「中」相当でも
+    // 非 null にし、読み込み完了後に非中設定へ変わる遷移で null↔非null の
+    // 段差を作らないため）。
+    loading: () => _scaled(lightTheme, 1.0),
+    // エラー時: デフォルトでlightThemeを返す（: 基本機能継続）。理由は loading と同じ。
+    error: (_, __) => _scaled(lightTheme, 1.0),
   );
 });
 
@@ -43,8 +46,25 @@ final currentThemeProvider = Provider<ThemeData>((ref) {
 /// 「fontSize が null なら倍率は 1.0 でなければならない」と assert しており、
 /// 倍率 1.0 以外ではこの null フィールドで例外になる。fontSize を持つ
 /// フィールドだけを個別に倍率がけする。
+///
+/// `factor == 1.0`（「中」）でも早期リターンしない（P0、リスクレビュー反映）:
+/// 以前は `if (factor == 1.0) return base;` としており、`base` は
+/// TextButton/OutlinedButton/FilledButton の `textStyle` が null のまま
+/// （テーマが明示していないため）。すると「中」でだけ `textStyle` が null、
+/// 「大」「小」では非 null という非対称ができる。`MaterialApp` は既定で
+/// `theme:` を `AnimatedTheme`（200ms）に渡しており、`TextStyle.lerp` は
+/// 片方が null だと `t < 0.5` で旧値のまま静止、`t >= 0.5` で null へ
+/// ジャンプするステップ関数になる（`text_style.dart`）。「中」に/から
+/// 切り替える瞬間、ボタンラベルが最初の 100ms 止まり、200ms を超えても
+/// 目標値に収束しない不具合が実測された
+/// （`test/core/themes/theme_provider_button_label_test.dart` の
+/// P0 テスト参照）。「大」↔「小」のように両側とも非 null な遷移は
+/// 早期リターンが無くても最初から滑らかだった。
+/// 早期リターンを外しても「中」の見た目は 1px も変えない:
+/// `_scaledStyle`/`_scaledButtonStyle` は `factor == 1.0` のとき
+/// `fontSize * 1.0` で数値上は元の値のまま（オブジェクトとしては新しいが
+/// 値は等しい）になるよう作ってある。
 ThemeData _scaled(ThemeData base, double factor) {
-  if (factor == 1.0) return base;
   // ボタン種のうちテーマが textStyle を明示していないもの
   // （TextButton/OutlinedButton/FilledButton）向けの既定ラベルスタイル。
   // 一度だけ導出して 3 種で使い回す。
@@ -166,9 +186,12 @@ TextStyle _defaultButtonLabelStyle(ThemeData base) {
 /// `widgetValue ?? themeValue ?? defaultValue` の全置換で解決するため
 /// （`button_style_button.dart`）、太さ・字間が丸ごと落ちていた）。
 ///
-/// 呼び出し元の [_scaled] が `factor == 1.0` で早期リターンするため、
-/// ここに来る時点で必ず `factor != 1.0`（「中」では呼ばれず、実効スタイルは
-/// 1px も変わらない）。
+/// `factor == 1.0`（「中」）でもここを通る（P0、リスクレビュー反映）:
+/// [_scaled] は「中」で早期リターンしない。ここで常に非 null な `textStyle` を
+/// 与えることで、「中」に/から切り替わる瞬間に `textStyle` が null↔非null に
+/// ならないようにしている（`_scaled` のコメント参照）。「中」では
+/// `fontSize * 1.0` で数値上は既定スタイルのままなので、実効スタイルは
+/// 1px も変わらない。
 ///
 /// `inherit` を明示的に上書きしない理由: [defaultLabelStyle] の `inherit` は
 /// 導出元（`Typography.englishLike2021.labelLarge`）の `inherit: false` を

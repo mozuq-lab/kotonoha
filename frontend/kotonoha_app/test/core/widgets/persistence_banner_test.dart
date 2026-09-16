@@ -427,10 +427,44 @@ void main() {
       final paragraph = tester.renderObject<RenderParagraph>(
         find.textContaining('保存できません'),
       );
-      expect(
-        paragraph.text.style!.fontSize,
-        closeTo(lightTheme.textTheme.bodyMedium!.fontSize! * 1.2, 0.01),
+      // 固定値 14 に倍率を掛ける（リスクレビューで bodyMedium 化の判断を撤回、
+      // Fix round 3）。bodyMedium（20.0）を使うと「中」でも見た目が変わり、
+      // 「大」では画面高の 34% をバナーが占有した（実測）。
+      expect(paragraph.text.style!.fontSize, closeTo(14 * 1.2, 0.01));
+    });
+
+    testWidgets('バナーの文字はフォント設定「中」では 14 のまま変わらない（L-103、Fix round 3）',
+        (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          persistenceStateProvider.overrideWithValue(const PersistenceReady()),
+          settingsNotifierProvider.overrideWith(
+            () => _FixedSettings(const AppSettings(fontSize: FontSize.medium)),
+          ),
+        ],
       );
+      addTearDown(container.dispose);
+      await container.read(settingsNotifierProvider.future);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: Consumer(
+            builder: (context, ref, _) => MaterialApp(
+              theme: ref.watch(currentThemeProvider),
+              home: const Scaffold(body: PersistenceBanner()),
+            ),
+          ),
+        ),
+      );
+      container
+          .read(settingsWriteFailureProvider.notifier)
+          .record(key: 'fontSize', succeeded: false);
+      await tester.pump();
+
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.textContaining('保存できません'),
+      );
+      expect(paragraph.text.style!.fontSize, closeTo(14, 0.01));
     });
   });
 }

@@ -45,4 +45,30 @@ void main() {
   test('小では 0.8 倍になる', () async {
     expect(await bodyLargeSizeFor(FontSize.small), closeTo(base * 0.8, 0.01));
   });
+
+  test(
+      'displayLarge は fontSize が null のまま残る（例外を投げない、Important、'
+      'リスクレビュー反映）', () async {
+    // なぜ: _scaledStyle の「fontSize が null なら手を付けない」ガードは、
+    // 本アプリの3テーマの textTheme では 15 フィールド中 12 フィールド
+    // （displayLarge を含む）が実際に fontSize: null であるため、これを
+    // 削除すると `fontSize! * factor` の非 null 表明で実際に落ちる
+    // （リスクレビューで実測）。このガードを直接見るテストが無かったため追加する。
+    expect(lightTheme.textTheme.displayLarge?.fontSize, isNull);
+
+    final container = ProviderContainer(
+      overrides: [
+        settingsNotifierProvider.overrideWith(
+          () => _FixedSettings(const AppSettings(fontSize: FontSize.large)),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(settingsNotifierProvider.future);
+
+    // 例外を投げずに読めること自体が主張（fontSize は null のまま）。
+    final displayLarge =
+        container.read(currentThemeProvider).textTheme.displayLarge;
+    expect(displayLarge?.fontSize, isNull);
+  });
 }
