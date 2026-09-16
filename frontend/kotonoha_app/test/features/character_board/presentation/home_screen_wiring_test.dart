@@ -9,6 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/input_limit_notice.dart';
+import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
 import 'package:kotonoha_app/features/status_buttons/status_buttons.dart';
@@ -280,6 +282,27 @@ void main() {
 
       expect(find.byIcon(Icons.open_in_full), findsOneWidget);
       expect(find.byTooltip('対面表示'), findsOneWidget);
+    });
+  });
+
+  group('入力上限の告知 (L-73、EDGE-101)', () {
+    testWidgets('入力欄が 1000 文字に達すると、入力欄の下に告知が出る（L-73）', (tester) async {
+      final container = buildContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: HomeScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      container
+          .read(inputBufferProvider.notifier)
+          .setText('あ' * InputBufferNotifier.maxLength);
+      await tester.pump();
+      expect(find.text(InputLimitNotice.message), findsOneWidget);
     });
   });
 }

@@ -16,6 +16,7 @@ import 'package:kotonoha_app/features/character_board/domain/character_data.dart
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/input_limit_notice.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_buttons.dart';
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
@@ -436,34 +437,48 @@ class HomeScreen extends ConsumerWidget {
     final contentPadding =
         compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;
 
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
-      padding: EdgeInsets.all(contentPadding),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline,
-        ),
-        borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-      ),
-      constraints: BoxConstraints(minHeight: minHeight, maxHeight: maxHeight),
-      // アクセシビリティ対応: liveRegionで入力中テキストの変化を
-      // スクリーンリーダーが自動読み上げできるようにする。
-      child: Semantics(
-        liveRegion: true,
-        child: SingleChildScrollView(
-          reverse: true,
-          child: Text(
-            inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontSize: _getFontSizeValue(fontSize),
-                  color: inputBuffer.isEmpty
-                      ? Theme.of(context).colorScheme.onSurface.withAlpha(128)
-                      : Theme.of(context).colorScheme.onSurface,
-                ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          width: double.infinity,
+          margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
+          padding: EdgeInsets.all(contentPadding),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline,
+            ),
+            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+          ),
+          constraints:
+              BoxConstraints(minHeight: minHeight, maxHeight: maxHeight),
+          // アクセシビリティ対応: liveRegionで入力中テキストの変化を
+          // スクリーンリーダーが自動読み上げできるようにする。
+          child: Semantics(
+            liveRegion: true,
+            child: SingleChildScrollView(
+              reverse: true,
+              child: Text(
+                inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontSize: _getFontSizeValue(fontSize),
+                      color: inputBuffer.isEmpty
+                          ? Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withAlpha(128)
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
+            ),
           ),
         ),
-      ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalMargin),
+          child: const InputLimitNotice(),
+        ),
+      ],
     );
   }
 
