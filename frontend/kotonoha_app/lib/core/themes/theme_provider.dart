@@ -45,25 +45,45 @@ final currentThemeProvider = Provider<ThemeData>((ref) {
 /// フィールドだけを個別に倍率がけする。
 ThemeData _scaled(ThemeData base, double factor) {
   if (factor == 1.0) return base;
+  // ボタン種のうちテーマが textStyle を明示していないもの
+  // （TextButton/OutlinedButton/FilledButton）向けの既定ラベルスタイル。
+  // 一度だけ導出して 3 種で使い回す。
+  final defaultButtonLabelStyle = _defaultButtonLabelStyle(base);
   return base.copyWith(
     textTheme: _scaledTextTheme(base.textTheme, factor),
     primaryTextTheme: _scaledTextTheme(base.primaryTextTheme, factor),
     // ボタンラベル（REQ-802「ボタンラベル」もフォントサイズ設定の対象）。
     // ElevatedButton はテーマが textStyle を明示しているのでそれに倍率を掛け、
     // TextButton/OutlinedButton/FilledButton はテーマに textStyle の明示が無く
-    // Material の実効既定値（14px、_defaultButtonLabelFontSize）で描かれているため
-    // その既定値を基準に倍率を掛けた textStyle を新たに与える。
+    // Material 既定スタイル（[_defaultButtonLabelStyle] 参照）で描かれているため
+    // その既定スタイルの fontSize にだけ倍率を掛けた textStyle を新たに与える。
     elevatedButtonTheme: ElevatedButtonThemeData(
-      style: _scaledButtonStyle(base.elevatedButtonTheme.style, factor),
+      style: _scaledButtonStyle(
+        base.elevatedButtonTheme.style,
+        factor,
+        defaultButtonLabelStyle,
+      ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: _scaledButtonStyle(base.textButtonTheme.style, factor),
+      style: _scaledButtonStyle(
+        base.textButtonTheme.style,
+        factor,
+        defaultButtonLabelStyle,
+      ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: _scaledButtonStyle(base.outlinedButtonTheme.style, factor),
+      style: _scaledButtonStyle(
+        base.outlinedButtonTheme.style,
+        factor,
+        defaultButtonLabelStyle,
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
-      style: _scaledButtonStyle(base.filledButtonTheme.style, factor),
+      style: _scaledButtonStyle(
+        base.filledButtonTheme.style,
+        factor,
+        defaultButtonLabelStyle,
+      ),
     ),
   );
 }
@@ -98,37 +118,75 @@ TextStyle? _scaledStyle(TextStyle? style, double factor) {
   return style.copyWith(fontSize: fontSize * factor);
 }
 
-/// テーマがボタンの textStyle を明示していないときに描画される実効フォントサイズ。
-/// [TextButton]・[OutlinedButton]・[FilledButton] はいずれもテーマ側に textStyle を
-/// 明示していない。この場合 Material 3 のボタン既定スタイルは `Theme.of(context)`
-/// の `textTheme` ではなく Flutter 組込みの Typography（englishLike 等）の
-/// labelLarge をそのまま使うため、本アプリの `textTheme.labelLarge`（本アプリでは
-/// fontSize が null）には影響されず、常にこの既定値で描かれる。
-/// 実測（`RenderParagraph` で測定、3 テーマ・3 ボタン種すべて一致）して確認済み。
-const double _defaultButtonLabelFontSize = 14.0;
+/// テーマがボタンの `textStyle` を明示していないとき（[TextButton]・
+/// [OutlinedButton]・[FilledButton]）に実際に使われる Material 3 既定の
+/// ラベルスタイルを、`Theme.of(context)` を介さずに再現する。
+///
+/// 導出の根拠（SDK ソースで確認済み）:
+/// - 各ボタンの M3 既定スタイル（`_TextButtonDefaultsM3` 等、
+///   `text_button.dart`/`outlined_button.dart`/`filled_button.dart`）は
+///   `textStyle: MaterialStatePropertyAll(Theme.of(context).textTheme.labelLarge)`
+///   を使う。
+/// - `Theme.of(context)`（`theme.dart` の `Theme.of`）は
+///   `ThemeData.localize(theme, theme.typography.geometryThemeFor(category))`
+///   を呼び、`category` はロケールの `MaterialLocalizations.scriptCategory`。
+/// - `ThemeData.localize`（`theme_data.dart`）は
+///   `textTheme: localTextGeometry.merge(baseTheme.textTheme)` で textTheme を
+///   作る。`labelLarge` については
+///   `geometry.labelLarge.merge(base.textTheme.labelLarge)` となり、
+///   `merge` は他方が非 null のフィールドだけ上書きする
+///   （`TextStyle.merge`、`text_style.dart`）。本アプリの `textTheme.labelLarge`
+///   は `fontSize`/`fontWeight`/`letterSpacing` が null で `color` のみ設定
+///   されているため、結果は「geometry の書体情報＋テーマの色」になる。
+/// - `category` は本アプリの `MaterialApp`（`app.dart`）が `locale`/
+///   `localizationsDelegates` を指定していないため、既定の
+///   `ScriptCategory.englishLike` になる（コード上は日本語ロケールを想定した
+///   `ScriptCategory.dense` になり得るが、`typography.dart` の
+///   `_M3Typography.englishLike`/`dense`/`tall` の `labelLarge` は
+///   `fontSize: 14.0, fontWeight: FontWeight.w500, letterSpacing: 0.1` が
+///   3 つとも同一値のため、どちらが選ばれても本メソッドの結果は変わらない。
+///   差があるのは `textBaseline`（`alphabetic`/`ideographic`）のみ）。
+///
+/// `Typography.englishLike2021` は locale/platform に依存しない定数のため
+/// `Typography.material2021()` を構築せずに直接参照できる。
+TextStyle _defaultButtonLabelStyle(ThemeData base) {
+  return Typography.englishLike2021.labelLarge!
+      .merge(base.textTheme.labelLarge);
+}
 
 /// ボタン種ごとの [ButtonStyle] にフォント設定の倍率を掛ける。
 /// テーマが `textStyle` を明示していればその `fontSize` に倍率を掛ける
 /// （[TextStyle.copyWith] を使うので `fontWeight` 等の他の属性は保たれる）。
-/// 明示が無いボタン種は [_defaultButtonLabelFontSize] を基準に倍率を掛けた
-/// `textStyle` を新たに与える。呼び出し元の [_scaled] が `factor == 1.0` で
-/// 早期リターンするため、ここに来る時点で必ず `factor != 1.0`
-/// （「中」では呼ばれず、実効サイズは 1px も変わらない）。
+/// 明示が無いボタン種は [defaultLabelStyle]（[_defaultButtonLabelStyle] で
+/// 導出した Material 既定スタイル）の `fontSize` にだけ倍率を掛ける
+/// （同じく `copyWith` なので `fontWeight`・`letterSpacing`・`fontFamily`・
+/// `inherit` は既定のまま保たれ、太さ・字間が失われない——再レビューで
+/// 検出された不具合: 以前は `TextStyle(fontSize: ...)` を素で合成しており、
+/// `ButtonStyleButton.build()` はプロパティ単位ではなく
+/// `widgetValue ?? themeValue ?? defaultValue` の全置換で解決するため
+/// （`button_style_button.dart`）、太さ・字間が丸ごと落ちていた）。
 ///
-/// `inherit: false` を明示する理由: Material 3 のボタン既定スタイルの
-/// `TextStyle` は `inherit: false`（Typography 由来の完結したスタイル）。
-/// `ButtonStyleButton` はボタンの状態変化時に `AnimatedDefaultTextStyle` で
-/// 直前のスタイルからここのスタイルへ補間するため、`inherit` が食い違うと
-/// `TextStyle.lerp` が「Failed to interpolate TextStyles with different
-/// inherit values」で例外を投げる（実際に踏んだ: 設定読み込み中は
-/// `currentThemeProvider` が未倍率の既定スタイル [inherit: false] を返し、
-/// 設定確定後にここで作るスタイルへ遷移する瞬間に再現した）。
-ButtonStyle _scaledButtonStyle(ButtonStyle? style, double factor) {
-  final currentTextStyle = style?.textStyle?.resolve(const <WidgetState>{});
-  final scaledTextStyle = currentTextStyle != null
-      ? _scaledStyle(currentTextStyle, factor)
-      : TextStyle(
-          fontSize: _defaultButtonLabelFontSize * factor, inherit: false);
+/// 呼び出し元の [_scaled] が `factor == 1.0` で早期リターンするため、
+/// ここに来る時点で必ず `factor != 1.0`（「中」では呼ばれず、実効スタイルは
+/// 1px も変わらない）。
+///
+/// `inherit` を明示的に上書きしない理由: [defaultLabelStyle] の `inherit` は
+/// 導出元（`Typography.englishLike2021.labelLarge`）の `inherit: false` を
+/// そのまま引き継ぐ（`TextStyle.merge`/`copyWith` は `inherit` に触れない）。
+/// これは Material 3 のボタン既定スタイルの `inherit` と一致するため、
+/// `ButtonStyleButton` が状態変化時に `AnimatedDefaultTextStyle` で
+/// 直前のスタイルとここのスタイルを補間しても
+/// 「Failed to interpolate TextStyles with different inherit values」には
+/// ならない（round 1 で素の `TextStyle(fontSize: ..., inherit: false)` を
+/// 手で合成したときに実際にこの例外を踏んだ）。
+ButtonStyle _scaledButtonStyle(
+  ButtonStyle? style,
+  double factor,
+  TextStyle defaultLabelStyle,
+) {
+  final currentTextStyle =
+      style?.textStyle?.resolve(const <WidgetState>{}) ?? defaultLabelStyle;
+  final scaledTextStyle = _scaledStyle(currentTextStyle, factor);
   return (style ?? const ButtonStyle()).copyWith(
     textStyle: WidgetStatePropertyAll(scaledTextStyle),
   );
