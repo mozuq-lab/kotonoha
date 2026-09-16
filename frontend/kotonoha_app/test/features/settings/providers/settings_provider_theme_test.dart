@@ -14,6 +14,7 @@ import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 
 import '../../../support/contrast_helpers.dart';
+import '../../../support/theme_helpers.dart';
 
 void main() {
   group('TASK-0073: テーマ設定 Providerテスト', () {
@@ -134,7 +135,7 @@ void main() {
 
         // 初期状態: ライトテーマ
         var currentTheme = container.read(currentThemeProvider);
-        expect(currentTheme, lightTheme);
+        expectSameTheme(currentTheme, lightTheme);
 
         // When: 実際の処理実行: テーマを「ダーク」に変更
         final notifier = container.read(settingsNotifierProvider.notifier);
@@ -142,14 +143,14 @@ void main() {
 
         // Then: 結果検証: currentThemeProviderがdarkThemeを返す
         currentTheme = container.read(currentThemeProvider);
-        expect(currentTheme, darkTheme);
+        expectSameTheme(currentTheme, darkTheme);
 
         // When: テーマを「高コントラスト」に変更
         await notifier.setTheme(AppTheme.highContrast);
 
         // Then: currentThemeProviderがhighContrastThemeを返す
         currentTheme = container.read(currentThemeProvider);
-        expect(currentTheme, highContrastTheme);
+        expectSameTheme(currentTheme, highContrastTheme);
 
         container.dispose();
       });
@@ -167,7 +168,7 @@ void main() {
         final currentTheme = container.read(currentThemeProvider);
 
         // Then: 結果検証: デフォルトテーマ（ライト）が返される
-        expect(currentTheme, lightTheme);
+        expectSameTheme(currentTheme, lightTheme);
 
         container.dispose();
       });

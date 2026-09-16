@@ -15,6 +15,8 @@ import 'package:kotonoha_app/core/themes/dark_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 
+import '../../../support/theme_helpers.dart';
+
 void main() {
   group('TASK-0073: テーマ適用 統合テスト', () {
     setUp(() async {
@@ -142,7 +144,7 @@ void main() {
 
         // currentThemeProviderがdarkThemeを返すことを確認
         final currentTheme = container.read(currentThemeProvider);
-        expect(currentTheme, darkTheme);
+        expectSameTheme(currentTheme, darkTheme);
 
         await tester.pumpWidget(
           UncontrolledProviderScope(
@@ -203,7 +205,7 @@ void main() {
 
         // currentThemeProviderも確認
         var currentTheme = container.read(currentThemeProvider);
-        expect(currentTheme, lightTheme);
+        expectSameTheme(currentTheme, lightTheme);
 
         // When: 実際の処理実行: テーマを「ダーク」に変更
         final notifier = container.read(settingsNotifierProvider.notifier);
@@ -215,7 +217,7 @@ void main() {
 
         // currentThemeProviderも更新される
         currentTheme = container.read(currentThemeProvider);
-        expect(currentTheme, darkTheme);
+        expectSameTheme(currentTheme, darkTheme);
 
         container.dispose();
       });
