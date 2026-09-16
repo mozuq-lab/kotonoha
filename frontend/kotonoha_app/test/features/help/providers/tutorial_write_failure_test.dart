@@ -18,6 +18,11 @@ class _ThrowingStore extends InMemorySharedPreferencesStore {
   Future<bool> setValue(String valueType, String key, Object value) async {
     throw Exception('setValue failed (injected)');
   }
+
+  @override
+  Future<bool> remove(String key) async {
+    throw Exception('remove failed (injected)');
+  }
 }
 
 void main() {
@@ -50,5 +55,20 @@ void main() {
     await container.read(tutorialProvider.notifier).completeTutorial();
 
     expect(container.read(settingsWriteFailureProvider), isEmpty);
+  });
+
+  test('リセットの書き込みが失敗しても未処理エラーにならず、状態は未完了に戻る', () async {
+    SharedPreferences.setMockInitialValues({});
+    SharedPreferencesStorePlatform.instance = _ThrowingStore();
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final notifier = container.read(tutorialProvider.notifier);
+
+    await notifier.completeTutorial();
+    expect(container.read(tutorialProvider).isCompleted, isTrue);
+
+    await expectLater(notifier.resetTutorial(), completes);
+
+    expect(container.read(tutorialProvider).isCompleted, isFalse);
   });
 }

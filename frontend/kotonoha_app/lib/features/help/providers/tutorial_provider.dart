@@ -75,12 +75,19 @@ class TutorialNotifier extends Notifier<TutorialState> {
         .record(key: _tutorialCompletedKey, succeeded: succeeded);
   }
 
-  /// チュートリアルをリセット（テスト用）
-  /// shared_preferencesからフラグを削除する。
+  /// チュートリアルをリセット
+  /// ヘルプ画面の「もう一度見る」から呼ぶ。shared_preferences のフラグ削除に
+  /// 失敗しても画面は前へ戻れるよう状態は戻す。削除の失敗は報告しない
+  /// （フラグの削除失敗は利用者のデータの損失ではなく、次回起動でチュートリアルが
+  /// 再表示されないだけ）。
   Future<void> resetTutorial() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tutorialCompletedKey);
-
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_tutorialCompletedKey);
+    } catch (_) {
+      // 失敗は報告しない（利用者のデータではない）
+    }
+    if (!ref.mounted) return;
     state = state.copyWith(isCompleted: false);
   }
 }
