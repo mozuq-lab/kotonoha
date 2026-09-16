@@ -383,4 +383,45 @@ void main() {
       expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
     });
   });
+
+  group('下書きの保存失敗の告知（NFR-302、L-104）', () {
+    Future<ProviderContainer> pumpWithContainer(
+        WidgetTester tester, PersistenceState state) async {
+      final container = ProviderContainer(
+        overrides: [persistenceStateProvider.overrideWithValue(state)],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: lightTheme,
+            home: const Scaffold(body: PersistenceBanner()),
+          ),
+        ),
+      );
+      return container;
+    }
+
+    testWidgets('下書きの保存が失敗していると「入力中の文を保存できません」と出る', (tester) async {
+      final container =
+          await pumpWithContainer(tester, const PersistenceReady());
+      container
+          .read(settingsWriteFailureProvider.notifier)
+          .record(key: draftTextWriteKey, succeeded: false);
+      await tester.pump();
+      expect(find.textContaining('入力中の文を保存できません'), findsOneWidget);
+      expect(find.textContaining('設定を保存できません'), findsNothing);
+    });
+
+    testWidgets('下書きと設定の両方が失敗していると「入力中の文、設定を保存できません」と出る', (tester) async {
+      final container =
+          await pumpWithContainer(tester, const PersistenceReady());
+      final notifier = container.read(settingsWriteFailureProvider.notifier);
+      notifier.record(key: draftTextWriteKey, succeeded: false);
+      notifier.record(key: 'fontSize', succeeded: false);
+      await tester.pump();
+      expect(find.textContaining('入力中の文、設定を保存できません'), findsOneWidget);
+    });
+  });
 }

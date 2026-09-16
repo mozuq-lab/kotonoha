@@ -7,6 +7,8 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.dart';
+
 // 定数定義
 
 /// SharedPreferencesのキー
@@ -14,7 +16,7 @@ class _SessionKeys {
   _SessionKeys._();
 
   /// 入力中のテキスト
-  static const String draftText = 'draft_text';
+  static const String draftText = draftTextWriteKey;
 
   /// 最後に表示したルート
   static const String lastRoute = 'last_route';
@@ -108,45 +110,72 @@ class AppSessionNotifier extends Notifier<AppSessionState> {
   }
 
   /// 入力中のテキストを保存
-  /// クラッシュ時のデータ保持
+  /// クラッシュ時のデータ保持。失敗は利用者に報告する（NFR-302、台帳 L-104）。
   Future<void> saveDraftText(String text) async {
     state = state.copyWith(draftText: text);
-
-    final prefs = await SharedPreferences.getInstance();
-    if (text.isEmpty) {
-      await prefs.remove(_SessionKeys.draftText);
-    } else {
-      await prefs.setString(_SessionKeys.draftText, text);
-    }
+    await _persist(
+      _SessionKeys.draftText,
+      (prefs) => text.isEmpty
+          ? prefs.remove(_SessionKeys.draftText)
+          : prefs.setString(_SessionKeys.draftText, text),
+    );
   }
 
-  /// 最後に表示したルートを保存
-  /// バックグラウンド復帰時の状態復元
+  /// 最後に表示したルートを保存（セッションの記録。失敗は報告しない）
   Future<void> saveLastRoute(String route) async {
     state = state.copyWith(lastRoute: route);
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_SessionKeys.lastRoute, route);
+    await _persist(
+      _SessionKeys.lastRoute,
+      (prefs) => prefs.setString(_SessionKeys.lastRoute, route),
+      report: false,
+    );
   }
 
   /// アプリがバックグラウンドに移行した時の処理
-  /// バックグラウンド移行時の状態保存
   Future<void> onAppPaused() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // 現在の状態を永続化
     if (state.draftText.isNotEmpty) {
-      await prefs.setString(_SessionKeys.draftText, state.draftText);
+      await _persist(
+        _SessionKeys.draftText,
+        (prefs) => prefs.setString(_SessionKeys.draftText, state.draftText),
+      );
     }
-    if (state.lastRoute != null) {
-      await prefs.setString(_SessionKeys.lastRoute, state.lastRoute!);
+    final lastRoute = state.lastRoute;
+    if (lastRoute != null) {
+      await _persist(
+        _SessionKeys.lastRoute,
+        (prefs) => prefs.setString(_SessionKeys.lastRoute, lastRoute),
+        report: false,
+      );
     }
-
-    // タイムスタンプを保存
-    await prefs.setString(
+    await _persist(
       _SessionKeys.sessionTimestamp,
-      DateTime.now().millisecondsSinceEpoch.toString(),
+      (prefs) => prefs.setString(
+        _SessionKeys.sessionTimestamp,
+        DateTime.now().millisecondsSinceEpoch.toString(),
+      ),
+      report: false,
     );
+  }
+
+  /// SharedPreferences への書き込みを行い、成否を報告する
+  /// [report] が false のキーは、失敗しても未処理エラーにしないだけで報告しない
+  /// （セッションの記録であって利用者のデータではない）。
+  Future<void> _persist(
+    String key,
+    Future<bool> Function(SharedPreferences prefs) write, {
+    bool report = true,
+  }) async {
+    var succeeded = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      succeeded = await write(prefs);
+    } catch (_) {
+      succeeded = false;
+    }
+    if (!report || !ref.mounted) return;
+    ref
+        .read(settingsWriteFailureProvider.notifier)
+        .record(key: key, succeeded: succeeded);
   }
 
   /// アプリがフォアグラウンドに復帰した時の処理

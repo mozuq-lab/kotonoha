@@ -27,3 +27,13 @@ final settingsWriteFailureProvider =
     NotifierProvider<SettingsWriteFailureNotifier, Set<String>>(
   SettingsWriteFailureNotifier.new,
 );
+
+/// 入力中の文（下書き）の SharedPreferences キー。`app_session_provider.dart` と共有する
+const String draftTextWriteKey = 'draft_text';
+
+/// 失敗しているキーを利用者向けの名前に写す（順序固定: 入力中の文 → 設定）
+/// 下書きは利用者のデータ（NFR-302）、それ以外のキーは設定として 1 語にまとめる。
+List<String> prefFailureNames(Set<String> failedKeys) => [
+      if (failedKeys.contains(draftTextWriteKey)) '入力中の文',
+      if (failedKeys.any((key) => key != draftTextWriteKey)) '設定',
+    ];
