@@ -68,7 +68,7 @@ class PersistenceBanner extends ConsumerWidget {
     final state = ref.watch(persistenceStateProvider);
     final scheme = Theme.of(context).colorScheme;
     final dismissed = ref.watch(recreatedNoticeDismissedProvider);
-    final settingsFailed = ref.watch(settingsWriteFailureProvider).isNotEmpty;
+    final failedPrefKeys = ref.watch(settingsWriteFailureProvider);
     const none = <PersistedArea>{};
 
     // 保存できない状態（閉じられない）と作り直しの告知（閉じられる）は別々に組み、
@@ -97,7 +97,7 @@ class PersistenceBanner extends ConsumerWidget {
     // 設定（SharedPreferences）の保存失敗は Hive の領域と同じ告知に名前を並べる
     final failedNames = [
       ..._areaNames(failedAreas),
-      if (settingsFailed) '設定',
+      ...prefFailureNames(failedPrefKeys),
     ];
     // 失敗の領域が分からないときは対象を特定しない文言に倒す（設定の失敗が重なっても同じ）
     final failureText = isFailureState && failedAreas.isEmpty
