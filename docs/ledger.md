@@ -39,6 +39,7 @@
 - [ ] L-103 常設バナーの文字はアプリ設定の 3 段階フォントに追随しない（`fontSize: 14` 固定。OS の文字拡大は効く） — frontend/kotonoha_app/lib/core/widgets/persistence_banner.dart（#126 の独立監査。L-74 と同系）
 - [ ] L-104 下書き（`draft_text`）とチュートリアル完了フラグの SharedPreferences 書き込みは失敗しても報告されない（try も無く未処理の非同期エラーになる）。下書きは NFR-302 の対象で「最もコストの高い損失」とコード自身が書く — frontend/kotonoha_app/lib/features/app_state/providers/app_session_provider.dart:112-150、lib/features/help/providers/tutorial_provider.dart:60-71（#127 の独立監査）
 - [ ] L-106 ADR-005 が #125〜#127 で 55 行まで肥大化した（挙動の細部・日付・台帳番号を追記）。60 行上限も「改訂は追記せず書き直す」の規則も 2 系統レビューも捕まえず、利用者が adr-touch のコメントで気づいた。#128 で構造を変えた（ADR-010:34 の 1 句、規律 7 のレンズ）。10 月の棚卸し観点 6 で、以後の ADR 差分に細部が入らなかったかを見て、効かなければ数字（上限）を見直す — docs/adr/ADR-010-document-framework.md:34、AGENTS.md 規律 7
+- [ ] L-107 ストア提出用の画像がゼロ（アイコン 1024/512、iPhone・iPad・スマートフォンのスクリーンショット、Play のフィーチャーグラフィック 1024×500）。`docs/store-assets-guide.md` のチェックリストは全項目が未着手 — frontend/kotonoha_app/fastlane/（画像 0 件、2026-09-16 実測）。ADR-007 条件 4
 
 ## 判断待ち
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。Web 成果物に鍵を焼かない（#121 で外した）
@@ -51,6 +52,7 @@
 - [ ] L-88 `fix/backend-production-hardening` はローカルにしか無い（#86 で「証拠として残す」と決定）。push して保全するか、ローカル限りとするか — Issue #86（旧 remaining-work.md から移記）
 - [ ] L-101 Hive 自身の自動復旧（本番既定 `crashRecovery: true`）は末尾の破損を黙って切り捨てて開くため、最も起きやすい形の破損では退避も告知も無い。`crashRecovery: false` に倒して全破損を自前経路（退避＋告知）に集約するか（部分救出を捨てる）、受け入れるか — frontend/kotonoha_app/lib/core/utils/hive_init.dart:86、hive 2.2.3 storage_backend_vm.dart:91-96（#126 の独立監査）
 - [x] L-105 `EmergencyStateNotifier.startEmergency()` / `resetEmergency()` が音声再生の await の後に state を書き、headless web の E2E（`large_emergency_buttons_test.dart` TC-E2E-084-013）がテスト完了後の UnmountedRefException で時々赤になる（2026-09-12 の #125 CI、同一コミットの再実行で緑）。await 後に `ref.mounted` を確かめる修正を、遅い FakeAudioService で赤を先に見る単体テスト付きで入れるか、フレークとして残すか — frontend/kotonoha_app/lib/features/emergency/presentation/providers/emergency_state_provider.dart:80。解消（2026-09-13、#131: await 後に `ref.mounted` を確かめる。遅い音声サービスで赤→緑）
+- [ ] L-108 Google Play の個人アカウント（2023-11-13 以降に作成）は製品版の前にクローズドテスト（12 人以上が 14 日間連続で参加）が必須。ADR-007 は「β 配布」を却下し「オープンテスト段階は挟まない」と決めたが、これはストア側の必須要件で選べない。組織アカウント（D-U-N-S 番号）で登録して要件を外すか、クローズドテストを計画して ADR-007 を改訂するか。L-84 の登録前に決める — https://support.google.com/googleplay/android-developer/answer/14151465（2026-09-16 確認）、ADR-007 条件 4
 
 ## 計測（棚卸しの記録。最新の 1 回だけ残す）
 | 日付 | 核 | 未卒業 ADR | 台帳 未対応/対応済/却下 | 出力ゼロの仕組み | 実在しないパス参照 | kill rate | 製品/全体（30 日） |
