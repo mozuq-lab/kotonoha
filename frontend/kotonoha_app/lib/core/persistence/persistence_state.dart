@@ -52,6 +52,17 @@ enum CorruptionOutcome {
   recreated,
 }
 
+/// 領域ごとの結果から、ある結果になった領域の集合を取り出す
+/// 状態の導出とバナーの両方が使う（変換を 2 箇所に書くと、片方だけ条件が
+/// 変わったときに告知の領域が食い違う）。
+extension CorruptionOutcomeAreas on Map<PersistedArea, CorruptionOutcome> {
+  /// [outcome] になった領域
+  Set<PersistedArea> areasWith(CorruptionOutcome outcome) => {
+        for (final entry in entries)
+          if (entry.value == outcome) entry.key,
+      };
+}
+
 /// 永続化の状態
 /// 状態は 4 つしかない。sealed にしてあるので、利用側で switch を書けば
 /// 分岐漏れはコンパイルエラーになる。
