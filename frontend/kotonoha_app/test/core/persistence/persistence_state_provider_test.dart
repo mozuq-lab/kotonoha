@@ -130,6 +130,26 @@ void main() {
           {PersistedArea.history});
     });
 
+    test('起動時に読める分だけ救った領域は、作り直した領域と別に状態へ届く', () async {
+      await Hive.openBox<HistoryItem>(PersistedArea.history.boxName);
+      await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      await Hive.openBox<FavoriteItem>(PersistedArea.favorites.boxName);
+      final container = ProviderContainer(
+        overrides: [
+          corruptionOutcomesProvider.overrideWithValue({
+            PersistedArea.history: CorruptionOutcome.salvaged,
+            PersistedArea.favorites: CorruptionOutcome.recreated,
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      final state = container.read(persistenceStateProvider);
+      expect(state, isA<PersistenceRecreated>());
+      final loss = state as PersistenceRecreated;
+      expect(loss.salvagedAreas, {PersistedArea.history});
+      expect(loss.recreatedAreas, {PersistedArea.favorites});
+    });
+
     test('nullを返すrepositoryの領域と、状態が報告する失敗領域が一致する', () async {
       // この製品にとっての意味: 利用者に「保存できない」と伝える根拠と
       // 実際に保存を担うrepositoryの有無は、同じ事実でなければならない。
