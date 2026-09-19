@@ -102,10 +102,6 @@ class PersistenceBanner extends ConsumerWidget {
     // 保存できない状態は破損の結果を運ばないので、そのときは起動時の結果を
     // 直接読む。失敗の告知で、作り直した・一部を失ったことを隠さない（台帳 L-102）
     final outcomes = ref.watch(corruptionOutcomesProvider);
-    Set<PersistedArea> areasWith(CorruptionOutcome outcome) => {
-          for (final entry in outcomes.entries)
-            if (entry.value == outcome) entry.key,
-        };
     final (recreatedAreas, salvagedAreas) = dismissed
         ? (none, none)
         : switch (state) {
@@ -113,8 +109,8 @@ class PersistenceBanner extends ConsumerWidget {
               (recreatedAreas, salvagedAreas),
             PersistenceReady() => (none, none),
             PersistenceUnavailable() || PersistenceRecoverableFailure() => (
-                areasWith(CorruptionOutcome.recreated),
-                areasWith(CorruptionOutcome.salvaged),
+                outcomes.areasWith(CorruptionOutcome.recreated),
+                outcomes.areasWith(CorruptionOutcome.salvaged),
               ),
           };
 

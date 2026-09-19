@@ -390,6 +390,42 @@ void main() {
       expect(find.textContaining('定型文を読み込めなかったため、空の状態で開始しました'), findsOneWidget);
     });
 
+    testWidgets('読み上げのラベルにも、保存できない告知と破損の告知の両方が入る', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pump(
+        tester,
+        const PersistenceRecoverableFailure({PersistedArea.favorites}),
+        {PersistedArea.history: CorruptionOutcome.salvaged},
+      );
+      final label = tester
+          .getSemantics(find.byType(PersistenceBanner))
+          .getSemanticsData()
+          .label;
+      expect(label, contains('お気に入りを保存できません'));
+      expect(label, contains('履歴の一部を読み込めませんでした'));
+      handle.dispose();
+    });
+
+    testWidgets('破損の告知が並んでも、何も保存できないときの配色のまま（弱い警告色に落とさない）', (tester) async {
+      await pump(
+        tester,
+        const PersistenceUnavailable(),
+        {PersistedArea.presetPhrases: CorruptionOutcome.recreated},
+      );
+      final material = tester.widget<Material>(
+        find
+            .ancestor(
+              of: find.textContaining('保存できません'),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      expect(
+        material.color,
+        unavailableBannerColors(lightTheme.colorScheme).background,
+      );
+    });
+
     testWidgets('「閉じる」は破損の告知だけを消し、保存できない告知は残す', (tester) async {
       await pump(
         tester,

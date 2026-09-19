@@ -35,14 +35,10 @@ final persistenceStateProvider = Provider<PersistenceState>((ref) {
   }..removeAll(failedWrites);
 
   final outcomes = ref.watch(corruptionOutcomesProvider);
-  Set<PersistedArea> areasWith(CorruptionOutcome outcome) => {
-        for (final entry in outcomes.entries)
-          if (entry.value == outcome) entry.key,
-      };
 
   return resolvePersistenceState(
     openedAreas: usableAreas,
-    recreatedAreas: areasWith(CorruptionOutcome.recreated),
-    salvagedAreas: areasWith(CorruptionOutcome.salvaged),
+    recreatedAreas: outcomes.areasWith(CorruptionOutcome.recreated),
+    salvagedAreas: outcomes.areasWith(CorruptionOutcome.salvaged),
   );
 });
