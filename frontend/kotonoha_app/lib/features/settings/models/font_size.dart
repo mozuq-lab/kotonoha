@@ -2,6 +2,8 @@
 /// 実装方針: interfaces.dartで定義されたFontSize enumを再利用
 library;
 
+import 'package:kotonoha_app/core/constants/app_sizes.dart';
+
 // 実装内容: フォントサイズの3段階（小・中・大）を定義
 // アクセシビリティ要件として3段階のフォントサイズ選択を提供
 enum FontSize {
@@ -23,4 +25,15 @@ enum FontSize {
 
   // コンストラクタ: enumの各値に表示名を関連付け
   const FontSize(this.displayName);
+}
+
+/// フォントサイズ設定をテーマの倍率に写す
+/// 文字盤やボタンが使う明示サイズ（[AppSizes.fontSizeSmall] 等）と同じ比にする。
+extension FontSizeScale on FontSize {
+  /// テーマの textTheme に掛ける倍率（中 = 1.0）
+  double get scaleFactor => switch (this) {
+        FontSize.small => AppSizes.fontSizeSmall / AppSizes.fontSizeMedium,
+        FontSize.medium => 1.0,
+        FontSize.large => AppSizes.fontSizeLarge / AppSizes.fontSizeMedium,
+      };
 }

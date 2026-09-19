@@ -16,6 +16,8 @@ import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state_provider.dart';
 import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 
 /// バナーの前景色と背景色の組
 /// コントラスト比を測るテストが参照するため公開している。
@@ -69,6 +71,15 @@ class PersistenceBanner extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final dismissed = ref.watch(recreatedNoticeDismissedProvider);
     final failedPrefKeys = ref.watch(settingsWriteFailureProvider);
+    // フォントサイズ設定の倍率（読み込み中・失敗時は「中」相当の 1.0）。
+    // bodyMedium 等のテーマスタイルを使わない理由は下記 Text の style コメント参照。
+    final fontSizeFactor = ref
+            .watch(settingsNotifierProvider)
+            .asData
+            ?.value
+            .fontSize
+            .scaleFactor ??
+        1.0;
     const none = <PersistedArea>{};
 
     // 保存できない状態（閉じられない）と作り直しの告知（閉じられる）は別々に組み、
@@ -139,7 +150,20 @@ class PersistenceBanner extends ConsumerWidget {
                 child: ExcludeSemantics(
                   child: Text(
                     message,
-                    style: TextStyle(color: colors.foreground, fontSize: 14),
+                    // フォントサイズ設定の倍率を固定値 14 に掛ける（REQ-802、
+                    // 台帳 L-103）。テーマの bodyMedium は使わない: 本アプリの
+                    // 3 テーマはいずれも bodyMedium の fontSize が
+                    // AppSizes.fontSizeMedium（20.0）で、常設バナーの見た目が
+                    // 「中」設定でも 14px→20px に変わってしまい、複数の告知が
+                    // 重なる「大」設定では画面高の約 34%（実測、幅 390px の
+                    // 画面で高さ 288px）を占有して文字盤の可視領域を大きく
+                    // 圧迫する（リスクレビューで指摘、一度 bodyMedium 化した
+                    // 判断を撤回）。「中」では 14px のまま・「大」では
+                    // 16.8px と、既存の見た目を保ちつつ倍率だけ追従させる。
+                    style: TextStyle(
+                      color: colors.foreground,
+                      fontSize: 14 * fontSizeFactor,
+                    ),
                   ),
                 ),
               ),
