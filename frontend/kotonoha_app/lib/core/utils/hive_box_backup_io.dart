@@ -5,6 +5,26 @@ library;
 
 import 'dart:io';
 
+/// 書きかけの退避（`<box>.hive.corrupt.bak.tmp`）が残っていれば片付ける。
+/// 写している最中にプロセスが落ちると残り、**利用者の発話を含む写しが端末に残って
+/// OSのバックアップにも乗る**。次に破損するまで誰も消さないので、box が正常に
+/// 開けたときに片付ける（`openBoxWithRecovery`が呼ぶ。台帳 L-114）。
+/// 消せなくても呼び出し元は何も変えない（次の退避が上書きする）。
+Future<void> removeStaleBackupStaging(String? hivePath, String boxName) async {
+  if (hivePath == null) {
+    return;
+  }
+  try {
+    final stagingFile =
+        File('${resolveBoxBackupFilePath(hivePath, boxName)}.tmp');
+    if (await stagingFile.exists()) {
+      await stagingFile.delete();
+    }
+  } catch (_) {
+    // 片付けに失敗しても、box の利用には影響しない
+  }
+}
+
 /// Hiveと同じ小文字のBox名でファイルパスを解決する。
 /// 大小文字を区別しないファイルシステムでは誤ったパスでもファイルが見つかるため、
 /// I/Oから分離してパス自体をテストできるようにする。
@@ -57,7 +77,18 @@ Future<bool> backupCorruptBoxFile(String? hivePath, String boxName) async {
         return false;
       }
 
-      // 入れ替え: 同じディレクトリ内の rename なので、途中の状態が残らない
+      // 中身をディスクへ確定させてから入れ替える。rename の順序は保たれるが、
+      // hive と同じく書き込みの永続化までは保証されないので、入れ替えた直後に
+      // 電源が落ちると「前回の退避は消え、新しい退避は中身が無い」になりうる
+      // （台帳 L-126 と同じ窓。退避は破損時にしか通らないので、ここは fsync する）
+      final staged = await stagingFile.open(mode: FileMode.append);
+      try {
+        await staged.flush();
+      } finally {
+        await staged.close();
+      }
+
+      // 入れ替え: 同じディレクトリ内の rename なので、宛先は旧版か新版のどちらか
       await stagingFile.rename(backupFile.path);
       return true;
     } finally {

@@ -14,3 +14,6 @@ library;
 Future<bool> backupCorruptBoxFile(String? hivePath, String boxName) async {
   return false;
 }
+
+/// 書きかけの退避を片付ける。この環境では退避そのものを行わないので何もしない。
+Future<void> removeStaleBackupStaging(String? hivePath, String boxName) async {}

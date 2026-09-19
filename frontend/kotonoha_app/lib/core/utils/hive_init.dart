@@ -88,7 +88,11 @@ Future<Box<T>?> openBoxWithRecovery<T>(
   void Function()? onSalvaged,
 }) async {
   try {
-    return await Hive.openBox<T>(name, crashRecovery: false);
+    final box = await Hive.openBox<T>(name, crashRecovery: false);
+    // 前回の退避が書きかけで終わっていたら、その一時ファイルを片付ける。
+    // 残すと、利用者の発話を含む写しが次に破損するまで端末に残る（台帳 L-114）
+    await removeStaleBackupStaging(hivePath, name);
+    return box;
   } catch (error, stackTrace) {
     // 破損検知ログ: Box破損等でオープンに失敗した際に記録する
     debugPrint('[hive_init] Box "$name" のオープンに失敗しました: $error');
