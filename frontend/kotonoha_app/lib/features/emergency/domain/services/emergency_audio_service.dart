@@ -72,6 +72,9 @@ class EmergencyAudioService implements EmergencyAudioServiceInterface {
   /// 再生中フラグ
   bool _isPlaying = false;
 
+  /// 最後に受け付けた再生開始・停止（[_inOrder] が繋いでいく）
+  Future<void> _pending = Future<void>.value();
+
   /// エラーコールバック
   void Function(Object error)? _onError;
 
@@ -100,10 +103,11 @@ class EmergencyAudioService implements EmergencyAudioServiceInterface {
   /// 既に再生中の場合は何もしない。
   /// 例外発生時
   /// onErrorコールバックを呼び出す
-  /// エラーをログに記録
-  /// 例外を再スローしない（UIは継続動作）
+  /// 例外を再スローする（握りつぶして UI を継続させるのは呼び出し側）
   @override
-  Future<void> startEmergencySound() async {
+  Future<void> startEmergencySound() => _inOrder(_start);
+
+  Future<void> _start() async {
     if (_isPlaying) return;
 
     try {
@@ -128,7 +132,9 @@ class EmergencyAudioService implements EmergencyAudioServiceInterface {
   /// 現在再生中の緊急音を停止する。
   /// 再生中でない場合は何もしない。
   @override
-  Future<void> stopEmergencySound() async {
+  Future<void> stopEmergencySound() => _inOrder(_stop);
+
+  Future<void> _stop() async {
     if (!_isPlaying) return;
 
     try {
@@ -148,5 +154,18 @@ class EmergencyAudioService implements EmergencyAudioServiceInterface {
   Future<void> dispose() async {
     _isPlaying = false;
     await _player.dispose();
+  }
+
+  // 内部メソッド
+
+  /// 再生開始・停止を、呼ばれた順に 1 本ずつ実行する（台帳 L-110）
+  /// [_isPlaying] は操作が終わってから変わるので、前の操作の途中に次が
+  /// 走ると、再生開始の途中の停止は空振りし（後から鳴り始めた音が残る）、
+  /// 停止の途中の再生開始は省略される（無音のまま終わる）。前の操作が
+  /// 終わってから判定させる。失敗は呼び出し元へ返すが、列は止めない。
+  Future<void> _inOrder(Future<void> Function() operation) {
+    final result = _pending.then((_) => operation());
+    _pending = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
   }
 }
