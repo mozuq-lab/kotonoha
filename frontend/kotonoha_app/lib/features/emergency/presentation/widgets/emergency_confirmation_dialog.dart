@@ -128,13 +128,22 @@ class _EmergencyConfirmationDialogState
     // AA対応: ボタン背景はテーマごとに変わるため、文字色を固定せず
     // 実際の背景色の輝度から黒・白のうちコントラスト比が高い方を選ぶ。
     final cancelButtonTextColor = bestContrastingTextColor(cancelButtonColor);
+    // フォントサイズ設定への追従（REQ-2007、台帳 L-111）: 固定サイズの
+    // AppTextStyles は設定に追従しない。テーマの bodyMedium は「中」の基準
+    // （fontSizeMedium）に設定の倍率が掛かっているので、サイズだけをそこから取る
+    // （色・太さはテーマごとに違うので取らない。アプリのテーマの下では「中」の
+    // 見た目は変わらない）。
+    final baseFontSize =
+        theme.textTheme.bodyMedium?.fontSize ?? AppSizes.fontSizeMedium;
+    final smallFontSize =
+        baseFontSize * AppSizes.fontSizeSmall / AppSizes.fontSizeMedium;
 
     return Semantics(
       label: '緊急呼び出し確認ダイアログ',
       child: AlertDialog(
         title: Text(
           EmergencyConfirmationDialog.dialogTitle,
-          style: AppTextStyles.headingMedium,
+          style: AppTextStyles.headingMedium.copyWith(fontSize: baseFontSize),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -142,7 +151,7 @@ class _EmergencyConfirmationDialogState
           children: [
             Text(
               EmergencyConfirmationDialog.confirmationMessage,
-              style: AppTextStyles.bodyMedium,
+              style: AppTextStyles.bodyMedium.copyWith(fontSize: baseFontSize),
             ),
             const SizedBox(height: AppSizes.paddingSmall),
             // AA対応: 補足文の色に Colors.grey(#9E9E9E) を固定していたため
@@ -152,15 +161,20 @@ class _EmergencyConfirmationDialogState
             Text(
               '周囲に緊急音が鳴り、画面が赤くなります。',
               style: AppTextStyles.bodySmall.copyWith(
+                fontSize: smallFontSize,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],
         ),
         actions: [
-          _buildCancelButton(cancelButtonColor, cancelButtonTextColor),
+          _buildCancelButton(
+            cancelButtonColor,
+            cancelButtonTextColor,
+            baseFontSize,
+          ),
           const SizedBox(width: AppSizes.paddingSmall),
-          _buildConfirmButton(confirmButtonColor),
+          _buildConfirmButton(confirmButtonColor, baseFontSize),
         ],
         actionsPadding: const EdgeInsets.all(AppSizes.paddingMedium),
         actionsAlignment: MainAxisAlignment.center,
@@ -173,6 +187,7 @@ class _EmergencyConfirmationDialogState
     required String label,
     required Color backgroundColor,
     required Color textColor,
+    required double fontSize,
     required VoidCallback onTap,
   }) {
     return SizedBox(
@@ -191,17 +206,31 @@ class _EmergencyConfirmationDialogState
             horizontal: AppSizes.paddingMedium,
           ),
         ),
-        child: Text(label, style: AppTextStyles.button),
+        // 箱（120×44）は固定なので、収まらないラベルは折り返して切られ、
+        // 「いいえ」が「いい」と読めてしまう（「大」に OS の文字拡大が重なると
+        // 起きる）。折り返さず、箱に収まるところまで縮める
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: AppTextStyles.button.copyWith(fontSize: fontSize),
+          ),
+        ),
       ),
     );
   }
 
   /// 「いいえ」ボタンを構築
-  Widget _buildCancelButton(Color backgroundColor, Color textColor) =>
+  Widget _buildCancelButton(
+    Color backgroundColor,
+    Color textColor,
+    double fontSize,
+  ) =>
       _buildDialogButton(
         label: EmergencyConfirmationDialog.cancelLabel,
         backgroundColor: backgroundColor,
         textColor: textColor,
+        fontSize: fontSize,
         onTap: widget.onCancel,
       );
 
@@ -211,10 +240,12 @@ class _EmergencyConfirmationDialogState
   /// 高コントラスト(#FF0000) 4.00:1 で WCAG AA(4.5:1) 未達だった。
   /// 緊急色は「目立たせる」ための色なので暗くはせず
   /// 背景輝度から最良の文字色を選ぶことで赤を保ったまま基準を満たす。
-  Widget _buildConfirmButton(Color backgroundColor) => _buildDialogButton(
+  Widget _buildConfirmButton(Color backgroundColor, double fontSize) =>
+      _buildDialogButton(
         label: EmergencyConfirmationDialog.confirmLabel,
         backgroundColor: backgroundColor,
         textColor: bestContrastingTextColor(backgroundColor),
+        fontSize: fontSize,
         onTap: widget.onConfirm,
       );
 }

@@ -1,6 +1,8 @@
 /// EmergencyAudioService テスト
 library;
 
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -211,6 +213,74 @@ void main() {
 
         // Assert
         expect(service.isPlaying, isFalse);
+      });
+    });
+
+    // 再生開始・停止が互いの await の途中に呼ばれる（台帳 L-110）。
+    // 視覚を先に出すので、再生開始が終わる前にリセットを押せる
+    group('操作の交錯（L-110）', () {
+      test('再生開始の途中で停止が呼ばれたら、鳴り始めた後に止める', () async {
+        final playing = Completer<void>();
+        when(() => mockPlayer.play(any())).thenAnswer((_) => playing.future);
+
+        // Act: 再生開始が SDK の play() で止まっている間に停止を呼ぶ
+        final starting = service.startEmergencySound();
+        final stopping = service.stopEmergencySound();
+        await pumpEventQueue();
+
+        // Assert: play() が終わるまで、SDK の stop() は呼ばれない（空振りもしない）
+        verify(() => mockPlayer.play(any())).called(1);
+        verifyNever(() => mockPlayer.stop());
+
+        // Act: 音が鳴り始める
+        playing.complete();
+        await starting;
+        await stopping;
+
+        // Assert: 鳴り始めた後に止まり、音は鳴りっぱなしにならない
+        verify(() => mockPlayer.stop()).called(1);
+        expect(service.isPlaying, isFalse);
+      });
+
+      test('停止の途中で再生開始が呼ばれたら、止まった後にもう一度鳴らす', () async {
+        final stopped = Completer<void>();
+        when(() => mockPlayer.stop()).thenAnswer((_) => stopped.future);
+        await service.startEmergencySound();
+        clearInteractions(mockPlayer);
+
+        // Act: 停止が SDK の stop() で止まっている間にもう一度開始する
+        final stopping = service.stopEmergencySound();
+        final restarting = service.startEmergencySound();
+        await pumpEventQueue();
+
+        // Assert: stop() が終わるまで、SDK の play() は呼ばれない
+        verify(() => mockPlayer.stop()).called(1);
+        verifyNever(() => mockPlayer.play(any()));
+
+        // Act: 停止が終わる
+        stopped.complete();
+        await stopping;
+        await restarting;
+
+        // Assert: 再開始が省略されず、無音のまま終わらない
+        verify(() => mockPlayer.play(any())).called(1);
+        expect(service.isPlaying, isTrue);
+      });
+
+      test('再生開始が失敗しても、その後ろで待っていた操作は実行される', () async {
+        var plays = 0;
+        when(() => mockPlayer.play(any())).thenAnswer((_) async {
+          if (plays++ == 0) throw Exception('load failed');
+        });
+
+        // Act: 1 回目が失敗する前に、2 回目を後ろに並べておく
+        final first = service.startEmergencySound();
+        final second = service.startEmergencySound();
+
+        // Assert: 失敗は 1 回目の呼び出し元にだけ届き、2 回目は鳴る
+        await expectLater(first, throwsException);
+        await second;
+        expect(service.isPlaying, isTrue);
       });
     });
   });
