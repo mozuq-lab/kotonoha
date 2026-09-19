@@ -44,11 +44,28 @@ class PersistedBox<T> {
   Future<void> putAll(Map<dynamic, T> entries) =>
       _guard(() => _box.putAll(entries));
 
-  /// [key] を削除する
-  Future<void> delete(dynamic key) => _guard(() => _box.delete(key));
+  /// [key] を削除し、消した内容をファイルからも取り除く（台帳 L-119）
+  /// Hive は追記型で、delete は「消した」という印のフレームを足すだけ。元の
+  /// フレームは Hive 自身の compaction（削除 60 件超かつ 15% 超）まで残り、
+  /// OS のバックアップにも乗る。保存しているのは利用者の発話そのものなので、
+  /// 1 件ごとに compact して実際に取り除く（履歴の上限あふれもここを通る）。
+  /// compact は別名に書いて rename する方式で、Hive は新しいファイルを
+  /// fsync しない。直後の flush（fsync）で、電源断で中身が欠けうる時間を縮める。
+  /// 欠けた場合は、次回起動時に退避と告知の経路に入る（`hive_init.dart`）。
+  /// Web（IndexedDB）ではどちらも何もしない。
+  Future<void> delete(dynamic key) => _guard(() async {
+        await _box.delete(key);
+        await _box.compact();
+        await _box.flush();
+      });
 
   /// すべて削除する
-  Future<void> clear() => _guard(() => _box.clear());
+  /// clear はファイルを 0 に切り詰める。切り詰めを flush（fsync）で確定させ、
+  /// 直後の電源断で消したはずの内容が戻らないようにする（台帳 L-119）。
+  Future<void> clear() => _guard(() async {
+        await _box.clear();
+        await _box.flush();
+      });
 
   /// 書き込みを実行し、成否を報告する
   /// 例外を飲む理由: ADR-005 は「保存されないことは伝えて**継続する**」と
