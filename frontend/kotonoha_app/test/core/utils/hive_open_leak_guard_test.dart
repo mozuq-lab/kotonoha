@@ -41,6 +41,53 @@ void main() {
     );
   });
 
+  test('`.lock` を含むだけのパスは吸収しない', () async {
+    // `endsWith` を `contains` に緩めると、`probe.lock.bak` のような別のファイルの
+    // 失敗まで吸収してしまう。吸収すると閉じ直しに入るので、**呼ばれた回数**で見る
+    // （最後は投げ直すので、例外の型だけでは見分けられない）
+    var calls = 0;
+    await expectLater(
+      closeHiveIgnoringMissingLock(
+        close: () async {
+          calls++;
+          throw const PathNotFoundException(
+            '/tmp/probe.lock.bak',
+            OSError('No such file or directory', 2),
+          );
+        },
+      ),
+      throwsA(isA<PathNotFoundException>()),
+    );
+    expect(calls, 1, reason: '吸収せずその場で投げ直すこと（閉じ直しに入らない）');
+  });
+
+  test('消えた `.lock` を吸収した後、ほかの box の失敗は見逃さない', () async {
+    // `Hive.close()` は `Future.wait` なので、複数の box が失敗しても最初の
+    // エラーしか伝わらない。消えた `.lock` がその 1 つ目だと、後ろの本当の失敗が
+    // 捨てられる。吸収したら閉じ直して確かめる
+    var calls = 0;
+    await expectLater(
+      closeHiveIgnoringMissingLock(
+        close: () async {
+          calls++;
+          if (calls == 1) {
+            throw const PathNotFoundException(
+              '/tmp/probe.lock',
+              OSError('No such file or directory', 2),
+            );
+          }
+          throw const FileSystemException(
+            'Cannot close file',
+            '/tmp/other.hive',
+            OSError('Input/output error', 5),
+          );
+        },
+      ),
+      throwsA(isA<FileSystemException>()),
+    );
+    expect(calls, 2, reason: '吸収したら、残りの box をもう一度閉じて確かめる');
+  });
+
   test('パスが見つからない以外の失敗は投げ直す', () async {
     await expectLater(
       closeHiveIgnoringMissingLock(
