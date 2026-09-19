@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state_provider.dart';
+import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.dart';
 import 'package:kotonoha_app/core/themes/dark_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
@@ -344,6 +345,74 @@ void main() {
       expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
     });
   });
+  // 台帳 L-102: 保存できない状態と、起動時の破損の告知（作り直し・救出）が同時のとき、
+  // 前者が後者を隠していた。ディスクフルは末尾破損と保存失敗の共通の原因で、救出は
+  // 見た目で気づけないので、隠れると一部を失ったことが伝わらない
+  group('保存できない状態と破損の告知が同時（L-102）', () {
+    Future<void> pump(
+      WidgetTester tester,
+      PersistenceState state,
+      Map<PersistedArea, CorruptionOutcome> outcomes,
+    ) =>
+        tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              persistenceStateProvider.overrideWithValue(state),
+              corruptionOutcomesProvider.overrideWithValue(outcomes),
+            ],
+            child: MaterialApp(
+              theme: lightTheme,
+              home: const Scaffold(body: PersistenceBanner()),
+            ),
+          ),
+        );
+
+    testWidgets('一部の領域を保存できなくても、別の領域を救ったことは隠さない', (tester) async {
+      await pump(
+        tester,
+        const PersistenceRecoverableFailure({PersistedArea.favorites}),
+        {PersistedArea.history: CorruptionOutcome.salvaged},
+      );
+      // 2 つの告知が、同じ 1 つの文に並んでいる
+      final message = tester.widget<Text>(find.textContaining('保存できません')).data!;
+      expect(message, contains('お気に入りを保存できません'));
+      expect(message, contains('履歴の一部を読み込めませんでした'));
+      expect(message, contains('退避'));
+    });
+
+    testWidgets('何も保存できなくても、空で作り直した領域があることは隠さない', (tester) async {
+      await pump(
+        tester,
+        const PersistenceUnavailable(),
+        {PersistedArea.presetPhrases: CorruptionOutcome.recreated},
+      );
+      expect(find.textContaining('を保存できません'), findsOneWidget);
+      expect(find.textContaining('定型文を読み込めなかったため、空の状態で開始しました'), findsOneWidget);
+    });
+
+    testWidgets('「閉じる」は破損の告知だけを消し、保存できない告知は残す', (tester) async {
+      await pump(
+        tester,
+        const PersistenceRecoverableFailure({PersistedArea.favorites}),
+        {PersistedArea.history: CorruptionOutcome.salvaged},
+      );
+      await tester.tap(find.text('閉じる'));
+      await tester.pump();
+      expect(find.textContaining('一部を読み込めませんでした'), findsNothing);
+      expect(find.textContaining('お気に入りを保存できません'), findsOneWidget);
+      expect(find.text('閉じる'), findsNothing);
+    });
+
+    testWidgets('保存できているときは、状態に無い破損の告知を足さない（告知の出所は状態のまま）', (tester) async {
+      await pump(
+        tester,
+        const PersistenceReady(),
+        {PersistedArea.history: CorruptionOutcome.salvaged},
+      );
+      expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
+    });
+  });
+
   group('設定（SharedPreferences）の保存失敗の告知（ADR-005、L-83）', () {
     Future<ProviderContainer> pumpWithContainer(
         WidgetTester tester, PersistenceState state) async {
