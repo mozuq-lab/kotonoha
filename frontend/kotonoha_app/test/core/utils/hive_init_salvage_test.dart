@@ -231,15 +231,27 @@ void main() {
     await raw.close();
 
     bool? openWhenNotified;
+    bool? backedUpWhenNotified;
+    bool? liveFileGoneWhenNotified;
     await runGuardingHiveOpenLeak(
       () => openBoxWithRecovery<dynamic>(
         name,
         hivePath: tempDir.path,
-        onRecreated: () => openWhenNotified = Hive.isBoxOpen(name),
+        onRecreated: () {
+          openWhenNotified = Hive.isBoxOpen(name);
+          backedUpWhenNotified =
+              File('${tempDir.path}/$name.hive.corrupt.bak').existsSync();
+          liveFileGoneWhenNotified =
+              !File('${tempDir.path}/$name.hive').existsSync();
+        },
       ),
     );
 
-    expect(openWhenNotified, isFalse, reason: '開き直しの成否に関わらず伝わるよう、削除した直後に伝えること');
+    // 開き直しを待たない（待つと、失敗したときに伝わらない）
+    expect(openWhenNotified, isFalse, reason: '開き直しの成否に関わらず伝わるよう、開き直す前に伝えること');
+    // 早すぎてもいけない: 退避と削除が済んでから伝える
+    expect(backedUpWhenNotified, isTrue, reason: '退避より先に伝えてはいけない');
+    expect(liveFileGoneWhenNotified, isTrue, reason: '削除より先に伝えてはいけない');
   });
 
   test('壊れていない box は退避も告知もしない', () async {
