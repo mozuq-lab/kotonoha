@@ -44,8 +44,8 @@ Core features (keyboard, phrases, speech, emergency) work without internet conne
 
 【Privacy】
 
-- Your input data stays on your device only
-- No automatic cloud sync
+- Your input data is stored on your device
+- The app itself never syncs to any cloud (your device's OS backup may include it)
 - AI conversion sends data to server only with your consent
 
 【Target Users】
