@@ -6,6 +6,7 @@
 // （電源断を想定し、close 時の処理に頼らない）。
 // testWidgets ではなく test を使う（FakeAsync の下では Hive のファイル I/O が終わらない）。
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -52,6 +53,10 @@ PresetPhrase _phrase(String id, String content) => PresetPhrase(
 void main() {
   late Directory tempDir;
 
+  setUpAll(() {
+    registerFallbackValue(_phrase('fallback', 'fallback'));
+  });
+
   setUp(() async {
     await Hive.close();
     tempDir = await Directory.systemTemp.createTemp('persisted_box_delete_');
@@ -92,7 +97,7 @@ void main() {
     expect(await _fileContains(file, 'けす文-BBB'), isFalse,
         reason: '消した発話が端末のファイルと OS のバックアップに残る');
     expect(await _fileContains(file, 'のこす文-AAA'), isTrue);
-    expect(results, everyElement(isTrue));
+    expect(results, [true, true, true], reason: 'put 2 回と delete 1 回の報告');
   });
 
   test('全削除した内容は、ファイルの中にも残らない', () async {
@@ -159,17 +164,96 @@ void main() {
     expect(results, [true]);
   });
 
-  test('compact に失敗したら、保存の失敗として報告する（消した内容が残ったことを黙らない）', () async {
+  test('compact に失敗しても、削除は成功として報告し、flush して次の書き込みを通す', () async {
+    // 削除そのものは済んでいる。保存できているのに「保存できません」と誤報しない。
+    // 残った分は、次に compact が通ったときに取り除かれる
     final box = _MockBox();
     when(() => box.delete(any<dynamic>())).thenAnswer((_) async {});
-    when(box.compact).thenThrow(const FileSystemException('disk full'));
+    when(box.compact)
+        .thenAnswer((_) async => throw const FileSystemException('disk full'));
     when(box.flush).thenAnswer((_) async {});
+    when(() => box.put(any<dynamic>(), any())).thenAnswer((_) async {});
     final results = <bool>[];
+    final persisted =
+        PersistedBox<PresetPhrase>(box, onWriteResult: results.add);
 
-    await PersistedBox<PresetPhrase>(box, onWriteResult: results.add)
-        .delete('gone');
+    await persisted.delete('gone');
+    await persisted.put('next', _phrase('next', '次の文'));
 
-    expect(results, [false]);
+    verifyInOrder([
+      () => box.delete('gone'),
+      box.compact,
+      box.flush,
+      () => box.put('next', any()),
+    ]);
+    expect(results, [true, true]);
+  });
+
+  // compact は対象のフレームを集めるまでに await を挟む。その間に既存キーへの
+  // 上書き put が始まると、Hive の keystore 上の古いフレームが未書き込みのものに
+  // 置き換わり、書き直したファイルにその項目が入らない（その瞬間に落ちると消える）。
+  // 1 件目の compact の最中に始まった 2 件目の削除は、compact されずに残る。
+  // どちらも、書き込みを呼ばれた順に 1 本ずつ実行すれば起きない
+  test('compact が終わるまで、後ろの書き込みは box に届かない', () async {
+    final box = _MockBox();
+    final compacting = Completer<void>();
+    when(() => box.delete(any<dynamic>())).thenAnswer((_) async {});
+    when(box.compact).thenAnswer((_) => compacting.future);
+    when(box.flush).thenAnswer((_) async {});
+    when(() => box.put(any<dynamic>(), any())).thenAnswer((_) async {});
+    final persisted = PersistedBox<PresetPhrase>(box, onWriteResult: (_) {});
+
+    // When: 削除を待たずに、上書きの保存と 2 件目の削除を重ねる
+    final deleting = persisted.delete('a');
+    final putting = persisted.put('b', _phrase('b', '上書き'));
+    final deletingNext = persisted.delete('c');
+    await pumpEventQueue();
+
+    // Then: 1 件目の compact が終わるまで、後ろは始まらない
+    verify(() => box.delete('a')).called(1);
+    verify(box.compact).called(1);
+    verifyNever(() => box.put(any<dynamic>(), any()));
+    verifyNever(() => box.delete('c'));
+
+    // When: compact が終わる
+    compacting.complete();
+    await Future.wait([deleting, putting, deletingNext]);
+
+    // Then: 呼ばれた順に届き、2 件目の削除も compact される
+    verifyInOrder([
+      () => box.put('b', any()),
+      () => box.delete('c'),
+      box.compact,
+      box.flush,
+    ]);
+  });
+
+  test('待たずに重ねた削除と上書きの後も、中身は呼んだ順の結果になり、消した内容は残らない', () async {
+    var box = await Hive.openBox<PresetPhrase>('presetPhrases');
+    final file = File('${tempDir.path}/presetphrases.hive');
+    final results = <bool>[];
+    final persisted =
+        PersistedBox<PresetPhrase>(box, onWriteResult: results.add);
+    await persisted.put('a', _phrase('a', 'けす文-A'));
+    await persisted.put('b', _phrase('b', 'ふるい文-B'));
+    await persisted.put('c', _phrase('c', 'けす文-C'));
+
+    // When: どれも待たずに呼ぶ
+    await Future.wait([
+      persisted.delete('a'),
+      persisted.put('b', _phrase('b', 'あたらしい文-B')),
+      persisted.delete('c'),
+    ]);
+
+    // Then
+    expect(await _fileContains(file, 'けす文-A'), isFalse);
+    expect(await _fileContains(file, 'けす文-C'), isFalse);
+    expect(results, everyElement(isTrue));
+    expect(results, hasLength(6));
+    await box.close();
+    box = await Hive.openBox<PresetPhrase>('presetPhrases');
+    expect(box.keys, ['b']);
+    expect(box.get('b')!.content, 'あたらしい文-B');
   });
 
   test('履歴が上限を超えて押し出された発話も、ファイルの中に残らない', () async {
