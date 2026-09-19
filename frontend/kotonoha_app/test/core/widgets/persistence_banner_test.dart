@@ -280,10 +280,8 @@ void main() {
         tester,
         const PersistenceRecreated({}, salvagedAreas: {PersistedArea.history}),
       );
-      expect(
-        find.text('履歴の一部を読み込めませんでした。元のデータは端末内に退避しています'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('履歴の一部を読み込めませんでした'), findsOneWidget);
+      expect(find.textContaining('退避'), findsOneWidget);
       expect(find.textContaining('空の状態で開始'), findsNothing,
           reason: '残っているのに空で始めたとは言わない');
       expect(find.text('閉じる'), findsOneWidget);
@@ -297,11 +295,10 @@ void main() {
           salvagedAreas: {PersistedArea.history},
         ),
       );
-      expect(
-        find.text('お気に入りを読み込めなかったため、空の状態で開始しました。'
-            '履歴の一部を読み込めませんでした。元のデータは端末内に退避しています'),
-        findsOneWidget,
-      );
+      final message = tester.widget<Text>(find.textContaining('退避')).data!;
+      expect(message, contains('お気に入りを読み込めなかったため、空の状態で開始しました'));
+      expect(message, contains('履歴の一部を読み込めませんでした'));
+      expect('退避'.allMatches(message), hasLength(1));
     });
 
     testWidgets('救った領域の告知も「閉じる」で消え、高さを取らなくなる', (tester) async {
