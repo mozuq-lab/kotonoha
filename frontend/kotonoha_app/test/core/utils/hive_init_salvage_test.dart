@@ -217,6 +217,31 @@ void main() {
     expect(salvaged, isFalse);
   });
 
+  test('削除した時点で伝えるので、その後の開き直しに失敗しても伝わる', () async {
+    // 台帳 L-102 後半: 退避して削除した後、開き直しに失敗すると null を返す。
+    // 「消した」ことを開き直しの成否に結びつけていると、そのとき利用者には
+    // 「保存できません」しか伝わらず、履歴が消えたことは黙って進む。
+    // 開き直しの失敗はテストから注入できないので、**伝える時点**を観測する。
+    if (!Hive.isAdapterRegistered(60)) {
+      Hive.registerAdapter(_UnreadableAdapter());
+    }
+    const name = 'unreadable_order';
+    final raw = await Hive.openBox<dynamic>(name);
+    await raw.put('k', _Unreadable());
+    await raw.close();
+
+    bool? openWhenNotified;
+    await runGuardingHiveOpenLeak(
+      () => openBoxWithRecovery<dynamic>(
+        name,
+        hivePath: tempDir.path,
+        onRecreated: () => openWhenNotified = Hive.isBoxOpen(name),
+      ),
+    );
+
+    expect(openWhenNotified, isFalse, reason: '開き直しの成否に関わらず伝わるよう、削除した直後に伝えること');
+  });
+
   test('壊れていない box は退避も告知もしない', () async {
     await writePhrases(2);
 

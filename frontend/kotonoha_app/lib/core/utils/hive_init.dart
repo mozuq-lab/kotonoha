@@ -165,12 +165,18 @@ Future<Box<T>?> openBoxWithRecovery<T>(
       );
     }
 
+    // 空にしたことを、**開き直す前に**呼び出し元（initHive → 永続化状態）へ伝える
+    // （ADR-005、L-90・L-102 後半）。ここで伝えるのは、退避と削除が済んだ時点で
+    // 「以前のデータはもうこの box に無い」が確定するため。開き直しの成否に
+    // 結びつけると、開き直しに失敗したときに利用者へ「保存できません」しか
+    // 伝わらず、履歴が消えたことは黙って進む（次回起動では box が正常に開くので
+    // 破損も見つからず、二度と伝わらない）。
+    onRecreated?.call();
+
     try {
       // 復旧処理: 再オープン: 削除後にBoxを再オープンする
       final recovered = await Hive.openBox<T>(name);
       debugPrint('[hive_init] Box "$name" の復旧に成功しました');
-      // 空で作り直したことを呼び出し元（initHive → 永続化状態）に伝える（ADR-005、L-90）
-      onRecreated?.call();
       return recovered;
     } catch (recoveryError, recoveryStackTrace) {
       // 復旧失敗: 再オープンも失敗した場合はnullを返し、インメモリフォールバックへ委ねる

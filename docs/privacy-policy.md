@@ -1,7 +1,7 @@
 # プライバシーポリシー / Privacy Policy
 
-最終更新日: 2026年9月19日
-Last Updated: September 19, 2026
+最終更新日: 2026年9月20日
+Last Updated: September 20, 2026
 
 ---
 
@@ -72,8 +72,10 @@ AI変換機能（オプション）を使用する場合のみ、以下のデー
 
 ユーザーは以下の方法でデータを削除できます。
 
-- アプリ内の設定から履歴・お気に入りを個別または全削除
+- アプリ内の履歴画面・お気に入り画面から、履歴とお気に入りを個別または全件削除
 - アプリをアンインストールすることで、すべてのローカルデータが削除されます
+
+アプリ内で削除したデータが、すでに取られた OS のバックアップに含まれている場合、その削除はバックアップには及びません。端末の復元や再インストールで戻ることがあります。
 
 「データの保管」に記載した壊れたデータの写しは、アプリ内の削除の操作では消えません。同じ種類のデータで次に破損が見つかったときに新しい写しで置き換えられることがあり、アプリをアンインストールすると端末からは削除されます。OS のバックアップに含まれた写しは、OS 側でそのバックアップが削除されるまで残り、端末の復元や再インストールの際に戻ることがあります。
 
@@ -166,8 +168,10 @@ The collected data is used only for the following purposes:
 
 Users can delete data in the following ways:
 
-- Delete history and favorites individually or entirely from app settings
+- Delete history and favorites individually or entirely, from the History and Favorites screens in the App
 - Uninstalling the app deletes all local data
+
+If data you delete within the App is already included in an OS backup, deleting it in the App does not remove it from that backup. It may come back when you restore your device or reinstall the App.
 
 The copies of damaged data described under "Data Storage" are not removed by deleting data within the App. A copy may be replaced by a newer one the next time damage is found in the same kind of data, and it is deleted from your device when you uninstall the App. A copy included in an OS backup remains until that backup is deleted, and may come back when you restore your device or reinstall the App.
 
