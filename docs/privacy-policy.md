@@ -73,6 +73,7 @@ AI変換機能（オプション）を使用する場合のみ、以下のデー
 ユーザーは以下の方法でデータを削除できます。
 
 - アプリ内の履歴画面・お気に入り画面から、履歴とお気に入りを個別または全件削除
+- アプリ内の定型文画面から、定型文を個別に削除
 - アプリをアンインストールすることで、すべてのローカルデータが削除されます
 
 アプリ内で削除したデータが、すでに取られた OS のバックアップに含まれている場合、その削除はバックアップには及びません。端末の復元や再インストールで戻ることがあります。
@@ -169,6 +170,7 @@ The collected data is used only for the following purposes:
 Users can delete data in the following ways:
 
 - Delete history and favorites individually or entirely, from the History and Favorites screens in the App
+- Delete preset phrases individually, from the Preset Phrases screen in the App
 - Uninstalling the app deletes all local data
 
 If data you delete within the App is already included in an OS backup, deleting it in the App does not remove it from that backup. It may come back when you restore your device or reinstall the App.
