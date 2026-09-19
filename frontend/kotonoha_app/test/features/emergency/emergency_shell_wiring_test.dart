@@ -3,6 +3,8 @@
 /// AppShellを経由して全画面に配線されていることを検証する。
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -144,6 +146,37 @@ void main() {
         reason: 'リセット後は緊急アラート画面が消える必要がある',
       );
       verify(() => mockAudioService.stopEmergencySound()).called(1);
+    });
+
+    // 台帳 L-110: 音声の再生開始が遅い（headless web の audioplayers 等）と
+    // 「はい」の後も緊急画面が出なかった。視覚は音声を待たない。
+    testWidgets('音声の再生開始が終わらなくても「はい」の直後に緊急アラート画面が出る',
+        (WidgetTester tester) async {
+      // 再生開始を保留したままにする
+      final playing = Completer<void>();
+      addTearDown(playing.complete);
+      when(() => mockAudioService.startEmergencySound())
+          .thenAnswer((_) => playing.future);
+
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(EmergencyButtonWithConfirmation));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(ElevatedButton, 'はい'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(EmergencyAlertScreen),
+        findsOneWidget,
+        reason: '再生開始を待たずに緊急アラート画面を出す必要がある',
+      );
+      expect(find.text('リセット'), findsOneWidget);
     });
   });
 }

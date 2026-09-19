@@ -59,17 +59,21 @@ class EmergencyStateNotifier extends Notifier<EmergencyStateEnum> {
   // 公開メソッド
 
   /// 緊急呼び出しを開始
-  /// 緊急音を再生し、状態を alertActive に変更する。
+  /// 状態を alertActive に変更してから、緊急音を再生する。
   /// 既に alertActive の場合は何もしない。
   /// 処理内容
-  /// 1. 緊急音の再生を開始
-  /// 2. 状態を alertActive に変更
+  /// 1. 状態を alertActive に変更（視覚は音声の再生開始を待たない）
+  /// 2. 緊急音の再生を開始
+  /// 3. 再生の await 中にリセットされていたら、鳴り始めた音を止める
   /// 例外発生時
-  /// 音声再生が失敗しても状態は alertActive に変更
+  /// 音声再生が失敗しても状態は alertActive のまま
   /// （視覚的な緊急表示は継続）
   /// 再生の await 中に provider が破棄された場合は何もしない
   Future<void> startEmergency() async {
     if (state == EmergencyStateEnum.alertActive) return;
+
+    // 視覚を先に出す。再生開始が遅くても緊急画面は待たせない（台帳 L-110）
+    state = EmergencyStateEnum.alertActive;
 
     try {
       final audioService = ref.read(emergencyAudioServiceProvider);
@@ -78,9 +82,16 @@ class EmergencyStateNotifier extends Notifier<EmergencyStateEnum> {
       // 音声再生エラーは無視し、画面表示は継続
     }
 
-    // 再生の await 中に provider が破棄されていたら書かない（台帳 L-105）
+    // 再生の await 中に provider が破棄されていたら state に触らない（台帳 L-105）
     if (!ref.mounted) return;
-    state = EmergencyStateEnum.alertActive;
+    // 再生の await 中にリセットされていたら、その時点の停止は空振りしている。
+    // 後から鳴り始めた音をここで止める（止めないと誰も止められない）
+    if (state == EmergencyStateEnum.alertActive) return;
+    try {
+      await ref.read(emergencyAudioServiceProvider).stopEmergencySound();
+    } catch (_) {
+      // 停止エラーは無視
+    }
   }
 
   /// 緊急呼び出しをリセット

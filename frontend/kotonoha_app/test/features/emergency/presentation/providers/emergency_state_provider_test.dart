@@ -3,12 +3,15 @@ library;
 
 import 'dart:async';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:kotonoha_app/features/emergency/domain/models/emergency_state.dart';
+import 'package:kotonoha_app/features/emergency/domain/services/emergency_audio_service.dart';
 import 'package:kotonoha_app/features/emergency/presentation/providers/emergency_state_provider.dart';
+import '../../../../mocks/mock_audio_player.dart';
 import '../../../../mocks/mock_emergency_audio_service.dart';
 
 void main() {
@@ -563,6 +566,82 @@ void main() {
 
         // Assert
         await expectLater(pending, completes);
+      });
+    });
+
+    // 視覚を先に出す（台帳 L-110）ので、再生開始の await 中にリセットを押せる。
+    // 本物の EmergencyAudioService を通し、モックは外部 SDK の AudioPlayer だけ。
+    group('再生開始とリセットの競合（L-110）', () {
+      late MockAudioPlayer mockPlayer;
+      late EmergencyAudioService service;
+      late ProviderContainer local;
+
+      setUpAll(() {
+        registerFallbackValue(AssetSource('test'));
+        registerFallbackValue(ReleaseMode.loop);
+      });
+
+      setUp(() {
+        mockPlayer = MockAudioPlayer();
+        when(() => mockPlayer.setReleaseMode(any())).thenAnswer((_) async {});
+        when(() => mockPlayer.setVolume(any())).thenAnswer((_) async {});
+        when(() => mockPlayer.stop()).thenAnswer((_) async {});
+        service = EmergencyAudioService(player: mockPlayer);
+        local = ProviderContainer(
+          overrides: [
+            emergencyAudioServiceProvider.overrideWithValue(service),
+          ],
+        );
+        addTearDown(local.dispose);
+      });
+
+      test('再生開始の途中でリセットされたら、後から鳴り始めた音を止める', () async {
+        final playing = Completer<void>();
+        when(() => mockPlayer.play(any())).thenAnswer((_) => playing.future);
+        final notifier = local.read(emergencyStateProvider.notifier);
+
+        // Act: 再生開始が終わる前にリセットし、その後で音が鳴り始める
+        final starting = notifier.startEmergency();
+        await notifier.resetEmergency();
+        playing.complete();
+        await starting;
+
+        // Assert: 通常状態に戻り、音は鳴りっぱなしにならない
+        expect(
+          local.read(emergencyStateProvider),
+          equals(EmergencyStateEnum.normal),
+        );
+        expect(
+          service.isPlaying,
+          isFalse,
+          reason: 'リセット後に鳴り始めた音は、もう一度リセットしても止められない',
+        );
+        verify(() => mockPlayer.stop()).called(1);
+      });
+
+      test('再生開始の途中でリセットされ、もう一度開始されたら音は鳴り続ける', () async {
+        final plays = [Completer<void>(), Completer<void>()];
+        var calls = 0;
+        when(() => mockPlayer.play(any()))
+            .thenAnswer((_) => plays[calls++].future);
+        final notifier = local.read(emergencyStateProvider.notifier);
+
+        // Act: 開始 → リセット → 再び開始。その後で 2 回の再生開始が終わる
+        final first = notifier.startEmergency();
+        await notifier.resetEmergency();
+        final second = notifier.startEmergency();
+        plays[0].complete();
+        await first;
+        plays[1].complete();
+        await second;
+
+        // Assert: 緊急状態のまま音が鳴っている
+        expect(
+          local.read(emergencyStateProvider),
+          equals(EmergencyStateEnum.alertActive),
+        );
+        expect(service.isPlaying, isTrue);
+        verifyNever(() => mockPlayer.stop());
       });
     });
   });
