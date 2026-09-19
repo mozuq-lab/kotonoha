@@ -178,6 +178,42 @@ void main() {
       );
       expect(find.text('リセット'), findsOneWidget);
     });
+
+    // リセットも同じ。再生開始や停止が詰まっている間、赤い画面を消せないと
+    // 利用者は誤発報を取り消せたのか分からない
+    testWidgets('音声の再生開始も停止も終わらなくても「リセット」の直後に緊急アラート画面が消える',
+        (WidgetTester tester) async {
+      final playing = Completer<void>();
+      final stopping = Completer<void>();
+      addTearDown(playing.complete);
+      addTearDown(stopping.complete);
+      when(() => mockAudioService.startEmergencySound())
+          .thenAnswer((_) => playing.future);
+      when(() => mockAudioService.stopEmergencySound())
+          .thenAnswer((_) => stopping.future);
+
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(EmergencyButtonWithConfirmation));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(ElevatedButton, 'はい'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('リセット'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(EmergencyAlertScreen),
+        findsNothing,
+        reason: '停止を待たずに緊急アラート画面を消す必要がある',
+      );
+      verify(() => mockAudioService.stopEmergencySound()).called(1);
+    });
   });
 }
 

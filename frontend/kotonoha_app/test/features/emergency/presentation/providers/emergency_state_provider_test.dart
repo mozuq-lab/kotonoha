@@ -595,53 +595,66 @@ void main() {
         addTearDown(local.dispose);
       });
 
-      test('再生開始の途中でリセットされたら、後から鳴り始めた音を止める', () async {
+      test('再生開始の途中でリセットされたら、すぐ通常状態に戻り、鳴り始めた音は止まる', () async {
         final playing = Completer<void>();
         when(() => mockPlayer.play(any())).thenAnswer((_) => playing.future);
         final notifier = local.read(emergencyStateProvider.notifier);
 
-        // Act: 再生開始が終わる前にリセットし、その後で音が鳴り始める
+        // Act: 再生開始が終わる前にリセットする
         final starting = notifier.startEmergency();
-        await notifier.resetEmergency();
-        playing.complete();
-        await starting;
+        final resetting = notifier.resetEmergency();
 
-        // Assert: 通常状態に戻り、音は鳴りっぱなしにならない
+        // Assert: 再生開始を待たずに通常状態へ戻る
         expect(
           local.read(emergencyStateProvider),
           equals(EmergencyStateEnum.normal),
         );
+
+        // Act: その後で音が鳴り始める
+        playing.complete();
+        await starting;
+        await resetting;
+
+        // Assert: 音は鳴りっぱなしにならない
+        verifyInOrder([
+          () => mockPlayer.play(any()),
+          () => mockPlayer.stop(),
+        ]);
         expect(
           service.isPlaying,
           isFalse,
           reason: 'リセット後に鳴り始めた音は、もう一度リセットしても止められない',
         );
-        verify(() => mockPlayer.stop()).called(1);
       });
 
-      test('再生開始の途中でリセットされ、もう一度開始されたら音は鳴り続ける', () async {
-        final plays = [Completer<void>(), Completer<void>()];
-        var calls = 0;
-        when(() => mockPlayer.play(any()))
-            .thenAnswer((_) => plays[calls++].future);
+      test('リセットの停止が終わる前にもう一度開始されたら、緊急状態で音が鳴る', () async {
+        final playing = Completer<void>();
+        final stopped = Completer<void>();
+        var plays = 0;
+        when(() => mockPlayer.play(any())).thenAnswer(
+          (_) => plays++ == 0 ? playing.future : Future<void>.value(),
+        );
+        when(() => mockPlayer.stop()).thenAnswer((_) => stopped.future);
         final notifier = local.read(emergencyStateProvider.notifier);
 
-        // Act: 開始 → リセット → 再び開始。その後で 2 回の再生開始が終わる
+        // Act: 開始 → リセット → 1 回目の再生開始が終わり、停止が始まる
         final first = notifier.startEmergency();
-        await notifier.resetEmergency();
-        final second = notifier.startEmergency();
-        plays[0].complete();
+        final resetting = notifier.resetEmergency();
+        playing.complete();
         await first;
-        plays[1].complete();
+        // 停止の途中でもう一度開始し、その後で停止が終わる
+        final second = notifier.startEmergency();
+        stopped.complete();
+        await resetting;
         await second;
 
-        // Assert: 緊急状態のまま音が鳴っている
+        // Assert: 再開始が省略されず、緊急状態のまま無音で終わらない
         expect(
           local.read(emergencyStateProvider),
           equals(EmergencyStateEnum.alertActive),
         );
+        verify(() => mockPlayer.play(any())).called(2);
         expect(service.isPlaying, isTrue);
-        verifyNever(() => mockPlayer.stop());
       });
     });
   });

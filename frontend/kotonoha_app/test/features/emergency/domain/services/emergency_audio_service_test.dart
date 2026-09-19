@@ -1,6 +1,8 @@
 /// EmergencyAudioService テスト
 library;
 
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -211,6 +213,62 @@ void main() {
 
         // Assert
         expect(service.isPlaying, isFalse);
+      });
+    });
+
+    // 再生開始・停止が互いの await の途中に呼ばれる（台帳 L-110）。
+    // 視覚を先に出すので、再生開始が終わる前にリセットを押せる
+    group('操作の交錯（L-110）', () {
+      test('再生開始の途中で停止が呼ばれたら、鳴り始めた後に止める', () async {
+        final playing = Completer<void>();
+        when(() => mockPlayer.play(any())).thenAnswer((_) => playing.future);
+
+        // Act: 再生開始が終わる前に停止し、その後で音が鳴り始める
+        final starting = service.startEmergencySound();
+        final stopping = service.stopEmergencySound();
+        playing.complete();
+        await starting;
+        await stopping;
+
+        // Assert: 停止が空振りせず、音は鳴りっぱなしにならない
+        verifyInOrder([
+          () => mockPlayer.play(any()),
+          () => mockPlayer.stop(),
+        ]);
+        expect(service.isPlaying, isFalse);
+      });
+
+      test('停止の途中で再生開始が呼ばれたら、止まった後にもう一度鳴らす', () async {
+        final stopped = Completer<void>();
+        when(() => mockPlayer.stop()).thenAnswer((_) => stopped.future);
+        await service.startEmergencySound();
+
+        // Act: 停止が終わる前にもう一度開始し、その後で停止が終わる
+        final stopping = service.stopEmergencySound();
+        final restarting = service.startEmergencySound();
+        stopped.complete();
+        await stopping;
+        await restarting;
+
+        // Assert: 再開始が省略されず、無音のまま終わらない
+        verifyInOrder([
+          () => mockPlayer.play(any()),
+          () => mockPlayer.stop(),
+          () => mockPlayer.play(any()),
+        ]);
+        expect(service.isPlaying, isTrue);
+      });
+
+      test('再生開始が失敗しても、次の操作は実行される', () async {
+        when(() => mockPlayer.play(any())).thenThrow(Exception('load failed'));
+        await expectLater(service.startEmergencySound(), throwsException);
+
+        // Act: 失敗の後でもう一度開始する
+        when(() => mockPlayer.play(any())).thenAnswer((_) async {});
+        await service.startEmergencySound();
+
+        // Assert
+        expect(service.isPlaying, isTrue);
       });
     });
   });
