@@ -45,47 +45,12 @@ void main() {
       }
     });
 
-    test('TC-059-006: Hive Boxが破損した際、Hive自身の自動復旧で正常に開かれる（正常系）', () async {
-      // 補足: Hiveはデフォルト（crashRecovery: true）で内部的にフレーム単位の
-      // 自動復旧を行うため、多くの破損はopenBoxWithRecoveryのcatch節に
-      // 到達する前にHive自身が吸収する。本テストはその経路を確認する。
-
-      var box = await Hive.openBox<PresetPhrase>('presetPhrases');
-      await box.close();
-
-      // Boxファイルを破損させる
-      final boxFile = File('${tempDir.path}/presetphrases.hive');
-      if (boxFile.existsSync()) {
-        await boxFile.writeAsString('INVALID_DATA_CORRUPTION_TEST');
-      }
-
-      var recreatedByUs = false;
-
-      box = (await openBoxWithRecovery<PresetPhrase>(
-        'presetPhrases',
-        hivePath: tempDir.path,
-        onRecreated: () => recreatedByUs = true,
-      ))!;
-      expect(recreatedByUs, isFalse,
-          reason: 'Hive 自身の自動復旧で開けたときは「作り直した」とは言わない');
-
-      expect(Hive.isBoxOpen('presetPhrases'), true, reason: 'Boxが自動復旧により開かれる');
-      expect(box, isNotNull, reason: 'アプリが正常に動作する');
-
-      // 自動復旧後のBoxは空の状態（破損データは失われる）
-      final items = box.values.toList();
-      expect(items.isEmpty, true, reason: '復旧後のBoxは空の状態');
-
-      await box.close();
-    });
-
     test('TC-059-006-破損系: openBoxWithRecovery()は破損データを削除前にバックアップしてから復旧する',
         () async {
       // 実際に動作することを検証する
-      // 工夫: crashRecovery: falseを指定してHive自身の自動復旧を無効化し
-      // 破損時に必ずHiveErrorがスローされる状況を作ることで
-      // openBoxWithRecovery自身のバックアップ→delete→再オープンの
-      // フォールバック経路を確実に検証する。
+      // openBoxWithRecoveryはHive自身の自動復旧に黙って任せない（台帳 L-101）。
+      // 破損時はHiveErrorを受けてから、バックアップ→開き直しの経路を通る。
+      // 読める分が残る場合は hive_init_salvage_test.dart が見る。
 
       var box = await Hive.openBox<PresetPhrase>('presetPhrases');
       await box.close();
@@ -94,17 +59,13 @@ void main() {
       await boxFile.writeAsString('CORRUPTED_BEFORE_INIT');
       final corruptedBytes = await boxFile.readAsBytes();
 
-      // crashRecovery: falseにより、Hive自身の自動復旧をバイパスして
-      // 内部でHiveErrorがスローされ、openBoxWithRecoveryのcatch節
-      // （バックアップ→deleteBoxFromDisk→再openBox）が実行される
-      // 既知の制約: crashRecovery: falseで意図的に例外を発生させると
-      // Hiveパッケージ内部の既知の非同期リーク（runGuardingHiveOpenLeakの
-      // ドキュメント参照）が発生するため、テストヘルパーで吸収する。
+      // 既知の制約: 最初のオープンが失敗すると、Hiveパッケージ内部の既知の
+      // 非同期リーク（runGuardingHiveOpenLeakのドキュメント参照）が発生する
+      // ため、テストヘルパーで吸収する。
       var recreated = false;
       final recovered = await runGuardingHiveOpenLeak(
         () => openBoxWithRecovery<PresetPhrase>(
           'presetPhrases',
-          crashRecovery: false,
           hivePath: tempDir.path,
           onRecreated: () => recreated = true,
         ),
@@ -198,9 +159,11 @@ void main() {
       final boxFile = File('${tempDir.path}/test_log_presetphrases.hive');
       await boxFile.writeAsString('CORRUPTED_DATA');
 
-      box = (await openBoxWithRecovery<PresetPhrase>(
-        'test_log_presetPhrases',
-        hivePath: tempDir.path,
+      box = (await runGuardingHiveOpenLeak(
+        () => openBoxWithRecovery<PresetPhrase>(
+          'test_log_presetPhrases',
+          hivePath: tempDir.path,
+        ),
       ))!;
 
       expect(Hive.isBoxOpen('test_log_presetPhrases'), true,
@@ -222,12 +185,18 @@ void main() {
       await presetFile.writeAsString('CORRUPTED');
       await historyFile.writeAsString('CORRUPTED');
 
-      presetBox = (await openBoxWithRecovery<PresetPhrase>(
-        'multi_presetPhrases',
-        hivePath: tempDir.path,
+      presetBox = (await runGuardingHiveOpenLeak(
+        () => openBoxWithRecovery<PresetPhrase>(
+          'multi_presetPhrases',
+          hivePath: tempDir.path,
+        ),
       ))!;
-      historyBox =
-          (await openBoxWithRecovery('multi_history', hivePath: tempDir.path))!;
+      historyBox = (await runGuardingHiveOpenLeak(
+        () => openBoxWithRecovery<dynamic>(
+          'multi_history',
+          hivePath: tempDir.path,
+        ),
+      ))!;
 
       expect(Hive.isBoxOpen('multi_presetPhrases'), true,
           reason: 'presetPhrasesが自動復旧');

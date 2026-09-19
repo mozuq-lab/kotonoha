@@ -52,39 +52,43 @@ bool _isCorruptionError(Object error) {
 }
 
 /// 関数定義: Box破損時の復旧つきオープン処理
-/// 実装内容: [Hive.openBox]でBoxをオープンする。オープンに失敗した場合
-/// 例外の種類によって扱いを分岐する。
+/// 実装内容: [Hive.openBox]でBoxをオープンする。**Hive自身の自動復旧
+/// （crashRecovery: true）は最初には使わない**（台帳 L-101）。自動復旧は
+/// 最初の壊れたフレーム以降を黙ってファイルから切り捨てて開くため、最も
+/// 起きやすい破損（書き込み途中の電源断で末尾が壊れる）で、退避も告知も無いまま
+/// 一部が消える。まず自動復旧なしで開き、オープンに失敗した場合は例外の
+/// 種類によって扱いを分岐する。
 /// データ破損を示す例外（[HiveError]・[FormatException]・[RangeError]
-/// [_isCorruptionError]参照）: 削除前に破損Boxファイルを
+/// [_isCorruptionError]参照）: 破損Boxファイルを
 /// `<boxName>.hive.corrupt.bak`として退避（[backupCorruptBoxFile]）した上で
-/// [Hive.deleteBoxFromDisk]により削除し、再オープンを試みる。
-/// バックアップ自体に失敗した場合は、データ保全を優先して削除を中止しnullを返す。
+/// 1. 自動復旧ありで開き直し、読める分を救う。中身が残れば[onSalvaged]
+///    何も残らなければ[onRecreated]を呼ぶ
+/// 2. それも破損で開けなければ[Hive.deleteBoxFromDisk]で削除し、空で
+///    作り直して[onRecreated]を呼ぶ
+/// バックアップ自体に失敗した場合は、データ保全を優先して切り捨ても削除も
+/// 行わずnullを返す（退避なしの自動復旧は、元に戻せない切り捨てになる）。
 /// それ以外の例外（[FileSystemException]によるディスクフル・権限エラー等
 /// 環境起因の可能性がある失敗）: Boxを削除せずnullを返す。
 /// いずれの場合も、復旧が不可能な場合は例外を再送出せずnullを返し
 /// 呼び出し側はインメモリフォールバック（Box未オープン扱い）として
 /// 継続できるようにする。
 /// 設計判断: アプリ起動不能を防ぐことに加え、履歴・定型文・お気に入り等の
-/// 端末内にしか存在しない復元不能なユーザーデータを、非破損エラーで
-/// 無言のまま失わないことを最優先とする。
-/// 非破損エラーでの削除を防ぐ。
-/// [crashRecovery]はテスト用のフック。既定値の`true`ではHive自身が持つ
-/// フレーム単位の自動復旧が先に働くため、本関数のcatch節（削除→再オープン）まで
-/// 到達するのは自動復旧でも救えない破損時のみとなる。テストで確実にcatch節を
-/// 検証したい場合は`false`を渡し、Hive側の自動復旧を無効化する。
+/// 端末内にしか存在しない復元不能なユーザーデータを、無言のまま失わない
+/// ことを最優先とする。破損の判定はHive自身の例外に任せる（自作の検出器は
+/// 持たない。AGENTS.md 規律 8）。
 /// [hivePath]はBoxファイルが格納されているディレクトリのパス（Hiveの
 /// ホームディレクトリ）。破損時のバックアップ退避に使用する。不明な場合は
 /// nullを渡してよい（その場合、破損時のバックアップは行えないため
-/// データ保全を優先して削除は行われない）。
+/// データ保全を優先して切り捨ても削除も行われない）。
 /// 戻り値: オープンに成功した[Box]。復旧を含めて失敗した場合はnull。
 Future<Box<T>?> openBoxWithRecovery<T>(
   String name, {
-  bool crashRecovery = true,
   String? hivePath,
   void Function()? onRecreated,
+  void Function()? onSalvaged,
 }) async {
   try {
-    return await Hive.openBox<T>(name, crashRecovery: crashRecovery);
+    return await Hive.openBox<T>(name, crashRecovery: false);
   } catch (error, stackTrace) {
     // 破損検知ログ: Box破損等でオープンに失敗した際に記録する
     debugPrint('[hive_init] Box "$name" のオープンに失敗しました: $error');
@@ -113,6 +117,27 @@ Future<Box<T>?> openBoxWithRecovery<T>(
         'データ保全を優先して削除を中止します。インメモリフォールバックで継続します。',
       );
       return null;
+    }
+
+    // 復旧処理: 救出: 退避済みなので、Hive自身の自動復旧に壊れた所から後ろを
+    // 切り捨てさせ、読める分を残して開く（ADR-005、台帳 L-101）
+    try {
+      final salvaged = await Hive.openBox<T>(name);
+      if (salvaged.isEmpty) {
+        // 何も残らなかった。「一部」ではなく、空で始めたと伝える
+        debugPrint('[hive_init] Box "$name" から救えるデータはありませんでした');
+        onRecreated?.call();
+      } else {
+        debugPrint('[hive_init] Box "$name" の読める分を救いました');
+        onSalvaged?.call();
+      }
+      return salvaged;
+    } catch (salvageError) {
+      debugPrint('[hive_init] Box "$name" の救出に失敗しました: $salvageError');
+      if (!_isCorruptionError(salvageError)) {
+        // 環境起因エラー: 削除しない（最初のオープンと同じ扱い）
+        return null;
+      }
     }
 
     // 復旧処理: 削除: バックアップ退避済みの破損Boxファイルを削除する
@@ -258,38 +283,37 @@ Future<Map<PersistedArea, CorruptionOutcome>> initHive() async {
 /// 3 つの永続化領域の box を順に開き、破損を見つけて退避した領域とその結果を返す
 ///
 /// box 名と領域は同じ [PersistedArea] から導くので、「history の箱を作り直して
-/// presetPhrases と告げる」形は書けない。[initHive] が呼ぶ。テストは
-/// `Hive.init(tempDir)` の後に直接呼べる（`Hive.initFlutter` を通らない）。
-/// [crashRecovery] は本番では既定の true。Hive 自身の自動復旧で開ける破損は
-/// 自前経路（退避＋告知）を通らない（台帳 L-101）。テストは false で自前経路を通す。
+/// presetPhrases と告げる」形は書けない。結果は領域ごとに 1 つなので、同じ領域を
+/// 「救った」と「作り直した」の両方で告げる形も書けない。[initHive] が呼ぶ。
+/// テストは `Hive.init(tempDir)` の後に直接呼べる（`Hive.initFlutter` を通らない）。
 Future<Map<PersistedArea, CorruptionOutcome>> openPersistedBoxes({
   required String? hivePath,
-  bool crashRecovery = true,
 }) async {
   final outcomes = <PersistedArea, CorruptionOutcome>{};
   for (final area in PersistedArea.values) {
-    void mark() => outcomes[area] = CorruptionOutcome.recreated;
+    void recreated() => outcomes[area] = CorruptionOutcome.recreated;
+    void salvaged() => outcomes[area] = CorruptionOutcome.salvaged;
     switch (area) {
       case PersistedArea.history:
         await openBoxWithRecovery<HistoryItem>(
           area.boxName,
-          crashRecovery: crashRecovery,
           hivePath: hivePath,
-          onRecreated: mark,
+          onRecreated: recreated,
+          onSalvaged: salvaged,
         );
       case PersistedArea.presetPhrases:
         await openBoxWithRecovery<PresetPhrase>(
           area.boxName,
-          crashRecovery: crashRecovery,
           hivePath: hivePath,
-          onRecreated: mark,
+          onRecreated: recreated,
+          onSalvaged: salvaged,
         );
       case PersistedArea.favorites:
         await openBoxWithRecovery<FavoriteItem>(
           area.boxName,
-          crashRecovery: crashRecovery,
           hivePath: hivePath,
-          onRecreated: mark,
+          onRecreated: recreated,
+          onSalvaged: salvaged,
         );
     }
   }
