@@ -3,8 +3,8 @@
 /// box の API（`keys`・`values`）ではなく実ファイルのバイト列で見る。
 /// box 越しに見ると、Hive が削除の印を付けただけのフレームは「無い」ように
 /// 見えるが、ファイルにも OS のバックアップにも残っている（台帳 L-119）。
-/// 2 ファイル（`persisted_box_delete_test.dart`・
-/// `hive_init_startup_compact_test.dart`）が同じ確かめ方をするため、ここ 1 箇所に置く。
+/// `persisted_box_delete_test.dart` が使う。同じ確かめ方をするテストが増えたら
+/// ここから取る（各ファイルに複製すると片方だけ弱いまま取り残される）。
 library;
 
 import 'dart:convert';

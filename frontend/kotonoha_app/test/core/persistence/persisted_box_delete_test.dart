@@ -208,6 +208,27 @@ void main() {
     expect(results, [true]);
   });
 
+  test('掃除が失敗し続けても、書き込みと削除そのものは成功として報告する', () async {
+    // hive は compact が一度失敗するとそのセッションは掃除しなくなる（台帳 L-125）。
+    // そのとき消した内容はファイルに残るが、**削除そのものは済んでいる**ので、
+    // 「保存できません」とは伝えない（誤報になる）
+    final box = _MockBox();
+    when(() => box.put(any<dynamic>(), any())).thenAnswer((_) async {});
+    when(() => box.delete(any<dynamic>())).thenAnswer((_) async {});
+    when(box.compact)
+        .thenAnswer((_) async => throw const FileSystemException('disk full'));
+    when(box.flush).thenAnswer((_) async {});
+    final results = <bool>[];
+    final persisted =
+        PersistedBox<PresetPhrase>(box, onWriteResult: results.add);
+
+    await persisted.put('a', _phrase('a', '文'));
+    await persisted.delete('a');
+    await persisted.put('b', _phrase('b', '文'));
+
+    expect(results, [true, true, true]);
+  });
+
   test('削除そのものの掃除で fsync に失敗したら、保存の失敗として報告する', () async {
     // 前の残りの掃除とは扱いが違う: こちらは「消したことを確定できなかった」
     final box = _MockBox();
