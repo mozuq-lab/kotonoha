@@ -201,12 +201,16 @@ void main() {
     when(box.compact).thenAnswer((_) => compacting.future);
     when(box.flush).thenAnswer((_) async {});
     when(() => box.put(any<dynamic>(), any())).thenAnswer((_) async {});
+    when(() => box.putAll(any())).thenAnswer((_) async {});
+    when(box.clear).thenAnswer((_) async => 0);
     final persisted = PersistedBox<PresetPhrase>(box, onWriteResult: (_) {});
 
-    // When: 削除を待たずに、上書きの保存と 2 件目の削除を重ねる
+    // When: 削除を待たずに、上書きの保存・2 件目の削除・一括保存・全削除を重ねる
     final deleting = persisted.delete('a');
     final putting = persisted.put('b', _phrase('b', '上書き'));
     final deletingNext = persisted.delete('c');
+    final puttingAll = persisted.putAll({'d': _phrase('d', '一括')});
+    final clearing = persisted.clear();
     await pumpEventQueue();
 
     // Then: 1 件目の compact が終わるまで、後ろは始まらない
@@ -214,16 +218,21 @@ void main() {
     verify(box.compact).called(1);
     verifyNever(() => box.put(any<dynamic>(), any()));
     verifyNever(() => box.delete('c'));
+    verifyNever(() => box.putAll(any()));
+    verifyNever(box.clear);
 
     // When: compact が終わる
     compacting.complete();
-    await Future.wait([deleting, putting, deletingNext]);
+    await Future.wait([deleting, putting, deletingNext, puttingAll, clearing]);
 
     // Then: 呼ばれた順に届き、2 件目の削除も compact される
     verifyInOrder([
       () => box.put('b', any()),
       () => box.delete('c'),
       box.compact,
+      box.flush,
+      () => box.putAll(any()),
+      box.clear,
       box.flush,
     ]);
   });
