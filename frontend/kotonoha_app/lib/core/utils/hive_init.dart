@@ -220,7 +220,7 @@ void registerPersistedTypeAdapters({
 /// 破損時の継続動作: 各Boxのオープンは個別にtry/catchされ、復旧不可能な場合でも
 /// 例外を外部に投げない。該当するBoxは未オープンのまま扱われ
 /// `repository_providers`側のnullフォールバックによりインメモリ動作で継続する。
-Future<Set<PersistedArea>> initHive() async {
+Future<Map<PersistedArea, CorruptionOutcome>> initHive() async {
   // Hive初期化: Flutter環境用のHive初期化
   // 実装内容: ローカルストレージのパス設定とHive環境の準備
   await Hive.initFlutter();
@@ -255,20 +255,20 @@ Future<Set<PersistedArea>> initHive() async {
   return openPersistedBoxes(hivePath: hivePath);
 }
 
-/// 3 つの永続化領域の box を順に開き、破損で退避して空で作り直した領域を返す
+/// 3 つの永続化領域の box を順に開き、破損を見つけて退避した領域とその結果を返す
 ///
 /// box 名と領域は同じ [PersistedArea] から導くので、「history の箱を作り直して
 /// presetPhrases と告げる」形は書けない。[initHive] が呼ぶ。テストは
 /// `Hive.init(tempDir)` の後に直接呼べる（`Hive.initFlutter` を通らない）。
 /// [crashRecovery] は本番では既定の true。Hive 自身の自動復旧で開ける破損は
 /// 自前経路（退避＋告知）を通らない（台帳 L-101）。テストは false で自前経路を通す。
-Future<Set<PersistedArea>> openPersistedBoxes({
+Future<Map<PersistedArea, CorruptionOutcome>> openPersistedBoxes({
   required String? hivePath,
   bool crashRecovery = true,
 }) async {
-  final recreated = <PersistedArea>{};
+  final outcomes = <PersistedArea, CorruptionOutcome>{};
   for (final area in PersistedArea.values) {
-    void mark() => recreated.add(area);
+    void mark() => outcomes[area] = CorruptionOutcome.recreated;
     switch (area) {
       case PersistedArea.history:
         await openBoxWithRecovery<HistoryItem>(
@@ -293,5 +293,5 @@ Future<Set<PersistedArea>> openPersistedBoxes({
         );
     }
   }
-  return Set.unmodifiable(recreated);
+  return Map.unmodifiable(outcomes);
 }

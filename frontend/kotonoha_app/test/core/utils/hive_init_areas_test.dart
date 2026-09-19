@@ -64,7 +64,7 @@ void main() {
     );
 
     // Then: 領域の対応が正しく、退避ファイルが残り、3 つとも開いている
-    expect(recreated, {PersistedArea.history});
+    expect(recreated, {PersistedArea.history: CorruptionOutcome.recreated});
     expect(
         File('${tempDir.path}/history.hive.corrupt.bak').existsSync(), isTrue);
     for (final area in PersistedArea.values) {
@@ -80,7 +80,8 @@ void main() {
     final recreated = await runGuardingHiveOpenLeak(
       () => openPersistedBoxes(hivePath: tempDir.path, crashRecovery: false),
     );
-    expect(recreated, {PersistedArea.presetPhrases});
+    expect(
+        recreated, {PersistedArea.presetPhrases: CorruptionOutcome.recreated});
   });
 
   test('favorites の box が壊れていれば、作り直した領域は {favorites} だけ', () async {
@@ -90,6 +91,6 @@ void main() {
     final recreated = await runGuardingHiveOpenLeak(
       () => openPersistedBoxes(hivePath: tempDir.path, crashRecovery: false),
     );
-    expect(recreated, {PersistedArea.favorites});
+    expect(recreated, {PersistedArea.favorites: CorruptionOutcome.recreated});
   });
 }

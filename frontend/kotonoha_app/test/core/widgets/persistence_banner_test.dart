@@ -275,6 +275,43 @@ void main() {
           reason: '作り直していない領域の名前は出さない');
     });
 
+    testWidgets('読める分だけ救った領域は「一部を読み込めませんでした」と退避を領域名つきで伝える', (tester) async {
+      await _pumpBanner(
+        tester,
+        const PersistenceRecreated({}, salvagedAreas: {PersistedArea.history}),
+      );
+      expect(find.textContaining('履歴の一部を読み込めませんでした'), findsOneWidget);
+      expect(find.textContaining('退避'), findsOneWidget);
+      expect(find.textContaining('空の状態で開始'), findsNothing,
+          reason: '残っているのに空で始めたとは言わない');
+      expect(find.text('閉じる'), findsOneWidget);
+    });
+
+    testWidgets('作り直した領域と救った領域が両方あれば、1 つの告知に並べ、退避の文は 1 回だけ', (tester) async {
+      await _pumpBanner(
+        tester,
+        const PersistenceRecreated(
+          {PersistedArea.favorites},
+          salvagedAreas: {PersistedArea.history},
+        ),
+      );
+      final message = tester.widget<Text>(find.textContaining('退避')).data!;
+      expect(message, contains('お気に入りを読み込めなかったため、空の状態で開始しました'));
+      expect(message, contains('履歴の一部を読み込めませんでした'));
+      expect('退避'.allMatches(message), hasLength(1));
+    });
+
+    testWidgets('救った領域の告知も「閉じる」で消え、高さを取らなくなる', (tester) async {
+      await _pumpBanner(
+        tester,
+        const PersistenceRecreated({}, salvagedAreas: {PersistedArea.history}),
+      );
+      await tester.tap(find.text('閉じる'));
+      await tester.pump();
+      expect(find.textContaining('一部を読み込めませんでした'), findsNothing);
+      expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
+    });
+
     testWidgets('「閉じる」は支援技術から見え、タップの操作を持つ（読み上げ利用者も閉じられる）', (tester) async {
       final handle = tester.ensureSemantics();
       await _pumpBanner(

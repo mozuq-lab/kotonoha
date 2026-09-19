@@ -42,6 +42,16 @@ extension PersistedAreaNames on PersistedArea {
       };
 }
 
+/// 起動時に破損を見つけた領域の結果（どちらも元のファイルは退避済み）
+/// 領域ごとに 1 つ。同じ領域が「救った」と「作り直した」の両方になることは無い。
+enum CorruptionOutcome {
+  /// 壊れた所より前の、読める分だけを残して開いた（台帳 L-101）
+  salvaged,
+
+  /// 何も読めず、空で作り直した
+  recreated,
+}
+
 /// 永続化の状態
 /// 状態は 4 つしかない。sealed にしてあるので、利用側で switch を書けば
 /// 分岐漏れはコンパイルエラーになる。
@@ -78,15 +88,22 @@ final class PersistenceUnavailable extends PersistenceState {
   const PersistenceUnavailable();
 }
 
-/// 破損した box を `<box>.hive.corrupt.bak` に退避して空で作り直した状態。
-/// 保存はできるが、作り直した領域の以前のデータは無い。
-/// 「黙って消える」を避けるため、領域名つきで利用者に伝える（ADR-005、L-90）。
+/// 破損した box を `<box>.hive.corrupt.bak` に退避して開き直した状態。
+/// 保存はできるが、以前のデータの全部（空で作り直した領域）か一部
+/// （読める分だけ救った領域）が無い。
+/// 「黙って消える」を避けるため、領域名つきで利用者に伝える（ADR-005、L-90・L-101）。
 final class PersistenceRecreated extends PersistenceState {
-  /// 作り直した領域
+  /// 空で作り直した領域
   final Set<PersistedArea> recreatedAreas;
 
+  /// 読める分だけを救った領域
+  final Set<PersistedArea> salvagedAreas;
+
   /// Recreated 状態を作る
-  const PersistenceRecreated(this.recreatedAreas);
+  const PersistenceRecreated(
+    this.recreatedAreas, {
+    this.salvagedAreas = const {},
+  });
 }
 
 /// 開いている box の集合から永続化の状態を導く
@@ -97,13 +114,15 @@ final class PersistenceRecreated extends PersistenceState {
 PersistenceState resolvePersistenceState({
   required Set<PersistedArea> openedAreas,
   Set<PersistedArea> recreatedAreas = const {},
+  Set<PersistedArea> salvagedAreas = const {},
 }) {
   final failedAreas = PersistedArea.values.toSet().difference(openedAreas);
   if (failedAreas.isEmpty) {
-    // 開けない領域が無くても、破損で作り直した領域があれば利用者に伝える（ADR-005）
-    return recreatedAreas.isEmpty
+    // 開けない領域が無くても、破損で作り直した・一部だけ救った領域があれば
+    // 利用者に伝える（ADR-005）
+    return recreatedAreas.isEmpty && salvagedAreas.isEmpty
         ? const PersistenceReady()
-        : PersistenceRecreated(recreatedAreas);
+        : PersistenceRecreated(recreatedAreas, salvagedAreas: salvagedAreas);
   }
   if (failedAreas.length == PersistedArea.values.length) {
     return const PersistenceUnavailable();

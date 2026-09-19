@@ -118,7 +118,9 @@ void main() {
       await Hive.openBox<FavoriteItem>(PersistedArea.favorites.boxName);
       final container = ProviderContainer(
         overrides: [
-          recreatedAreasProvider.overrideWithValue({PersistedArea.history}),
+          corruptionOutcomesProvider.overrideWithValue(
+            {PersistedArea.history: CorruptionOutcome.recreated},
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -126,6 +128,26 @@ void main() {
       expect(state, isA<PersistenceRecreated>());
       expect((state as PersistenceRecreated).recreatedAreas,
           {PersistedArea.history});
+    });
+
+    test('起動時に読める分だけ救った領域は、作り直した領域と別に状態へ届く', () async {
+      await Hive.openBox<HistoryItem>(PersistedArea.history.boxName);
+      await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      await Hive.openBox<FavoriteItem>(PersistedArea.favorites.boxName);
+      final container = ProviderContainer(
+        overrides: [
+          corruptionOutcomesProvider.overrideWithValue({
+            PersistedArea.history: CorruptionOutcome.salvaged,
+            PersistedArea.favorites: CorruptionOutcome.recreated,
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      final state = container.read(persistenceStateProvider);
+      expect(state, isA<PersistenceRecreated>());
+      final loss = state as PersistenceRecreated;
+      expect(loss.salvagedAreas, {PersistedArea.history});
+      expect(loss.recreatedAreas, {PersistedArea.favorites});
     });
 
     test('nullを返すrepositoryの領域と、状態が報告する失敗領域が一致する', () async {

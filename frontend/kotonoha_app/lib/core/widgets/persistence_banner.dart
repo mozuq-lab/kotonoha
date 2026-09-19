@@ -99,10 +99,11 @@ class PersistenceBanner extends ConsumerWidget {
         ),
     };
     // 空の集合は「作り直し無し」と同じ扱い（失敗の文言で誤報しない）
-    final recreatedAreas = switch (state) {
-      PersistenceRecreated(:final recreatedAreas) when !dismissed =>
-        recreatedAreas,
-      _ => none,
+    final (recreatedAreas, salvagedAreas) = switch (state) {
+      PersistenceRecreated(:final recreatedAreas, :final salvagedAreas)
+          when !dismissed =>
+        (recreatedAreas, salvagedAreas),
+      _ => (none, none),
     };
 
     // 設定（SharedPreferences）の保存失敗は Hive の領域と同じ告知に名前を並べる
@@ -116,8 +117,16 @@ class PersistenceBanner extends ConsumerWidget {
         : failedNames.isNotEmpty
             ? '${failedNames.join('、')}を保存できません。アプリを閉じると消えます'
             : null;
-    final recreatedText = recreatedAreas.isNotEmpty
-        ? '${_areaNames(recreatedAreas).join('、')}を読み込めなかったため、空の状態で開始しました。元のデータは端末内に退避しています'
+    // 空で作り直した領域と、読める分だけ救った領域（台帳 L-101）。どちらも元の
+    // ファイルは退避済みなので、退避の文は最後に 1 回だけ付ける
+    final lossTexts = [
+      if (recreatedAreas.isNotEmpty)
+        '${_areaNames(recreatedAreas).join('、')}を読み込めなかったため、空の状態で開始しました',
+      if (salvagedAreas.isNotEmpty)
+        '${_areaNames(salvagedAreas).join('、')}の一部を読み込めませんでした',
+    ];
+    final recreatedText = lossTexts.isNotEmpty
+        ? '${lossTexts.join('。')}。元のデータは端末内に退避しています'
         : null;
     if (failureText == null && recreatedText == null) {
       return const SizedBox.shrink();
