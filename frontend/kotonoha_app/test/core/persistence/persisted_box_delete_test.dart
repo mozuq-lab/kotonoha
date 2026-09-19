@@ -7,7 +7,6 @@
 // testWidgets ではなく test を使う（FakeAsync の下では Hive のファイル I/O が終わらない）。
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -18,28 +17,13 @@ import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/history_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
+
+import '../../support/hive_file_bytes.dart';
 import 'package:mocktail/mocktail.dart';
 
 /// Hive の Box（外部 SDK の境界）。fsync の有無と compact の失敗は、実ファイルでは
 /// 観測・注入できないので、ここだけモックで見る
 class _MockBox extends Mock implements Box<PresetPhrase> {}
-
-/// [file] のバイト列に [text]（UTF-8）が含まれるか
-Future<bool> _fileContains(File file, String text) async {
-  final haystack = await file.readAsBytes();
-  final needle = utf8.encode(text);
-  for (var i = 0; i + needle.length <= haystack.length; i++) {
-    var matched = true;
-    for (var j = 0; j < needle.length; j++) {
-      if (haystack[i + j] != needle[j]) {
-        matched = false;
-        break;
-      }
-    }
-    if (matched) return true;
-  }
-  return false;
-}
 
 PresetPhrase _phrase(String id, String content) => PresetPhrase(
       id: id,
@@ -87,16 +71,16 @@ void main() {
     await persisted.put('keep', _phrase('keep', 'のこす文-AAA'));
     await persisted.put('gone', _phrase('gone', 'けす文-BBB'));
     await box.flush();
-    expect(await _fileContains(file, 'けす文-BBB'), isTrue,
+    expect(await fileContains(file, 'けす文-BBB'), isTrue,
         reason: '前提: 消す前はファイルにある');
 
     // When
     await persisted.delete('gone');
 
     // Then: 消した内容はファイルに無く、残した内容はある
-    expect(await _fileContains(file, 'けす文-BBB'), isFalse,
+    expect(await fileContains(file, 'けす文-BBB'), isFalse,
         reason: '消した発話が端末のファイルと OS のバックアップに残る');
-    expect(await _fileContains(file, 'のこす文-AAA'), isTrue);
+    expect(await fileContains(file, 'のこす文-AAA'), isTrue);
     expect(results, [true, true, true], reason: 'put 2 回と delete 1 回の報告');
   });
 
@@ -106,11 +90,11 @@ void main() {
     final persisted = PersistedBox<PresetPhrase>(box, onWriteResult: (_) {});
     await persisted.put('a', _phrase('a', 'ぜんぶけす文-CCC'));
     await box.flush();
-    expect(await _fileContains(file, 'ぜんぶけす文-CCC'), isTrue);
+    expect(await fileContains(file, 'ぜんぶけす文-CCC'), isTrue);
 
     await persisted.clear();
 
-    expect(await _fileContains(file, 'ぜんぶけす文-CCC'), isFalse);
+    expect(await fileContains(file, 'ぜんぶけす文-CCC'), isFalse);
     expect(await file.length(), 0);
   });
 
@@ -255,8 +239,8 @@ void main() {
     ]);
 
     // Then
-    expect(await _fileContains(file, 'けす文-A'), isFalse);
-    expect(await _fileContains(file, 'けす文-C'), isFalse);
+    expect(await fileContains(file, 'けす文-A'), isFalse);
+    expect(await fileContains(file, 'けす文-C'), isFalse);
     expect(results, everyElement(isTrue));
     expect(results, hasLength(6));
     await box.close();
@@ -285,9 +269,9 @@ void main() {
 
     // Then
     expect(box.length, HistoryRepository.maxHistoryCount);
-    expect(await _fileContains(file, '発話-001'), isFalse,
+    expect(await fileContains(file, '発話-001'), isFalse,
         reason: '押し出された発話がファイルに残る');
-    expect(await _fileContains(file, '発話-002'), isTrue);
-    expect(await _fileContains(file, '発話-051'), isTrue);
+    expect(await fileContains(file, '発話-002'), isTrue);
+    expect(await fileContains(file, '発話-051'), isTrue);
   });
 }

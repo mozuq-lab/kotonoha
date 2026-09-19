@@ -286,6 +286,7 @@ Future<Map<PersistedArea, CorruptionOutcome>> initHive() async {
 /// presetPhrases と告げる」形は書けない。結果は領域ごとに 1 つなので、同じ領域を
 /// 「救った」と「作り直した」の両方で告げる形も書けない。[initHive] が呼ぶ。
 /// テストは `Hive.init(tempDir)` の後に直接呼べる（`Hive.initFlutter` を通らない）。
+/// 開いた box は [_removeStaleFramesAtStartup] で 1 回掃除する（台帳 L-120・L-121）。
 Future<Map<PersistedArea, CorruptionOutcome>> openPersistedBoxes({
   required String? hivePath,
 }) async {
@@ -293,29 +294,56 @@ Future<Map<PersistedArea, CorruptionOutcome>> openPersistedBoxes({
   for (final area in PersistedArea.values) {
     void recreated() => outcomes[area] = CorruptionOutcome.recreated;
     void salvaged() => outcomes[area] = CorruptionOutcome.salvaged;
-    switch (area) {
-      case PersistedArea.history:
-        await openBoxWithRecovery<HistoryItem>(
+    final box = switch (area) {
+      PersistedArea.history => await openBoxWithRecovery<HistoryItem>(
           area.boxName,
           hivePath: hivePath,
           onRecreated: recreated,
           onSalvaged: salvaged,
-        );
-      case PersistedArea.presetPhrases:
-        await openBoxWithRecovery<PresetPhrase>(
+        ),
+      PersistedArea.presetPhrases => await openBoxWithRecovery<PresetPhrase>(
           area.boxName,
           hivePath: hivePath,
           onRecreated: recreated,
           onSalvaged: salvaged,
-        );
-      case PersistedArea.favorites:
-        await openBoxWithRecovery<FavoriteItem>(
+        ),
+      PersistedArea.favorites => await openBoxWithRecovery<FavoriteItem>(
           area.boxName,
           hivePath: hivePath,
           onRecreated: recreated,
           onSalvaged: salvaged,
-        );
-    }
+        ),
+    };
+    await _removeStaleFramesAtStartup(box, area);
   }
   return Map.unmodifiable(outcomes);
+}
+
+/// 前のセッションが残した「消した内容・置き換えられた古い内容」を取り除く
+///
+/// Hive は追記型で、削除も上書きも元のフレームをファイルに残す。書き込みのたびの
+/// 掃除（`PersistedBox`）は削除だけを対象にしているので、上書きで置き換えられた
+/// 古い内容は次の削除まで残る（台帳 L-120）。compact が一度失敗した box は、その
+/// セッションの間ずっと掃除されない（hive 2.2.3 `storage_backend_vm.dart` の
+/// `_compactionScheduled` が成功時にしか戻らない。台帳 L-121）。掃除を持たない
+/// 版が書いたファイルも同じ。**起動時は書き込みが重ならないので、ここで 1 回だけ
+/// 掃除する**（`PersistedBox` の直列化の外で compact してよい唯一の時点）。
+/// 掃除するものが無ければ Hive 自身が何もしない（`keystore.deletedEntries` が 0
+/// なら `box.compact()` は即座に返る）ので、普通の起動では書き直しも起きない。
+/// 失敗しても起動は続ける: データは無事で、掃除は次の削除か次回起動で行われる。
+/// Web（IndexedDB）では compact も flush も何もしない。
+Future<void> _removeStaleFramesAtStartup(
+  Box<dynamic>? box,
+  PersistedArea area,
+) async {
+  if (box == null) return;
+  try {
+    await box.compact();
+    await box.flush();
+  } catch (error) {
+    debugPrint(
+      '[hive_init] Box "${area.boxName}" の起動時の掃除に失敗しました'
+      '（データはそのまま。次の削除か次回起動で掃除されます）: $error',
+    );
+  }
 }
