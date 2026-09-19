@@ -98,13 +98,21 @@ class PersistenceBanner extends ConsumerWidget {
           true,
         ),
     };
-    // 空の集合は「作り直し無し」と同じ扱い（失敗の文言で誤報しない）
-    final (recreatedAreas, salvagedAreas) = switch (state) {
-      PersistenceRecreated(:final recreatedAreas, :final salvagedAreas)
-          when !dismissed =>
-        (recreatedAreas, salvagedAreas),
-      _ => (none, none),
-    };
+    // 空の集合は「作り直し無し」と同じ扱い（失敗の文言で誤報しない）。
+    // 保存できない状態は破損の結果を運ばないので、そのときは起動時の結果を
+    // 直接読む。失敗の告知で、作り直した・一部を失ったことを隠さない（台帳 L-102）
+    final outcomes = ref.watch(corruptionOutcomesProvider);
+    final (recreatedAreas, salvagedAreas) = dismissed
+        ? (none, none)
+        : switch (state) {
+            PersistenceRecreated(:final recreatedAreas, :final salvagedAreas) =>
+              (recreatedAreas, salvagedAreas),
+            PersistenceReady() => (none, none),
+            PersistenceUnavailable() || PersistenceRecoverableFailure() => (
+                outcomes.areasWith(CorruptionOutcome.recreated),
+                outcomes.areasWith(CorruptionOutcome.salvaged),
+              ),
+          };
 
     // 設定（SharedPreferences）の保存失敗は Hive の領域と同じ告知に名前を並べる
     final failedNames = [
