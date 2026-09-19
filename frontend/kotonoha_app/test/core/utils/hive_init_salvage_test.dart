@@ -51,7 +51,7 @@ void main() {
   late File backupFile;
 
   setUp(() async {
-    await Hive.close();
+    await closeHiveIgnoringMissingLock();
     tempDir = await Directory.systemTemp.createTemp('hive_salvage_test_');
     Hive.init(tempDir.path);
     if (!Hive.isAdapterRegistered(1)) {
@@ -63,7 +63,7 @@ void main() {
   });
 
   tearDown(() async {
-    await Hive.close();
+    await closeHiveIgnoringMissingLock();
     if (tempDir.existsSync()) {
       await tempDir.delete(recursive: true);
     }
