@@ -38,17 +38,73 @@ class PersistedBox<T> {
   int get length => _box.length;
 
   /// [key] に [value] を書く
-  Future<void> put(dynamic key, T value) => _guard(() => _box.put(key, value));
+  Future<void> put(dynamic key, T value) =>
+      _inOrder(() => _box.put(key, value));
 
   /// [entries] をまとめて書く
   Future<void> putAll(Map<dynamic, T> entries) =>
-      _guard(() => _box.putAll(entries));
+      _inOrder(() => _box.putAll(entries));
 
-  /// [key] を削除する
-  Future<void> delete(dynamic key) => _guard(() => _box.delete(key));
+  /// [key] を削除し、消した内容をファイルからも取り除く（台帳 L-119）
+  /// Hive は追記型で、delete は「消した」という印のフレームを足すだけ。元の
+  /// フレームは Hive 自身の compaction（削除 60 件超かつ 15% 超）まで残り、
+  /// OS のバックアップにも乗る。保存しているのは利用者の発話そのものなので、
+  /// 1 件ごとに実際に取り除く（履歴の上限あふれもここを通る）。
+  Future<void> delete(dynamic key) => _inOrder(() async {
+        await _box.delete(key);
+        await _removeDeletedFromFile();
+      });
 
   /// すべて削除する
-  Future<void> clear() => _guard(() => _box.clear());
+  /// clear はファイルを 0 に切り詰める。切り詰めを flush（fsync）で確定させ、
+  /// 直後の電源断で消したはずの内容が戻らないようにする（台帳 L-119）。
+  Future<void> clear() => _inOrder(() async {
+        await _box.clear();
+        await _box.flush();
+      });
+
+  /// 実行中か待機中の最後の書き込み。無ければ null
+  Future<void>? _lastWrite;
+
+  /// 書き込みを、呼ばれた順に 1 本ずつ実行する
+  /// Hive の compact は、対象のフレームを集めるまでに await を挟む。その間に
+  /// 既存キーへの上書き put が始まると、keystore 上の古いフレームが未書き込みの
+  /// ものに置き換わり、書き直したファイルにその項目が入らない（その瞬間に
+  /// 落ちると、その項目が消える）。compact の最中に始まった次の削除は、compact
+  /// されずに残る。このアプリの書き込みはすべてここを通るので、1 本ずつにすれば
+  /// どちらも起きない。
+  /// 空いているときはその場で始める（後ろに並べるのは、走っている書き込みが
+  /// あるときだけ）。待たずに書いて直後に読む呼び出し元から見た挙動を変えない。
+  Future<void> _inOrder(Future<void> Function() write) {
+    final previous = _lastWrite;
+    final result =
+        previous == null ? _guard(write) : previous.then((_) => _guard(write));
+    late final Future<void> settled;
+    settled = result.then<void>((_) {}, onError: (Object _) {}).whenComplete(
+      () {
+        if (identical(_lastWrite, settled)) _lastWrite = null;
+      },
+    );
+    _lastWrite = settled;
+    return result;
+  }
+
+  /// 消した内容をファイルから取り除き、結果を fsync で確定させる
+  /// compact は別名に書いて rename する方式で、Hive は新しいファイルを fsync
+  /// しない。直後の flush で、電源断で中身が欠けうる時間を縮める（無くなりは
+  /// しない。欠け方によっては次回起動時に告知されない。台帳 L-116）。
+  /// compact の失敗は保存の失敗にしない: 削除そのものは済んでおり、保存できて
+  /// いるのに「保存できません」と伝えるのは誤報になる。残った分は、次に compact
+  /// が通ったときに取り除かれる（Hive は失敗後その box の compact を再開しない
+  /// ので、実際には次回起動の後）。Web（IndexedDB）ではどちらも何もしない。
+  Future<void> _removeDeletedFromFile() async {
+    try {
+      await _box.compact();
+    } catch (error) {
+      debugPrint('[PersistedBox] 消した内容をファイルから取り除けませんでした: $error');
+    }
+    await _box.flush();
+  }
 
   /// 書き込みを実行し、成否を報告する
   /// 例外を飲む理由: ADR-005 は「保存されないことは伝えて**継続する**」と
