@@ -60,7 +60,7 @@ Future<void> pumpApp(
   }
 
   // main.dart と同型: 作り直した領域を ProviderScope に渡す（ADR-005、L-90）
-  final recreatedAreas = await initHive();
+  final corruptionOutcomes = await initHive();
 
   // テスト用にデータをクリア
   if (clearData) {
@@ -70,7 +70,7 @@ Future<void> pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        recreatedAreasProvider.overrideWithValue(recreatedAreas),
+        corruptionOutcomesProvider.overrideWithValue(corruptionOutcomes),
         ...?(overrides as List<dynamic>?),
       ],
       child: const KotonohaApp(),

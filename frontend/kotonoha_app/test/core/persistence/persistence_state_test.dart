@@ -62,6 +62,28 @@ void main() {
           {PersistedArea.history});
     });
 
+    test('読める分だけ救った領域があれば Recreated で、救った領域を作り直した領域と別に保持する', () {
+      final state = resolvePersistenceState(
+        openedAreas: PersistedArea.values.toSet(),
+        recreatedAreas: {PersistedArea.favorites},
+        salvagedAreas: {PersistedArea.history},
+      );
+      expect(state, isA<PersistenceRecreated>());
+      final recreated = state as PersistenceRecreated;
+      expect(recreated.salvagedAreas, {PersistedArea.history});
+      expect(recreated.recreatedAreas, {PersistedArea.favorites});
+    });
+
+    test('救った領域だけでも Ready にはならない（一部を失ったことを黙らない）', () {
+      final state = resolvePersistenceState(
+        openedAreas: PersistedArea.values.toSet(),
+        salvagedAreas: {PersistedArea.history},
+      );
+      expect(state, isA<PersistenceRecreated>());
+      expect((state as PersistenceRecreated).salvagedAreas,
+          {PersistedArea.history});
+    });
+
     test('作り直した領域があっても、開けない領域があれば失敗の状態が優先する', () {
       final state = resolvePersistenceState(
         openedAreas: {PersistedArea.history, PersistedArea.favorites},

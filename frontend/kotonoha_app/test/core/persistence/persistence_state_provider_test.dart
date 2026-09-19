@@ -118,7 +118,9 @@ void main() {
       await Hive.openBox<FavoriteItem>(PersistedArea.favorites.boxName);
       final container = ProviderContainer(
         overrides: [
-          recreatedAreasProvider.overrideWithValue({PersistedArea.history}),
+          corruptionOutcomesProvider.overrideWithValue(
+            {PersistedArea.history: CorruptionOutcome.recreated},
+          ),
         ],
       );
       addTearDown(container.dispose);

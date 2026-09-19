@@ -26,10 +26,11 @@ void main() async {
   // アプリがrunAppへ到達できるようにtry/catchで保護する。
   // Hiveが利用不可でもrepository_providersのnullフォールバックにより
   // 文字盤・TTS等の基本機能はインメモリ動作で継続できる。
-  // 破損で退避して空で作り直した領域。永続化状態として利用者に伝える（ADR-005、L-90）
-  var recreatedAreas = const <PersistedArea>{};
+  // 破損を見つけて退避した領域とその結果。永続化状態として利用者に伝える
+  // （ADR-005、L-90・L-101）
+  var corruptionOutcomes = const <PersistedArea, CorruptionOutcome>{};
   try {
-    recreatedAreas = await initHive();
+    corruptionOutcomes = await initHive();
   } catch (error, stackTrace) {
     debugPrint('[main] Hive初期化に失敗しました。インメモリ動作で起動を継続します: $error');
     debugPrintStack(stackTrace: stackTrace);
@@ -38,7 +39,9 @@ void main() async {
   // アプリ起動: ProviderScopeでKotonohaAppをラップして起動
   runApp(
     ProviderScope(
-      overrides: [recreatedAreasProvider.overrideWithValue(recreatedAreas)],
+      overrides: [
+        corruptionOutcomesProvider.overrideWithValue(corruptionOutcomes),
+      ],
       child: const KotonohaApp(),
     ),
   );
