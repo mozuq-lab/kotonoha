@@ -131,7 +131,8 @@ class _EmergencyConfirmationDialogState
     // フォントサイズ設定への追従（REQ-2007、台帳 L-111）: 固定サイズの
     // AppTextStyles は設定に追従しない。テーマの bodyMedium は「中」の基準
     // （fontSizeMedium）に設定の倍率が掛かっているので、サイズだけをそこから取る
-    // （色・太さはテーマごとに違うので取らない。「中」の見た目は変えない）。
+    // （色・太さはテーマごとに違うので取らない。アプリのテーマの下では「中」の
+    // 見た目は変わらない）。
     final baseFontSize =
         theme.textTheme.bodyMedium?.fontSize ?? AppSizes.fontSizeMedium;
     final smallFontSize =
@@ -205,9 +206,15 @@ class _EmergencyConfirmationDialogState
             horizontal: AppSizes.paddingMedium,
           ),
         ),
-        child: Text(
-          label,
-          style: AppTextStyles.button.copyWith(fontSize: fontSize),
+        // 箱（120×44）は固定なので、収まらないラベルは折り返して切られ、
+        // 「いいえ」が「いい」と読めてしまう（「大」に OS の文字拡大が重なると
+        // 起きる）。折り返さず、箱に収まるところまで縮める
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: AppTextStyles.button.copyWith(fontSize: fontSize),
+          ),
         ),
       ),
     );

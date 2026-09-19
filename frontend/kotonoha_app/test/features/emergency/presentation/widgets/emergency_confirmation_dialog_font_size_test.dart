@@ -1,6 +1,6 @@
 /// 緊急確認ダイアログの文字がフォントサイズ設定に追従する（REQ-2007、台帳 L-111）
 /// 設定 → currentThemeProvider → ダイアログ の実際の経路を通し、
-/// 描画された RenderParagraph の実効サイズで測る。
+/// 描画された RenderParagraph の fontSize（OS の文字拡大を掛ける前の値）で測る。
 /// 「中」では 1px も変えない（20 / 20 / 16 / 20）。
 library;
 
@@ -28,8 +28,8 @@ class _FixedSettings extends SettingsNotifier {
 const _supplementaryText = '周囲に緊急音が鳴り、画面が赤くなります。';
 
 /// 設定を固定したアプリ相当の木で、緊急ボタンから確認ダイアログを開く。
-/// 設定ごとに独立した pump にする（ProviderScope.overrides は mount 後に
-/// 差し替わらないので、同じ木で設定を変えると偽の緑になる）。
+/// 設定ごとに独立した pump にする（同じ木で override だけ作り直しても、生成済みの
+/// [_FixedSettings] とその設定値が残るので、設定が変わらないまま緑になる）。
 Future<void> _openDialog(
   WidgetTester tester, {
   required FontSize fontSize,
@@ -129,36 +129,43 @@ void main() {
       });
     }
 
-    // リスク: ボタンの箱（120×44）は固定なので、「大」でラベルが収まらないと
-    // 折り返して「はい」「いいえ」が欠ける。Text は箱の幅に制約されて
-    // 折り返すだけで矩形は箱を出ないので、1 行の自然な幅と高さで測る
-    testWidgets('「大」でもボタンのラベルが折り返さずにボタンの箱に収まる', (tester) async {
-      await _openDialog(tester, fontSize: FontSize.large);
+    // リスク: ボタンの箱（120×44）は固定。ラベルが収まらないと折り返して
+    // 高さ 44 で切られ、「いいえ」が「いい」（肯定）と読める。アプリの「大」に
+    // OS の文字拡大が重なると起きる（Android の最大は 1.3 倍）。
+    // Text は箱の幅に制約されるだけで矩形は箱を出ないので、制約後の大きさでは
+    // 測れない。「折り返していない」と「描かれた矩形が箱に入っている」で測る
+    for (final osScale in [1.0, 1.3, 2.0]) {
+      testWidgets('「大」と OS の文字拡大 $osScale 倍でも、ボタンのラベルが欠けない', (tester) async {
+        tester.platformDispatcher.textScaleFactorTestValue = osScale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await _openDialog(tester, fontSize: FontSize.large);
 
-      for (final label in [
-        EmergencyConfirmationDialog.confirmLabel,
-        EmergencyConfirmationDialog.cancelLabel,
-      ]) {
-        final paragraph =
-            tester.renderObject<RenderParagraph>(find.text(label));
-        final button = tester.getSize(
-          find.ancestor(
-            of: find.text(label),
-            matching: find.byType(ElevatedButton),
-          ),
-        );
-        expect(
-          paragraph.getMaxIntrinsicWidth(double.infinity),
-          lessThanOrEqualTo(paragraph.constraints.maxWidth),
-          reason: '「$label」が 1 行に収まらず折り返す',
-        );
-        expect(
-          paragraph.size.height,
-          lessThanOrEqualTo(button.height),
-          reason: '「$label」の高さがボタンの高さ ${button.height} を超える',
-        );
-      }
-      expect(tester.takeException(), isNull);
-    });
+        for (final label in [
+          EmergencyConfirmationDialog.confirmLabel,
+          EmergencyConfirmationDialog.cancelLabel,
+        ]) {
+          final paragraph =
+              tester.renderObject<RenderParagraph>(find.text(label));
+          expect(
+            paragraph.size.width,
+            closeTo(paragraph.getMaxIntrinsicWidth(double.infinity), 0.01),
+            reason: '「$label」が折り返している（1 行の自然な幅で置かれていない）',
+          );
+          final button = tester.getRect(
+            find.ancestor(
+              of: find.text(label),
+              matching: find.byType(ElevatedButton),
+            ),
+          );
+          final drawn = tester.getRect(find.text(label));
+          expect(
+            button.expandToInclude(drawn),
+            equals(button),
+            reason: '「$label」の描かれた矩形 $drawn がボタン $button からはみ出している',
+          );
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 }
