@@ -7,7 +7,6 @@
 // testWidgets ではなく test を使う（FakeAsync の下では Hive のファイル I/O が終わらない）。
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -18,28 +17,13 @@ import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/history_item_adapter.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase_adapter.dart';
+
+import '../../support/hive_file_bytes.dart';
 import 'package:mocktail/mocktail.dart';
 
 /// Hive の Box（外部 SDK の境界）。fsync の有無と compact の失敗は、実ファイルでは
 /// 観測・注入できないので、ここだけモックで見る
 class _MockBox extends Mock implements Box<PresetPhrase> {}
-
-/// [file] のバイト列に [text]（UTF-8）が含まれるか
-Future<bool> _fileContains(File file, String text) async {
-  final haystack = await file.readAsBytes();
-  final needle = utf8.encode(text);
-  for (var i = 0; i + needle.length <= haystack.length; i++) {
-    var matched = true;
-    for (var j = 0; j < needle.length; j++) {
-      if (haystack[i + j] != needle[j]) {
-        matched = false;
-        break;
-      }
-    }
-    if (matched) return true;
-  }
-  return false;
-}
 
 PresetPhrase _phrase(String id, String content) => PresetPhrase(
       id: id,
@@ -87,16 +71,16 @@ void main() {
     await persisted.put('keep', _phrase('keep', 'のこす文-AAA'));
     await persisted.put('gone', _phrase('gone', 'けす文-BBB'));
     await box.flush();
-    expect(await _fileContains(file, 'けす文-BBB'), isTrue,
+    expect(await fileContains(file, 'けす文-BBB'), isTrue,
         reason: '前提: 消す前はファイルにある');
 
     // When
     await persisted.delete('gone');
 
     // Then: 消した内容はファイルに無く、残した内容はある
-    expect(await _fileContains(file, 'けす文-BBB'), isFalse,
+    expect(await fileContains(file, 'けす文-BBB'), isFalse,
         reason: '消した発話が端末のファイルと OS のバックアップに残る');
-    expect(await _fileContains(file, 'のこす文-AAA'), isTrue);
+    expect(await fileContains(file, 'のこす文-AAA'), isTrue);
     expect(results, [true, true, true], reason: 'put 2 回と delete 1 回の報告');
   });
 
@@ -106,11 +90,11 @@ void main() {
     final persisted = PersistedBox<PresetPhrase>(box, onWriteResult: (_) {});
     await persisted.put('a', _phrase('a', 'ぜんぶけす文-CCC'));
     await box.flush();
-    expect(await _fileContains(file, 'ぜんぶけす文-CCC'), isTrue);
+    expect(await fileContains(file, 'ぜんぶけす文-CCC'), isTrue);
 
     await persisted.clear();
 
-    expect(await _fileContains(file, 'ぜんぶけす文-CCC'), isFalse);
+    expect(await fileContains(file, 'ぜんぶけす文-CCC'), isFalse);
     expect(await file.length(), 0);
   });
 
@@ -150,6 +134,114 @@ void main() {
       box.flush,
     ]);
     expect(results, [true]);
+  });
+
+  // 前のセッションが残した分（上書きで置き換えられた古い内容、掃除を持たない版が
+  // 書いたファイル、compact が止まっていた間の削除）を、このセッションの最初の
+  // 書き込みで 1 回だけ取り除く（台帳 L-120・L-121）
+  test('セッションの最初の書き込みで、前のセッションが残した古い内容も取り除く', () async {
+    // Given: 前のセッションで上書きした形（Hive は上書きでも元のフレームを残す）
+    var box = await Hive.openBox<PresetPhrase>('presetPhrases');
+    final file = File('${tempDir.path}/presetphrases.hive');
+    await box.put('p1', _phrase('p1', 'なおす前の文-AAA'));
+    await box.put('p1', _phrase('p1', 'なおした後の文-BBB'));
+    await box.close();
+    expect(await fileContains(file, 'なおす前の文-AAA'), isTrue,
+        reason: '前提: 書き換える前の内容がファイルに残っている');
+
+    // When: 起動して最初の書き込みをする（新しいキーの追加＝掃除を伴わない操作）
+    box = await Hive.openBox<PresetPhrase>('presetPhrases');
+    final persisted = PersistedBox<PresetPhrase>(box, onWriteResult: (_) {});
+    await persisted.put('p2', _phrase('p2', 'あたらしい文-CCC'));
+
+    // Then: 前の古い内容も一緒に消え、今の内容は両方読める
+    expect(await fileContains(file, 'なおす前の文-AAA'), isFalse);
+    expect(box.get('p1')!.content, 'なおした後の文-BBB');
+    expect(box.get('p2')!.content, 'あたらしい文-CCC');
+  });
+
+  test('前の残りの掃除は 1 回だけで、2 回目以降の書き込みでは走らない', () async {
+    final box = _MockBox();
+    when(() => box.put(any<dynamic>(), any())).thenAnswer((_) async {});
+    when(box.compact).thenAnswer((_) async {});
+    when(box.flush).thenAnswer((_) async {});
+    final persisted = PersistedBox<PresetPhrase>(box, onWriteResult: (_) {});
+
+    await persisted.put('a', _phrase('a', '1 回目'));
+    await persisted.put('b', _phrase('b', '2 回目'));
+    await persisted.put('c', _phrase('c', '3 回目'));
+
+    // 上書きのたびに掃除すると、rename と fsync の窓が入力のたびに開く
+    verify(box.compact).called(1);
+    verify(box.flush).called(1);
+  });
+
+  test('最初の書き込みが削除なら、その削除の掃除が前の残りも兼ねる', () async {
+    final box = _MockBox();
+    when(() => box.delete(any<dynamic>())).thenAnswer((_) async {});
+    when(() => box.put(any<dynamic>(), any())).thenAnswer((_) async {});
+    when(box.compact).thenAnswer((_) async {});
+    when(box.flush).thenAnswer((_) async {});
+    final persisted = PersistedBox<PresetPhrase>(box, onWriteResult: (_) {});
+
+    await persisted.delete('gone');
+    await persisted.put('next', _phrase('next', '次の文'));
+
+    // 削除の掃除が 1 回だけ（前の残りのための 2 回目が重ならない）
+    verify(box.compact).called(1);
+    verify(box.flush).called(1);
+  });
+
+  test('前の残りの掃除に失敗しても、書き込みは成功として報告する', () async {
+    // 書き込み自体は済んでいる。前のセッションの後始末の失敗で「保存できません」と
+    // 伝えるのは誤報になる。fsync の失敗（内側で吸収されない側）で確かめる
+    final box = _MockBox();
+    when(() => box.put(any<dynamic>(), any())).thenAnswer((_) async {});
+    when(box.compact).thenAnswer((_) async {});
+    when(box.flush)
+        .thenAnswer((_) async => throw const FileSystemException('disk full'));
+    final results = <bool>[];
+
+    await PersistedBox<PresetPhrase>(box, onWriteResult: results.add)
+        .put('a', _phrase('a', '文'));
+
+    expect(results, [true]);
+  });
+
+  test('掃除が失敗し続けても、書き込みと削除そのものは成功として報告する', () async {
+    // hive は compact が一度失敗するとそのセッションは掃除しなくなる（台帳 L-125）。
+    // そのとき消した内容はファイルに残るが、**削除そのものは済んでいる**ので、
+    // 「保存できません」とは伝えない（誤報になる）
+    final box = _MockBox();
+    when(() => box.put(any<dynamic>(), any())).thenAnswer((_) async {});
+    when(() => box.delete(any<dynamic>())).thenAnswer((_) async {});
+    when(box.compact)
+        .thenAnswer((_) async => throw const FileSystemException('disk full'));
+    when(box.flush).thenAnswer((_) async {});
+    final results = <bool>[];
+    final persisted =
+        PersistedBox<PresetPhrase>(box, onWriteResult: results.add);
+
+    await persisted.put('a', _phrase('a', '文'));
+    await persisted.delete('a');
+    await persisted.put('b', _phrase('b', '文'));
+
+    expect(results, [true, true, true]);
+  });
+
+  test('削除そのものの掃除で fsync に失敗したら、保存の失敗として報告する', () async {
+    // 前の残りの掃除とは扱いが違う: こちらは「消したことを確定できなかった」
+    final box = _MockBox();
+    when(() => box.delete(any<dynamic>())).thenAnswer((_) async {});
+    when(box.compact).thenAnswer((_) async {});
+    when(box.flush)
+        .thenAnswer((_) async => throw const FileSystemException('disk full'));
+    final results = <bool>[];
+
+    await PersistedBox<PresetPhrase>(box, onWriteResult: results.add)
+        .delete('gone');
+
+    expect(results, [false]);
   });
 
   test('全削除の後に flush（fsync）して、切り詰めを確定させる', () async {
@@ -255,8 +347,8 @@ void main() {
     ]);
 
     // Then
-    expect(await _fileContains(file, 'けす文-A'), isFalse);
-    expect(await _fileContains(file, 'けす文-C'), isFalse);
+    expect(await fileContains(file, 'けす文-A'), isFalse);
+    expect(await fileContains(file, 'けす文-C'), isFalse);
     expect(results, everyElement(isTrue));
     expect(results, hasLength(6));
     await box.close();
@@ -285,9 +377,9 @@ void main() {
 
     // Then
     expect(box.length, HistoryRepository.maxHistoryCount);
-    expect(await _fileContains(file, '発話-001'), isFalse,
+    expect(await fileContains(file, '発話-001'), isFalse,
         reason: '押し出された発話がファイルに残る');
-    expect(await _fileContains(file, '発話-002'), isTrue);
-    expect(await _fileContains(file, '発話-051'), isTrue);
+    expect(await fileContains(file, '発話-002'), isTrue);
+    expect(await fileContains(file, '発話-051'), isTrue);
   });
 }

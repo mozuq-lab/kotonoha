@@ -55,12 +55,20 @@ void main() {
     );
   }
 
+  /// 書き込みの後、`PersistedBox` はセッションに 1 回だけ掃除する（台帳 L-120）。
+  /// 実際の box は応えるので、モックも応えるようにする。
+  void stubCleanUp(_MockFavoriteBox box) {
+    when(box.compact).thenAnswer((_) async {});
+    when(box.flush).thenAnswer((_) async {});
+  }
+
   Box<FavoriteItem> failingFavoriteBox() {
     final box = _MockFavoriteBox();
     when(() => box.values).thenReturn(<FavoriteItem>[]);
     when(() => box.put(any<dynamic>(), any())).thenThrow(
       const FileSystemException('No space left on device'),
     );
+    stubCleanUp(box);
     return box;
   }
 
@@ -68,6 +76,7 @@ void main() {
     final box = _MockFavoriteBox();
     when(() => box.values).thenReturn(<FavoriteItem>[]);
     when(() => box.put(any<dynamic>(), any())).thenAnswer((_) async {});
+    stubCleanUp(box);
     return box;
   }
 

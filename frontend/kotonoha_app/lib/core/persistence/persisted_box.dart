@@ -66,6 +66,9 @@ class PersistedBox<T> {
   /// 実行中か待機中の最後の書き込み。無ければ null
   Future<void>? _lastWrite;
 
+  /// このセッションで、前のセッションが残した分を取り除いたか
+  bool _staleFramesRemoved = false;
+
   /// 書き込みを、呼ばれた順に 1 本ずつ実行する
   /// Hive の compact は、対象のフレームを集めるまでに await を挟む。その間に
   /// 既存キーへの上書き put が始まると、keystore 上の古いフレームが未書き込みの
@@ -75,10 +78,18 @@ class PersistedBox<T> {
   /// どちらも起きない。
   /// 空いているときはその場で始める（後ろに並べるのは、走っている書き込みが
   /// あるときだけ）。待たずに書いて直後に読む呼び出し元から見た挙動を変えない。
+  /// このセッションの最初の書き込みでは、前のセッションが残した分も取り除く
+  /// （[_removeStaleFramesOnce]）。
   Future<void> _inOrder(Future<void> Function() write) {
+    Future<void> writeThenCleanUpOnce() async {
+      await write();
+      await _removeStaleFramesOnce();
+    }
+
     final previous = _lastWrite;
-    final result =
-        previous == null ? _guard(write) : previous.then((_) => _guard(write));
+    final result = previous == null
+        ? _guard(writeThenCleanUpOnce)
+        : previous.then((_) => _guard(writeThenCleanUpOnce));
     late final Future<void> settled;
     settled = result.then<void>((_) {}, onError: (Object _) {}).whenComplete(
       () {
@@ -87,6 +98,38 @@ class PersistedBox<T> {
     );
     _lastWrite = settled;
     return result;
+  }
+
+  /// 前のセッションが残した分を、このセッションで 1 回だけ取り除く（台帳 L-120・L-121）
+  /// Hive は追記型で、上書きも元のフレームをファイルに残す。削除のたびの掃除
+  /// （[_removeDeletedFromFile]）は削除だけを対象にしているので、上書きで
+  /// 置き換えられた古い内容は次の削除まで残る（L-120）。掃除を持たない版が
+  /// 書いたファイルも同じ（既存の端末）。compact が一度失敗した box は、その
+  /// セッションの間ずっと掃除されない（L-121）。
+  /// **上書きのたびには掃除しない**: compact は書き直して rename する操作で、
+  /// Hive は rename の前に fsync しない。上書きは入力のたびに起きるので、毎回
+  /// 挟むと電源断で失うものが「追記した 1 件」から「box 全体」に広がる。
+  /// セッションに 1 回なら、その窓は 1 回で済む。
+  /// 起動直後ではなく最初の書き込みに合わせる理由: 起動時に別枠で呼ぶと、box を
+  /// 開くだけで何も書かないセッションでも compact を 1 回呼ぶことになる。
+  /// **compact を呼ぶ機会は、それでも増える**: 直前の版では delete と clear だけが
+  /// 呼んでいた。put しかしないセッションでも 1 回呼ぶので、そこで失敗すると、
+  /// そのセッションの以後の削除は掃除されない（hive は一度失敗すると
+  /// `_compactionScheduled` を true のままにし、以後の `compact()` は何もせずに
+  /// 返る。`storage_backend_vm.dart:147-148`、台帳 L-125）。
+  /// 受け入れた理由: 削除しない利用者のセッションは、これが無いと一度も掃除されず、
+  /// 編集で置き換えた古い内容と、掃除を持たない版が残した分がいつまでも残る。
+  /// 失敗するのは空き容量・権限が尽きた状況で、そこでは削除時の compact も同じく
+  /// 失敗する。失っているのは「一度失敗した後に空きが戻ったセッション」だけ。
+  /// 失敗しても書き込みは成功として報告する: 書き込み自体は済んでおり、
+  /// 掃除は前のセッションの後始末なので、「保存できません」は誤報になる。
+  Future<void> _removeStaleFramesOnce() async {
+    if (_staleFramesRemoved) return;
+    try {
+      await _removeDeletedFromFile();
+    } catch (error) {
+      debugPrint('[PersistedBox] 前のセッションが残した分を取り除けませんでした: $error');
+    }
   }
 
   /// 消した内容をファイルから取り除き、結果を fsync で確定させる
@@ -98,6 +141,8 @@ class PersistedBox<T> {
   /// が通ったときに取り除かれる（Hive は失敗後その box の compact を再開しない
   /// ので、実際には次回起動の後）。Web（IndexedDB）ではどちらも何もしない。
   Future<void> _removeDeletedFromFile() async {
+    // 前のセッションの分も、この 1 回で一緒に取り除かれる
+    _staleFramesRemoved = true;
     try {
       await _box.compact();
     } catch (error) {
