@@ -27,6 +27,21 @@ PresetPhrase _phrase(int n) => PresetPhrase(
       updatedAt: DateTime(2026, 9, 1),
     );
 
+/// 読み出しで必ず RangeError を投げる値（チェックサムは正しいのに中身を読めない
+/// フレームを作るため）。Hive 自身の自動復旧でも開けない破損になる
+class _Unreadable {}
+
+class _UnreadableAdapter extends TypeAdapter<_Unreadable> {
+  @override
+  int get typeId => 60;
+
+  @override
+  _Unreadable read(BinaryReader reader) => throw RangeError('unreadable');
+
+  @override
+  void write(BinaryWriter writer, _Unreadable obj) => writer.writeByte(0);
+}
+
 /// 開いた結果と、呼び出し元へ伝わった内容
 typedef _Opened = ({Box<PresetPhrase>? box, bool salvaged, bool recreated});
 
@@ -164,6 +179,42 @@ void main() {
     expect(second.box!.keys, ['id-1', 'id-2', 'id-3', 'id-4']);
     expect(second.salvaged, isFalse);
     expect(second.recreated, isFalse);
+  });
+
+  test('自動復旧でも開けない破損は、退避してから削除し、空で作り直したと伝える', () async {
+    // Given: チェックサムは正しいが、中身を読むと RangeError になるフレーム
+    if (!Hive.isAdapterRegistered(60)) {
+      Hive.registerAdapter(_UnreadableAdapter());
+    }
+    const name = 'unreadable';
+    final file = File('${tempDir.path}/$name.hive');
+    final raw = await Hive.openBox<dynamic>(name);
+    await raw.put('k', _Unreadable());
+    await raw.close();
+    final originalBytes = await file.readAsBytes();
+
+    // When
+    var salvaged = false;
+    var recreated = false;
+    final box = await runGuardingHiveOpenLeak(
+      () => openBoxWithRecovery<dynamic>(
+        name,
+        hivePath: tempDir.path,
+        onSalvaged: () => salvaged = true,
+        onRecreated: () => recreated = true,
+      ),
+    );
+
+    // Then: 救出は諦め、退避を残して空で開き直す
+    expect(box, isNotNull);
+    expect(box!.isEmpty, isTrue);
+    expect(
+      await File('${tempDir.path}/$name.hive.corrupt.bak').readAsBytes(),
+      equals(originalBytes),
+    );
+    expect(await file.length(), 0, reason: '読めないフレームは元のファイルから消えている');
+    expect(recreated, isTrue);
+    expect(salvaged, isFalse);
   });
 
   test('壊れていない box は退避も告知もしない', () async {
