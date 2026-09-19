@@ -64,7 +64,7 @@ AI変換機能（オプション）を使用する場合のみ、以下のデー
 ### データの保管
 
 - **ローカルデータ**: お使いの端末内に保存されます。本アプリ自身がクラウドへ同期することはありません。端末の OS のバックアップ機能（Android の自動バックアップ、iOS の iCloud バックアップ）を有効にしている場合は、他のアプリのデータと同様に OS によってバックアップされ、機種変更時に復元されることがあります
-- **壊れたデータの写し**: iOS・Android 版では、端末に保存されたデータのファイルが壊れていることを起動時に見つけた場合、修復の前に、壊れたファイルの写しを端末内に残します。写しには、それまでに保存されていた入力履歴・定型文・お気に入りが含まれることがあります。本アプリが写しを外部へ送信することはありません。OS のバックアップ機能を有効にしている場合は、ほかのローカルデータと同様にバックアップの対象になります
+- **壊れたデータの写し**: iOS・Android 版では、端末に保存されたデータのファイルが壊れていることを起動時に見つけた場合、壊れたファイルに手を加える前に、その写しを端末内に残します。写しには、それまでに保存されていた入力履歴・定型文・お気に入りが含まれることがあります（アプリ内で個別に削除した項目が含まれることもあります）。本アプリが写しを外部へ送信することはありません。OS のバックアップ機能を有効にしている場合は、ほかのローカルデータと同様にバックアップの対象になります
 - **AI変換データ**: 変換処理後、サーバーに保存されません
 
 ### データの削除
@@ -74,7 +74,7 @@ AI変換機能（オプション）を使用する場合のみ、以下のデー
 - アプリ内の設定から履歴・お気に入りを個別または全削除
 - アプリをアンインストールすることで、すべてのローカルデータが削除されます
 
-「データの保管」に記載した壊れたデータの写しは、アプリ内の削除の操作では消えません。同じ種類のデータで次に破損が見つかったときに上書きされ、アプリをアンインストールすると削除されます。
+「データの保管」に記載した壊れたデータの写しは、アプリ内の削除の操作では消えません。同じ種類のデータで次に破損が見つかったときに新しい写しで置き換えられることがあり、アプリをアンインストールすると端末からは削除されます。OS のバックアップに含まれた写しは、OS 側でそのバックアップが削除されるまで残り、端末の復元や再インストールの際に戻ることがあります。
 
 ### 第三者への提供
 
@@ -157,7 +157,7 @@ The collected data is used only for the following purposes:
 ### Data Storage
 
 - **Local Data**: Stored on your device. The App itself does not synchronize it to any cloud. If you have enabled your device's OS backup (Android Auto Backup or iCloud Backup), the OS may back it up and restore it on a new device, as it does for other apps
-- **Copies of Damaged Data**: On iOS and Android, if the App finds at startup that a data file stored on your device is damaged, it keeps a copy of the damaged file on your device before repairing it. The copy may contain input history, preset phrases, and favorites saved up to that point. The App never sends the copy to external servers. If you have enabled your device's OS backup, the copy is backed up in the same way as other local data
+- **Copies of Damaged Data**: On iOS and Android, if the App finds at startup that a data file stored on your device is damaged, it keeps a copy of the damaged file on your device before modifying it. The copy may contain input history, preset phrases, and favorites saved up to that point, including items you had deleted individually within the App. The App never sends the copy off your device. If you have enabled your device's OS backup, the copy may be backed up in the same way as other local data
 - **AI Conversion Data**: Not stored on servers after processing
 
 ### Data Deletion
@@ -167,7 +167,7 @@ Users can delete data in the following ways:
 - Delete history and favorites individually or entirely from app settings
 - Uninstalling the app deletes all local data
 
-The copies of damaged data described under "Data Storage" are not removed by deleting data within the App. A copy is overwritten the next time damage is found in the same kind of data, and it is deleted when you uninstall the App.
+The copies of damaged data described under "Data Storage" are not removed by deleting data within the App. A copy may be replaced by a newer one the next time damage is found in the same kind of data, and it is deleted from your device when you uninstall the App. A copy included in an OS backup remains until that backup is deleted, and may come back when you restore your device or reinstall the App.
 
 ### Sharing with Third Parties
 
