@@ -18,7 +18,7 @@
 - [ ] L-67 お気に入りが `frontend/kotonoha_app/lib/features/favorite/`（ロジック）と `frontend/kotonoha_app/lib/features/favorites/`（UI）の 2 ディレクトリに分かれたまま — ADR-005（棚卸し 2026-09 で現存を確認、Phase 5（文書）の後）
 - [ ] L-68 要件 ID 107 件のうち 14 件が、テストにも openspec にも 1 度も現れない（追跡性の穴。挙動は別 ID で試験済みのものを含む） — docs/spec/kotonoha-requirements.md（一覧は棚卸し 2026-09 の PR 本文）
 - [ ] L-69 `expect(widget.runtimeType.toString(), equals('CharacterBoardWidget'))` はクラス名を固定するだけで挙動を検査しない — frontend/kotonoha_app/test/widgets/character_board_optimization_test.dart:389（棚卸し 2026-09、観点 4）
-- [ ] L-73 入力欄の 1000 文字上限に警告表示が無く、超過分を黙って捨てる（EDGE-101 の未達） — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:65,89（PR #114 の突き合わせ）
+- [x] L-73 入力欄の 1000 文字上限に警告表示が無く、超過分を黙って捨てる（EDGE-101 の未達） — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:65,89（PR #114 の突き合わせ）。解消（2026-09-16、#133: 入力欄の直下に告知。持ち越しは L-109）
 - [ ] L-74 フォントサイズ設定が home_screen 配下にしか届かず、定型文一覧が追従しない（REQ-802・REQ-2007 の未達） — frontend/kotonoha_app/lib/features/preset_phrase/presentation/widgets/phrase_list_item.dart:98、frontend/kotonoha_app/lib/app.dart:47-56（PR #114 の突き合わせ）
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
 - [ ] L-76 NFR-502（backend の重要なビジネスロジック・API エンドポイントで 90% 以上のカバレッジ）が未測定。CI の `fail_under` は全体閾値（NFR-501） — docs/spec/kotonoha-requirements.md:166（L-55 と同形）。基準が 3 か所にある（pyproject の fail_under 80、flutter.yml の THRESHOLD 80、codecov.yml の python 90% と存在しないパスの除外）
@@ -40,6 +40,8 @@
 - [x] L-104 下書き（`draft_text`）とチュートリアル完了フラグの SharedPreferences 書き込みは失敗しても報告されない（try も無く未処理の非同期エラーになる）。下書きは NFR-302 の対象で「最もコストの高い損失」とコード自身が書く — frontend/kotonoha_app/lib/features/app_state/providers/app_session_provider.dart:112-150、lib/features/help/providers/tutorial_provider.dart:60-71（#127 の独立監査）。解消（2026-09-16、#135: 設定と同じ報告経路に流しバナーに「入力中の文を保存できません」。再起動後に消失の理由を残せない限界は ADR-005 のとおり残る）
 - [ ] L-106 ADR-005 が #125〜#127 で 55 行まで肥大化した（挙動の細部・日付・台帳番号を追記）。60 行上限も「改訂は追記せず書き直す」の規則も 2 系統レビューも捕まえず、利用者が adr-touch のコメントで気づいた。#128 で構造を変えた（ADR-010:34 の 1 句、規律 7 のレンズ）。10 月の棚卸し観点 6 で、以後の ADR 差分に細部が入らなかったかを見て、効かなければ数字（上限）を見直す — docs/adr/ADR-010-document-framework.md:34、AGENTS.md 規律 7
 - [ ] L-107 ストア提出用の画像がゼロ（アイコン 1024/512、iPhone・iPad・スマートフォンのスクリーンショット、Play のフィーチャーグラフィック 1024×500）。`docs/store-assets-guide.md` のチェックリストは全項目が未着手 — frontend/kotonoha_app/fastlane/（画像 0 件、2026-09-16 実測）。ADR-007 条件 4
+- [ ] L-109 入力上限の告知（#133）の持ち越し: (1) `setText` 経由（AI 変換結果）の 1000 文字超は切り詰められ、告知は「達した」と「切り詰めた」を区別しない（定型文は上限 500、候補は短文なので現実の経路は AI 変換結果だけ）(2) `substring` は UTF-16 単位で切るためサロゲートペアを壊しうる（文字盤から絵文字は入力できない）(3) 告知文がフォント設定に追随しない（テーマ倍率の PR で解消する見込み）(4) 標準レイアウトで告知表示時のレイアウトテストが無い — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:84、#133 の 2 系統レビュー
+- [ ] L-110 緊急ボタンの E2E（`large_emergency_buttons_test.dart` TC-E2E-084-021）が headless web で時々「はい」の直後に緊急画面を見つけられない（#133 の CI run 34997386337。main の直近 3 回は緑）。`startEmergency()` が音声再生の await の後に `alertActive` を書くため、再生が遅いと緊急表示が遅れる。視覚を先（state を先に書く）にして音声を後にすれば利用者にも E2E にも効くが、決定として出す — frontend/kotonoha_app/lib/features/emergency/presentation/providers/emergency_state_provider.dart:71-82
 
 ## 判断待ち
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。Web 成果物に鍵を焼かない（#121 で外した）

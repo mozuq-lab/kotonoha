@@ -25,6 +25,13 @@ final inputBufferProvider = NotifierProvider<InputBufferNotifier, String>(
   InputBufferNotifier.new,
 );
 
+/// 入力バッファが上限（[InputBufferNotifier.maxLength]）に達しているか
+/// 上限で黙って捨てるのではなく、利用者に伝えるための派生状態（EDGE-101、台帳 L-73）。
+final inputLimitReachedProvider = Provider<bool>(
+  (ref) =>
+      ref.watch(inputBufferProvider).length >= InputBufferNotifier.maxLength,
+);
+
 /// 文字入力バッファの状態管理クラス
 /// [Notifier]を継承し、同期的な状態更新でUI応答性を維持する。
 /// 状態は[String]型で、入力された文字列を保持する。
