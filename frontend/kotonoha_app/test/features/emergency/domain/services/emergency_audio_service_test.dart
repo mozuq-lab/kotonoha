@@ -223,18 +223,22 @@ void main() {
         final playing = Completer<void>();
         when(() => mockPlayer.play(any())).thenAnswer((_) => playing.future);
 
-        // Act: 再生開始が終わる前に停止し、その後で音が鳴り始める
+        // Act: 再生開始が SDK の play() で止まっている間に停止を呼ぶ
         final starting = service.startEmergencySound();
         final stopping = service.stopEmergencySound();
+        await pumpEventQueue();
+
+        // Assert: play() が終わるまで、SDK の stop() は呼ばれない（空振りもしない）
+        verify(() => mockPlayer.play(any())).called(1);
+        verifyNever(() => mockPlayer.stop());
+
+        // Act: 音が鳴り始める
         playing.complete();
         await starting;
         await stopping;
 
-        // Assert: 停止が空振りせず、音は鳴りっぱなしにならない
-        verifyInOrder([
-          () => mockPlayer.play(any()),
-          () => mockPlayer.stop(),
-        ]);
+        // Assert: 鳴り始めた後に止まり、音は鳴りっぱなしにならない
+        verify(() => mockPlayer.stop()).called(1);
         expect(service.isPlaying, isFalse);
       });
 
@@ -242,32 +246,40 @@ void main() {
         final stopped = Completer<void>();
         when(() => mockPlayer.stop()).thenAnswer((_) => stopped.future);
         await service.startEmergencySound();
+        clearInteractions(mockPlayer);
 
-        // Act: 停止が終わる前にもう一度開始し、その後で停止が終わる
+        // Act: 停止が SDK の stop() で止まっている間にもう一度開始する
         final stopping = service.stopEmergencySound();
         final restarting = service.startEmergencySound();
+        await pumpEventQueue();
+
+        // Assert: stop() が終わるまで、SDK の play() は呼ばれない
+        verify(() => mockPlayer.stop()).called(1);
+        verifyNever(() => mockPlayer.play(any()));
+
+        // Act: 停止が終わる
         stopped.complete();
         await stopping;
         await restarting;
 
         // Assert: 再開始が省略されず、無音のまま終わらない
-        verifyInOrder([
-          () => mockPlayer.play(any()),
-          () => mockPlayer.stop(),
-          () => mockPlayer.play(any()),
-        ]);
+        verify(() => mockPlayer.play(any())).called(1);
         expect(service.isPlaying, isTrue);
       });
 
-      test('再生開始が失敗しても、次の操作は実行される', () async {
-        when(() => mockPlayer.play(any())).thenThrow(Exception('load failed'));
-        await expectLater(service.startEmergencySound(), throwsException);
+      test('再生開始が失敗しても、その後ろで待っていた操作は実行される', () async {
+        var plays = 0;
+        when(() => mockPlayer.play(any())).thenAnswer((_) async {
+          if (plays++ == 0) throw Exception('load failed');
+        });
 
-        // Act: 失敗の後でもう一度開始する
-        when(() => mockPlayer.play(any())).thenAnswer((_) async {});
-        await service.startEmergencySound();
+        // Act: 1 回目が失敗する前に、2 回目を後ろに並べておく
+        final first = service.startEmergencySound();
+        final second = service.startEmergencySound();
 
-        // Assert
+        // Assert: 失敗は 1 回目の呼び出し元にだけ届き、2 回目は鳴る
+        await expectLater(first, throwsException);
+        await second;
         expect(service.isPlaying, isTrue);
       });
     });
