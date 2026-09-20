@@ -368,10 +368,12 @@ void main() {
     });
   }
 
-  // 非テキストのコントラスト（WCAG 2.1 の 1.4.11）。ボタンの輪郭が
-  // ダイアログの面から浮かないと、どこを押せばよいか分からない。
-  // `normal`（AI 変換の同意）は背景 #2196F3 と面 #F5F5F5 で **2.87:1** しか
-  // 無く、3:1 を割っていた（台帳 L-132。#150 が作った状態）
+  // **この製品の、通常状態におけるボタン境界の検査。**
+  // WCAG 2.1 の 1.4.11 は「コンポーネントを識別するのに必要な視覚情報」と
+  // その隣接色に 3:1 を求める。文字や配置で識別できれば外周の境界そのものは
+  // 必須ではないので、2.87:1 が直ちに違反とは言えない。ここでは**製品として
+  // 境界を強める**ことを決め、その決定を見張る（台帳 L-132。#150 が作った状態）。
+  // focused の表示は 1.4.11 の対象、disabled は例外。どちらもここでは見ていない
   for (final (themeName, theme) in [
     ('ライト', lightTheme),
     ('ダーク', darkTheme),
@@ -418,20 +420,22 @@ void main() {
               .first,
         );
         final surface = dialog.color ?? theme.dialogTheme.backgroundColor!;
-        // 1.4.11 が求めるのは**境界**が見分けられること。塗りでも枠線でも、
-        // どちらかが面に対して 3:1 あればよい
+        // 境界が見分けられればよいので、塗りでも枠線でもどちらかが 3:1 あれば
+        // 通す。枠線は **実際に描かれるもの**を読む（`ButtonStyle.side` を
+        // 直読みすると `BorderStyle.none` や幅 0 を見落とし、1 画素も描かれて
+        // いない状態を緑で通す。2026-09-20 実測）
         final fill = renderedButtonColor(tester, 'はい')!;
-        final side = tester
-            .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'はい'))
-            .style
-            ?.side
-            ?.resolve({});
+        final side = paintedButtonSide(tester, 'はい');
         final fillRatio = wcagContrastRatio(fill, surface);
         final sideRatio =
             side == null ? 0.0 : wcagContrastRatio(side.color, surface);
         final ratio = math.max(fillRatio, sideRatio);
 
-        expect(ratio, greaterThanOrEqualTo(minimumNonTextContrast - 0.005),
+        // 合格ラインは実装の定数を参照せずリテラルで置く。参照すると、
+        // `minimumNonTextContrast` を下げたときに本番の分岐（枠線を付けるか）と
+        // 合格ラインが一緒に下がり、検査が空になる（2026-09-20 実測で緑を確認）。
+        // 3.0 は WCAG の数字なので丸めて通さない（2.999 は不合格）
+        expect(ratio, greaterThanOrEqualTo(3.0),
             reason: '$themeName/$kindName: ボタンの境界が面 $surface から'
                 '浮かない（塗り $fill = $fillRatio:1、枠線 $side = $sideRatio:1）');
       });

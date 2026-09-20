@@ -89,10 +89,16 @@ void expectDoesNotOverflow(
         for (final MapEntry(key: label, value: rect) in rects.entries) {
           expect(buttonOf(label).hitTestable(), findsWidgets,
               reason: '$name: 「$label」が押せない');
+          // `hitTestable()` はボタン**中央の 1 点**しか見ないので、端が欠けても
+          // 中央が押せれば通る。四辺すべてが画面の中にあることを別に見る
           expect(rect.left, greaterThanOrEqualTo(-epsilon),
               reason: '$name: 「$label」が画面の左に出ている（$rect）');
           expect(rect.right, lessThanOrEqualTo(width + epsilon),
               reason: '$name: 「$label」が画面の右に出ている（$rect）');
+          expect(rect.top, greaterThanOrEqualTo(-epsilon),
+              reason: '$name: 「$label」が画面の上に出ている（$rect）');
+          expect(rect.bottom, lessThanOrEqualTo(screen.height + epsilon),
+              reason: '$name: 「$label」が画面の下に出ている（$rect）');
         }
 
         // 3. どのボタンどうしも 16px 以上離れている。

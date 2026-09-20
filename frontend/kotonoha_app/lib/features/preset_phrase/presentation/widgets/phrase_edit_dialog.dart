@@ -107,8 +107,8 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
     //
     // なお `ConfirmKind.destructive` が置いている「取り消せない実行だけを塗って
     // 見分けられるようにする」という決定は、**この 2 つには当てはまらない**。
-    // 取り消しても元の文言が戻るだけだが、**「キャンセル」を誤って押すと
-    // 打ち直した内容が消える**。
+    // **編集ではキャンセルも保存も取り消せない**。「キャンセル」を誤って押すと
+    // 打ち直した内容が消え、「保存」を誤って押すと元の文言が戻せない。
     // だから「保存」は塗らない（台帳 L-137）。
     return ConfirmationDialogLayout.build(
       title: const Text('定型文を編集'),

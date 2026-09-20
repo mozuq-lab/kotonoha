@@ -18,11 +18,16 @@ import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 
-/// 誤操作防止ダイアログの並び
+/// ダイアログの並び（間隔とスクロール）
 ///
 /// **間隔を決めているのはここだけ。** 緊急確認ダイアログのように、色や
 /// 連続タップ防止のために自前で `AlertDialog` を組む必要があるものも、
 /// 並びはここから取る（ADR-005 の 1 概念 1 真実）。
+///
+/// 誤操作防止の二択（`ConfirmationDialog`）のために作ったが、いまは
+/// `lib/core/widgets/error_dialog.dart` のエラーダイアログ 4 つ（1〜3 択）と
+/// 定型文のフォーム 2 つも通る。**`actions` の中身には何も要求しない**ので、
+/// 択の数や並び順の意味付けは呼び出し側の責任（台帳 L-133）。
 abstract final class ConfirmationDialogLayout {
   /// 縦積みになったときのボタンとボタンの隙間。
   /// `AlertDialog` の `actionsOverflowButtonSpacing` に渡す（既定は 0）
@@ -187,7 +192,7 @@ class ConfirmationDialog extends StatelessWidget {
                 ? null
                 : BorderSide(
                     color: bestContrastingTextColor(dialogSurface),
-                    width: 2,
+                    width: 1,
                   ),
           ),
           child: Text(confirmLabel),
