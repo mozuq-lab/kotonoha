@@ -137,15 +137,14 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
   /// 定型文を削除してもお気に入りは残る（ADR-005、2026-09-13）ので、
   /// 確認ダイアログにお気に入りの告知は出さない。
   void _onDelete(PresetPhrase phrase) {
+    final notifier = ref.read(presetPhraseNotifierProvider.notifier);
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => PhraseDeleteDialog(
         phrase: phrase,
         onConfirm: () {
-          ref
-              .read(presetPhraseNotifierProvider.notifier)
-              .deletePhrase(phrase.id);
+          notifier.deletePhrase(phrase.id);
         },
       ),
     );
