@@ -11,8 +11,8 @@
 - [ ] L-55 AI 変換の平均応答時間（3秒以内）が未測定 — ADR-002 のプロバイダ支出上限設定と同日に実測（backend 公開の前提）
 - [ ] L-57 Android 12 以上と iOS の実機で、OS のバックアップから履歴・定型文・お気に入り・設定が復元されることを確認 — NFR-106（2026-09-12 に #99 の除外を撤回）
 - [ ] L-59 `exc.errors(include_input=False, ...)` から `include_input=False` を落とす mutant が生存 — ValidationError の入力値が `ConfigError` へ漏れないことを検査するテストが無い（ADR-003） — backend/app/config.py:161（mutmut 生存。#106 の測定の残り）
-- [ ] L-60 `SafeError.__init__` の `super().__init__(code.value)` を `None` にする mutant が生存 — 基底 `SafeError` の文字列表現が `ErrorCode` を保持することを検査するテストが無い — backend/app/errors.py:108（mutmut 生存。#106 の測定の残り）
-- [ ] L-61 `RateLimiter.__init__` の `RateLimitItemPerSecond(times, seconds)` の `seconds` を `None` にする mutant が生存 — 設定した秒数がレート制限ウィンドウ長に反映されることを検査するテストが無い — backend/app/ratelimit.py:42（mutmut 生存。#106 の測定の残り）
+- [x] L-60 SafeError の repr が安全な ErrorCode を保持する診断契約を検査。super().__init__ の code.value を None にする指定 mutant を kill — backend/tests/test_errors.py::test_raising_outside_except_leaves_no_context（2026-09-20、指定変異 RED/復元 GREEN、make mutation 158/184 = 85.87% → 165/184 killed = 89.67%。L-59 は survived として分母に含む。HTTP/log の破損経路を証明したものではない）
+- [x] L-61 5秒窓で1.1秒後も同一送信元を拒否する実 HTTP 応答を検査。RateLimitItemPerSecond の seconds を None にする指定 mutant を kill — backend/tests/test_ratelimit.py::test_configured_window_still_rejects_after_one_second（2026-09-20、指定変異 RED/復元 GREEN、make mutation は L-60 の同時計測）
 - [ ] L-65 mutmut の対象テストは pyproject の 4 ファイル指定で固定されており、テストを増やしても走らない（kill rate が理由なく下がる）。`also_copy` で app/ 全体を写して指定を無くせるか試す — backend/pyproject.toml [tool.mutmut]
 - [ ] L-66 `LogLevel` が lib 内で参照ゼロ（`logger_test.dart:248` が enum の値の並びだけを固定している） — frontend/kotonoha_app/lib/core/utils/logger.dart:10（棚卸し 2026-09、観点 1・4）。決定: L-139 の「`lib/` からの呼び出し・参照が 0 のものは消す」を適用する（2026-09-20 第 2 回）。束 3 で実施
 - [ ] L-67 お気に入りが `frontend/kotonoha_app/lib/features/favorite/`（ロジック）と `frontend/kotonoha_app/lib/features/favorites/`（UI）の 2 ディレクトリに分かれたまま — ADR-005（棚卸し 2026-09 で現存を確認、Phase 5（文書）の後）
