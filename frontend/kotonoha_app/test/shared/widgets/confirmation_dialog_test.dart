@@ -320,28 +320,45 @@ void main() {
     ),
   );
 
-  testWidgets('AI変換の同意の実行ボタンは primary 色（destructive と別の色）', (tester) async {
-    tester.view.physicalSize = const Size(375, 900);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          inputBufferProvider.overrideWith(_FilledBuffer.new),
-          networkProvider.overrideWith(_Online.new),
-          settingsNotifierProvider.overrideWith(_NotYetAccepted.new),
-          ttsProvider.overrideWith(_StubTts.new),
-        ],
-        child: MaterialApp(theme: lightTheme, home: const HomeScreen()),
-      ),
-    );
-    await pumpFrames(tester);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'AI変換'));
-    await pumpFrames(tester);
+  // AI 同意も 3 テーマで、取り消しとの区別まで見る（destructive と同じ扱い）
+  for (final (themeName, theme) in [
+    ('ライト', lightTheme),
+    ('ダーク', darkTheme),
+    ('高コントラスト', highContrastTheme),
+  ]) {
+    testWidgets('$themeName: AI変換の同意は primary 色で、「同意しない」と区別できる',
+        (tester) async {
+      tester.view.physicalSize = const Size(375, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            inputBufferProvider.overrideWith(_FilledBuffer.new),
+            networkProvider.overrideWith(_Online.new),
+            settingsNotifierProvider.overrideWith(_NotYetAccepted.new),
+            ttsProvider.overrideWith(_StubTts.new),
+          ],
+          child: MaterialApp(theme: theme, home: const HomeScreen()),
+        ),
+      );
+      await pumpFrames(tester);
+      await tester.tap(find.widgetWithText(ElevatedButton, 'AI変換'));
+      await pumpFrames(tester);
 
-    expect(
-        renderedButtonColor(tester, '同意して利用'), lightTheme.colorScheme.primary);
-    expect(lightTheme.colorScheme.primary, isNot(lightTheme.colorScheme.error),
-        reason: 'destructive と normal が同じ色では、重さの差が伝わらない');
-  });
+      final confirm = renderedButtonColor(tester, '同意して利用');
+      final cancel = renderedButtonColor(tester, '同意しない');
+
+      // データを消す操作ではないので error ではなく primary
+      expect(confirm, theme.colorScheme.primary,
+          reason: '$themeName: 同意ボタンが primary 色で塗られていない');
+      // 取り消しと同じ見た目では、そもそも見分けがつかない
+      expect(cancel, isNot(confirm),
+          reason: '$themeName: 同意しないと同意して利用が同じ色'
+              '（同意しない=$cancel 同意して利用=$confirm）');
+      // destructive と同じ色では、重さの差が伝わらない
+      expect(theme.colorScheme.primary, isNot(theme.colorScheme.error),
+          reason: '$themeName: primary と error が同じ色');
+    });
+  }
 }

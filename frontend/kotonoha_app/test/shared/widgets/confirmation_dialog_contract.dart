@@ -167,22 +167,46 @@ void expectMeetsContract(
                 reason: '$name: 「$label」の幅が足りない');
           }
 
-          // どちらのボタンも押せる（あふれてクリップされていない）
+          // どちらのボタンも押せる（あふれてクリップされていない）。
+          // `hitTestable()` が見るのは**ボタン中央の 1 点が Flutter の木の
+          // hit test に出るか**だけで、キーボードに隠れているかは分からない
+          // （キーボードは Flutter の外側にあり、遮蔽物としては存在しない）。
+          // そこで、キーボードの上端より下に出ていないことを別に見る
           for (final label in [cancelLabel, confirmLabel]) {
             expect(confirmationButton(label).hitTestable(), findsWidgets,
                 reason: '$name: 「$label」が押せない');
           }
+          for (final (label, rect) in [
+            (cancelLabel, cancel),
+            (confirmLabel, confirm),
+          ]) {
+            expect(rect.bottom, lessThanOrEqualTo(640 - inset + epsilon),
+                reason: '$name: 「$label」がキーボードの下に隠れる'
+                    '（下端 ${rect.bottom} > ${640 - inset}）');
+          }
+
+          // 開いた直後のフレームで測っていないこと。遷移の途中でも寸法と
+          // hit test は通り得るので、もう 1 フレーム進めて動かないことを見る
+          final settled =
+              tester.getRect(confirmationButton(confirmLabel).first);
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(
+              tester.getRect(confirmationButton(confirmLabel).first), settled,
+              reason: '$name: まだ動いている（遷移の途中で測っている）');
         });
       }
     }
   }
 }
 
-/// ボタンに実際に塗られている色（`ButtonStyle` ではなく描画結果を見る）
+/// ボタンに塗られた**解決済みの基底色**（`ButtonStyle` ではなく `Material.color`）
 ///
 /// `style` を見ると、テーマ側で塗られている場合に `null` が返って
 /// 「塗られていない」と誤読する。取り消しボタンを実行とまったく同じ色に
 /// 塗っても `style` 比較は気づかなかった（2026-09-20 実測）。
+/// **「描画結果そのもの」ではない**: `Material` はこの色のあとに surface tint・
+/// ink・子の描画を重ねる。テーマ解決の結果を見る目的には足りるが、
+/// 画面に出る最終的な画素とは別物。
 Color? renderedButtonColor(WidgetTester tester, String label) {
   final material = find
       .descendant(
