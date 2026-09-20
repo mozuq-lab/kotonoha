@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_confirmation_dialog.dart';
 
+import '../../../../shared/widgets/confirmation_dialog_contract.dart';
+
 void main() {
   group('ClearConfirmationDialog - 表示テスト', () {
     // 確認ダイアログの表示確認
@@ -528,7 +530,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - 「はい」ボタンのサイズを確認
-      final yesButtonFinder = find.widgetWithText(TextButton, 'はい');
+      final yesButtonFinder = confirmationButton('はい');
       final size = tester.getSize(yesButtonFinder);
       expect(size.width, greaterThanOrEqualTo(AppSizes.minTapTarget));
       expect(size.height, greaterThanOrEqualTo(AppSizes.minTapTarget));
@@ -575,7 +577,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - 「いいえ」ボタンのサイズを確認
-      final noButtonFinder = find.widgetWithText(TextButton, 'いいえ');
+      final noButtonFinder = confirmationButton('いいえ');
       final size = tester.getSize(noButtonFinder);
       expect(size.width, greaterThanOrEqualTo(AppSizes.minTapTarget));
       expect(size.height, greaterThanOrEqualTo(AppSizes.minTapTarget));

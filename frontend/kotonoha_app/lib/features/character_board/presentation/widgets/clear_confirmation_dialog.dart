@@ -7,7 +7,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 
 /// 全消去確認ダイアログウィジェット
 /// 全消去ボタンタップ時に表示される確認ダイアログ。
@@ -28,33 +28,15 @@ class ClearConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('確認'),
-      content: const Text('入力内容をすべて消去しますか？'),
-      actions: [
-        // いいえボタン
-        TextButton(
-          style: TextButton.styleFrom(
-            minimumSize: const Size(
-              AppSizes.minTapTarget,
-              AppSizes.minTapTarget,
-            ),
-          ),
-          onPressed: onCancelled,
-          child: const Text('いいえ'),
-        ),
-        // はいボタン
-        TextButton(
-          style: TextButton.styleFrom(
-            minimumSize: const Size(
-              AppSizes.minTapTarget,
-              AppSizes.minTapTarget,
-            ),
-          ),
-          onPressed: onConfirmed,
-          child: const Text('はい'),
-        ),
-      ],
+    // 並び（間隔・並び順・タップ目標・スクロール）は ConfirmationDialog が持つ。
+    // ここで AlertDialog を組み直さない（台帳 L-130）
+    return ConfirmationDialog(
+      title: '確認',
+      message: '入力内容をすべて消去しますか？',
+      cancelLabel: 'いいえ',
+      confirmLabel: 'はい',
+      onCancel: onCancelled,
+      onConfirm: onConfirmed,
     );
   }
 
