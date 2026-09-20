@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title | default: site.title }}</title>
+<meta name="description" content="{{ site.description }}">
+<style>
+  :root { color-scheme: light dark; --fg: #1b1b1b; --bg: #ffffff; --muted: #5a5a5a; --line: #d8d8d8; --link: #0b5fbd; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg: #e8e8e8; --bg: #16181c; --muted: #a0a4ab; --line: #343840; --link: #7fb2ff; }
+  }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+         line-height: 1.85; }
+  main { max-width: 44rem; margin: 0 auto; padding: 2.5rem 1rem 1rem; }
+  h1, h2, h3, h4 { line-height: 1.4; margin-top: 2.2em; }
+  h1 { margin-top: 0; }
+  h1, h2 { border-bottom: 1px solid var(--line); padding-bottom: .3em; }
+  a { color: var(--link); }
+  code { background: rgba(127,127,127,.15); padding: .1em .35em; border-radius: 3px; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 2.5em 0; }
+  table { border-collapse: collapse; } td, th { border: 1px solid var(--line); padding: .4em .7em; }
+  footer { max-width: 44rem; margin: 0 auto; padding: 1rem 1rem 3rem;
+           border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>{{ content }}</main>
+<footer><a href="{{ '/' | relative_url }}">ことのは</a> · <a href="https://github.com/mozuq-lab/kotonoha">GitHub</a></footer>
+</body>
+</html>
