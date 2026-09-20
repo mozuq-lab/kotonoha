@@ -14,6 +14,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/router/app_router.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 
 /// 「入力欄へ」ボタンウィジェット
 /// アイコン+ラベル表示、タップターゲット44px以上。
@@ -97,19 +98,15 @@ Future<void> sendTextToInputBuffer({
   final shouldReplace = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('入力欄へ'),
-          content: const Text('入力中の内容を置き換えて入力欄にセットします。よろしいですか？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('キャンセル'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('置き換える'),
-            ),
-          ],
+        // 置き換えると入力中の文が消え、利用者は打ち直せない。
+        // 並びは ConfirmationDialog に任せる（台帳 L-130）
+        builder: (dialogContext) => ConfirmationDialog(
+          title: '入力欄へ',
+          message: '入力中の内容を置き換えて入力欄にセットします。よろしいですか？',
+          cancelLabel: 'キャンセル',
+          confirmLabel: '置き換える',
+          onCancel: () => Navigator.of(dialogContext).pop(false),
+          onConfirm: () => Navigator.of(dialogContext).pop(true),
         ),
       ) ??
       false;

@@ -10,6 +10,8 @@ import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_c
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_delete_dialog.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
+
 import 'confirmation_dialog_contract.dart';
 
 void main() {
@@ -50,5 +52,39 @@ void main() {
     ),
     cancelLabel: EmergencyConfirmationDialog.cancelLabel,
     confirmLabel: EmergencyConfirmationDialog.confirmLabel,
+  );
+
+  // 入力欄の置き換え・AI 変換の同意・お気に入りと履歴の削除は、画面の中で
+  // `ConfirmationDialog` を直接組んでいる。ラベルと kind の組み合わせを
+  // ここで代表させる（ウィジェット自体に契約が入っているので、組み合わせが
+  // 増えても並びは変わらない）
+  expectMeetsContract(
+    '入力欄の置き換え',
+    dialog: (context) => ConfirmationDialog(
+      title: '入力欄へ',
+      message: '入力中の内容を置き換えて入力欄にセットします。よろしいですか？',
+      cancelLabel: 'キャンセル',
+      confirmLabel: '置き換える',
+      onCancel: () {},
+      onConfirm: () {},
+    ),
+    cancelLabel: 'キャンセル',
+    confirmLabel: '置き換える',
+  );
+
+  expectMeetsContract(
+    'AI変換の利用確認',
+    dialog: (context) => ConfirmationDialog(
+      title: 'AI変換の利用確認',
+      message: 'AI変換では入力した文章を外部のAIサービスへ送信します。'
+          '送信前に内容を確認し、同意できる場合のみ利用してください。',
+      cancelLabel: '同意しない',
+      confirmLabel: '同意して利用',
+      kind: ConfirmKind.normal,
+      onCancel: () {},
+      onConfirm: () {},
+    ),
+    cancelLabel: '同意しない',
+    confirmLabel: '同意して利用',
   );
 }

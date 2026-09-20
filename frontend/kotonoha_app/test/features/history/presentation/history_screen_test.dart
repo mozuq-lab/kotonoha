@@ -13,6 +13,8 @@ import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 
+import '../../../shared/widgets/confirmation_dialog_contract.dart';
+
 // テストヘルパー関数
 
 /// テストデータ準備: テスト用の履歴データを生成するヘルパー関数
@@ -518,14 +520,14 @@ void main() {
 
         // 「削除」ボタンが表示される
         expect(
-          find.widgetWithText(TextButton, '削除'),
+          confirmationButton('削除'),
           findsOneWidget,
           reason: '削除ボタンが表示される必要がある',
         );
 
         // 「キャンセル」ボタンが表示される
         expect(
-          find.widgetWithText(TextButton, 'キャンセル'),
+          confirmationButton('キャンセル'),
           findsOneWidget,
           reason: 'キャンセルボタンが表示される必要がある',
         );

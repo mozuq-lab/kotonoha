@@ -13,6 +13,8 @@ import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 
+import '../../../shared/widgets/confirmation_dialog_contract.dart';
+
 // テストヘルパー関数
 
 /// テストデータ準備: テスト用の履歴データを生成するヘルパー関数
@@ -489,7 +491,7 @@ void main() {
         expect(find.byType(AlertDialog), findsOneWidget);
 
         // 「キャンセル」ボタンをタップする
-        await tester.tap(find.widgetWithText(TextButton, 'キャンセル'));
+        await tester.tap(confirmationButton('キャンセル'));
         await tester.pumpAndSettle();
 
         // Then: ダイアログが閉じる
@@ -593,7 +595,7 @@ void main() {
         await tester.tap(find.byIcon(Icons.delete_sweep));
         await tester.pumpAndSettle();
 
-        await tester.tap(find.widgetWithText(TextButton, '削除'));
+        await tester.tap(confirmationButton('削除'));
         await tester.pumpAndSettle();
 
         // Then: リストが自動的に更新される

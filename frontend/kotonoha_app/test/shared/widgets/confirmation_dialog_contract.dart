@@ -126,11 +126,13 @@ void expectMeetsContract(
         expect(layout.gap, greaterThanOrEqualTo(minGap - epsilon),
             reason: '$name: 取り消しと実行が近すぎる（誤操作になる）。$where');
 
-        // 3. タップ目標。**この 1 本はダイアログ側のコードでは赤にならない。**
-        // アプリのテーマの `minimumSize`（`light_theme.dart`）と Material の
-        // `MaterialTapTargetSize.padded` が二重に保証しているため。
-        // 両方を外すと 40.0 で赤になることは確かめた（2026-09-20）。
-        // その保証が外れたときに落ちる見張りとして置く
+        // 3. タップ目標。**この 1 本は `minimumSize` を変えても赤にならない。**
+        // 実寸はテーマの `minimumSize` と `materialTapTargetSize` /
+        // `visualDensity` で決まるため（2026-09-20 実測）。
+        // `tapTargetSize: shrinkWrap` ＋ padding 0 にすると 48 本が赤になる。
+        // **見ているのはテストの既定プラットフォーム（Android 相当）だけ**で、
+        // デスクトップのブラウザでは `visualDensity` が効いて「いいえ」が
+        // 36px になる（main からの既存の穴。台帳 L-134）
         for (final (label, rect) in [
           (cancelLabel, cancel),
           (confirmLabel, confirm),
