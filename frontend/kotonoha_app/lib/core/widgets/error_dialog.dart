@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 
 import '../themes/theme_colors.dart';
 
@@ -75,7 +76,7 @@ Future<void> showErrorDialog({
 }) async {
   return showDialog(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (context) => ConfirmationDialogLayout.build(
       title: Row(
         children: [
           Icon(Icons.error_outline, color: Colors.red[700]),
@@ -164,12 +165,14 @@ Future<void> showNetworkErrorDialog({
 }) async {
   return showDialog(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (context) => ConfirmationDialogLayout.build(
       title: Row(
         children: [
           Icon(Icons.wifi_off, color: warningIconColor(context)),
           const SizedBox(width: 8),
-          const Text('ネットワークエラー'),
+          // 見出しは折り返せるようにする。`Expanded` が無いと、
+          // 幅 320・倍率 1.0 でも右へあふれてボタンが切れる（台帳 L-133）
+          const Expanded(child: Text('ネットワークエラー')),
         ],
       ),
       content: const Text(
@@ -226,12 +229,14 @@ Future<void> showAIConversionErrorDialog({
 }) async {
   return showDialog(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (context) => ConfirmationDialogLayout.build(
       title: Row(
         children: [
           Icon(Icons.auto_fix_off, color: warningIconColor(context)),
           const SizedBox(width: 8),
-          const Text('AI変換エラー'),
+          // 見出しは折り返せるようにする。`Expanded` が無いと、
+          // 幅 320・倍率 1.0 でも右へあふれてボタンが切れる（台帳 L-133）
+          const Expanded(child: Text('AI変換エラー')),
         ],
       ),
       content: Column(
@@ -312,12 +317,14 @@ Future<void> showTTSErrorDialog({
 }) async {
   return showDialog(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (context) => ConfirmationDialogLayout.build(
       title: Row(
         children: [
           Icon(Icons.volume_off, color: warningIconColor(context)),
           const SizedBox(width: 8),
-          const Text('読み上げエラー'),
+          // 見出しは折り返せるようにする。`Expanded` が無いと、
+          // 幅 320・倍率 1.0 でも右へあふれてボタンが切れる（台帳 L-133）
+          const Expanded(child: Text('読み上げエラー')),
         ],
       ),
       content: const Text(

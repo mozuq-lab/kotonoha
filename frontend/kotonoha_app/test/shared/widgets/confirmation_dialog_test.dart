@@ -9,6 +9,8 @@
 /// （台帳 L-135。`send_to_input_button.dart` を戻して 2230 本が全部緑になった）。
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,14 +31,18 @@ import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/history/presentation/history_screen.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/preset_phrase_screen.dart';
+import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
+import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/core/themes/dark_theme.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
 
 import 'confirmation_dialog_contract.dart';
@@ -359,6 +365,122 @@ void main() {
       // destructive と同じ色では、重さの差が伝わらない
       expect(theme.colorScheme.primary, isNot(theme.colorScheme.error),
           reason: '$themeName: primary と error が同じ色');
+    });
+  }
+
+  // 非テキストのコントラスト（WCAG 2.1 の 1.4.11）。ボタンの輪郭が
+  // ダイアログの面から浮かないと、どこを押せばよいか分からない。
+  // `normal`（AI 変換の同意）は背景 #2196F3 と面 #F5F5F5 で **2.87:1** しか
+  // 無く、3:1 を割っていた（台帳 L-132。#150 が作った状態）
+  for (final (themeName, theme) in [
+    ('ライト', lightTheme),
+    ('ダーク', darkTheme),
+    ('高コントラスト', highContrastTheme),
+  ]) {
+    for (final (kindName, kind) in [
+      ('destructive', ConfirmKind.destructive),
+      ('normal', ConfirmKind.normal),
+    ]) {
+      testWidgets('$themeName: $kindName の実行ボタンは面に対して 3:1 以上', (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => ConfirmationDialog(
+                      title: '確認',
+                      message: '実行しますか？',
+                      cancelLabel: 'いいえ',
+                      confirmLabel: 'はい',
+                      kind: kind,
+                      onCancel: () {},
+                      onConfirm: () {},
+                    ),
+                  ),
+                  child: const Text('開く'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('開く'));
+        await tester.pumpAndSettle();
+
+        final dialog = tester.widget<Material>(
+          find
+              .descendant(
+                of: find.byType(AlertDialog),
+                matching: find.byType(Material),
+              )
+              .first,
+        );
+        final surface = dialog.color ?? theme.dialogTheme.backgroundColor!;
+        // 1.4.11 が求めるのは**境界**が見分けられること。塗りでも枠線でも、
+        // どちらかが面に対して 3:1 あればよい
+        final fill = renderedButtonColor(tester, 'はい')!;
+        final side = tester
+            .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'はい'))
+            .style
+            ?.side
+            ?.resolve({});
+        final fillRatio = wcagContrastRatio(fill, surface);
+        final sideRatio =
+            side == null ? 0.0 : wcagContrastRatio(side.color, surface);
+        final ratio = math.max(fillRatio, sideRatio);
+
+        expect(ratio, greaterThanOrEqualTo(minimumNonTextContrast - 0.005),
+            reason: '$themeName/$kindName: ボタンの境界が面 $surface から'
+                '浮かない（塗り $fill = $fillRatio:1、枠線 $side = $sideRatio:1）');
+      });
+    }
+  }
+
+  // `AlertDialog(scrollable: true)` が title と content を
+  // `SingleChildScrollView` に入れるので、フォーム側が自前で持つと入れ子になる。
+  // 内側は無限高さ制約で `maxScrollExtent = 0` になりドラッグを取らないため
+  // 無害だが、**効かない仕組みは残さない**（ADR-008。台帳 L-138）
+  for (final (name, dialog) in [
+    ('定型文の追加', const PhraseAddDialog()),
+    ('定型文の編集', null),
+  ]) {
+    testWidgets('$name: ダイアログの中のスクロールは 1 つだけ', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: lightTheme,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => dialog ?? PhraseEditDialog(phrase: _phrase()),
+                ),
+                child: const Text('開く'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('開く'));
+      await tester.pumpAndSettle();
+
+      // `TextField` は内部に `Scrollable` を持つので、それは数えない。
+      // `AlertDialog(scrollable: true)` が作る `SingleChildScrollView` が
+      // 1 つだけであることを見る
+      final scrollViews = find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(SingleChildScrollView),
+          )
+          .evaluate()
+          .length;
+      expect(scrollViews, 1,
+          reason: '$name: `SingleChildScrollView` が $scrollViews 個ある（入れ子）');
     });
   }
 }
