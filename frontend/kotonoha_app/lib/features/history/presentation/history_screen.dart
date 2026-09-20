@@ -11,6 +11,7 @@ import '../../tts/domain/models/tts_state.dart';
 import 'widgets/history_item_card.dart';
 import 'widgets/empty_history_widget.dart';
 import 'constants/history_ui_constants.dart';
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 
 /// 履歴画面ウィジェット
@@ -158,9 +159,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       context: context,
       barrierDismissible: false, // 誤操作防止
       builder: (BuildContext dialogContext) {
-        return _ConfirmDialog(
+        return ConfirmationDialog(
           title: HistoryUIConstants.confirmDialogTitle,
-          content: HistoryUIConstants.deleteAllConfirmMessage,
+          message: HistoryUIConstants.deleteAllConfirmMessage,
+          cancelLabel: HistoryUIConstants.cancelButtonLabel,
+          confirmLabel: HistoryUIConstants.deleteButtonLabel,
           onConfirm: () {
             Navigator.of(dialogContext).pop();
             ref.read(historyProvider.notifier).clearAllHistories();
@@ -231,39 +234,5 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ),
       );
     }
-  }
-}
-
-/// 確認ダイアログウィジェット（内部使用）
-/// 重複コード削減のため、共通の確認ダイアログを定義。
-class _ConfirmDialog extends StatelessWidget {
-  const _ConfirmDialog({
-    required this.title,
-    required this.content,
-    required this.onConfirm,
-    required this.onCancel,
-  });
-
-  final String title;
-  final String content;
-  final VoidCallback onConfirm;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(title),
-      content: Text(content),
-      actions: [
-        TextButton(
-          onPressed: onCancel,
-          child: const Text(HistoryUIConstants.cancelButtonLabel),
-        ),
-        TextButton(
-          onPressed: onConfirm,
-          child: const Text(HistoryUIConstants.deleteButtonLabel),
-        ),
-      ],
-    );
   }
 }

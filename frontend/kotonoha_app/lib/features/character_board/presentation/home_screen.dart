@@ -35,6 +35,7 @@ import 'package:kotonoha_app/features/settings/providers/settings_provider.dart'
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 
 /// ホーム画面（文字盤画面）ウィジェット
 /// アプリケーションのメイン画面。文字盤入力機能を提供する。
@@ -726,21 +727,17 @@ class HomeScreen extends ConsumerWidget {
     final accepted = await showDialog<bool>(
           context: context,
           barrierDismissible: false,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('AI変換の利用確認'),
-            content: const Text(
-              'AI変換では入力した文章を外部のAIサービスへ送信します。送信前に内容を確認し、同意できる場合のみ利用してください。',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('同意しない'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('同意して利用'),
-              ),
-            ],
+          // データを消す操作ではないので destructive ではないが、
+          // 外部送信への同意なので誤タップは避ける（台帳 L-130）
+          builder: (dialogContext) => ConfirmationDialog(
+            title: 'AI変換の利用確認',
+            message: 'AI変換では入力した文章を外部のAIサービスへ送信します。'
+                '送信前に内容を確認し、同意できる場合のみ利用してください。',
+            cancelLabel: '同意しない',
+            confirmLabel: '同意して利用',
+            kind: ConfirmKind.normal,
+            onCancel: () => Navigator.of(dialogContext).pop(false),
+            onConfirm: () => Navigator.of(dialogContext).pop(true),
           ),
         ) ??
         false;

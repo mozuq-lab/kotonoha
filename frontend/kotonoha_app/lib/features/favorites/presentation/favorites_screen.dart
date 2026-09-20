@@ -10,6 +10,7 @@ import '../../tts/domain/models/tts_state.dart';
 import 'widgets/favorite_item_card.dart';
 import 'widgets/empty_favorite_widget.dart';
 import 'constants/favorite_ui_constants.dart';
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 
 /// お気に入り画面ウィジェット
@@ -242,9 +243,11 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       context: context,
       barrierDismissible: false, // 誤操作防止
       builder: (BuildContext dialogContext) {
-        return _ConfirmDialog(
+        return ConfirmationDialog(
           title: FavoriteUIConstants.confirmDialogTitle,
-          content: FavoriteUIConstants.deleteConfirmMessage,
+          message: FavoriteUIConstants.deleteConfirmMessage,
+          cancelLabel: FavoriteUIConstants.cancelButtonLabel,
+          confirmLabel: FavoriteUIConstants.deleteButtonLabel,
           onConfirm: () {
             Navigator.of(dialogContext).pop();
             _deleteFavoriteWithUndo(context, id);
@@ -277,9 +280,11 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       context: context,
       barrierDismissible: false, // 誤操作防止
       builder: (BuildContext dialogContext) {
-        return _ConfirmDialog(
+        return ConfirmationDialog(
           title: FavoriteUIConstants.confirmDialogTitle,
-          content: FavoriteUIConstants.deleteAllConfirmMessage,
+          message: FavoriteUIConstants.deleteAllConfirmMessage,
+          cancelLabel: FavoriteUIConstants.cancelButtonLabel,
+          confirmLabel: FavoriteUIConstants.deleteButtonLabel,
           onConfirm: () {
             Navigator.of(dialogContext).pop();
             ref.read(favoriteProvider.notifier).clearAllFavorites();
@@ -293,40 +298,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           onCancel: () => Navigator.of(dialogContext).pop(),
         );
       },
-    );
-  }
-}
-
-/// 確認ダイアログウィジェット（内部使用）
-/// 重複コード削減のため、共通の確認ダイアログを定義。
-class _ConfirmDialog extends StatelessWidget {
-  const _ConfirmDialog({
-    required this.title,
-    required this.content,
-    required this.onConfirm,
-    required this.onCancel,
-  });
-
-  final String title;
-  final String content;
-  final VoidCallback onConfirm;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(title),
-      content: Text(content),
-      actions: [
-        TextButton(
-          onPressed: onCancel,
-          child: const Text(FavoriteUIConstants.cancelButtonLabel),
-        ),
-        TextButton(
-          onPressed: onConfirm,
-          child: const Text(FavoriteUIConstants.deleteButtonLabel),
-        ),
-      ],
     );
   }
 }
