@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:kotonoha_app/features/favorites/presentation/favorites_screen.dart';
+import 'package:kotonoha_app/features/favorite/presentation/favorites_screen.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';

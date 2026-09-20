@@ -25,7 +25,7 @@ import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_b
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
-import 'package:kotonoha_app/features/favorites/presentation/favorites_screen.dart';
+import 'package:kotonoha_app/features/favorite/presentation/favorites_screen.dart';
 import 'package:kotonoha_app/features/history/domain/models/history.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/history/presentation/history_screen.dart';

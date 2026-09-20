@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kotonoha_app/features/favorites/presentation/widgets/empty_favorite_widget.dart';
+import 'package:kotonoha_app/features/favorite/presentation/widgets/empty_favorite_widget.dart';
 
 void main() {
   group('EmptyFavoriteWidget', () {
