@@ -1,0 +1,93 @@
+# プライバシーポリシーとサポートページを GitHub Pages で配信する（ADR-007 条件 4、台帳 L-86）。
+# 配信するのは利用者・審査者向けの正本だけで、ADR・台帳・仕様は出さない。
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/privacy-policy.md'
+      - 'docs/support.md'
+      - 'docs/user-guide/**'
+      - 'docs/site/**'
+      - '.github/workflows/pages.yml'
+  pull_request:
+    paths:
+      - 'docs/privacy-policy.md'
+      - 'docs/support.md'
+      - 'docs/user-guide/**'
+      - 'docs/site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 配信するものだけを組み立てる
+        env:
+          # project site は https://<owner>.github.io/<repo>/ なので、baseurl はリポジトリ名。
+          # 設定ファイルに焼くとリポジトリ名の変更で腐るため、ここで足す。
+          BASE_PATH: /${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          src=_site_src
+          mkdir -p "$src"
+          cp docs/site/_config.yml docs/site/index.md "$src"/
+          cp -R docs/site/_layouts "$src"/_layouts
+          cp docs/privacy-policy.md docs/support.md "$src"/
+          cp -R docs/user-guide "$src"/user-guide
+          printf 'baseurl: "%s"\n' "$BASE_PATH" >> "$src"/_config.yml
+          # Jekyll は front matter の無いファイルを変換せずそのまま置く。正本に Jekyll 用の
+          # 記述を持たせたくないので、写しの側に入れる。題は見出しから取るので、
+          # user-guide に文書が増えても一覧を手書きせずに拾える。
+          find "$src" -name '*.md' -print0 | while IFS= read -r -d '' f; do
+            title=$(grep -m1 '^# ' "$f" | sed 's/^# //; s/"/'"'"'/g')
+            { printf -- '---\nlayout: default\ntitle: "%s"\n---\n\n' "$title"; cat "$f"; } > "$f.tmp"
+            mv "$f.tmp" "$f"
+          done
+
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./_site_src
+          destination: ./_site
+
+      - name: 配信物を見る（審査に出す URL が 404 や壊れたリンクにならないこと）
+        run: |
+          set -euo pipefail
+          test -f _site/privacy-policy.html
+          test -f _site/support.html
+          test -f _site/user-guide/faq.html
+          grep -q 'プライバシーポリシー' _site/privacy-policy.html
+          # 相対 .md リンクが .html へ解決されていること。
+          # 解決に失敗すると .md のまま残り、公開後に 404 になる。
+          grep -q 'user-guide/faq\.html' _site/support.html
+          ! grep -q 'user-guide/faq\.md' _site/support.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+  deploy:
+    # PR では組み立てと検査だけ行い、配信は main からに限る。
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

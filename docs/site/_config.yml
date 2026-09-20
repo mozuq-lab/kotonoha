@@ -1,0 +1,13 @@
+# GitHub Pages で配信する公開文書の設定（ADR-007 条件 4）。
+# baseurl は workflow が repository 名から足す（ここに書くとリポジトリ名の変更で腐る）。
+title: ことのは
+description: 文字盤コミュニケーション支援アプリ「ことのは」の公開文書
+lang: ja
+
+# 正本（docs/privacy-policy.md ほか）の相対 .md リンクを、生成後の .html へ解決させる。
+# 自前で書き換えると腐るので、GitHub Pages 標準のプラグインに任せる。
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+  collections: false
