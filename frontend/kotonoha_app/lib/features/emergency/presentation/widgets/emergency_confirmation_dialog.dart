@@ -141,7 +141,12 @@ class _EmergencyConfirmationDialogState
 
     return Semantics(
       label: '緊急呼び出し確認ダイアログ',
-      child: AlertDialog(
+      // 並び（間隔・スクロール）は `ConfirmationDialog` と同じものを使う
+      // （台帳 L-112・L-130・L-131。ADR-005 の 1 概念 1 真実）。
+      // このダイアログだけが `ConfirmationDialog` を使わずに自前で組むのは、
+      // テーマごとの色（緊急色は `colorScheme.error` とは別）・連続タップ防止
+      // （両ボタンを無効化する）・補足行・固定箱の `FittedBox` を持つため。
+      child: ConfirmationDialogLayout.build(
         title: Text(
           EmergencyConfirmationDialog.dialogTitle,
           style: AppTextStyles.headingMedium.copyWith(fontSize: baseFontSize),
@@ -176,17 +181,6 @@ class _EmergencyConfirmationDialogState
           ),
           _buildConfirmButton(confirmButtonColor, baseFontSize),
         ],
-        // 並び（間隔・スクロール）は `ConfirmationDialog` と同じものを使う
-        // （台帳 L-112・L-130・L-131。ADR-005 の 1 概念 1 真実）。
-        // このダイアログだけが `ConfirmationDialog` を使わずに自前で組むのは、
-        // テーマごとの色（緊急色は `colorScheme.error` とは別）・連続タップ防止
-        // （両ボタンを無効化する）・補足行・固定箱の `FittedBox` を持つため。
-        // **並びの数字はここに書かない。**
-        scrollable: ConfirmationDialogLayout.scrollable,
-        actionsOverflowButtonSpacing:
-            ConfirmationDialogLayout.overflowButtonSpacing,
-        buttonPadding: ConfirmationDialogLayout.buttonPadding,
-        actionsPadding: ConfirmationDialogLayout.actionsPadding,
         actionsAlignment: MainAxisAlignment.center,
       ),
     );

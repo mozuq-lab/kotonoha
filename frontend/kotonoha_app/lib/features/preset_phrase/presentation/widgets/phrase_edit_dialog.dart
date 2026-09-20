@@ -98,7 +98,13 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    // 並びは `ConfirmationDialog` と同じものを使う（台帳 L-130）。
+    // 本文がフォーム（文字数カウンタ・カテゴリ選択・エラー表示）なので
+    // `ConfirmationDialog`（本文は String）には入らないが、**「キャンセル」と
+    // 「保存」が接すると、打った文がそのまま消える**のは同じ。
+    // 指定が無いと `AlertDialog` の既定のままで、幅 320・倍率 1.3 で 0.0px に
+    // なる（2026-09-20 実測）。
+    return ConfirmationDialogLayout.build(
       title: const Text('定型文を編集'),
       content: SingleChildScrollView(
         child: PhraseFormContent(
@@ -122,17 +128,6 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
           child: const Text('保存'),
         ),
       ],
-      // 並びは `ConfirmationDialog` と同じものを使う（台帳 L-130）。
-      // 本文がフォーム（文字数カウンタ・カテゴリ選択・エラー表示）なので
-      // `ConfirmationDialog`（本文は String）には入らないが、**「キャンセル」と
-      // 「保存」が接すると、打った文がそのまま消える**のは同じ。
-      // 指定が無いと `AlertDialog` の既定のままで、幅 320・倍率 1.3 で 0.0px に
-      // なる（2026-09-20 実測）。並びの数字はここに書かない。
-      scrollable: ConfirmationDialogLayout.scrollable,
-      actionsOverflowButtonSpacing:
-          ConfirmationDialogLayout.overflowButtonSpacing,
-      buttonPadding: ConfirmationDialogLayout.buttonPadding,
-      actionsPadding: ConfirmationDialogLayout.actionsPadding,
     );
   }
 }

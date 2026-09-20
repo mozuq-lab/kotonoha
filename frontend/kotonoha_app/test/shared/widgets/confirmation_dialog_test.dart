@@ -13,7 +13,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
+import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
+import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
+import 'package:kotonoha_app/features/network/providers/network_provider.dart';
+import 'package:kotonoha_app/features/settings/models/app_settings.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_button_with_confirmation.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
@@ -23,14 +28,15 @@ import 'package:kotonoha_app/features/history/domain/models/history.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/history/presentation/history_screen.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
-import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
-import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_delete_dialog.dart';
-import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
+import 'package:kotonoha_app/features/preset_phrase/presentation/preset_phrase_screen.dart';
+import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
+import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
+import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
+import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/core/themes/dark_theme.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
-import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
 
 import 'confirmation_dialog_contract.dart';
@@ -46,6 +52,35 @@ class _Favorites extends FavoriteNotifier {
 class _FilledBuffer extends InputBufferNotifier {
   @override
   String build() => '入力中の文';
+}
+
+class _Online extends NetworkNotifier {
+  @override
+  NetworkState build() => NetworkState.online;
+}
+
+/// AI 変換にまだ同意していない状態（`AppSettings` の既定）
+class _NotYetAccepted extends SettingsNotifier {
+  @override
+  Future<AppSettings> build() async => const AppSettings();
+}
+
+class _Phrases extends PresetPhraseNotifier {
+  _Phrases(this._state);
+  final PresetPhraseState _state;
+  @override
+  PresetPhraseState build() => _state;
+}
+
+/// 実プラグイン（FlutterTts）を触らせないためのスタブ
+class _StubTts extends TTSNotifier {
+  @override
+  TTSServiceState build() => const TTSServiceState(
+        state: TTSState.idle,
+        currentSpeed: TTSSpeed.normal,
+      );
+  @override
+  Future<void> speak(String text) async {}
 }
 
 class _Histories extends HistoryNotifier {
@@ -68,18 +103,6 @@ PresetPhrase _phrase() => PresetPhrase(
 Widget _screenWith(Widget entry) => Scaffold(body: Center(child: entry));
 
 /// ダイアログ自体が公開ウィジェットのもの。本番の `showDialog` と同じ形で開く
-Widget _opener(Widget Function(BuildContext context) dialog) => Scaffold(
-      body: Builder(
-        builder: (context) => ElevatedButton(
-          onPressed: () => showDialog<void>(
-            context: context,
-            barrierDismissible: false,
-            builder: dialog,
-          ),
-          child: const Text('開く'),
-        ),
-      ),
-    );
 
 Future<void> _tapText(WidgetTester tester, String text) =>
     tester.tap(find.text(text));
@@ -98,30 +121,50 @@ void main() {
     confirmLabel: 'はい',
   );
 
+  // 定型文の 3 つは `PresetPhraseScreen` から開く。ここをテストの中で
+  // 組み直すと、画面側が素の `AlertDialog` に戻されても気づけない（L-135）。
+  // 一覧に 1 件だけ置く（✏️ と 🗑 は行数ぶん並ぶので、複数あると掴めない）
+  Widget phraseScope(Widget app) => ProviderScope(
+        overrides: [
+          presetPhraseNotifierProvider.overrideWith(
+            () => _Phrases(PresetPhraseState(phrases: [_phrase()])),
+          ),
+          ttsProvider.overrideWith(_StubTts.new),
+        ],
+        child: app,
+      );
+
   expectMeetsContract(
     '定型文の削除',
-    home: () => _opener((_) => PhraseDeleteDialog(phrase: _phrase())),
-    open: (tester) => _tapText(tester, '開く'),
+    home: PresetPhraseScreen.new,
+    open: (tester) => _tapIcon(tester, Icons.delete_outline),
     cancelLabel: 'キャンセル',
     confirmLabel: '削除',
+    scope: phraseScope,
   );
 
   // 本文がフォームなので `ConfirmationDialog` には入らない。
-  // 並びだけ `ConfirmationDialogLayout` から取っている（台帳 L-130）
+  // 並びだけ `ConfirmationDialogLayout.build` から取っている（台帳 L-130）
   expectMeetsContract(
     '定型文の追加',
-    home: () => _opener((_) => const PhraseAddDialog()),
-    open: (tester) => _tapText(tester, '開く'),
+    // 本文がフォーム。キーボードが出た状態でも当てる（`scrollable` が効く場面）
+    withKeyboard: true,
+    home: PresetPhraseScreen.new,
+    open: (tester) => _tapIcon(tester, Icons.add),
     cancelLabel: 'キャンセル',
     confirmLabel: '保存',
+    scope: phraseScope,
   );
 
   expectMeetsContract(
     '定型文の編集',
-    home: () => _opener((_) => PhraseEditDialog(phrase: _phrase())),
-    open: (tester) => _tapText(tester, '開く'),
+    // 本文がフォーム。キーボードが出た状態でも当てる（`scrollable` が効く場面）
+    withKeyboard: true,
+    home: PresetPhraseScreen.new,
+    open: (tester) => _tapIcon(tester, Icons.edit),
     cancelLabel: 'キャンセル',
     confirmLabel: '保存',
+    scope: phraseScope,
   );
 
   // 緊急呼び出しだけは `ConfirmationDialog` を使わず自前で組む（色・連続タップ
@@ -211,60 +254,94 @@ void main() {
     ),
   );
 
-  // 「取り消せない実行だけを塗って見分けられるようにする」という決定に
-  // 観測点を置く。レビューで、`colorScheme.error` をリテラルの赤に変えても、
-  // `destructive` を `primary` に変えても 769 本が緑のままだと分かったため
-  // （どちらも比率だけ見る既存テストを通ってしまう）。
-  // 色そのものは決定（`light_theme.dart` の「緊急色との分離 1.83:1」）なので、
-  // テーマの役割色と一致することを見る。面とのコントラストは台帳 L-132。
+  // --- 「取り消せない実行だけを塗って見分けられるようにする」という決定 ---
+  //
+  // レビューで 2 つの穴が見つかった（2026-09-20）。
+  //   1. `style` を見ると、テーマ側で塗られている場合に null が返る。
+  //      取り消しボタンを実行とまったく同じ赤に塗っても気づかなかった
+  //   2. テストの中で `kind:` を明示して組むと、**本番の呼び出し元が
+  //      どちらを受け取るか**を見ていない。`kind` の既定を `normal` に
+  //      変えても全テストが緑のままだった
+  // そこで、本番の入口から開いて**描画された色**を見る。
   for (final (themeName, theme) in [
     ('ライト', lightTheme),
     ('ダーク', darkTheme),
     ('高コントラスト', highContrastTheme),
   ]) {
-    for (final (kindName, kind, expected) in [
-      ('destructive', ConfirmKind.destructive, (ColorScheme c) => c.error),
-      ('normal', ConfirmKind.normal, (ColorScheme c) => c.primary),
-    ]) {
-      testWidgets('$themeName: $kindName の実行ボタンはテーマの役割色で塗る', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: theme,
-            home: Scaffold(
-              body: Builder(
-                builder: (context) => ElevatedButton(
-                  onPressed: () => showDialog<void>(
-                    context: context,
-                    builder: (_) => ConfirmationDialog(
-                      title: '確認',
-                      message: '消しますか？',
-                      cancelLabel: 'いいえ',
-                      confirmLabel: 'はい',
-                      kind: kind,
-                      onCancel: () {},
-                      onConfirm: () {},
-                    ),
-                  ),
-                  child: const Text('開く'),
-                ),
-              ),
-            ),
+    testWidgets('$themeName: 全消去の「はい」は error 色で塗られ、「いいえ」と区別できる',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: const Scaffold(
+            body: Center(child: ClearAllButton(enabled: true)),
           ),
-        );
-        await tester.tap(find.text('開く'));
-        await tester.pumpAndSettle();
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
 
-        final button = tester.widget<ElevatedButton>(
-          find.widgetWithText(ElevatedButton, 'はい'),
-        );
-        final background = button.style!.backgroundColor!.resolve({});
-        expect(background, expected(theme.colorScheme));
-        // 取り消しと同じ見た目にならないこと（見分けがつかないと意味がない）
-        final cancel = tester.widget<TextButton>(
-          find.widgetWithText(TextButton, 'いいえ'),
-        );
-        expect(cancel.style?.backgroundColor?.resolve({}), isNot(background));
-      });
+      final confirm = renderedButtonColor(tester, 'はい');
+      final cancel = renderedButtonColor(tester, 'いいえ');
+
+      // 取り消せない実行はテーマの error 色。`kind` の既定が変わるとここが落ちる
+      expect(confirm, theme.colorScheme.error,
+          reason: '$themeName: 実行ボタンが error 色で塗られていない');
+      // 取り消しと同じ見た目では、そもそも見分けがつかない
+      expect(cancel, isNot(confirm),
+          reason: '$themeName: 取り消しと実行が同じ色（いいえ=$cancel はい=$confirm）');
+    });
+  }
+
+  // `ConfirmKind.normal` を使う本番の経路は AI 変換の同意だけ。
+  // `HomeScreen` は永久に動くアニメーションを持つので `pumpAndSettle` が
+  // 返らない。フレームを決め打ちで進める（`settle` の差し替え口）
+  Future<void> pumpFrames(WidgetTester tester) async {
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 300));
     }
   }
+
+  expectMeetsContract(
+    'AI変換の利用確認',
+    home: HomeScreen.new,
+    open: (tester) => tester.tap(find.widgetWithText(ElevatedButton, 'AI変換')),
+    cancelLabel: '同意しない',
+    confirmLabel: '同意して利用',
+    settle: pumpFrames,
+    scope: (app) => ProviderScope(
+      overrides: [
+        inputBufferProvider.overrideWith(_FilledBuffer.new),
+        networkProvider.overrideWith(_Online.new),
+        settingsNotifierProvider.overrideWith(_NotYetAccepted.new),
+        ttsProvider.overrideWith(_StubTts.new),
+      ],
+      child: app,
+    ),
+  );
+
+  testWidgets('AI変換の同意の実行ボタンは primary 色（destructive と別の色）', (tester) async {
+    tester.view.physicalSize = const Size(375, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inputBufferProvider.overrideWith(_FilledBuffer.new),
+          networkProvider.overrideWith(_Online.new),
+          settingsNotifierProvider.overrideWith(_NotYetAccepted.new),
+          ttsProvider.overrideWith(_StubTts.new),
+        ],
+        child: MaterialApp(theme: lightTheme, home: const HomeScreen()),
+      ),
+    );
+    await pumpFrames(tester);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'AI変換'));
+    await pumpFrames(tester);
+
+    expect(
+        renderedButtonColor(tester, '同意して利用'), lightTheme.colorScheme.primary);
+    expect(lightTheme.colorScheme.primary, isNot(lightTheme.colorScheme.error),
+        reason: 'destructive と normal が同じ色では、重さの差が伝わらない');
+  });
 }
