@@ -39,6 +39,14 @@ const widths = [320.0, 360.0, 375.0, 768.0];
 /// 契約を当てる文字倍率。2.4 は設定「大」(1.2) と OS の拡大 (2.0) が重なった形
 const scales = [1.0, 1.3, 2.0, 2.4];
 
+/// ソフトキーボードが押し上げる高さ。
+/// **本文に `TextField` があるダイアログだけに当てる**（`withKeyboard`）。
+/// 0 だけだと `scrollable` が効く場面を一度も見ない（キーボードが出ると
+/// 幅 320・倍率 2.0 で 16px、倍率 2.4 で 42px あふれる。2026-09-20 実測）。
+/// 文字盤はアプリ内のキーボードなので `viewInsets` は立たず、ほかの経路に
+/// 当てると入口のボタンが画面の外へ出てタップできなくなるだけ
+const softKeyboardInset = 340.0;
+
 /// ラベルから確認ダイアログのボタンを探す。
 /// **見た目の型（`TextButton` / `ElevatedButton`）に依存しない。** 型で探すと、
 /// 実行ボタンの見せ方を変えただけでテストが落ち、逆に「ボタンがある」ことを
@@ -68,87 +76,144 @@ enum Placement { column, row, none }
   return (placement: Placement.none, gap: 0);
 }
 
-/// [open] で開いたダイアログが、全ての幅・倍率で契約を満たすことを確かめる
+/// ダイアログが全ての幅・倍率で契約を満たすことを確かめる
+///
+/// [home] には**本番の画面／ウィジェット**を渡し、[open] で**本番と同じ入口**を
+/// タップして開く。テストの中で `ConfirmationDialog` を組み直すと、呼び出し元が
+/// 素の `AlertDialog` に戻されても緑のまま通ってしまう（台帳 L-135）。
 void expectMeetsContract(
   String name, {
-  required Widget Function(BuildContext context) dialog,
+  required Widget Function() home,
+  required Future<void> Function(WidgetTester tester) open,
   required String cancelLabel,
   required String confirmLabel,
+
+  /// `ProviderScope` など、`MaterialApp` の外に要る包みを足す
+  Widget Function(Widget app)? scope,
+
+  /// `pumpAndSettle` が返らない画面のための差し替え口
+  /// （`HomeScreen` は永久に動くアニメーションを持つ）
+  Future<void> Function(WidgetTester tester)? settle,
+
+  /// 本文に `TextField` があるものは、キーボードが出た状態でも当てる
+  bool withKeyboard = false,
 }) {
+  final insets = withKeyboard ? [0.0, softKeyboardInset] : [0.0];
   for (final width in widths) {
     for (final scale in scales) {
-      testWidgets('$name: 幅 $width・文字倍率 $scale で契約を満たす', (tester) async {
-        final screen = Size(width, 640);
-        tester.view.physicalSize = screen;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
+      for (final inset in insets) {
+        final where = inset == 0
+            ? '幅 $width・文字倍率 $scale'
+            : '幅 $width・文字倍率 $scale・キーボード $inset';
+        testWidgets('$name: $where で契約を満たす', (tester) async {
+          tester.view.physicalSize = Size(width, 640);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
 
-        await tester.pumpWidget(
-          MaterialApp(
+          final app = MaterialApp(
             theme: lightTheme,
             builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(scale)),
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(scale),
+                viewInsets: EdgeInsets.only(bottom: inset),
+              ),
               child: child!,
             ),
-            home: Scaffold(
-              body: Builder(
-                builder: (context) => ElevatedButton(
-                  onPressed: () => showDialog<void>(
-                    context: context,
-                    builder: dialog,
-                  ),
-                  child: const Text('開く'),
-                ),
-              ),
-            ),
-          ),
-        );
-        await tester.tap(find.text('開く'));
-        await tester.pumpAndSettle();
+            home: home(),
+          );
+          Future<void> waitForFrames() async {
+            if (settle != null) return settle(tester);
+            await tester.pumpAndSettle();
+          }
 
-        // 4. あふれない（説明文が画面の外へ出て読めなくならない）
-        expect(tester.takeException(), isNull,
-            reason: '$name が幅 $width・倍率 $scale であふれた');
+          await tester.pumpWidget(scope == null ? app : scope(app));
+          await waitForFrames();
+          await open(tester);
+          await waitForFrames();
 
-        Rect rectOf(String label) =>
-            tester.getRect(confirmationButton(label).first);
-        final cancel = rectOf(cancelLabel);
-        final confirm = rectOf(confirmLabel);
-        final layout = placementOf(cancel, confirm);
-        final where = '取り消し=$cancel 実行=$confirm';
+          // 4. あふれない（本文が画面の外へ出て読めなくならない）
+          expect(tester.takeException(), isNull,
+              reason: '$name が $where であふれた');
 
-        // 2. 並び方が定まっている（逆順・斜め・接触はここで落ちる）
-        expect(layout.placement, isNot(Placement.none),
-            reason: '$name: 取り消しと実行が接している／並んでいない。$where');
+          Rect rectOf(String label) =>
+              tester.getRect(confirmationButton(label).first);
+          final cancel = rectOf(cancelLabel);
+          final confirm = rectOf(confirmLabel);
+          final layout = placementOf(cancel, confirm);
+          final at = '取り消し=$cancel 実行=$confirm';
 
-        // 1. 16px 以上離れている
-        expect(layout.gap, greaterThanOrEqualTo(minGap - epsilon),
-            reason: '$name: 取り消しと実行が近すぎる（誤操作になる）。$where');
+          // 2. 並び方が定まっている（逆順・斜め・接触はここで落ちる）
+          expect(layout.placement, isNot(Placement.none),
+              reason: '$name: 取り消しと実行が接している／並んでいない。$at');
 
-        // 3. タップ目標。**この 1 本は `minimumSize` を変えても赤にならない。**
-        // 実寸はテーマの `minimumSize` と `materialTapTargetSize` /
-        // `visualDensity` で決まるため（2026-09-20 実測）。
-        // `tapTargetSize: shrinkWrap` ＋ padding 0 にすると 48 本が赤になる。
-        // **見ているのはテストの既定プラットフォーム（Android 相当）だけ**で、
-        // デスクトップのブラウザでは `visualDensity` が効いて「いいえ」が
-        // 36px になる（main からの既存の穴。台帳 L-134）
-        for (final (label, rect) in [
-          (cancelLabel, cancel),
-          (confirmLabel, confirm),
-        ]) {
-          expect(rect.height, greaterThanOrEqualTo(minTapTarget - epsilon),
-              reason: '$name: 「$label」の高さが足りない');
-          expect(rect.width, greaterThanOrEqualTo(minTapTarget - epsilon),
-              reason: '$name: 「$label」の幅が足りない');
-        }
+          // 1. 16px 以上離れている
+          expect(layout.gap, greaterThanOrEqualTo(minGap - epsilon),
+              reason: '$name: 取り消しと実行が近すぎる（誤操作になる）。$at');
 
-        // どちらのボタンも押せる（あふれてクリップされていない）
-        for (final label in [cancelLabel, confirmLabel]) {
-          expect(confirmationButton(label).hitTestable(), findsWidgets,
-              reason: '$name: 「$label」が押せない');
-        }
-      });
+          // 3. タップ目標。**この 1 本は `minimumSize` を変えても赤にならない。**
+          // 実寸はテーマの `minimumSize` と `materialTapTargetSize` /
+          // `visualDensity` で決まるため（2026-09-20 実測）。
+          // `tapTargetSize: shrinkWrap` ＋ padding 0 にすると 48 本が赤になる。
+          // **見ているのはテストの既定プラットフォーム（Android 相当）だけ**で、
+          // デスクトップのブラウザでは `visualDensity` が効いて「いいえ」が
+          // 36px になる（main からの既存の穴。台帳 L-134）
+          for (final (label, rect) in [
+            (cancelLabel, cancel),
+            (confirmLabel, confirm),
+          ]) {
+            expect(rect.height, greaterThanOrEqualTo(minTapTarget - epsilon),
+                reason: '$name: 「$label」の高さが足りない');
+            expect(rect.width, greaterThanOrEqualTo(minTapTarget - epsilon),
+                reason: '$name: 「$label」の幅が足りない');
+          }
+
+          // どちらのボタンも押せる（あふれてクリップされていない）。
+          // `hitTestable()` が見るのは**ボタン中央の 1 点が Flutter の木の
+          // hit test に出るか**だけで、キーボードに隠れているかは分からない
+          // （キーボードは Flutter の外側にあり、遮蔽物としては存在しない）。
+          // そこで、キーボードの上端より下に出ていないことを別に見る
+          for (final label in [cancelLabel, confirmLabel]) {
+            expect(confirmationButton(label).hitTestable(), findsWidgets,
+                reason: '$name: 「$label」が押せない');
+          }
+          for (final (label, rect) in [
+            (cancelLabel, cancel),
+            (confirmLabel, confirm),
+          ]) {
+            expect(rect.bottom, lessThanOrEqualTo(640 - inset + epsilon),
+                reason: '$name: 「$label」がキーボードの下に隠れる'
+                    '（下端 ${rect.bottom} > ${640 - inset}）');
+          }
+
+          // 開いた直後のフレームで測っていないこと。遷移の途中でも寸法と
+          // hit test は通り得るので、もう 1 フレーム進めて動かないことを見る
+          final settled =
+              tester.getRect(confirmationButton(confirmLabel).first);
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(
+              tester.getRect(confirmationButton(confirmLabel).first), settled,
+              reason: '$name: まだ動いている（遷移の途中で測っている）');
+        });
+      }
     }
   }
+}
+
+/// ボタンに塗られた**解決済みの基底色**（`ButtonStyle` ではなく `Material.color`）
+///
+/// `style` を見ると、テーマ側で塗られている場合に `null` が返って
+/// 「塗られていない」と誤読する。取り消しボタンを実行とまったく同じ色に
+/// 塗っても `style` 比較は気づかなかった（2026-09-20 実測）。
+/// **「描画結果そのもの」ではない**: `Material` はこの色のあとに surface tint・
+/// ink・子の描画を重ねる。テーマ解決の結果を見る目的には足りるが、
+/// 画面に出る最終的な画素とは別物。
+Color? renderedButtonColor(WidgetTester tester, String label) {
+  final material = find
+      .descendant(
+          of: confirmationButton(label), matching: find.byType(Material))
+      .evaluate()
+      .map((e) => e.widget as Material)
+      .where((m) => m.color != null)
+      .toList();
+  return material.isEmpty ? null : material.first.color;
 }

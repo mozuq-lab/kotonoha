@@ -5,10 +5,10 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/preset_phrase_validator.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_form_content.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 
 /// 機能概要: 定型文編集ダイアログ
 /// 実装方針: AlertDialogベースでPhraseFormContentを使用、初期値設定
@@ -98,7 +98,13 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    // 並びは `ConfirmationDialog` と同じものを使う（台帳 L-130）。
+    // 本文がフォーム（文字数カウンタ・カテゴリ選択・エラー表示）なので
+    // `ConfirmationDialog`（本文は String）には入らないが、**「キャンセル」と
+    // 「保存」が接すると、打った文がそのまま消える**のは同じ。
+    // 指定が無いと `AlertDialog` の既定のままで、幅 320・倍率 1.3 で 0.0px に
+    // なる（2026-09-20 実測）。
+    return ConfirmationDialogLayout.build(
       title: const Text('定型文を編集'),
       content: SingleChildScrollView(
         child: PhraseFormContent(
@@ -114,17 +120,11 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
         // キャンセルボタン: ダイアログを閉じる
         TextButton(
           onPressed: _onCancel,
-          style: TextButton.styleFrom(
-            minimumSize: const Size(0, AppSizes.minTapTarget),
-          ),
           child: const Text('キャンセル'),
         ),
         // 保存ボタン: バリデーション後に保存
         ElevatedButton(
           onPressed: _onSave,
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(0, AppSizes.minTapTarget),
-          ),
           child: const Text('保存'),
         ),
       ],

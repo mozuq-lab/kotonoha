@@ -45,9 +45,12 @@ abstract final class ConfirmationDialogLayout {
   static const bool scrollable = true;
 
   // タップ目標 44px 以上（REQ-3001）は、ここでは指定しない。ボタンごとに
-  // `minimumSize` を重ねても効かないため（2026-09-20 実測。1 文字ラベルで
-  // `minimumSize` を 0 にしても 48×48）。効かない指定は重ねない
-  // （ADR-008 の「発火ゼロの仕組みを作らない」）。実寸を決めているのは
+  // `minimumSize` を重ねても**下限を上げる方向には効かない**
+  // （2026-09-20 実測。1 文字ラベルで `minimumSize` を 0 にしても 48×48）。
+  // むしろ `ButtonStyle.merge` はウィジェット側が勝つので、テーマより小さい
+  // 値を書くと**下限を下げてしまう**（定型文の `Size(0, 44)` がテーマの
+  // `Size(60, 60)` を抑えていて、外したら保存ボタンが 48→60 になった）。
+  // どちらの向きにも良くないので重ねない。実寸を決めているのは
   //   1. アプリのテーマの `minimumSize`（`light_theme.dart` の
   //      textButtonTheme 44×44・elevatedButtonTheme `recommendedTapTarget`）
   //   2. テーマの `materialTapTargetSize` と `visualDensity`
@@ -58,6 +61,28 @@ abstract final class ConfirmationDialogLayout {
   // アプリ全体の `TextButton` に及ぶ既存の穴。台帳 L-134）。
   // 契約テストはテストの既定プラットフォーム（Android 相当）で回るので、
   // この 1 本はそこまでしか見張れない。
+
+  /// 並びを当てた `AlertDialog` を作る。
+  ///
+  /// **本文がフォームなどで `ConfirmationDialog` に入らないものは、
+  /// 4 つの引数を手で書き写さずにこれを使う。** 書き写す形だと 1 つ落としても
+  /// 気づけない（`scrollable` だけ外しても全テストが緑のままだった。2026-09-20）。
+  static AlertDialog build({
+    required Widget title,
+    required Widget content,
+    required List<Widget> actions,
+    MainAxisAlignment? actionsAlignment,
+  }) =>
+      AlertDialog(
+        scrollable: scrollable,
+        title: title,
+        content: content,
+        actions: actions,
+        actionsOverflowButtonSpacing: overflowButtonSpacing,
+        buttonPadding: buttonPadding,
+        actionsPadding: actionsPadding,
+        actionsAlignment: actionsAlignment,
+      );
 }
 
 /// 実行ボタンの重さ
@@ -131,8 +156,7 @@ class ConfirmationDialog extends StatelessWidget {
       ConfirmKind.normal => colorScheme.primary,
     };
 
-    return AlertDialog(
-      scrollable: ConfirmationDialogLayout.scrollable,
+    return ConfirmationDialogLayout.build(
       title: Text(title),
       content: Text(message),
       actions: [
@@ -149,10 +173,6 @@ class ConfirmationDialog extends StatelessWidget {
           child: Text(confirmLabel),
         ),
       ],
-      actionsOverflowButtonSpacing:
-          ConfirmationDialogLayout.overflowButtonSpacing,
-      buttonPadding: ConfirmationDialogLayout.buttonPadding,
-      actionsPadding: ConfirmationDialogLayout.actionsPadding,
     );
   }
 }
