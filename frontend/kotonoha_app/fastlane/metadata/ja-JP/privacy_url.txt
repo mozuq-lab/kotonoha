@@ -1,1 +1,1 @@
-https://github.com/mozuq-lab/kotonoha/blob/main/docs/privacy-policy.md
+https://mozuq-lab.github.io/kotonoha/privacy-policy.html

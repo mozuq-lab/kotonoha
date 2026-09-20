@@ -1,1 +1,1 @@
-https://github.com/mozuq-lab/kotonoha/blob/main/docs/support.md
+https://mozuq-lab.github.io/kotonoha/support.html
