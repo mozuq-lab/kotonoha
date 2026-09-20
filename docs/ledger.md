@@ -22,7 +22,7 @@
 - [x] L-74 フォントサイズ設定が home_screen 配下にしか届かず、定型文一覧が追従しない（REQ-802・REQ-2007 の未達） — frontend/kotonoha_app/lib/features/preset_phrase/presentation/widgets/phrase_list_item.dart:98、frontend/kotonoha_app/lib/app.dart:47-56（PR #114 の突き合わせ）。解消（2026-09-16、テーマの textTheme とボタンテーマに倍率を掛ける。PR は下記）
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
 - [ ] L-76 NFR-502（backend の重要なビジネスロジック・API エンドポイントで 90% 以上のカバレッジ）が未測定。CI の `fail_under` は全体閾値（NFR-501） — docs/spec/kotonoha-requirements.md:166（L-55 と同形）。基準が 3 か所にある（pyproject の fail_under 80、flutter.yml の THRESHOLD 80、codecov.yml の python 90% と存在しないパスの除外）。決定（2026-09-20 第 3 回、決定シート）: カバレッジ基準を 1 箇所に寄せてから NFR-502 を測る（A）。ADR-005 の 1 概念 1 真実と同じ形。どれが正かが決まらないと、測った数字が何に照らされるのかが決まらない
-- [ ] L-77 libから呼ばれないshowOfflineAIConversionDialogと対応testは削除済み。残りはTextInputFieldと専用test — PR #114の突き合わせ、L-139の決定を束3で適用（2026-09-20）。
+- [ ] L-77 libから呼ばれないshowOfflineAIConversionDialogと対応testは削除済み。TextInputFieldのクリア機能と対応testも削除済み。残りは入力本体と専用test — PR #114の突き合わせ、L-139の決定を束3で適用（2026-09-20）。
 - [ ] L-78 README.md:82 の `curl -s localhost:8000/api/v1/health` は、localhost が ::1 に解決される環境で timeout する（uvicorn は 127.0.0.1 で待つ）。127.0.0.1 に直すか注記する — Task 6 の実測（2026-09-06）
 - [ ] L-84 開発者登録（Apple Developer Program / Google Play）が未着手。外部律速で、他の作業を待つ理由が無い — ADR-007 条件 4（人が動かす。旧 remaining-work.md から移記）
 - [ ] L-85 ストア掲載文（`frontend/kotonoha_app/fastlane/metadata/ja-JP`・`en-US`）を「医療・治療効果を謳わない」観点で点検していない — ADR-007 条件 4（旧 remaining-work.md から移記）
