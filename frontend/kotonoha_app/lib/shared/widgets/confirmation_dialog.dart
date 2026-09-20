@@ -25,7 +25,6 @@ import 'package:kotonoha_app/core/utils/contrast.dart';
 /// 並びはここから取る（ADR-005 の 1 概念 1 真実）。
 ///
 /// 誤操作防止の二択（`ConfirmationDialog`）のために作ったが、いまは
-/// `lib/core/widgets/error_dialog.dart` のエラーダイアログ 4 つ（1〜3 択）と
 /// 定型文のフォーム 2 つも通る。**`actions` の中身には何も要求しない**ので、
 /// 択の数や並び順の意味付けは呼び出し側の責任（台帳 L-133）。
 abstract final class ConfirmationDialogLayout {

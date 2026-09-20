@@ -64,29 +64,4 @@ void main() {
       expect(find.text('再試行'), findsOneWidget);
     });
   });
-
-  // TTSErrorDialog テスト
-
-  group('TTSErrorDialog', () {
-    testWidgets('TC-078-010: TTS再生エラーダイアログが表示される', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showTTSErrorDialog(
-                context: context,
-              ),
-              child: const Text('Show Dialog'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Show Dialog'));
-      await tester.pumpAndSettle();
-
-      // Then: 適切なメッセージが表示される
-      expect(find.textContaining('読み上げ'), findsWidgets);
-    });
-  });
 }

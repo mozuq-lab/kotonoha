@@ -6,9 +6,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
-
-import '../themes/theme_colors.dart';
 
 // エラースナックバーの配色
 
@@ -78,51 +75,6 @@ void showNetworkErrorSnackBar({
     message: '接続できませんでした',
     showRetry: true,
     onRetry: onRetry,
-  );
-}
-
-// TTS再生エラーダイアログ
-
-/// TTS再生エラーダイアログを表示する
-/// TTS再生エラー時のメッセージ
-/// [context] BuildContext
-/// [onRetry] 再試行ボタンのコールバック（オプション）
-Future<void> showTTSErrorDialog({
-  required BuildContext context,
-  VoidCallback? onRetry,
-}) async {
-  return showDialog(
-    context: context,
-    builder: (context) => ConfirmationDialogLayout.build(
-      title: Row(
-        children: [
-          Icon(Icons.volume_off, color: warningIconColor(context)),
-          const SizedBox(width: 8),
-          // 見出しは折り返せるようにする。`Expanded` が無いと、
-          // 幅 320・倍率 1.0 でも右へあふれてボタンが切れる（台帳 L-133）
-          const Expanded(child: Text('読み上げエラー')),
-        ],
-      ),
-      content: const Text(
-        '読み上げに失敗しました。\n'
-        'テキストは画面に表示されています。\n\n'
-        '音量や端末の設定を確認してください。',
-      ),
-      actions: [
-        if (onRetry != null)
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onRetry();
-            },
-            child: const Text('再試行'),
-          ),
-        ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('OK'),
-        ),
-      ],
-    ),
   );
 }
 
