@@ -115,7 +115,10 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
     // 入力があるうちは、閉じる前に確認する（台帳 L-136）。
     // 元の文言から変わっているかどうか。変えていなければ捨てるものが無い
     return DiscardInputGuard(
-      hasInput: _contentController.text != widget.phrase.content,
+      // **カテゴリの変更も捨てるもの**（本文だけ見ると、チップを押しただけの
+      // 変更が黙って消える。#154 の 2 系統レビューが実測）
+      hasInput: _contentController.text != widget.phrase.content ||
+          _selectedCategory != widget.phrase.category,
       onDiscard: _onCancel,
       child: ConfirmationDialogLayout.build(
         title: const Text('定型文を編集'),

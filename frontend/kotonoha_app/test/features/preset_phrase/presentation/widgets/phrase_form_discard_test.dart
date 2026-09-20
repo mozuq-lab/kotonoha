@@ -20,6 +20,7 @@ import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/shared/widgets/discard_input_guard.dart';
 
 class _Phrases extends PresetPhraseNotifier {
   _Phrases(this._state);
@@ -145,5 +146,57 @@ void main() {
     await tester.tap(find.text('破棄する'));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNothing, reason: '破棄を選んでも閉じない');
+  });
+
+  testWidgets('編集でカテゴリだけ変えても、戻る操作では黙って閉じない', (tester) async {
+    // 本文を見るだけでは、カテゴリの変更が捨てられたことに気づけない
+    // （#154 の 2 系統レビューが実測。到達経路は ✏️ → チップ → 戻る）
+    await _openScreen(tester);
+    await tester.tap(find.byIcon(Icons.edit));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'その他'));
+    await tester.pumpAndSettle();
+
+    await _systemBack(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.text(DiscardInputGuard.confirmMessage), findsOneWidget,
+        reason: 'カテゴリの変更が、確認も無く捨てられた');
+  });
+
+  testWidgets('追加で空白だけ打っても、足止めしない', (tester) async {
+    // 空白だけでは保存できない（`PresetPhraseValidator` が弾く）ので、
+    // 捨てるものが無い。操作の負担が大きい利用者を余計に止めない
+    await _openScreen(tester);
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '   ');
+    await tester.pumpAndSettle();
+
+    await _systemBack(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextField), findsNothing, reason: '空白だけなのに確認で足止めした');
+  });
+
+  testWidgets('確認が出ている最中にもう一度戻っても、入力は残る', (tester) async {
+    // 2 回目の戻るは確認ダイアログ側を閉じる。そのとき `showDialog` は
+    // null を返すので、**null を破棄扱いにすると打った文が消える**
+    // （#154 の 2 系統レビューで、`?? true` に倒しても誰も気づかなかった）
+    await _openScreen(tester);
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '打った文');
+    await tester.pumpAndSettle();
+
+    await _systemBack(tester);
+    await tester.pumpAndSettle();
+    expect(find.text(DiscardInputGuard.confirmMessage), findsOneWidget);
+
+    await _systemBack(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextField), findsOneWidget, reason: 'フォームが閉じた');
+    expect(find.text('打った文'), findsWidgets, reason: '入力が消えた');
   });
 }

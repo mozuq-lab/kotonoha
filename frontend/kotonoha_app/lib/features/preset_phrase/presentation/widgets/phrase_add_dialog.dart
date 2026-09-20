@@ -98,7 +98,10 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     // 入力があるうちは、閉じる前に確認する（台帳 L-136）。
     // 新しく打った文があるかどうか。空なら捨てるものが無い
     return DiscardInputGuard(
-      hasInput: _contentController.text.isNotEmpty,
+      // 空白だけでは保存できない（`PresetPhraseValidator` が弾く）ので、
+      // 捨てるものが無い。操作の負担が大きい利用者を余計に止めない。
+      // カテゴリは、本文が空なら保存できないので単独では見ない
+      hasInput: _contentController.text.trim().isNotEmpty,
       onDiscard: _onCancel,
       child: ConfirmationDialogLayout.build(
         title: const Text('定型文を追加'),

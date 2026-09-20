@@ -4,8 +4,17 @@
 /// **打ち直すしかない**（発話で訂正できないので、他に伝える手段が無い）。
 ///
 /// `barrierDismissible: false` が塞ぐのは**ダイアログの外をタップしたとき**
-/// だけで、端末の戻るボタン（Android のシステムバック、ブラウザの戻る）は
-/// 通ってしまう。**入力を持つダイアログは、これで包む。**
+/// だけで、**Android のシステムバック**は通ってしまう。
+/// **入力を持つダイアログは、これで包む。**
+///
+/// 効かない経路（2026-09-20 実測）:
+///   - **ブラウザの戻る**は `PopScope` を通らない。web の engine は
+///     `history.back()` を `popRoute` ではなく `pushRouteInformation` として
+///     送るため（台帳 L-143）
+///   - iOS にはシステムバックが無く、ダイアログは `PopupRoute` なので
+///     エッジスワイプの対象外。実質 Android 専用の守り
+///   - 「キャンセル」ボタンは通らない。**押し間違いではなく意思表示**なので、
+///     そこで訊き返さない
 library;
 
 import 'package:flutter/material.dart';
@@ -69,6 +78,8 @@ class DiscardInputGuard extends StatelessWidget {
             // `destructive` の塗りは破棄側に付く
             cancelLabel: keepLabel,
             confirmLabel: discardLabel,
+            // 打った文が消えるのは破棄側。既定に頼らず明示する
+            kind: ConfirmKind.destructive,
             onCancel: () => Navigator.of(dialogContext).pop(false),
             onConfirm: () => Navigator.of(dialogContext).pop(true),
           ),
