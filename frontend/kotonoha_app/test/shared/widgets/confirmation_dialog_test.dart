@@ -43,6 +43,7 @@ import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
 import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
+import 'package:kotonoha_app/shared/widgets/discard_input_guard.dart';
 import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
 
 import 'confirmation_dialog_contract.dart';
@@ -258,6 +259,23 @@ void main() {
       overrides: [inputBufferProvider.overrideWith(_FilledBuffer.new)],
       child: app,
     ),
+  );
+
+  // 入力を捨てる前の確認（`DiscardInputGuard`）。定型文の追加を開いて
+  // 文字を入れ、戻る操作を投げると出る（台帳 L-136）
+  expectMeetsContract(
+    '入力の破棄の確認',
+    home: PresetPhraseScreen.new,
+    open: (tester) async {
+      await tester.tap(find.byIcon(Icons.add));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '打った文');
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+    },
+    cancelLabel: DiscardInputGuard.keepLabel,
+    confirmLabel: DiscardInputGuard.discardLabel,
+    scope: phraseScope,
   );
 
   // --- 「取り消せない実行だけを塗って見分けられるようにする」という決定 ---
