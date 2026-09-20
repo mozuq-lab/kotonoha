@@ -13,6 +13,12 @@
 /// 両面から検証する。
 library;
 
+import 'dart:io';
+
+import 'package:hive/hive.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state.dart';
+import 'package:kotonoha_app/core/utils/hive_init.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -206,7 +212,12 @@ void main() {
       error: '初期データの読み込みに失敗しました: Exception',
     );
 
-    setUp(() {
+    late Directory tempDir;
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('preset_state_error_');
+      Hive.init(tempDir.path);
+      registerPersistedTypeAdapters();
+      await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
       container = ProviderContainer(
         overrides: [
           presetPhraseNotifierProvider
@@ -217,7 +228,11 @@ void main() {
           as _TestablePresetPhraseNotifier;
     });
 
-    tearDown(() => container.dispose());
+    tearDown(() async {
+      container.dispose();
+      await Hive.close();
+      await tempDir.delete(recursive: true);
+    });
 
     /// 回帰テスト: エラー画面が恒久的に固着するシナリオ
     /// PresetPhraseScreen は state.error != null のときリスト全体を

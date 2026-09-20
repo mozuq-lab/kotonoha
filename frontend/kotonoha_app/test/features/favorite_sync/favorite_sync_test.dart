@@ -1,6 +1,13 @@
 /// 定型文お気に入りとお気に入り画面の連動機能 - テスト
 library;
 
+import 'dart:io';
+
+import 'package:hive/hive.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state.dart';
+import 'package:kotonoha_app/core/utils/hive_init.dart';
+import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
@@ -11,7 +18,12 @@ void main() {
   late PresetPhraseNotifier presetPhraseNotifier;
   late FavoriteNotifier favoriteNotifier;
 
-  setUp(() {
+  late Directory tempDir;
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('favorite_sync_presets_');
+    Hive.init(tempDir.path);
+    registerPersistedTypeAdapters();
+    await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
     // テスト前準備: 共通のProviderContainerを作成し、両Notifierを取得
     // 環境初期化: 各テストを独立して実行するため、新しいコンテナを作成
     container = ProviderContainer();
@@ -20,10 +32,12 @@ void main() {
     favoriteNotifier = container.read(favoriteProvider.notifier);
   });
 
-  tearDown(() {
+  tearDown(() async {
     // テスト後処理: ProviderContainerをディスポーズ
     // 状態復元: リソースリークを防止
     container.dispose();
+    await Hive.close();
+    await tempDir.delete(recursive: true);
   });
 
   group('正常系テスト - 定型文お気に入りとFavoriteの連動', () {
