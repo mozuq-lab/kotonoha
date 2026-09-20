@@ -14,7 +14,7 @@
 - [ ] L-60 `SafeError.__init__` の `super().__init__(code.value)` を `None` にする mutant が生存 — 基底 `SafeError` の文字列表現が `ErrorCode` を保持することを検査するテストが無い — backend/app/errors.py:108（mutmut 生存。#106 の測定の残り）
 - [ ] L-61 `RateLimiter.__init__` の `RateLimitItemPerSecond(times, seconds)` の `seconds` を `None` にする mutant が生存 — 設定した秒数がレート制限ウィンドウ長に反映されることを検査するテストが無い — backend/app/ratelimit.py:42（mutmut 生存。#106 の測定の残り）
 - [ ] L-65 mutmut の対象テストは pyproject の 4 ファイル指定で固定されており、テストを増やしても走らない（kill rate が理由なく下がる）。`also_copy` で app/ 全体を写して指定を無くせるか試す — backend/pyproject.toml [tool.mutmut]
-- [ ] L-66 `LogLevel` が lib 内で参照ゼロ（`logger_test.dart:248` が enum の値の並びだけを固定している） — frontend/kotonoha_app/lib/core/utils/logger.dart:10（棚卸し 2026-09、観点 1・4）。決定: L-139 の「`lib/` からの呼び出し・参照が 0 のものは消す」を適用する（2026-09-20 第 2 回）。束 3 で実施
+- [x] L-66 lib内参照0のLogLevel enumと専用testを削除済み。AppLoggerは保持 — 棚卸し2026-09、L-139の決定を束3で適用（2026-09-20）。
 - [ ] L-67 お気に入りが `frontend/kotonoha_app/lib/features/favorite/`（ロジック）と `frontend/kotonoha_app/lib/features/favorites/`（UI）の 2 ディレクトリに分かれたまま — ADR-005（棚卸し 2026-09 で現存を確認、Phase 5（文書）の後）
 - [ ] L-68 要件 ID 107 件のうち 14 件が、テストにも openspec にも 1 度も現れない（追跡性の穴。挙動は別 ID で試験済みのものを含む） — docs/spec/kotonoha-requirements.md（一覧は棚卸し 2026-09 の PR 本文）
 - [ ] L-69 `expect(widget.runtimeType.toString(), equals('CharacterBoardWidget'))` はクラス名を固定するだけで挙動を検査しない — frontend/kotonoha_app/test/widgets/character_board_optimization_test.dart:389（棚卸し 2026-09、観点 4）
@@ -22,7 +22,7 @@
 - [x] L-74 フォントサイズ設定が home_screen 配下にしか届かず、定型文一覧が追従しない（REQ-802・REQ-2007 の未達） — frontend/kotonoha_app/lib/features/preset_phrase/presentation/widgets/phrase_list_item.dart:98、frontend/kotonoha_app/lib/app.dart:47-56（PR #114 の突き合わせ）。解消（2026-09-16、テーマの textTheme とボタンテーマに倍率を掛ける。PR は下記）
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
 - [ ] L-76 NFR-502（backend の重要なビジネスロジック・API エンドポイントで 90% 以上のカバレッジ）が未測定。CI の `fail_under` は全体閾値（NFR-501） — docs/spec/kotonoha-requirements.md:166（L-55 と同形）。基準が 3 か所にある（pyproject の fail_under 80、flutter.yml の THRESHOLD 80、codecov.yml の python 90% と存在しないパスの除外）。決定（2026-09-20 第 3 回、決定シート）: カバレッジ基準を 1 箇所に寄せてから NFR-502 を測る（A）。ADR-005 の 1 概念 1 真実と同じ形。どれが正かが決まらないと、測った数字が何に照らされるのかが決まらない
-- [ ] L-77 `showOfflineAIConversionDialog`（frontend/kotonoha_app/lib/features/network/presentation/widgets/network_aware_scaffold.dart:115）と `TextInputField`（frontend/kotonoha_app/lib/shared/widgets/text_input_field.dart:29）は lib からの呼び出しゼロで、テストだけが呼ぶ — PR #114 の突き合わせ（棚卸し観点 1）。決定: L-139 の「`lib/` からの呼び出し・参照が 0 のものは消す」を適用する（2026-09-20 第 2 回）。束 3 で実施
+- [ ] L-77 libから呼ばれないshowOfflineAIConversionDialogと対応testは削除済み。残りはTextInputFieldと専用test — PR #114の突き合わせ、L-139の決定を束3で適用（2026-09-20）。
 - [ ] L-78 README.md:82 の `curl -s localhost:8000/api/v1/health` は、localhost が ::1 に解決される環境で timeout する（uvicorn は 127.0.0.1 で待つ）。127.0.0.1 に直すか注記する — Task 6 の実測（2026-09-06）
 - [ ] L-84 開発者登録（Apple Developer Program / Google Play）が未着手。外部律速で、他の作業を待つ理由が無い — ADR-007 条件 4（人が動かす。旧 remaining-work.md から移記）
 - [ ] L-85 ストア掲載文（`frontend/kotonoha_app/fastlane/metadata/ja-JP`・`en-US`）を「医療・治療効果を謳わない」観点で点検していない — ADR-007 条件 4（旧 remaining-work.md から移記）
@@ -30,7 +30,7 @@
 - [ ] L-92 GitHub Actions 12 種が可変メジャータグ（`@v2` 等）で固定され SHA ピン留めが無い。秘密（AI_API_KEY・VERCEL_TOKEN・ANDROID_*・APPLE_*）を扱う job で走る — .github/workflows/*.yml（2026-09-12 の監査）。決定（2026-09-20 第 3 回、決定シート）: SHA にピン留めする（A）。供給網の固定は規律 8 の「依存の追加」と同じ扱い。dependabot が既に actions を見ている（#66〜#70）ので、ピン留めしても更新は自動で届く。自作の検査は作らない（既存の権威の出力を消費する。規律 8 の②）
 - [ ] L-94 `release.yml` が署名鍵・証明書・p12 パスワードを workspace のファイルに書き出す（`:100-121`、`:181-186`）。層 2 の照合に workflow を足したのは 2026-09-12 — .github/workflows/release.yml。決定（2026-09-20 第 3 回、決定シート）: 直す（A）。ランナーの一時ディレクトリに置き `if: always()` で消す。**後始末が 1 つも無いことを実測した**（`rm -f` も `if: always()` も `release.yml` に存在しない。2026-09-20）。tag でしか走らないので現状の被害は小さいが、仕組みが無い状態。L-52（アップロード鍵の配置）と同じ束で
 - [x] L-95 Hive の box 名の正が `frontend/kotonoha_app/lib/core/persistence/persistence_state.dart:31-35` にあり、`hive_init.dart` を触らずに変えられる（層 2 の永続化の照合外） — 2026-09-12 の監査。解消（2026-09-20、**すでに検査があった**。`frontend/kotonoha_app/test/core/persistence/hive_schema_allowlist_test.dart` の検査 C が `PersistedArea.boxName` を直接読む。`'history'` を `'historyX'` に変える変異で赤（`Which: at location ['history'] is 'historyX' instead of 'history'`）、復元して 5 件緑を実測。2026-09-12 の監査より後に検査が入ったのに、この行が更新されていなかった）
-- [ ] L-96 `frontend/kotonoha_app/web/.env.example` の設定（ENABLE_AI_CONVERSION 等）は lib から参照ゼロで、ビルド出力に複製される死んだ設定 — 2026-09-12 の監査。決定: L-139 の「`lib/` からの呼び出し・参照が 0 のものは消す」を適用する（2026-09-20 第 2 回）。束 3 で実施。**`.env.example` 系は規律 8 の「秘密を持つ設定キー」に当たるので、実施 PR で yes/no を書く**
+- [x] L-96 読み込まれないfrontend/kotonoha_app/web/.env.exampleを削除済み。規律8の設定キー削除はPR本文にyesと根拠を記録 — 2026-09-12の監査、L-139の決定を束3で適用（2026-09-20）。
 - [ ] L-97 pytest が third-party 由来の非推奨警告 2 件を出す（fastapi/starlette の TestClient、anyio の別名）。出力が静かでない — backend、#120
 - [ ] L-98 ストア提出の前に独立監査（規律 9、棚卸しスキルの付録）を 1 回行い、結果を台帳へ書く。条件 4 の充足判定の前 — AGENTS.md 規律 9、ADR-007 条件 4
 - [ ] L-99 定型文由来のお気に入りの重複判定が `sourceId` だけなので、★付きの定型文を削除して同文を作り直し★を押すと同文のお気に入りが 2 件並ぶ（#125 で連鎖削除を外して開いた経路。お気に入り画面から消せる）。content でも判定するかは判断待ち — frontend/kotonoha_app/lib/features/favorite/providers/favorite_provider.dart:242、ADR-005 限界。決定（2026-09-20 第 2 回、決定シート）: 記録して受け入れる（A）。お気に入り画面から消せる。content でも判定する案は「同じ文の別の定型文」を持てなくする副作用があり、説明しづらい規則が増えるので採らない（僅差）
