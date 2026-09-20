@@ -13,4 +13,4 @@ Testing Notes:
 - AI conversion feature requires internet connection
 - Emergency button plays a loud alarm sound (be careful when testing)
 
-No login required. All data is stored locally on the device.
+No login required. All data is stored locally on the device (the app itself never syncs to any cloud; the device's OS backup may include it).

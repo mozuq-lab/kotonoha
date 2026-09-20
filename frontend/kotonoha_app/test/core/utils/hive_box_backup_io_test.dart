@@ -118,6 +118,84 @@ void main() {
       expect(result, isFalse);
     });
 
+    test('写しに失敗しても、前回の退避は残る（台帳 L-114）', () async {
+      // 古い退避を先に消してから写すと、写しに失敗したとき新旧どちらも残らない。
+      // 元のファイルには手を付けないので box の中身は無事だが、前回の破損で
+      // 退避した分（もう元のファイルには無いデータ）は永久に失われる。
+      // 一時名へ書き切ってから入れ替えれば、失敗しても前回の退避が残る。
+      const boxName = 'presetPhrases';
+      final sourceFile = File('${tempDir.path}/presetphrases.hive');
+      final backupFile = File('${tempDir.path}/presetphrases.hive.corrupt.bak');
+      final previousBytes = 'PREVIOUS_BACKUP'.codeUnits;
+      await backupFile.writeAsBytes(previousBytes);
+      await sourceFile.writeAsBytes('CORRUPTED'.codeUnits);
+      // 元ファイルを読めなくして、写しだけを失敗させる（元ファイルは消さない）
+      await Process.run('chmod', ['000', sourceFile.path]);
+      addTearDown(() => Process.run('chmod', ['644', sourceFile.path]));
+
+      final result = await backupCorruptBoxFile(tempDir.path, boxName);
+
+      expect(result, isFalse, reason: '写しに失敗したら呼び出し元に削除を中止させる');
+      expect(backupFile.existsSync(), isTrue, reason: '写しに失敗したら前回の退避を消してはいけない');
+      expect(await backupFile.readAsBytes(), equals(previousBytes));
+    });
+
+    /// `.tmp` に残るのは利用者の発話を含む写しなので、成功でも失敗でも残さない
+    List<String> stagingLeftovers() => tempDir
+        .listSync()
+        .map((e) => e.path.split('/').last)
+        .where((name) => name.endsWith('.tmp'))
+        .toList();
+
+    test('退避に成功したら一時ファイルは残さない', () async {
+      const boxName = 'presetPhrases';
+      await File('${tempDir.path}/presetphrases.hive')
+          .writeAsBytes('CORRUPTED'.codeUnits);
+
+      final result = await backupCorruptBoxFile(tempDir.path, boxName);
+
+      expect(result, isTrue);
+      expect(stagingLeftovers(), isEmpty);
+    });
+
+    test('入れ替えに失敗しても一時ファイルは残さない', () async {
+      const boxName = 'presetPhrases';
+      await File('${tempDir.path}/presetphrases.hive')
+          .writeAsBytes('CORRUPTED'.codeUnits);
+      // 退避先をディレクトリにして、入れ替えだけを失敗させる
+      await Directory('${tempDir.path}/presetphrases.hive.corrupt.bak')
+          .create();
+
+      final result = await backupCorruptBoxFile(tempDir.path, boxName);
+
+      expect(result, isFalse);
+      expect(stagingLeftovers(), isEmpty, reason: '書きかけの写し（利用者の発話を含む）を端末に残さない');
+    });
+
+    test('前回の中断で残った一時ファイルは、box が正常に開けたときに片付ける', () async {
+      const boxName = 'presetPhrases';
+      final staging =
+          File('${tempDir.path}/presetphrases.hive.corrupt.bak.tmp');
+      await staging.writeAsBytes('INTERRUPTED_COPY'.codeUnits);
+
+      await removeStaleBackupStaging(tempDir.path, boxName);
+
+      expect(staging.existsSync(), isFalse);
+    });
+
+    test('片付けは、退避そのものや box のファイルには手を付けない', () async {
+      const boxName = 'presetPhrases';
+      final boxFile = File('${tempDir.path}/presetphrases.hive');
+      final backupFile = File('${tempDir.path}/presetphrases.hive.corrupt.bak');
+      await boxFile.writeAsBytes('LIVE'.codeUnits);
+      await backupFile.writeAsBytes('PREVIOUS_BACKUP'.codeUnits);
+
+      await removeStaleBackupStaging(tempDir.path, boxName);
+
+      expect(boxFile.existsSync(), isTrue);
+      expect(await backupFile.readAsBytes(), 'PREVIOUS_BACKUP'.codeUnits);
+    });
+
     test('既存の.bakファイルは上書きされ、最新の破損データが反映される', () async {
       const boxName = 'presetPhrases';
       final sourceFile = File('${tempDir.path}/presetphrases.hive');
