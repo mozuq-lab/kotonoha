@@ -173,9 +173,25 @@ class _EmergencyConfirmationDialogState
             cancelButtonTextColor,
             baseFontSize,
           ),
-          const SizedBox(width: AppSizes.paddingSmall),
           _buildConfirmButton(confirmButtonColor, baseFontSize),
         ],
+        // 取り消しと実行の間隔（台帳 L-112）。実行すると周囲に警報音が鳴るので、
+        // 誤タップは誤発報になり、利用者は声で取り消せない。間隔は縦と横で
+        // 別々に決まるので、framework の引数で両方を指定する（間に空の
+        // `SizedBox` を挟むと、その幅が折り返しの判定にも紛れ込む）。
+        //   縦: 幅が足りないと actions は縦積みに切り替わり（`OverflowBar`）、
+        //   `actionsOverflowButtonSpacing` がそのまま隙間になる。**既定は 0**
+        //   なので、以前はここで 2 つのボタンが接していた（幅 360 で実測）。
+        //   横: `OverflowBar` の `spacing` は `buttonPadding.horizontal / 2`
+        //   （`dialog.dart` の AlertDialog）。既定の 8 を保つと隙間も 8 になるので、
+        //   horizontal 24（`.horizontal` は左右の和で 48）を渡して 24 にする。
+        // どちらも「他の操作ボタンとの間隔 16px 以上」（`app_shell.dart`）を満たす。
+        // `buttonPadding` が actions の外周の余白にも足されるのは
+        // `actionsPadding` を渡していないときだけなので、下で明示している限り効かない。
+        actionsOverflowButtonSpacing: AppSizes.paddingMedium,
+        buttonPadding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.paddingLarge,
+        ),
         actionsPadding: const EdgeInsets.all(AppSizes.paddingMedium),
         actionsAlignment: MainAxisAlignment.center,
       ),
