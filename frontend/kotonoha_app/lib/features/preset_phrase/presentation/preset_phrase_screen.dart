@@ -158,7 +158,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
       barrierDismissible: false,
       builder: (dialogContext) => PhraseAddDialog(
         onSave: (content, category) {
-          notifier.addPhrase(
+          return notifier.addPhrase(
             content,
             category,
           );

@@ -55,9 +55,10 @@ void main() {
                   showDialog(
                     context: context,
                     builder: (_) => PhraseAddDialog(
-                      onSave: (content, category) {
+                      onSave: (content, category) async {
                         savedContent = content;
                         savedCategory = category;
+                        return true;
                       },
                     ),
                   );
@@ -131,8 +132,9 @@ void main() {
                   showDialog(
                     context: context,
                     builder: (_) => PhraseAddDialog(
-                      onSave: (content, category) {
+                      onSave: (content, category) async {
                         savedCategory = category;
+                        return true;
                       },
                     ),
                   );
@@ -319,8 +321,9 @@ void main() {
                   showDialog(
                     context: context,
                     builder: (_) => PhraseAddDialog(
-                      onSave: (_, __) {
+                      onSave: (_, __) async {
                         saveCallbackCalled = true;
+                        return true;
                       },
                     ),
                   );

@@ -10,6 +10,11 @@
 /// 成功したCRUD操作で `clearError: true` を立てることで画面が復帰する。
 library;
 
+import 'dart:io';
+import 'package:hive/hive.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state.dart';
+import 'package:kotonoha_app/core/utils/hive_init.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,6 +61,17 @@ PresetPhrase _createTestPhrase({required String id, required String content}) {
 }
 
 void main() {
+  late Directory tempDir;
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('preset_recovery_');
+    Hive.init(tempDir.path);
+    registerPersistedTypeAdapters();
+    await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+  });
+  tearDown(() async {
+    await Hive.close();
+    await tempDir.delete(recursive: true);
+  });
   group('PresetPhraseScreen エラー表示からの復帰', () {
     /// 「初期化失敗 → 1件追加済み」で固着した状態を初期状態として与える。
     /// phrases が非空なので initState の initializeDefaultPhrases は
@@ -93,9 +109,9 @@ void main() {
       final container = await pumpStuckScreen(tester);
 
       // When: FAB相当の操作（定型文の追加）が成功する
-      await container
+      await tester.runAsync(() => container
           .read(presetPhraseNotifierProvider.notifier)
-          .addPhrase('ありがとうございます', 'daily');
+          .addPhrase('ありがとうございます', 'daily'));
       await tester.pumpAndSettle();
 
       // Then: エラー表示が消え、定型文一覧が表示される
@@ -107,9 +123,9 @@ void main() {
     testWidgets('定型文の編集に成功すると画面がリスト表示へ復帰する', (tester) async {
       final container = await pumpStuckScreen(tester);
 
-      await container
+      await tester.runAsync(() => container
           .read(presetPhraseNotifierProvider.notifier)
-          .updatePhrase('1', content: 'こんばんは');
+          .updatePhrase('1', content: 'こんばんは'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('エラーが発生しました'), findsNothing);
@@ -119,9 +135,9 @@ void main() {
     testWidgets('定型文の削除に成功すると画面がリスト表示へ復帰する', (tester) async {
       final container = await pumpStuckScreen(tester);
 
-      await container
+      await tester.runAsync(() => container
           .read(presetPhraseNotifierProvider.notifier)
-          .deletePhrase('1');
+          .deletePhrase('1'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('エラーが発生しました'), findsNothing);

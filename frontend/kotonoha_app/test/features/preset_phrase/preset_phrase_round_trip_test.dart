@@ -8,6 +8,7 @@
 /// `test/features/history/history_round_trip_test.dart` の冒頭コメントを参照。
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -15,12 +16,28 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/preset_phrase_screen.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+
+class _DelayedBox extends Mock implements Box<PresetPhrase> {}
+
+Future<void> _waitForSave(WidgetTester tester) async {
+  for (var i = 0;
+      i < 100 && find.byType(TextField).evaluate().isNotEmpty;
+      i++) {
+    await tester
+        .runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+    await tester.pump();
+  }
+  await tester.pumpAndSettle();
+  expect(find.byType(TextField), findsNothing);
+}
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
@@ -66,6 +83,120 @@ void main() {
     }
   });
 
+  for (final missingBox in [false, true]) {
+    testWidgets('追加失敗（repoなし=$missingBox）でも本文とカテゴリを保持する', (tester) async {
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          if (missingBox) presetPhraseBoxProvider.overrideWithValue(null),
+        ],
+        child: const MaterialApp(home: PresetPhraseScreen()),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '失敗しても残す本文');
+      await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+      if (!missingBox) {
+        await tester.runAsync(() =>
+            Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName)
+                .close());
+      }
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('保存できません'), findsOneWidget);
+      expect(find.widgetWithText(TextField, '失敗しても残す本文'), findsOneWidget);
+      expect(
+          tester
+              .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
+              .selected,
+          isTrue);
+      await tester.enterText(find.byType(TextField), '再試行する本文');
+      await tester.pump();
+      expect(find.widgetWithText(TextField, '再試行する本文'), findsOneWidget);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '保存'))
+              .onPressed,
+          isNotNull);
+    });
+  }
+
+  testWidgets('追加保存中の連打・変更・キャンセル・backを止め、完了後は1件だけ残る', (tester) async {
+    await tester.runAsync(() async {
+      final box = Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      final delayedBox = _DelayedBox();
+      final gate = Completer<void>();
+      final flushed = Completer<void>();
+      registerFallbackValue(box.get(phraseId)!);
+      when(() => delayedBox.values).thenAnswer((_) => box.values);
+      when(() => delayedBox.put(any<dynamic>(), any()))
+          .thenAnswer((call) async {
+        await gate.future;
+        await box.put(call.positionalArguments[0],
+            call.positionalArguments[1] as PresetPhrase);
+      });
+      when(delayedBox.compact).thenAnswer((_) => box.compact());
+      when(delayedBox.flush).thenAnswer((_) async {
+        await box.flush();
+        flushed.complete();
+      });
+      try {
+        await tester.pumpWidget(ProviderScope(
+          overrides: [presetPhraseBoxProvider.overrideWithValue(delayedBox)],
+          child: const MaterialApp(home: PresetPhraseScreen()),
+        ));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(FloatingActionButton));
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField), '待機中に変えない本文');
+        await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+        await tester.tap(find.text('保存'));
+        await tester.tap(find.text('保存'));
+        await tester.pump();
+        expect(find.byType(TextField), findsOneWidget);
+        await tester.tap(find.text('保存'), warnIfMissed: false);
+        await tester.tap(find.text('キャンセル'), warnIfMissed: false);
+        await tester.tap(find.widgetWithText(ChoiceChip, 'その他'),
+            warnIfMissed: false);
+        await tester.tap(find.byType(TextField), warnIfMissed: false);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyX);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.textContaining('破棄しますか'), findsNothing);
+        expect(find.widgetWithText(TextField, '待機中に変えない本文'), findsOneWidget);
+        expect(tester.testTextInput.hasAnyClients, isFalse);
+        expect(
+            tester
+                .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
+                .selected,
+            isTrue);
+        gate.complete();
+        for (var i = 0;
+            i < 100 && find.byType(TextField).evaluate().isNotEmpty;
+            i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          await tester.pump();
+        }
+        await tester.pumpAndSettle();
+        expect(find.byType(TextField), findsNothing);
+        {
+          await box.close();
+          final reopened = await Hive.openBox<PresetPhrase>(
+              PersistedArea.presetPhrases.boxName);
+          expect(reopened.values, hasLength(2));
+          final added =
+              reopened.values.where((p) => p.content.contains('待機中に変えない'));
+          expect(added, hasLength(1));
+          expect(added.single.category, contains('health'));
+        }
+      } finally {
+        if (!gate.isCompleted) gate.complete();
+        await flushed.future.timeout(const Duration(seconds: 5));
+        await tester.pump();
+      }
+    });
+  });
+
   for (final edit in [false, true]) {
     testWidgets('${edit ? '編集' : '追加'}画面が消えても保存され、box再open後も残る',
         (tester) async {
@@ -93,8 +224,9 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
       await tester.runAsync(() async {
         await tester.tap(find.text('保存'));
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        if (edit) await Future<void>.delayed(const Duration(milliseconds: 100));
       });
+      if (!edit) await _waitForSave(tester);
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsNothing);
       late List<PresetPhrase> saved;

@@ -88,7 +88,7 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
   /// メソッド: 定型文を追加する
   /// 実装内容: 新しい定型文をUUID付きで追加
-  Future<void> addPhrase(String content, String category) async {
+  Future<bool> addPhrase(String content, String category) async {
     final now = DateTime.now();
     final newPhrase = PresetPhrase(
       id: _uuid.v4(), // UUID形式のID自動生成
@@ -99,19 +99,13 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       updatedAt: now,
     );
 
-    // 状態を更新し、お気に入り順でソート
-    // エラークリア: 操作が成功したので直前のエラーは解消したとみなす
-    final updatedPhrases = [...state.phrases, newPhrase];
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo == null || !await repo.save(newPhrase)) return false;
     state = state.copyWith(
-      phrases: _sortPhrases(updatedPhrases),
+      phrases: _sortPhrases([...state.phrases, newPhrase]),
       clearError: true,
     );
-
-    // 永続化: repoがあればHiveに保存
-    final repo = ref.read(presetPhraseRepositoryProvider);
-    if (repo != null) {
-      await repo.save(newPhrase);
-    }
+    return true;
   }
 
   /// メソッド: 定型文を更新する
