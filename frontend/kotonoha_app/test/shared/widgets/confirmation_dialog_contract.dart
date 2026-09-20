@@ -68,12 +68,20 @@ enum Placement { column, row, none }
   return (placement: Placement.none, gap: 0);
 }
 
-/// [open] で開いたダイアログが、全ての幅・倍率で契約を満たすことを確かめる
+/// ダイアログが全ての幅・倍率で契約を満たすことを確かめる
+///
+/// [home] には**本番の画面／ウィジェット**を渡し、[open] で**本番と同じ入口**を
+/// タップして開く。テストの中で `ConfirmationDialog` を組み直すと、呼び出し元が
+/// 素の `AlertDialog` に戻されても緑のまま通ってしまう（台帳 L-135）。
 void expectMeetsContract(
   String name, {
-  required Widget Function(BuildContext context) dialog,
+  required Widget Function() home,
+  required Future<void> Function(WidgetTester tester) open,
   required String cancelLabel,
   required String confirmLabel,
+
+  /// `ProviderScope` など、`MaterialApp` の外に要る包みを足す
+  Widget Function(Widget app)? scope,
 }) {
   for (final width in widths) {
     for (final scale in scales) {
@@ -83,28 +91,18 @@ void expectMeetsContract(
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: lightTheme,
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(scale)),
-              child: child!,
-            ),
-            home: Scaffold(
-              body: Builder(
-                builder: (context) => ElevatedButton(
-                  onPressed: () => showDialog<void>(
-                    context: context,
-                    builder: dialog,
-                  ),
-                  child: const Text('開く'),
-                ),
-              ),
-            ),
+        final app = MaterialApp(
+          theme: lightTheme,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(scale)),
+            child: child!,
           ),
+          home: home(),
         );
-        await tester.tap(find.text('開く'));
+        await tester.pumpWidget(scope == null ? app : scope(app));
+        await tester.pumpAndSettle();
+        await open(tester);
         await tester.pumpAndSettle();
 
         // 4. あふれない（説明文が画面の外へ出て読めなくならない）
