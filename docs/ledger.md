@@ -9,8 +9,6 @@
 - [ ] L-51 サポート連絡先が `support@kotonoha-app.example.com` のまま（RFC 2606 の予約ドメイン） — docs/support.md, docs/privacy-policy.md。ADR-007 条件 4
 - [ ] L-52 Android のアップロード鍵が無い（AAB・mapping・シンボルは #97 で解決済み） — .github/workflows/release.yml。ADR-007 条件 4。開発者登録後。Android の release ビルドは署名鍵が無いと debug 鍵で署名される（`frontend/kotonoha_app/android/app/build.gradle.kts:67-73`）
 - [ ] L-55 AI 変換の平均応答時間（3秒以内）が未測定 — ADR-002 のプロバイダ支出上限設定と同日に実測（backend 公開の前提）
-- [ ] L-149 release Web build が `secrets.AI_API_KEY` を `dart-define` で注入し zip を配布する経路が残る。通常 CI からの除去だけでは、Web 成果物に鍵を焼かないという L-58 の達成範囲が release まで及ぶように読める — .github/workflows/release.yml:12,54-68、2026-09-20 PR5 独立監査。実 secret・成果物への包含・実漏えいは未確認
-- [ ] L-150 公開 privacy-policy が AI 事業者への転送と、再変換で前回結果も送ることを説明し切れていない — docs/privacy-policy.md:28-31,69,85、frontend/kotonoha_app/lib/features/ai_conversion/data/api/ai_conversion_api_client.dart:68-82、backend/app/ai/providers.py、2026-09-20 PR5 独立監査。実送信・外部保管実態・法的分類は未確認
 - [ ] L-57 Android 12 以上と iOS の実機で、OS のバックアップから履歴・定型文・お気に入り・設定が復元されることを確認 — NFR-106（2026-09-12 に #99 の除外を撤回）
 - [ ] L-59 `exc.errors(include_input=False, ...)` から `include_input=False` を落とす mutant が生存 — ValidationError の入力値が `ConfigError` へ漏れないことを検査するテストが無い（ADR-003） — backend/app/config.py:161（mutmut 生存。#106 の測定の残り）
 - [ ] L-60 `SafeError.__init__` の `super().__init__(code.value)` を `None` にする mutant が生存 — 基底 `SafeError` の文字列表現が `ErrorCode` を保持することを検査するテストが無い — backend/app/errors.py:108（mutmut 生存。#106 の測定の残り）
@@ -70,6 +68,8 @@
 - [ ] L-145 Android のクローズドテストが未実行（代行サービスの選定、12 人以上 × 14 日連続のオプトイン、その後 production access を申請）。申請フォームはテスターの募集のしやすさ・全機能を使ったか・本番利用者の使い方と一致したか・集めたフィードバックの要約と収集方法を問う（2026-09-20 に公式ページで確認）。代行で計数要件は満たせるが、回答は実際に起きたことで書く — ADR-007 条件 4（L-108 の決定。人が動かす。L-84 の開発者登録の後、Android 公開の直前の律速）
 - [ ] L-146 Play Console のプライバシーポリシー URL（「アプリのコンテンツ」）は fastlane の metadata に無く、コンソールで設定する（iOS は `privacy_url.txt` が正）。L-86 の差し替えと同じ URL にする — ADR-007 条件 4（人が動かす。開発者登録 L-84 の後）
 - [ ] L-147 「経緯は書かない」（本文書 3 行目）に反して伸びた行が裾にある。未対応 55 行のうち 200 字以下は 27 行だが、401 字超が 10 行（最長 839 字の L-125）。上限の数字を置くか決める（`scripts/inventory.sh` は台帳の 3 状態を既に数えている） — ADR-010、L-106 と同形。10 月の棚卸し観点 6。決定（2026-09-20 第 2 回、決定シート）: 10 月の棚卸しで 200 字の上限を ADR-010 の改訂として置く（A）
+- [ ] L-149 release Web build が `secrets.AI_API_KEY` を `dart-define` で注入し zip を配布する経路が残る。通常 CI からの除去だけでは、Web 成果物に鍵を焼かないという L-58 の達成範囲が release まで及ぶように読める — .github/workflows/release.yml:12,54-68、2026-09-20 PR5 独立監査。実 secret・成果物への包含・実漏えいは未確認
+- [ ] L-150 公開 privacy-policy が AI 事業者への転送と、再変換で前回結果も送ることを説明し切れていない — docs/privacy-policy.md:28-31,69,85、frontend/kotonoha_app/lib/features/ai_conversion/data/api/ai_conversion_api_client.dart:68-82、backend/app/ai/providers.py、2026-09-20 PR5 独立監査。実送信・外部保管実態・法的分類は未確認
 
 ## 判断待ち
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。通常 CI の Web 成果物には鍵を焼かない（#121 で外した。release は L-149）。決定（2026-09-20 第 2 回、決定シート）: ストア提出後に回す（A）。ADR-007 が「初回は AI 変換抜き可、リリースは backend に依存しない」と決めている。L-55（応答時間の実測）も同日に
