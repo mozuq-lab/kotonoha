@@ -84,6 +84,10 @@ class DiscardInputGuard extends StatelessWidget {
             onConfirm: () => Navigator.of(dialogContext).pop(true),
           ),
         );
+        // `await` の間にこの route が取り除かれていることがありうる。
+        // SDK の `PopScope` の公式サンプル（`examples/api/.../pop_scope.0.dart`）も
+        // `context.mounted` を確かめてから pop する
+        if (!context.mounted) return;
         if (discard ?? false) onDiscard();
       },
       child: child,
