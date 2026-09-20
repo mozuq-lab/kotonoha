@@ -217,3 +217,27 @@ Color? renderedButtonColor(WidgetTester tester, String label) {
       .toList();
   return material.isEmpty ? null : material.first.color;
 }
+
+/// ボタンに**実際に描かれる**枠線。描かれないもの（`BorderStyle.none`、
+/// 幅 0、透明）は `null` を返す。
+///
+/// `ButtonStyle.side` を直読みすると、この 3 つを見落とす。実際
+/// `style: BorderStyle.none` を足しても「枠線あり」として緑のまま通った
+/// （2026-09-20 実測）。テーマ側で付いた枠線も `style` からは見えない。
+/// 描画に使われるのは `Material.shape` に解決されたあとの `side` なので、
+/// そちらを読む。
+BorderSide? paintedButtonSide(WidgetTester tester, String label) {
+  final material = find
+      .descendant(
+          of: confirmationButton(label), matching: find.byType(Material))
+      .evaluate()
+      .map((e) => e.widget as Material)
+      .where((m) => m.shape is OutlinedBorder)
+      .toList();
+  if (material.isEmpty) return null;
+  final side = (material.first.shape! as OutlinedBorder).side;
+  if (side.style != BorderStyle.solid) return null;
+  if (side.width <= 0) return null;
+  if (side.color.a == 0) return null;
+  return side;
+}

@@ -18,11 +18,16 @@ import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 
-/// 誤操作防止ダイアログの並び
+/// ダイアログの並び（間隔とスクロール）
 ///
 /// **間隔を決めているのはここだけ。** 緊急確認ダイアログのように、色や
 /// 連続タップ防止のために自前で `AlertDialog` を組む必要があるものも、
 /// 並びはここから取る（ADR-005 の 1 概念 1 真実）。
+///
+/// 誤操作防止の二択（`ConfirmationDialog`）のために作ったが、いまは
+/// `lib/core/widgets/error_dialog.dart` のエラーダイアログ 4 つ（1〜3 択）と
+/// 定型文のフォーム 2 つも通る。**`actions` の中身には何も要求しない**ので、
+/// 択の数や並び順の意味付けは呼び出し側の責任（台帳 L-133）。
 abstract final class ConfirmationDialogLayout {
   /// 縦積みになったときのボタンとボタンの隙間。
   /// `AlertDialog` の `actionsOverflowButtonSpacing` に渡す（既定は 0）
@@ -84,6 +89,10 @@ abstract final class ConfirmationDialogLayout {
         actionsAlignment: actionsAlignment,
       );
 }
+
+/// 非テキストのコントラストの下限（WCAG 2.1 の 1.4.11）。
+/// ボタンの境界が面から見分けられないと、どこを押せばよいか分からない
+const double minimumNonTextContrast = 3.0;
 
 /// 実行ボタンの重さ
 enum ConfirmKind {
@@ -148,7 +157,10 @@ class ConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final dialogSurface =
+        theme.dialogTheme.backgroundColor ?? colorScheme.surface;
     // 取り消せない操作は error 色で塗る。文字色は背景輝度から選ぶ
     // （テーマ 3 種で背景が変わるので、白や黒に固定すると AA を割る）
     final confirmBackground = switch (kind) {
@@ -169,6 +181,19 @@ class ConfirmationDialog extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: confirmBackground,
             foregroundColor: bestContrastingTextColor(confirmBackground),
+            // 塗りだけでは、面とのコントラストが WCAG 2.1 の非テキスト 3:1
+            // （1.4.11）に届かないことがある（ライトの `primary` #2196F3 と
+            // ダイアログ面 #F5F5F5 で 2.87:1。台帳 L-132）。
+            // **届かないときだけ**枠線で境界を作る。色は文字色と同じ考えで
+            // 面の輝度から選ぶ。塗りの色は変えないので、テーマの役割色は残り、
+            // 足りている `destructive` の見た目も変わらない
+            side: wcagContrastRatio(confirmBackground, dialogSurface) >=
+                    minimumNonTextContrast
+                ? null
+                : BorderSide(
+                    color: bestContrastingTextColor(dialogSurface),
+                    width: 1,
+                  ),
           ),
           child: Text(confirmLabel),
         ),

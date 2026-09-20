@@ -87,17 +87,26 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     // 「保存」が接すると、打った文がそのまま消える**のは同じ。
     // 指定が無いと `AlertDialog` の既定のままで、幅 320・倍率 1.3 で 0.0px に
     // なる（2026-09-20 実測）。
+    //
+    // なお `ConfirmKind.destructive` が置いている「取り消せない実行だけを塗って
+    // 見分けられるようにする」という決定は、**この 2 つには当てはまらない**。
+    // **取り消せないのは「キャンセル」側**で、押すと
+    // 打った文がそのまま消える。
+    // だから「保存」は塗らない（台帳 L-137）。
     return ConfirmationDialogLayout.build(
       title: const Text('定型文を追加'),
-      content: SingleChildScrollView(
-        child: PhraseFormContent(
-          controller: _contentController,
-          selectedCategory: _selectedCategory,
-          onCategoryChanged: _onCategoryChanged,
-          currentLength: _contentController.text.length,
-          errorMessage: _errorMessage,
-          onTextChanged: _onTextChanged,
-        ),
+      // 自前の `SingleChildScrollView` は持たない。
+      // `ConfirmationDialogLayout.build` が `scrollable: true` を渡すので、
+      // `AlertDialog` が title と content をスクロールに入れる。重ねると
+      // 内側は無限高さ制約で `maxScrollExtent = 0` になり、ドラッグを取らない
+      // 死んだ仕組みになる（ADR-008。台帳 L-138）
+      content: PhraseFormContent(
+        controller: _contentController,
+        selectedCategory: _selectedCategory,
+        onCategoryChanged: _onCategoryChanged,
+        currentLength: _contentController.text.length,
+        errorMessage: _errorMessage,
+        onTextChanged: _onTextChanged,
       ),
       actions: [
         // キャンセルボタン: ダイアログを閉じる
