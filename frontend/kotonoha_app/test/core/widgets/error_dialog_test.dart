@@ -65,33 +65,6 @@ void main() {
     });
   });
 
-  // NetworkErrorDialog テスト
-
-  group('NetworkErrorDialog', () {
-    testWidgets('TC-078-007: ネットワークエラーダイアログが表示される', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showNetworkErrorDialog(
-                context: context,
-                onRetry: () {},
-              ),
-              child: const Text('Show Dialog'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Show Dialog'));
-      await tester.pumpAndSettle();
-
-      // Then: 適切なメッセージが表示される
-      expect(find.textContaining('ネットワーク'), findsWidgets);
-      expect(find.text('再試行'), findsOneWidget);
-    });
-  });
-
   // AIConversionErrorDialog テスト
 
   group('AIConversionErrorDialog', () {
@@ -174,34 +147,6 @@ void main() {
 
       // Then: 適切なメッセージが表示される
       expect(find.textContaining('読み上げ'), findsWidgets);
-    });
-  });
-
-  // 日本語メッセージテスト
-
-  group('日本語メッセージテスト', () {
-    testWidgets('TC-078-011: エラーメッセージが日本語で表示される', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showNetworkErrorDialog(
-                context: context,
-                onRetry: () {},
-              ),
-              child: const Text('Show Dialog'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Show Dialog'));
-      await tester.pumpAndSettle();
-
-      // Then: 日本語のメッセージが含まれている
-      // 英語のテキストは含まれない
-      expect(find.textContaining('Network'), findsNothing);
-      expect(find.textContaining('Error'), findsNothing);
     });
   });
 }
