@@ -173,7 +173,19 @@ class _EmergencyConfirmationDialogState
             cancelButtonTextColor,
             baseFontSize,
           ),
-          const SizedBox(width: AppSizes.paddingSmall),
+          // 取り消しと実行の間隔（台帳 L-112）。実行すると周囲に警報音が鳴るので、
+          // 誤タップは誤発報になり、利用者は声で取り消せない。
+          // 幅が足りないと `AlertDialog` の actions は縦積みに切り替わる
+          // （`OverflowBar`）。そのとき縦の隙間は `actionsOverflowButtonSpacing`
+          // 由来で既定 0 なので、**このすきまが高さも持っていないと 2 つの
+          // ボタンが接する**（幅 360 で実測）。
+          // 横並びのときは `OverflowBar` が左右に 8 ずつ入れるので合計 24、
+          // 縦積みのときはこの 16 がそのまま隙間になる。どちらも
+          // 「他の操作ボタンとの間隔 16px 以上」（`app_shell.dart`）を満たす。
+          const SizedBox(
+            width: AppSizes.paddingSmall,
+            height: AppSizes.paddingMedium,
+          ),
           _buildConfirmButton(confirmButtonColor, baseFontSize),
         ],
         actionsPadding: const EdgeInsets.all(AppSizes.paddingMedium),
