@@ -23,6 +23,8 @@ final _lightButtonSide = WidgetStateProperty.resolveWith<BorderSide?>((states) {
 /// フォントサイズ: AppSizesの定義に従う
 final ThemeData lightTheme = ThemeData(
   brightness: Brightness.light,
+  visualDensity: VisualDensity.standard,
+  materialTapTargetSize: MaterialTapTargetSize.padded,
   colorScheme: const ColorScheme.light(
     primary: AppColors.primaryLight,
     // primary(#2196F3)上の白文字は約3.1:1でAA不足のため

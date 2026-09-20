@@ -25,6 +25,8 @@ final _darkButtonSide = WidgetStateProperty.resolveWith<BorderSide?>((states) {
 /// 暗い背景に白いテキストで十分なコントラストを確保
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
+  visualDensity: VisualDensity.standard,
+  materialTapTargetSize: MaterialTapTargetSize.padded,
   colorScheme: const ColorScheme.dark(
     primary: AppColors.primaryDark,
     // primaryDark(#1976D2)上の白文字は約4.6:1でAA適合。
