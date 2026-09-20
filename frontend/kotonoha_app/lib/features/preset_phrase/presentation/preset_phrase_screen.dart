@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_delete_dialog.dart';
@@ -152,6 +153,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
 
   /// メソッド: 追加ダイアログを表示
   void _showAddDialog(BuildContext context) {
+    final id = const Uuid().v4();
     final notifier = ref.read(presetPhraseNotifierProvider.notifier);
     showDialog<void>(
       context: context,
@@ -161,6 +163,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
           return notifier.addPhrase(
             content,
             category,
+            id: id,
           );
         },
       ),

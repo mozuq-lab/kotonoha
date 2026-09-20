@@ -83,6 +83,61 @@ void main() {
     }
   });
 
+  testWidgets('保存後のcompact失敗から同じフォームで再試行しても重複しない', (tester) async {
+    late Box<PresetPhrase> box;
+    late Directory blockedCompact;
+    await tester.runAsync(() async {
+      await Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName).close();
+      box = await Hive.openBox<PresetPhrase>(
+          PersistedArea.presetPhrases.boxName,
+          compactionStrategy: (_, __) => false);
+      for (var i = 0; i < 61; i++) {
+        await box.put(phraseId, box.get(phraseId)!);
+      }
+      await box.close();
+      box =
+          await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      blockedCompact = await Directory(
+              '${box.path!.replaceFirst(RegExp(r'\.hive$'), '')}.hivec')
+          .create();
+    });
+    addTearDown(() async {
+      if (await blockedCompact.exists()) await blockedCompact.delete();
+    });
+    await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: PresetPhraseScreen())));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '初回の保存本文');
+    await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+    await tester.runAsync(() => tester.tap(find.text('保存')));
+    for (var i = 0;
+        i < 100 && find.textContaining('入力内容を残しています').evaluate().isEmpty;
+        i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+    expect(find.textContaining('入力内容を残しています'), findsOneWidget);
+    expect(find.widgetWithText(TextField, '初回の保存本文'), findsOneWidget);
+    await tester.runAsync(blockedCompact.delete);
+    await tester.enterText(find.byType(TextField), '再試行した最新本文');
+    await tester.runAsync(() => tester.tap(find.text('保存')));
+    await _waitForSave(tester);
+    await tester.runAsync(() async {
+      await box.close();
+      final reopened =
+          await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      expect(reopened.values, hasLength(2));
+      expect(
+          reopened.values.where((p) => p.content.contains('初回の保存')), isEmpty);
+      final saved = reopened.values.where((p) => p.content.contains('再試行した最新'));
+      expect(saved, hasLength(1));
+      expect(saved.single.category, contains('health'));
+    });
+  });
+
   for (final missingBox in [false, true]) {
     testWidgets('追加失敗（repoなし=$missingBox）でも本文とカテゴリを保持する', (tester) async {
       await tester.pumpWidget(ProviderScope(
@@ -103,7 +158,7 @@ void main() {
       }
       await tester.tap(find.text('保存'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('保存できません'), findsOneWidget);
+      expect(find.textContaining('保存を確認できません'), findsOneWidget);
       expect(find.widgetWithText(TextField, '失敗しても残す本文'), findsOneWidget);
       expect(
           tester

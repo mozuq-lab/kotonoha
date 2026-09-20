@@ -73,7 +73,7 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     } else {
       setState(() {
         _saving = false;
-        _errorMessage = '保存できませんでした。入力内容を残しています。';
+        _errorMessage = '保存を確認できませんでした。入力内容を残しています。';
       });
     }
   }
