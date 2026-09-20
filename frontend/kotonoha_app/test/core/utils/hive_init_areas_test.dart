@@ -22,14 +22,14 @@ void main() {
   late Directory tempDir;
 
   setUp(() async {
-    await Hive.close();
+    await closeHiveIgnoringMissingLock();
     tempDir = await Directory.systemTemp.createTemp('hive_init_areas_');
     Hive.init(tempDir.path);
     registerPersistedTypeAdapters();
   });
 
   tearDown(() async {
-    await Hive.close();
+    await closeHiveIgnoringMissingLock();
     if (tempDir.existsSync()) {
       await tempDir.delete(recursive: true);
     }

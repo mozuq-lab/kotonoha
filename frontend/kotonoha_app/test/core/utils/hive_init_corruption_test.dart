@@ -30,7 +30,7 @@ void main() {
     late Directory tempDir;
 
     setUp(() async {
-      await Hive.close();
+      await closeHiveIgnoringMissingLock();
       tempDir = await Directory.systemTemp.createTemp('hive_corruption_test_');
       Hive.init(tempDir.path);
       if (!Hive.isAdapterRegistered(1)) {
@@ -39,7 +39,7 @@ void main() {
     });
 
     tearDown(() async {
-      await Hive.close();
+      await closeHiveIgnoringMissingLock();
       if (tempDir.existsSync()) {
         await tempDir.delete(recursive: true);
       }
