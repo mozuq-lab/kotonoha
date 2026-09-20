@@ -217,6 +217,43 @@ void main() {
     expect(salvaged, isFalse);
   });
 
+  test('削除した時点で伝えるので、その後の開き直しに失敗しても伝わる', () async {
+    // 台帳 L-102 後半: 退避して削除した後、開き直しに失敗すると null を返す。
+    // 「消した」ことを開き直しの成否に結びつけていると、そのとき利用者には
+    // 「保存できません」しか伝わらず、履歴が消えたことは黙って進む。
+    // 開き直しの失敗はテストから注入できないので、**伝える時点**を観測する。
+    if (!Hive.isAdapterRegistered(60)) {
+      Hive.registerAdapter(_UnreadableAdapter());
+    }
+    const name = 'unreadable_order';
+    final raw = await Hive.openBox<dynamic>(name);
+    await raw.put('k', _Unreadable());
+    await raw.close();
+
+    bool? openWhenNotified;
+    bool? backedUpWhenNotified;
+    bool? liveFileGoneWhenNotified;
+    await runGuardingHiveOpenLeak(
+      () => openBoxWithRecovery<dynamic>(
+        name,
+        hivePath: tempDir.path,
+        onRecreated: () {
+          openWhenNotified = Hive.isBoxOpen(name);
+          backedUpWhenNotified =
+              File('${tempDir.path}/$name.hive.corrupt.bak').existsSync();
+          liveFileGoneWhenNotified =
+              !File('${tempDir.path}/$name.hive').existsSync();
+        },
+      ),
+    );
+
+    // 開き直しを待たない（待つと、失敗したときに伝わらない）
+    expect(openWhenNotified, isFalse, reason: '開き直しの成否に関わらず伝わるよう、開き直す前に伝えること');
+    // 早すぎてもいけない: 退避と削除が済んでから伝える
+    expect(backedUpWhenNotified, isTrue, reason: '退避より先に伝えてはいけない');
+    expect(liveFileGoneWhenNotified, isTrue, reason: '削除より先に伝えてはいけない');
+  });
+
   test('壊れていない box は退避も告知もしない', () async {
     await writePhrases(2);
 
