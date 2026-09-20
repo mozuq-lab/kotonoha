@@ -116,17 +116,18 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
 
   /// メソッド: 編集処理
   void _onEdit(PresetPhrase phrase) {
+    final notifier = ref.read(presetPhraseNotifierProvider.notifier);
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => PhraseEditDialog(
         phrase: phrase,
         onSave: (updatedPhrase) {
-          ref.read(presetPhraseNotifierProvider.notifier).updatePhrase(
-                updatedPhrase.id,
-                content: updatedPhrase.content,
-                category: updatedPhrase.category,
-              );
+          notifier.updatePhrase(
+            updatedPhrase.id,
+            content: updatedPhrase.content,
+            category: updatedPhrase.category,
+          );
         },
       ),
     );
@@ -152,15 +153,16 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
 
   /// メソッド: 追加ダイアログを表示
   void _showAddDialog(BuildContext context) {
+    final notifier = ref.read(presetPhraseNotifierProvider.notifier);
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => PhraseAddDialog(
         onSave: (content, category) {
-          ref.read(presetPhraseNotifierProvider.notifier).addPhrase(
-                content,
-                category,
-              );
+          notifier.addPhrase(
+            content,
+            category,
+          );
         },
       ),
     );
