@@ -310,16 +310,41 @@ void main() {
         expect(widget, isA<StatefulWidget>());
       });
 
-      /// ConsumerWidgetの使用範囲確認
-      test('TC-OPT-017: CharacterBoardWidgetがConsumerWidgetでない', () {
-        final widget = CharacterBoardWidget(onCharacterTap: (_) {});
+      /// 親ウィジェット再ビルド時のカテゴリ選択保持
+      testWidgets('TC-OPT-017: 親の再ビルド後も選択したカテゴリを表示する', (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: StatefulBuilder(
+              builder: (context, setState) => Scaffold(
+                body: Column(
+                  children: [
+                    Expanded(
+                      child: CharacterBoardWidget(
+                        onCharacterTap: (_) {},
+                      ),
+                    ),
+                    ElevatedButton(
+                      key: const ValueKey('rebuild_parent'),
+                      onPressed: () => setState(() {}),
+                      child: const Text('親を再ビルド'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
 
-        // 期待結果: CharacterBoardWidgetがStatefulWidget
-        expect(widget, isA<StatefulWidget>());
+        await tester.tap(find.text('濁音'));
+        await tester.pumpAndSettle();
+        expect(find.text('が'), findsOneWidget);
+        expect(find.text('あ'), findsNothing);
 
-        // 期待結果: CharacterBoardWidgetがConsumerWidgetでない
-        // （ConsumerWidgetはriverpod_flutter packageから提供される）
-        expect(widget.runtimeType.toString(), equals('CharacterBoardWidget'));
+        await tester.tap(find.byKey(const ValueKey('rebuild_parent')));
+        await tester.pump();
+
+        expect(find.text('が'), findsOneWidget);
+        expect(find.text('あ'), findsNothing);
       });
     });
 

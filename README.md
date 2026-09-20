@@ -79,7 +79,7 @@ fvm flutter run -d chrome "${DEFINES[@]}"
 動作確認:
 
 ```bash
-curl -s localhost:8000/api/v1/health
+curl -s 127.0.0.1:8000/api/v1/health
 ```
 
 Swagger UI は http://localhost:8000/docs （development / test でのみ公開 — ADR-004）。
