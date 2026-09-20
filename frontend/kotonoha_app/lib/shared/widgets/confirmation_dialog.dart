@@ -44,15 +44,20 @@ abstract final class ConfirmationDialogLayout {
   /// ボタンは常に見えていて、説明文だけがスクロールする
   static const bool scrollable = true;
 
-  // タップ目標 44px 以上（REQ-3001）は、ここでは指定しない。**二重に保証済み**で、
-  // ボタンごとに `minimumSize` を重ねても一度も効かないため
-  // （2026-09-20 実測。1 文字ラベルで `minimumSize` を 0 にしても 48×48）。
-  //   1. アプリのテーマが `TextButton` に 44×44、`ElevatedButton` に
-  //      `recommendedTapTarget` を指定している（`light_theme.dart` の
-  //      textButtonTheme・elevatedButtonTheme。AA 対応として入れたもの）
-  //   2. Material の `MaterialTapTargetSize.padded`（テーマの既定）が 48×48
-  // 効かない指定は重ねない（ADR-008 の「発火ゼロの仕組みを作らない」）。
-  // 両方が外れたら契約テストが落ちる（実測: 24 本が 40.0 で赤）。
+  // タップ目標 44px 以上（REQ-3001）は、ここでは指定しない。ボタンごとに
+  // `minimumSize` を重ねても効かないため（2026-09-20 実測。1 文字ラベルで
+  // `minimumSize` を 0 にしても 48×48）。効かない指定は重ねない
+  // （ADR-008 の「発火ゼロの仕組みを作らない」）。実寸を決めているのは
+  //   1. アプリのテーマの `minimumSize`（`light_theme.dart` の
+  //      textButtonTheme 44×44・elevatedButtonTheme `recommendedTapTarget`）
+  //   2. テーマの `materialTapTargetSize` と `visualDensity`
+  // で、**2 はプラットフォームで変わる**。`defaultTargetPlatform` が
+  // macOS / Windows / Linux（＝デスクトップのブラウザ）だと `ThemeData` は
+  // `shrinkWrap` ＋ `VisualDensity(-2,-2)` を選び、1 の 44 から 8 引かれて
+  // **「いいえ」は 36px になる**（2026-09-20 実測。main でも同じで、
+  // アプリ全体の `TextButton` に及ぶ既存の穴。台帳 L-134）。
+  // 契約テストはテストの既定プラットフォーム（Android 相当）で回るので、
+  // この 1 本はそこまでしか見張れない。
 }
 
 /// 実行ボタンの重さ
@@ -104,9 +109,6 @@ class ConfirmationDialog extends StatelessWidget {
   /// 実行ボタンの重さ
   final ConfirmKind kind;
 
-  /// スクリーンリーダー向けのラベル（省略時は付けない）
-  final String? semanticsLabel;
-
   /// ConfirmationDialogを作成する
   const ConfirmationDialog({
     super.key,
@@ -117,7 +119,6 @@ class ConfirmationDialog extends StatelessWidget {
     required this.onCancel,
     required this.onConfirm,
     this.kind = ConfirmKind.destructive,
-    this.semanticsLabel,
   });
 
   @override
@@ -130,7 +131,7 @@ class ConfirmationDialog extends StatelessWidget {
       ConfirmKind.normal => colorScheme.primary,
     };
 
-    final dialog = AlertDialog(
+    return AlertDialog(
       scrollable: ConfirmationDialogLayout.scrollable,
       title: Text(title),
       content: Text(message),
@@ -153,9 +154,5 @@ class ConfirmationDialog extends StatelessWidget {
       buttonPadding: ConfirmationDialogLayout.buttonPadding,
       actionsPadding: ConfirmationDialogLayout.actionsPadding,
     );
-
-    final label = semanticsLabel;
-    if (label == null) return dialog;
-    return Semantics(label: label, child: dialog);
   }
 }

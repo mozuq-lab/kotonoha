@@ -179,8 +179,9 @@ class _EmergencyConfirmationDialogState
         // 並び（間隔・スクロール）は `ConfirmationDialog` と同じものを使う
         // （台帳 L-112・L-130・L-131。ADR-005 の 1 概念 1 真実）。
         // このダイアログだけが `ConfirmationDialog` を使わずに自前で組むのは、
-        // テーマごとの色・連続タップ防止・補足行・スクリーンリーダー向けラベルを
-        // 持つため。**並びの数字はここに書かない。**
+        // テーマごとの色（緊急色は `colorScheme.error` とは別）・連続タップ防止
+        // （両ボタンを無効化する）・補足行・固定箱の `FittedBox` を持つため。
+        // **並びの数字はここに書かない。**
         scrollable: ConfirmationDialogLayout.scrollable,
         actionsOverflowButtonSpacing:
             ConfirmationDialogLayout.overflowButtonSpacing,
