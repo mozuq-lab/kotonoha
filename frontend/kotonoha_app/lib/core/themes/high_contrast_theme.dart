@@ -11,6 +11,15 @@ import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
+final _highContrastButtonSide =
+    WidgetStateProperty.resolveWith<BorderSide?>((states) {
+  const enabled = BorderSide(color: Colors.black, width: 2.0);
+  if (states.contains(WidgetState.disabled)) {
+    return enabled.copyWith(color: enabled.color.withValues(alpha: 0.38));
+  }
+  return enabled;
+});
+
 /// 高コントラストテーマの定義
 /// アクセシビリティ要件
 /// コントラスト比: 4.5:1以上（WCAG 2.1 AAレベル）
@@ -71,11 +80,13 @@ final ThemeData highContrastTheme = ThemeData(
         fontSize: AppSizes.fontSizeMedium,
         fontWeight: FontWeight.bold,
       ),
-      side: const BorderSide(
-        color: Colors.black,
-        width: 2.0, // Thick border for high contrast
-      ),
-    ),
+    ).copyWith(side: _highContrastButtonSide),
+  ),
+
+  // チュートリアルの「次へ」は FilledButton を使う。ElevatedButton と同じく
+  // 面から境界を作る枠線はテーマで一元化する（台帳 L-140〜L-142）。
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom().copyWith(side: _highContrastButtonSide),
   ),
 
   // Icon button theme with high contrast
