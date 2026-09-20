@@ -11,6 +11,7 @@ import 'package:kotonoha_app/features/preset_phrase/domain/phrase_constants.dart
 import 'package:kotonoha_app/features/preset_phrase/domain/preset_phrase_validator.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_form_content.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
+import 'package:kotonoha_app/shared/widgets/discard_input_guard.dart';
 
 /// 機能概要: 定型文追加ダイアログ
 /// 実装方針: AlertDialogベースでPhraseFormContentを使用
@@ -93,33 +94,40 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     // **取り消せないのは「キャンセル」側**で、押すと
     // 打った文がそのまま消える。
     // だから「保存」は塗らない（台帳 L-137）。
-    return ConfirmationDialogLayout.build(
-      title: const Text('定型文を追加'),
-      // 自前の `SingleChildScrollView` は持たない。
-      // `ConfirmationDialogLayout.build` が `scrollable: true` を渡すので、
-      // `AlertDialog` が title と content をスクロールに入れる。重ねると
-      // 内側は無限高さ制約で `maxScrollExtent = 0` になり、ドラッグを取らない
-      // 死んだ仕組みになる（ADR-008。台帳 L-138）
-      content: PhraseFormContent(
-        controller: _contentController,
-        selectedCategory: _selectedCategory,
-        onCategoryChanged: _onCategoryChanged,
-        currentLength: _contentController.text.length,
-        errorMessage: _errorMessage,
-        onTextChanged: _onTextChanged,
+    // 端末の戻るボタンは `barrierDismissible: false` では塞げない。
+    // 入力があるうちは、閉じる前に確認する（台帳 L-136）。
+    // 新しく打った文があるかどうか。空なら捨てるものが無い
+    return DiscardInputGuard(
+      hasInput: _contentController.text.isNotEmpty,
+      onDiscard: _onCancel,
+      child: ConfirmationDialogLayout.build(
+        title: const Text('定型文を追加'),
+        // 自前の `SingleChildScrollView` は持たない。
+        // `ConfirmationDialogLayout.build` が `scrollable: true` を渡すので、
+        // `AlertDialog` が title と content をスクロールに入れる。重ねると
+        // 内側は無限高さ制約で `maxScrollExtent = 0` になり、ドラッグを取らない
+        // 死んだ仕組みになる（ADR-008。台帳 L-138）
+        content: PhraseFormContent(
+          controller: _contentController,
+          selectedCategory: _selectedCategory,
+          onCategoryChanged: _onCategoryChanged,
+          currentLength: _contentController.text.length,
+          errorMessage: _errorMessage,
+          onTextChanged: _onTextChanged,
+        ),
+        actions: [
+          // キャンセルボタン: ダイアログを閉じる
+          TextButton(
+            onPressed: _onCancel,
+            child: const Text('キャンセル'),
+          ),
+          // 保存ボタン: バリデーション後に保存
+          ElevatedButton(
+            onPressed: _onSave,
+            child: const Text('保存'),
+          ),
+        ],
       ),
-      actions: [
-        // キャンセルボタン: ダイアログを閉じる
-        TextButton(
-          onPressed: _onCancel,
-          child: const Text('キャンセル'),
-        ),
-        // 保存ボタン: バリデーション後に保存
-        ElevatedButton(
-          onPressed: _onSave,
-          child: const Text('保存'),
-        ),
-      ],
     );
   }
 }
