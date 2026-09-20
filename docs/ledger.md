@@ -9,6 +9,8 @@
 - [ ] L-51 サポート連絡先が `support@kotonoha-app.example.com` のまま（RFC 2606 の予約ドメイン） — docs/support.md, docs/privacy-policy.md。ADR-007 条件 4
 - [ ] L-52 Android のアップロード鍵が無い（AAB・mapping・シンボルは #97 で解決済み） — .github/workflows/release.yml。ADR-007 条件 4。開発者登録後。Android の release ビルドは署名鍵が無いと debug 鍵で署名される（`frontend/kotonoha_app/android/app/build.gradle.kts:67-73`）
 - [ ] L-55 AI 変換の平均応答時間（3秒以内）が未測定 — ADR-002 のプロバイダ支出上限設定と同日に実測（backend 公開の前提）
+- [ ] L-149 release Web build が `secrets.AI_API_KEY` を `dart-define` で注入し zip を配布する経路が残る。通常 CI からの除去だけでは、Web 成果物に鍵を焼かないという L-58 の達成範囲が release まで及ぶように読める — .github/workflows/release.yml:12,54-68、2026-09-20 PR5 独立監査。実 secret・成果物への包含・実漏えいは未確認
+- [ ] L-150 公開 privacy-policy が AI 事業者への転送と、再変換で前回結果も送ることを説明し切れていない — docs/privacy-policy.md:28-31,69,85、frontend/kotonoha_app/lib/features/ai_conversion/data/api/ai_conversion_api_client.dart:68-82、backend/app/ai/providers.py、2026-09-20 PR5 独立監査。実送信・外部保管実態・法的分類は未確認
 - [ ] L-57 Android 12 以上と iOS の実機で、OS のバックアップから履歴・定型文・お気に入り・設定が復元されることを確認 — NFR-106（2026-09-12 に #99 の除外を撤回）
 - [ ] L-59 `exc.errors(include_input=False, ...)` から `include_input=False` を落とす mutant が生存 — ValidationError の入力値が `ConfigError` へ漏れないことを検査するテストが無い（ADR-003） — backend/app/config.py:161（mutmut 生存。#106 の測定の残り）
 - [ ] L-60 `SafeError.__init__` の `super().__init__(code.value)` を `None` にする mutant が生存 — 基底 `SafeError` の文字列表現が `ErrorCode` を保持することを検査するテストが無い — backend/app/errors.py:108（mutmut 生存。#106 の測定の残り）
@@ -70,7 +72,7 @@
 - [ ] L-147 「経緯は書かない」（本文書 3 行目）に反して伸びた行が裾にある。未対応 55 行のうち 200 字以下は 27 行だが、401 字超が 10 行（最長 839 字の L-125）。上限の数字を置くか決める（`scripts/inventory.sh` は台帳の 3 状態を既に数えている） — ADR-010、L-106 と同形。10 月の棚卸し観点 6。決定（2026-09-20 第 2 回、決定シート）: 10 月の棚卸しで 200 字の上限を ADR-010 の改訂として置く（A）
 
 ## 判断待ち
-- [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。Web 成果物に鍵を焼かない（#121 で外した）。決定（2026-09-20 第 2 回、決定シート）: ストア提出後に回す（A）。ADR-007 が「初回は AI 変換抜き可、リリースは backend に依存しない」と決めている。L-55（応答時間の実測）も同日に
+- [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。通常 CI の Web 成果物には鍵を焼かない（#121 で外した。release は L-149）。決定（2026-09-20 第 2 回、決定シート）: ストア提出後に回す（A）。ADR-007 が「初回は AI 変換抜き可、リリースは backend に依存しない」と決めている。L-55（応答時間の実測）も同日に
 - [ ] L-70 道具表の 4 目的（影響範囲・ADR の引き出し・状態遷移・仕様乖離の逆生成）が未割当になった。tsumiki を有効に戻すか、別の道具を割り当てるか — AGENTS.md 道具表（棚卸し 2026-09 で降ろした）。決定（2026-09-20 第 2 回、決定シート）: 未割当のまま手で行い、10 月の棚卸しで再評価する（A）。tsumiki を戻す案は、9 月の棚卸しで降ろした理由が変わっていないので採らない
 - [x] L-80 `frontend/kotonoha_app/pubspec.lock` は Flutter 3.41.5 で解決したまま。`.fvmrc`／CI の 3.38.1 で `flutter pub get` すると `characters` が 1.4.1→1.4.0 に下がり `js` 0.7.2 が加わる。lock を 3.38.1 で作り直すか SDK を上げるか（依存の決定、規律 8） — Task 4 の実測（2026-09-06）。決定（2026-09-20、決定シート）: 3.38.1 で lock を作り直す（A）。手元と CI が一致し、コミットのたびの drift が消える。SDK を 3.41.5 に上げる案は影響が大きいので採らない。別セッション（dependabot）で実施。解消（2026-09-20、3.38.1 で lock を作り直した。SDK ピンの 6 パッケージが下がり `js` 0.7.2 が加わる。旧 lock は `pub get` で 32 行動いたが、新 lock は 0 行でテスト後も 0 行。analyze は info のみ・format 変更なし・2,445 件緑）
 - [ ] L-81 `backend/tests/contract/openapi_baseline.json` は正規化ダンプで、単体では現行 API の形しか示さない（enum の値や説明文を含まない）。ADR-010:28 と AGENTS.md 文書節が「API の正本」と呼ぶ記述の限界。呼び方を変えるか、ダンプに補うか — ADR-010「限界」。決定（2026-09-20 第 2 回、決定シート）: 呼び方を変える（A）。実体は契約テストの基準であって仕様書ではない。ADR-010 と AGENTS.md 文書節の 1 句を直す。ダンプに補う案は維持費が増えるので採らない
