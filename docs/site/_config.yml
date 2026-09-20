@@ -6,7 +6,8 @@ lang: ja
 
 # 正本（docs/privacy-policy.md ほか）の相対 .md リンクを、生成後の .html へ解決させる。
 # 自前で書き換えると腐るので、GitHub Pages 標準のプラグインに任せる。
-plugins: []
+plugins:
+  - jekyll-relative-links
 relative_links:
-  enabled: true
+  enabled: false
   collections: false
