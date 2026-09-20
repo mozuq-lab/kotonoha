@@ -53,6 +53,14 @@ void main() {
             reason: '$themeName: キャンセルボタンの描画Materialを取得できない');
         final materialRect = tester.getRect(material);
         final hitRect = tester.getRect(cancel);
+        expect(materialRect.height,
+            greaterThanOrEqualTo(_minimumTapTarget - _epsilon),
+            reason: '$themeName: desktopで「いいえ」のMaterialが44px未満'
+                '（Material=$materialRect, hit=$hitRect）');
+        expect(materialRect.width,
+            greaterThanOrEqualTo(_minimumTapTarget - _epsilon),
+            reason: '$themeName: desktopで「いいえ」のMaterialが44px未満'
+                '（Material=$materialRect, hit=$hitRect）');
         expect(
             hitRect.height, greaterThanOrEqualTo(_minimumTapTarget - _epsilon),
             reason: '$themeName: desktopで「いいえ」のhit領域が44px未満'
