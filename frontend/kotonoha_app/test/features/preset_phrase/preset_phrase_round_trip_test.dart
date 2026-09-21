@@ -66,6 +66,93 @@ void main() {
     }
   });
 
+  for (final edit in [false, true]) {
+    testWidgets('${edit ? '編集' : '追加'}画面が消えても保存され、box再open後も残る',
+        (tester) async {
+      final showScreen = ValueNotifier(true);
+      addTearDown(showScreen.dispose);
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          home: ValueListenableBuilder<bool>(
+            valueListenable: showScreen,
+            builder: (_, visible, __) => visible
+                ? const PresetPhraseScreen()
+                : const Scaffold(body: Text('ホーム相当')),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(
+          edit ? find.byIcon(Icons.edit) : find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '画面が消えても保存する本文');
+      await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+      showScreen.value = false;
+      await tester.pumpAndSettle();
+      expect(find.byType(PresetPhraseScreen), findsNothing);
+      expect(find.byType(TextField), findsOneWidget);
+      await tester.runAsync(() async {
+        await tester.tap(find.text('保存'));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+      late List<PresetPhrase> saved;
+      await tester.runAsync(() async {
+        await Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName)
+            .close();
+        saved = (await Hive.openBox<PresetPhrase>(
+                PersistedArea.presetPhrases.boxName))
+            .values
+            .toList();
+      });
+      final matches = saved.where((p) => p.content.contains('画面が消えても'));
+      expect(matches, hasLength(1));
+      expect(matches.single.category, contains('health'));
+      if (edit) expect(saved, hasLength(1));
+    });
+  }
+
+  testWidgets('画面除去後の削除確認で対象だけが消え、box再open後も戻らない', (tester) async {
+    await tester.runAsync(() async {
+      final box = Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      await box.put(
+          'keep', box.get(phraseId)!.copyWith(id: 'keep', displayOrder: 99));
+    });
+    final showScreen = ValueNotifier(true);
+    addTearDown(showScreen.dispose);
+    await tester.pumpWidget(ProviderScope(
+      child: MaterialApp(
+        home: ValueListenableBuilder<bool>(
+          valueListenable: showScreen,
+          builder: (_, visible, __) => visible
+              ? const PresetPhraseScreen()
+              : const Scaffold(body: Text('ホーム相当')),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.delete_outline).first);
+    await tester.pumpAndSettle();
+    showScreen.value = false;
+    await tester.pumpAndSettle();
+    expect(find.byType(PresetPhraseScreen), findsNothing);
+    expect(find.text('定型文の削除'), findsOneWidget);
+    await tester.runAsync(() async {
+      await tester.tap(find.text('削除'));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('定型文の削除'), findsNothing);
+    await tester.runAsync(() async {
+      await Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName).close();
+      final reopened =
+          await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      expect(reopened.keys, isNot(contains(phraseId)));
+      expect(reopened.keys, contains('keep'));
+    });
+  });
+
   testWidgets('定型文の星をタップすると favorites box に残り、再起動相当でも星が付いている', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: MaterialApp(home: PresetPhraseScreen())),
