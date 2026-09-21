@@ -6,8 +6,7 @@
 ///
 /// 見つかった形（2026-09-20 実測、修正前）:
 ///   - title が `Row` で `Expanded` が無いため、見出しが折り返せず右へあふれる。
-///     **倍率 1.0・幅 320 でも 56px あふれる**（`showErrorDialog` だけは
-///     元から `Expanded` を持っていた）
+///     **倍率 1.0・幅 320 でも 56px あふれる**
 ///   - actions は間隔の指定が無く、縦積みになると 0px で接する
 library;
 
@@ -120,18 +119,6 @@ void expectDoesNotOverflow(
 }
 
 void main() {
-  expectDoesNotOverflow(
-    'エラー',
-    open: (context) => showErrorDialog(
-      context: context,
-      title: 'エラーが発生しました',
-      message: '処理に失敗しました。',
-      showRetry: true,
-      onRetry: () {},
-    ),
-    labels: ['再試行', 'OK'],
-  );
-
   expectDoesNotOverflow(
     'ネットワークエラー',
     open: (context) => showNetworkErrorDialog(context: context, onRetry: () {}),

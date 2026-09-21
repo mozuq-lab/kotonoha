@@ -58,51 +58,6 @@ OriginalTextBoxColors originalTextBoxColors(BuildContext context) {
         );
 }
 
-// 汎用エラーダイアログ
-
-/// 汎用エラーダイアログを表示する
-/// [context] BuildContext
-/// [title] ダイアログのタイトル
-/// [message] エラーメッセージ
-/// [showRetry] 再試行ボタンを表示するかどうか
-/// [onRetry] 再試行ボタンのコールバック
-/// 分かりやすい日本語エラーメッセージ
-Future<void> showErrorDialog({
-  required BuildContext context,
-  required String title,
-  required String message,
-  bool showRetry = false,
-  VoidCallback? onRetry,
-}) async {
-  return showDialog(
-    context: context,
-    builder: (context) => ConfirmationDialogLayout.build(
-      title: Row(
-        children: [
-          Icon(Icons.error_outline, color: Colors.red[700]),
-          const SizedBox(width: 8),
-          Expanded(child: Text(title)),
-        ],
-      ),
-      content: Text(message),
-      actions: [
-        if (showRetry && onRetry != null)
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onRetry();
-            },
-            child: const Text('再試行'),
-          ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('OK'),
-        ),
-      ],
-    ),
-  );
-}
-
 // エラースナックバー
 
 /// エラースナックバーを表示する
