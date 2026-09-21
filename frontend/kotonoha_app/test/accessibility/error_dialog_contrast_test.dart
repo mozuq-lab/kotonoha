@@ -46,46 +46,6 @@ Color _dialogBackground(WidgetTester tester) {
 }
 
 void main() {
-  group('警告アイコン', () {
-    Future<Color> pumpAndReadIcon(WidgetTester tester, ThemeData theme) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: theme,
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: ElevatedButton(
-                onPressed: () =>
-                    showNetworkErrorDialog(context: context, onRetry: () {}),
-                child: const Text('open'),
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-      return resolvedIconColor(tester, find.byIcon(Icons.wifi_off));
-    }
-
-    for (final entry in _themes.entries) {
-      testWidgets('${entry.key}テーマで警告アイコンが 3:1 以上', (tester) async {
-        final icon = await pumpAndReadIcon(tester, entry.value);
-        final background = _dialogBackground(tester);
-
-        expectOpaque(background, '${entry.key}テーマのダイアログ背景');
-        expectOpaque(icon, '${entry.key}テーマの警告アイコン');
-
-        final ratio = contrastRatio(icon, background);
-        expect(
-          ratio,
-          greaterThanOrEqualTo(3.0),
-          reason: '${entry.key}テーマの警告アイコンのコントラスト比が '
-              '${ratio.toStringAsFixed(2)}:1 で非テキスト基準 (3:1) 未達',
-        );
-      });
-    }
-  });
-
   group('AI変換エラーの元テキストボックス', () {
     for (final entry in _themes.entries) {
       testWidgets('${entry.key}テーマで本文・ラベル・枠線が基準を満たす', (tester) async {

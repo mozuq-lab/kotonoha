@@ -106,54 +106,6 @@ void showErrorSnackBar({
   );
 }
 
-// ネットワークエラーダイアログ
-
-/// ネットワークエラーダイアログを表示する
-/// ネットワークエラー時の再試行オプション
-/// [context] BuildContext
-/// [onRetry] 再試行ボタンのコールバック
-/// [onCancel] キャンセルボタンのコールバック（オプション）
-Future<void> showNetworkErrorDialog({
-  required BuildContext context,
-  required VoidCallback onRetry,
-  VoidCallback? onCancel,
-}) async {
-  return showDialog(
-    context: context,
-    builder: (context) => ConfirmationDialogLayout.build(
-      title: Row(
-        children: [
-          Icon(Icons.wifi_off, color: warningIconColor(context)),
-          const SizedBox(width: 8),
-          // 見出しは折り返せるようにする。`Expanded` が無いと、
-          // 幅 320・倍率 1.0 でも右へあふれてボタンが切れる（台帳 L-133）
-          const Expanded(child: Text('ネットワークエラー')),
-        ],
-      ),
-      content: const Text(
-        'インターネットに接続できませんでした。\n'
-        '接続を確認して再度お試しください。',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            onCancel?.call();
-          },
-          child: const Text('キャンセル'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            onRetry();
-          },
-          child: const Text('再試行'),
-        ),
-      ],
-    ),
-  );
-}
-
 /// ネットワークエラースナックバーを表示する
 /// ネットワークエラー時の再試行オプション
 void showNetworkErrorSnackBar({

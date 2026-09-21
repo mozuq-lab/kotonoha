@@ -120,12 +120,6 @@ void expectDoesNotOverflow(
 
 void main() {
   expectDoesNotOverflow(
-    'ネットワークエラー',
-    open: (context) => showNetworkErrorDialog(context: context, onRetry: () {}),
-    labels: ['キャンセル', '再試行'],
-  );
-
-  expectDoesNotOverflow(
     'AI変換エラー',
     open: (context) => showAIConversionErrorDialog(
       context: context,
