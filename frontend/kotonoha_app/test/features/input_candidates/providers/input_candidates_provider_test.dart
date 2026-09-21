@@ -1,11 +1,15 @@
 /// inputCandidatesProvider テスト
 /// fix/improvement-p0-p2: 頻度ベースの入力候補
 /// 対象: lib/features/input_candidates/providers/input_candidates_provider.dart
-/// テスト方針: HiveのBoxをオープンしないプレーンな[ProviderContainer]を
-/// 使用する。repository_providers.dart はBox未オープン時にnullを返す設計
-/// のため、historyProvider/favoriteProvider/presetPhraseNotifierProviderは
-/// いずれもインメモリ動作にフォールバックする（既存のwiring testと同じ手法）。
+/// 定型文は実Hive boxへ保存し、保存済みの内容が入力候補へ届くことを確かめる。
 library;
+
+import 'dart:io';
+
+import 'package:hive/hive.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state.dart';
+import 'package:kotonoha_app/core/utils/hive_init.dart';
+import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,8 +25,18 @@ void main() {
   group('inputCandidatesProvider', () {
     late ProviderContainer container;
 
-    tearDown(() {
+    late Directory tempDir;
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('candidate_presets_');
+      Hive.init(tempDir.path);
+      registerPersistedTypeAdapters();
+      await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+    });
+
+    tearDown(() async {
       container.dispose();
+      await Hive.close();
+      await tempDir.delete(recursive: true);
     });
 
     test('入力バッファが空のときは空リストを返す', () {
