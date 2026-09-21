@@ -4,7 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
-import 'package:kotonoha_app/features/favorites/presentation/widgets/favorite_item_card.dart';
+import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_item_card.dart';
 
 void main() {
   group('FavoriteItemCard', () {

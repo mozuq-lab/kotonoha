@@ -15,7 +15,7 @@
 - [x] L-61 5秒窓で1.1秒後も同一送信元を拒否する実 HTTP 応答を検査。RateLimitItemPerSecond の seconds を None にする指定 mutant を kill — backend/tests/test_ratelimit.py::test_configured_window_still_rejects_after_one_second（2026-09-20、指定変異 RED/復元 GREEN、make mutation は L-60 の同時計測）
 - [ ] L-65 mutmut の対象テストは pyproject の 4 ファイル指定で固定されており、テストを増やしても走らない（kill rate が理由なく下がる）。`also_copy` で app/ 全体を写して指定を無くせるか試す — backend/pyproject.toml [tool.mutmut]
 - [x] L-66 lib内参照0のLogLevel enumと専用testを削除済み。AppLoggerは保持 — 棚卸し2026-09、L-139の決定を束3で適用（2026-09-20）。
-- [ ] L-67 お気に入りが `frontend/kotonoha_app/lib/features/favorite/`（ロジック）と `frontend/kotonoha_app/lib/features/favorites/`（UI）の 2 ディレクトリに分かれたまま — ADR-005（棚卸し 2026-09 で現存を確認、Phase 5（文書）の後）
+- [x] L-67 お気に入り UI を `frontend/kotonoha_app/lib/features/favorite/` へ統合し、旧 `features/favorites/` を撤去 — ADR-005（2026-09-21、旧パス 8 ファイルを rename、外部 import 3 本を更新。UI・ロジック・保存内容は不変）
 - [ ] L-68 要件 ID 107 件のうち 14 件が、テストにも openspec にも 1 度も現れない（追跡性の穴。挙動は別 ID で試験済みのものを含む） — docs/spec/kotonoha-requirements.md（一覧は棚卸し 2026-09 の PR 本文）
 - [x] L-69 `expect(widget.runtimeType.toString(), equals('CharacterBoardWidget'))` はクラス名を固定するだけで挙動を検査しない — frontend/kotonoha_app/test/widgets/character_board_optimization_test.dart:389（棚卸し 2026-09、観点 4）。解消（2026-09-21、親の再ビルド後も利用者が選んだカテゴリと文字盤表示を保持する挙動へ置換。`didUpdateWidget` で初期カテゴリへ戻す変異では既存 TC-OPT-003 は緑、新 TC-OPT-017 は赤、復元後は対象 14 件緑を実測）
 - [x] L-73 入力欄の 1000 文字上限に警告表示が無く、超過分を黙って捨てる（EDGE-101 の未達） — frontend/kotonoha_app/lib/features/character_board/providers/input_buffer_provider.dart:65,89（PR #114 の突き合わせ）。解消（2026-09-16、#133: 入力欄の直下に告知。持ち越しは L-109）

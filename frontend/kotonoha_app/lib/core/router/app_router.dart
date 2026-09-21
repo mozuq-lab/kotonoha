@@ -8,7 +8,7 @@ import 'package:kotonoha_app/core/router/error_screen.dart';
 import 'package:kotonoha_app/core/widgets/app_shell.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/face_to_face/presentation/screens/face_to_face_screen.dart';
-import 'package:kotonoha_app/features/favorites/presentation/favorites_screen.dart';
+import 'package:kotonoha_app/features/favorite/presentation/favorites_screen.dart';
 import 'package:kotonoha_app/features/help/presentation/screens/help_screen.dart';
 import 'package:kotonoha_app/features/history/presentation/history_screen.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/preset_phrase_screen.dart';
