@@ -38,7 +38,7 @@ class PersistedBox<T> {
   int get length => _box.length;
 
   /// [key] に [value] を書く
-  Future<void> put(dynamic key, T value) =>
+  Future<bool> put(dynamic key, T value) =>
       _inOrder(() => _box.put(key, value));
 
   /// [entries] をまとめて書く
@@ -80,7 +80,7 @@ class PersistedBox<T> {
   /// あるときだけ）。待たずに書いて直後に読む呼び出し元から見た挙動を変えない。
   /// このセッションの最初の書き込みでは、前のセッションが残した分も取り除く
   /// （[_removeStaleFramesOnce]）。
-  Future<void> _inOrder(Future<void> Function() write) {
+  Future<bool> _inOrder(Future<void> Function() write) {
     Future<void> writeThenCleanUpOnce() async {
       await write();
       await _removeStaleFramesOnce();
@@ -156,14 +156,16 @@ class PersistedBox<T> {
   /// 定めている（: ストレージ障害でも文字盤・TTS は使えるべき）。
   /// 再送出すると、await していない呼び出し元では未処理の非同期エラーになり
   /// 利用者には何も伝わらないまま操作だけが壊れる。
-  Future<void> _guard(Future<void> Function() write) async {
+  Future<bool> _guard(Future<void> Function() write) async {
     try {
       await write();
       _onWriteResult(true);
+      return true;
     } catch (error, stackTrace) {
       debugPrint('[PersistedBox] 書き込みに失敗しました: $error');
       debugPrintStack(stackTrace: stackTrace);
       _onWriteResult(false);
+      return false;
     }
   }
 }
