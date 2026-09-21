@@ -10,6 +10,14 @@ import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
+final _darkButtonSide = WidgetStateProperty.resolveWith<BorderSide?>((states) {
+  const enabled = BorderSide(color: Colors.white);
+  if (states.contains(WidgetState.disabled)) {
+    return enabled.copyWith(color: enabled.color.withValues(alpha: 0.38));
+  }
+  return enabled;
+});
+
 /// ダークテーマの定義
 /// アクセシビリティ要件
 /// タップターゲットサイズ: 最小44px x 44px、推奨60px x 60px
@@ -67,7 +75,13 @@ final ThemeData darkTheme = ThemeData(
         fontSize: AppSizes.fontSizeMedium,
         fontWeight: FontWeight.bold,
       ),
-    ),
+    ).copyWith(side: _darkButtonSide),
+  ),
+
+  // チュートリアルの「次へ」は FilledButton を使う。ElevatedButton と同じく
+  // 面から境界を作る枠線はテーマで一元化する（台帳 L-140〜L-142）。
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom().copyWith(side: _darkButtonSide),
   ),
 
   // Icon button theme

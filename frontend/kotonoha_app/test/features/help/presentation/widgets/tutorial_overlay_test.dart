@@ -3,11 +3,71 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kotonoha_app/core/themes/dark_theme.dart';
+import 'package:kotonoha_app/core/themes/high_contrast_theme.dart';
+import 'package:kotonoha_app/core/themes/light_theme.dart';
 
 import 'package:kotonoha_app/features/help/presentation/widgets/tutorial_overlay.dart';
 
+import '../../../../support/contrast_helpers.dart';
+
+BorderSide? _paintedNextButtonSide(WidgetTester tester) {
+  final material = find
+      .descendant(
+        of: find.widgetWithText(FilledButton, '次へ'),
+        matching: find.byType(Material),
+      )
+      .evaluate()
+      .map((element) => element.widget as Material)
+      .where((material) => material.shape is OutlinedBorder)
+      .firstOrNull;
+  if (material == null) return null;
+  final side = (material.shape! as OutlinedBorder).side;
+  if (side.style != BorderStyle.solid || side.width <= 0 || side.color.a == 0) {
+    return null;
+  }
+  return side;
+}
+
+Color _tutorialCardSurface(WidgetTester tester) {
+  final material = tester.widget<Material>(
+    find
+        .descendant(of: find.byType(Card), matching: find.byType(Material))
+        .first,
+  );
+  expect(material.color, isNotNull, reason: '描画されたチュートリアル Card の面色を取得できなかった');
+  return material.color!;
+}
+
 void main() {
   group('TutorialOverlay', () {
+    for (final (name, theme) in [
+      ('ライト', lightTheme),
+      ('ダーク', darkTheme),
+      ('高コントラスト', highContrastTheme),
+    ]) {
+      testWidgets('$name: 「次へ」の枠線はチュートリアル Card 面に対して 3:1 以上', (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: TutorialOverlay(
+              onComplete: () {},
+              child: const Scaffold(body: SizedBox.expand()),
+            ),
+          ),
+        );
+
+        final side = _paintedNextButtonSide(tester);
+        final surface = _tutorialCardSurface(tester);
+        expect(side, isNotNull, reason: '$name: 「次へ」の枠線が描画されていない');
+        expect(
+          contrastRatio(side!.color, surface),
+          greaterThanOrEqualTo(3.0),
+          reason: '$name: 「次へ」の枠線が Card 面 $surface から浮かない',
+        );
+      });
+    }
+
     testWidgets('オーバーレイが表示される', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
