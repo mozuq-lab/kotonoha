@@ -24,7 +24,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
-import 'package:kotonoha_app/features/favorites/presentation/favorites_screen.dart';
+import 'package:kotonoha_app/features/favorite/presentation/favorites_screen.dart';
 import 'package:kotonoha_app/features/history/presentation/history_screen.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';

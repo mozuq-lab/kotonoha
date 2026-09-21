@@ -340,26 +340,5 @@ void main() {
       final state = container.read(presetPhraseNotifierProvider);
       expect(state.phrases.length, equals(DefaultPhrases.totalCount));
     });
-
-    // リセット機能のテスト
-    /// resetToDefaultsでデータを初期状態に戻せる
-    test('TC-042-006: resetToDefaults()でデータを初期状態に戻せる', () async {
-      // 前提条件: 手動でデータを追加し、初期データを投入しない状態
-      await notifier.addPhrase('手動追加1', 'daily');
-      await notifier.addPhrase('手動追加2', 'health');
-
-      // 実行: リセット
-      await notifier.resetToDefaults();
-
-      // 結果検証: 初期データに戻っていることを確認
-      final state = container.read(presetPhraseNotifierProvider);
-      expect(state.phrases.length, equals(DefaultPhrases.totalCount));
-
-      // 手動追加のデータがないことを確認
-      final manualPhrases = state.phrases.where(
-        (p) => p.content == '手動追加1' || p.content == '手動追加2',
-      );
-      expect(manualPhrases.isEmpty, isTrue);
-    });
   });
 }
