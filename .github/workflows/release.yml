@@ -9,7 +9,6 @@ env:
   FLUTTER_VERSION: '3.38.1'
   JAVA_VERSION: '17'
   API_BASE_URL: ${{ vars.API_BASE_URL || 'http://localhost:8000' }}
-  AI_API_KEY: ${{ secrets.AI_API_KEY || '' }}
 
 jobs:
   validate-tag:
@@ -54,7 +53,6 @@ jobs:
         run: >
           flutter build web --release
           --dart-define=API_BASE_URL="${API_BASE_URL}"
-          --dart-define=AI_API_KEY="${AI_API_KEY}"
 
       - name: Create Web archive
         run: |
@@ -72,6 +70,8 @@ jobs:
     name: Build Android Release
     runs-on: ubuntu-latest
     needs: validate-tag
+    env:
+      AI_API_KEY: ${{ secrets.AI_API_KEY || '' }}
 
     defaults:
       run:
@@ -159,6 +159,8 @@ jobs:
     name: Build iOS Release
     runs-on: macos-latest
     needs: validate-tag
+    env:
+      AI_API_KEY: ${{ secrets.AI_API_KEY || '' }}
 
     defaults:
       run:

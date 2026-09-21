@@ -16,7 +16,6 @@ env:
   FLUTTER_VERSION: '3.38.1'
   JAVA_VERSION: '17'
   API_BASE_URL: ${{ vars.API_BASE_URL || 'http://localhost:8000' }}
-  AI_API_KEY: ${{ secrets.AI_API_KEY || '' }}
 
 jobs:
   analyze:
@@ -316,6 +315,8 @@ jobs:
     name: Build Android
     runs-on: ubuntu-latest
     needs: test
+    env:
+      AI_API_KEY: ${{ secrets.AI_API_KEY || '' }}
 
     defaults:
       run:
@@ -373,6 +374,8 @@ jobs:
     runs-on: macos-latest
     needs: test
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    env:
+      AI_API_KEY: ${{ secrets.AI_API_KEY || '' }}
 
     defaults:
       run:

@@ -55,9 +55,10 @@ class PresetPhraseRepository {
   /// メソッド定義: 定型文を保存（追加・更新）
   /// 実装内容: IDをキーとしてHive Boxに保存（同一IDは上書き）してキャッシュを無効化
   /// 引数: phrase - 保存する定型文
-  Future<void> save(PresetPhrase phrase) async {
-    await _box.put(phrase.id, phrase);
+  Future<bool> save(PresetPhrase phrase) async {
+    final succeeded = await _box.put(phrase.id, phrase);
     invalidateCache();
+    return succeeded;
   }
 
   /// メソッド定義: 定型文を削除

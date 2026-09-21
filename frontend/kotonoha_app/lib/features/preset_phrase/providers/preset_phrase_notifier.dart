@@ -11,6 +11,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/data/default_phrases.dart';
+import 'package:kotonoha_app/features/preset_phrase/domain/phrase_update_result.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:uuid/uuid.dart';
@@ -88,10 +89,10 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
 
   /// メソッド: 定型文を追加する
   /// 実装内容: 新しい定型文をUUID付きで追加
-  Future<void> addPhrase(String content, String category) async {
+  Future<bool> addPhrase(String content, String category, {String? id}) async {
     final now = DateTime.now();
     final newPhrase = PresetPhrase(
-      id: _uuid.v4(), // UUID形式のID自動生成
+      id: id ?? _uuid.v4(), // 同じフォームの再試行では同じkeyへ保存する
       content: content,
       category: category,
       displayOrder: state.phrases.length,
@@ -99,34 +100,28 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       updatedAt: now,
     );
 
-    // 状態を更新し、お気に入り順でソート
-    // エラークリア: 操作が成功したので直前のエラーは解消したとみなす
-    final updatedPhrases = [...state.phrases, newPhrase];
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    if (repo == null || !await repo.save(newPhrase)) return false;
     state = state.copyWith(
-      phrases: _sortPhrases(updatedPhrases),
+      phrases: _sortPhrases([
+        ...state.phrases.where((phrase) => phrase.id != newPhrase.id),
+        newPhrase,
+      ]),
       clearError: true,
     );
-
-    // 永続化: repoがあればHiveに保存
-    final repo = ref.read(presetPhraseRepositoryProvider);
-    if (repo != null) {
-      await repo.save(newPhrase);
-    }
+    return true;
   }
 
   /// メソッド: 定型文を更新する
   /// 実装内容: 指定IDの定型文を更新
-  Future<void> updatePhrase(
+  Future<PhraseUpdateResult> updatePhrase(
     String id, {
     String? content,
     String? category,
   }) async {
     // 対象の定型文を検索 (対応)
     final index = state.phrases.indexWhere((p) => p.id == id);
-    if (index == -1) {
-      // 存在しないIDの場合は何もしない
-      return;
-    }
+    if (index == -1) return PhraseUpdateResult.missing;
 
     final original = state.phrases[index];
     final updatedPhrase = original.copyWith(
@@ -135,19 +130,25 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
       updatedAt: DateTime.now(), // タイムスタンプ更新
     );
 
-    final updatedPhrases = List<PresetPhrase>.from(state.phrases);
-    updatedPhrases[index] = updatedPhrase;
-    // エラークリア: 操作が成功したので直前のエラーは解消したとみなす
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    var saved = false;
+    try {
+      saved = repo != null && await repo.save(updatedPhrase);
+    } catch (_) {
+      // await 中の削除を優先して、失敗とは区別する。
+    }
+    if (!state.phrases.any((p) => p.id == id)) {
+      return PhraseUpdateResult.missing;
+    }
+    if (!saved) return PhraseUpdateResult.failed;
     state = state.copyWith(
-      phrases: _sortPhrases(updatedPhrases),
+      phrases: _sortPhrases([
+        for (final phrase in state.phrases)
+          if (phrase.id == id) updatedPhrase else phrase,
+      ]),
       clearError: true,
     );
-
-    // 永続化: repoがあればHiveに保存
-    final repo = ref.read(presetPhraseRepositoryProvider);
-    if (repo != null) {
-      await repo.save(updatedPhrase);
-    }
+    return PhraseUpdateResult.saved;
   }
 
   /// メソッド: 定型文を削除する

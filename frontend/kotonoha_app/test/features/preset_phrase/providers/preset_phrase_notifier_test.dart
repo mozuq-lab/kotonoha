@@ -1,6 +1,12 @@
 /// PresetPhraseNotifier テスト
 library;
 
+import 'dart:io';
+import 'package:hive/hive.dart';
+import 'package:kotonoha_app/core/persistence/persistence_state.dart';
+import 'package:kotonoha_app/core/utils/hive_init.dart';
+import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
@@ -11,13 +17,20 @@ void main() {
   late ProviderContainer container;
   late PresetPhraseNotifier notifier;
 
-  setUp(() {
+  late Directory tempDir;
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('preset_notifier_');
+    Hive.init(tempDir.path);
+    registerPersistedTypeAdapters();
+    await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
     container = ProviderContainer();
     notifier = container.read(presetPhraseNotifierProvider.notifier);
   });
 
-  tearDown(() {
+  tearDown(() async {
     container.dispose();
+    await Hive.close();
+    await tempDir.delete(recursive: true);
   });
 
   group('PresetPhraseNotifier - 追加機能テスト', () {

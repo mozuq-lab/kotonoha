@@ -19,7 +19,7 @@ import 'package:kotonoha_app/shared/widgets/discard_input_guard.dart';
 /// 内容入力、カテゴリ選択、保存・キャンセル機能を提供。
 class PhraseAddDialog extends StatefulWidget {
   /// パラメータ定義: 保存時のコールバック
-  final void Function(String content, String category)? onSave;
+  final Future<bool> Function(String content, String category)? onSave;
 
   /// PhraseAddDialogを作成する
   const PhraseAddDialog({
@@ -35,6 +35,7 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
   final _contentController = TextEditingController();
   String _selectedCategory = PhraseConstants.defaultCategory;
   String? _errorMessage;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -44,7 +45,8 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
 
   /// メソッド: 保存ボタン押下時の処理
   /// 実装内容: バリデーション実行後、コールバック発火
-  void _onSave() {
+  Future<void> _onSave() async {
+    if (_saving) return;
     final validationError = PresetPhraseValidator.validateContent(
       _contentController.text,
     );
@@ -56,12 +58,29 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
       return;
     }
 
-    widget.onSave?.call(_contentController.text, _selectedCategory);
-    Navigator.of(context).pop();
+    setState(() => _saving = true);
+    var succeeded = false;
+    try {
+      succeeded = await widget.onSave
+              ?.call(_contentController.text, _selectedCategory) ??
+          false;
+    } catch (_) {
+      // 入力を残し、同じ場所で再試行できるようにする。
+    }
+    if (!mounted) return;
+    if (succeeded) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() {
+        _saving = false;
+        _errorMessage = '保存を確認できませんでした。入力内容を残しています。';
+      });
+    }
   }
 
   /// メソッド: キャンセルボタン押下時の処理
   void _onCancel() {
+    if (_saving) return;
     Navigator.of(context).pop();
   }
 
@@ -97,40 +116,43 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     // 端末の戻るボタンは `barrierDismissible: false` では塞げない。
     // 入力があるうちは、閉じる前に確認する（台帳 L-136）。
     // 新しく打った文があるかどうか。空なら捨てるものが無い
-    return DiscardInputGuard(
-      // 空白だけでは保存できない（`PresetPhraseValidator` が弾く）ので、
-      // 捨てるものが無い。操作の負担が大きい利用者を余計に止めない。
-      // カテゴリは、本文が空なら保存できないので単独では見ない
-      hasInput: _contentController.text.trim().isNotEmpty,
-      onDiscard: _onCancel,
-      child: ConfirmationDialogLayout.build(
-        title: const Text('定型文を追加'),
-        // 自前の `SingleChildScrollView` は持たない。
-        // `ConfirmationDialogLayout.build` が `scrollable: true` を渡すので、
-        // `AlertDialog` が title と content をスクロールに入れる。重ねると
-        // 内側は無限高さ制約で `maxScrollExtent = 0` になり、ドラッグを取らない
-        // 死んだ仕組みになる（ADR-008。台帳 L-138）
-        content: PhraseFormContent(
-          controller: _contentController,
-          selectedCategory: _selectedCategory,
-          onCategoryChanged: _onCategoryChanged,
-          currentLength: _contentController.text.length,
-          errorMessage: _errorMessage,
-          onTextChanged: _onTextChanged,
-        ),
-        actions: [
-          // キャンセルボタン: ダイアログを閉じる
-          TextButton(
-            onPressed: _onCancel,
-            child: const Text('キャンセル'),
-          ),
-          // 保存ボタン: バリデーション後に保存
-          ElevatedButton(
-            onPressed: _onSave,
-            child: const Text('保存'),
-          ),
-        ],
+    final dialog = ConfirmationDialogLayout.build(
+      title: const Text('定型文を追加'),
+      // 自前の `SingleChildScrollView` は持たない。
+      // `ConfirmationDialogLayout.build` が `scrollable: true` を渡すので、
+      // `AlertDialog` が title と content をスクロールに入れる。重ねると
+      // 内側は無限高さ制約で `maxScrollExtent = 0` になり、ドラッグを取らない
+      // 死んだ仕組みになる（ADR-008。台帳 L-138）
+      content: PhraseFormContent(
+        controller: _contentController,
+        selectedCategory: _selectedCategory,
+        onCategoryChanged: _onCategoryChanged,
+        currentLength: _contentController.text.length,
+        errorMessage: _errorMessage,
+        onTextChanged: _onTextChanged,
       ),
+      actions: [
+        // キャンセルボタン: ダイアログを閉じる
+        TextButton(
+          onPressed: _saving ? null : _onCancel,
+          child: const Text('キャンセル'),
+        ),
+        // 保存ボタン: バリデーション後に保存
+        ElevatedButton(
+          onPressed: _saving ? null : _onSave,
+          child: const Text('保存'),
+        ),
+      ],
     );
+    return _saving
+        ? PopScope(
+            canPop: false,
+            child: ExcludeFocus(child: AbsorbPointer(child: dialog)),
+          )
+        : DiscardInputGuard(
+            hasInput: _contentController.text.trim().isNotEmpty,
+            onDiscard: _onCancel,
+            child: dialog,
+          );
   }
 }
