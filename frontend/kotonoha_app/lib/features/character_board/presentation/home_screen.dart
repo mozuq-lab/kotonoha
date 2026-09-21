@@ -242,7 +242,8 @@ class HomeScreen extends ConsumerWidget {
   }) {
     final sectionGap = compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall;
 
-    return Column(
+    final controls = Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // クイック応答ボタン（はい/いいえ/わからない）
         _buildQuickResponseSection(
@@ -275,10 +276,14 @@ class HomeScreen extends ConsumerWidget {
           compact: compact,
         ),
         SizedBox(height: sectionGap),
-        // 文字盤
-        Expanded(
-          child: _buildCharacterBoard(ref, fontSize: fontSize),
-        ),
+      ],
+    );
+    return Column(
+      children: [
+        // カテゴリと44pxセル2行を残し、上部の超過分だけを移動する。
+        _ScrollableHomeControls(
+            maxHeight: availableHeight - 200, child: controls),
+        Expanded(child: _buildCharacterBoard(ref, fontSize: fontSize)),
       ],
     );
   }
@@ -823,4 +828,114 @@ class HomeScreen extends ConsumerWidget {
         return AppSizes.fontSizeLarge;
     }
   }
+}
+
+/// 操作群が収まらない場合だけ、固定した上下ボタンで移動できる領域。
+class _ScrollableHomeControls extends StatefulWidget {
+  const _ScrollableHomeControls({required this.maxHeight, required this.child});
+
+  final double maxHeight;
+  final Widget child;
+
+  @override
+  State<_ScrollableHomeControls> createState() =>
+      _ScrollableHomeControlsState();
+}
+
+class _ScrollableHomeControlsState extends State<_ScrollableHomeControls> {
+  static const _buttonHeight = 48.0;
+  final _controller = ScrollController();
+  bool _overflow = false;
+  bool _canUp = false;
+  bool _canDown = false;
+  bool _scheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_scheduleUpdate);
+  }
+
+  void _scheduleUpdate() {
+    if (_scheduled) return;
+    _scheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scheduled = false;
+      if (!mounted || !_controller.hasClients) return;
+      final position = _controller.position;
+      // 補助を除いた高さに収まれば消す。表示後のviewportだけでは残り続ける。
+      final overflow =
+          position.maxScrollExtent > (_overflow ? _buttonHeight : 0) + 0.5;
+      final canUp = position.extentBefore > 0.5;
+      final canDown = position.extentAfter > 0.5;
+      if (overflow != _overflow || canUp != _canUp || canDown != _canDown) {
+        setState(() {
+          _overflow = overflow;
+          _canUp = canUp;
+          _canDown = canDown;
+        });
+      }
+    });
+  }
+
+  void _move(int direction) {
+    final position = _controller.position;
+    // 停止位置の間に操作が隠れないよう、半画面ずつ重ねて移動する。
+    _controller.animateTo(
+      (position.pixels + direction * position.viewportDimension / 2)
+          .clamp(position.minScrollExtent, position.maxScrollExtent),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: widget.maxHeight),
+        child: NotificationListener<ScrollMetricsNotification>(
+          onNotification: (notification) {
+            if (notification.depth == 0) _scheduleUpdate();
+            return false;
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: SingleChildScrollView(
+                  key: const ValueKey('home-controls-scroll'),
+                  controller: _controller,
+                  child: widget.child,
+                ),
+              ),
+              if (_overflow)
+                SizedBox(
+                  height: _buttonHeight,
+                  child: Row(
+                    children: [
+                      for (final direction in [-1, 1])
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(44, 44),
+                              padding: EdgeInsets.zero,
+                            ),
+                            onPressed: (direction < 0 ? _canUp : _canDown)
+                                ? () => _move(direction)
+                                : null,
+                            child: Text(direction < 0 ? '上へ' : '下へ'),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
 }
