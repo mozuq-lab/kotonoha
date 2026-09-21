@@ -5,21 +5,6 @@ library;
 
 import 'package:logger/logger.dart';
 
-/// Log level enumeration
-enum LogLevel {
-  /// Debug level - detailed information for debugging
-  debug,
-
-  /// Info level - general information about app flow
-  info,
-
-  /// Warning level - potential issues that may need attention
-  warning,
-
-  /// Error level - errors that need immediate attention
-  error,
-}
-
 /// Application logger class
 /// Provides methods for logging at different levels with optional tags.
 /// In release mode, debug logs are suppressed.

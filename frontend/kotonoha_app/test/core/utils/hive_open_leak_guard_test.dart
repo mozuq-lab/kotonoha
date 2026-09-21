@@ -29,6 +29,21 @@ void main() {
     expect(Hive.isBoxOpen('probe'), isFalse, reason: 'box は閉じ切っていること');
   });
 
+  test('未closeの保存ディレクトリ消去は後片付けの失敗として返す', () async {
+    await Hive.close();
+    final dir = await Directory.systemTemp.createTemp('hive_removed_dir_');
+    addTearDown(Hive.close);
+    Hive.init(dir.path);
+    await Hive.openBox<String>('probe');
+    await dir.delete(recursive: true);
+
+    await expectLater(
+      closeHiveIgnoringMissingLock(),
+      throwsA(isA<PathNotFoundException>()),
+    );
+    expect(Hive.isBoxOpen('probe'), isFalse);
+  });
+
   test('`.lock` 以外のパスが見つからない失敗は投げ直す', () async {
     await expectLater(
       closeHiveIgnoringMissingLock(

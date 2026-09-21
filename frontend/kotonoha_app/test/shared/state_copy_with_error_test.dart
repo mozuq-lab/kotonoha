@@ -222,7 +222,7 @@ void main() {
     /// 回帰テスト: エラー画面が恒久的に固着するシナリオ
     /// PresetPhraseScreen は state.error != null のときリスト全体を
     /// エラー表示へ差し替える。エラーを消すのは loadPhrases
-    /// resetToDefaults（どちらも lib/ に呼び出し元が無い）と
+    /// （lib/ に呼び出し元が無い）と
     /// initializeDefaultPhrases（phrases が非空だと早期return）だけなので
     /// 「初期化失敗 → 1件追加成功 → 画面再訪」でエラーが解除不能になる。
     test('初期化失敗後に定型文を1件追加すると、画面再訪してもエラーが残らない', () async {
@@ -309,20 +309,6 @@ void main() {
       final state = container.read(presetPhraseNotifierProvider);
       expect(state.error, isNull);
       expect(state.isLoading, isFalse);
-    });
-
-    /// resetToDefaults 自体は clearError を持たない。phrases を空にした直後に
-    /// 呼ぶ initializeDefaultPhrases が早期returnせず必ずクリアするため
-    /// 二重にクリアする必要がない（重複させるとテストで検証できない
-    /// デッドコードになる）。ここでは観測可能な最終状態のみを固定する。
-    test('resetToDefaults() の完了後はエラーが解消している', () async {
-      notifier.setStateForTest(errorState);
-
-      await notifier.resetToDefaults();
-
-      final state = container.read(presetPhraseNotifierProvider);
-      expect(state.error, isNull);
-      expect(state.phrases, isNotEmpty);
     });
 
     test('initializeDefaultPhrases() の再試行はエラーを明示的にクリアする', () async {

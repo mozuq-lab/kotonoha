@@ -56,7 +56,8 @@ Future<T> runGuardingHiveOpenLeak<T>(Future<T> Function() body) async {
 /// 本番は box を閉じない（`lib` に `Hive.close()` も `box.close()` も無い。
 /// `Hive.deleteBoxFromDisk` は open に失敗した box を対象にするので登録されておらず、
 /// ファイルの有無を見る削除に落ちる）ので、この形で落ちるのはテストの後片付けだけ。
-/// **消えた `.lock` の削除失敗だけ**を吸収し、それ以外は投げ直す。
+/// 保存ディレクトリが残る場合の **消えた `.lock` の削除失敗だけ**を吸収する。
+/// ディレクトリごと消した後片付けの順序違反（L-127）は投げ直す。
 /// 吸収したら閉じ直す理由: `Hive.close()` は `Future.wait` なので、複数の box が
 /// 失敗しても**最初のエラーしか伝わらない**（残りは捨てられる。`hive_impl.dart:209-215`、
 /// `Future.wait` は既定で `eagerError: false`）。消えた `.lock` がその 1 つ目だと、
@@ -73,7 +74,12 @@ Future<void> closeHiveIgnoringMissingLock({
       await closeAll();
       return;
     } on PathNotFoundException catch (error) {
-      if (error.path?.endsWith('.lock') != true) rethrow;
+      final path = error.path;
+      if (path == null ||
+          !path.endsWith('.lock') ||
+          !await File(path).parent.exists()) {
+        rethrow;
+      }
     }
   }
   // 閉じるたびに消えた `.lock` が出続けるのは想定外（開いている box は有限で、

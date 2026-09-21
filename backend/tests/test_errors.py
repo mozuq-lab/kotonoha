@@ -41,6 +41,7 @@ def test_raising_outside_except_leaves_no_context() -> None:
     with pytest.raises(SafeError) as info:
         raise SafeError(ErrorCode.INTERNAL_ERROR, cause=cause)
     assert info.value.__context__ is None
+    assert ErrorCode.INTERNAL_ERROR.value in repr(info.value)
     assert "CANARY-secret" not in repr(info.value)
 
 
