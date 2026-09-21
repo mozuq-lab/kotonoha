@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/features/preset_phrase/domain/phrase_update_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
@@ -27,6 +28,37 @@ void main() {
       createdAt: createdAt ?? now,
       updatedAt: updatedAt ?? now,
     );
+  }
+
+  for (final throws in [false, true]) {
+    testWidgets('callback不在・例外でも編集入力を保持する（throw=$throws）', (tester) async {
+      await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+        return TextButton(
+          onPressed: () => showDialog<void>(
+            context: context,
+            builder: (_) => PhraseEditDialog(
+              phrase: createTestPhrase(id: '1', content: '元の本文'),
+              onSave:
+                  throws ? (_) async => throw StateError('save failed') : null,
+            ),
+          ),
+          child: const Text('編集'),
+        );
+      })));
+      await tester.tap(find.text('編集'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '保持する変更本文');
+      await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('保存を確認できません'), findsOneWidget);
+      expect(find.widgetWithText(TextField, '保持する変更本文'), findsOneWidget);
+      expect(
+          tester
+              .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
+              .selected,
+          isTrue);
+    });
   }
 
   group('PhraseEditDialog - 正常系テスト', () {
@@ -83,8 +115,9 @@ void main() {
                     context: context,
                     builder: (_) => PhraseEditDialog(
                       phrase: phrase,
-                      onSave: (updated) {
+                      onSave: (updated) async {
                         savedPhrase = updated;
+                        return PhraseUpdateResult.saved;
                       },
                     ),
                   );
@@ -131,8 +164,9 @@ void main() {
                     context: context,
                     builder: (_) => PhraseEditDialog(
                       phrase: phrase,
-                      onSave: (updated) {
+                      onSave: (updated) async {
                         savedPhrase = updated;
+                        return PhraseUpdateResult.saved;
                       },
                     ),
                   );
@@ -183,8 +217,9 @@ void main() {
                     context: context,
                     builder: (_) => PhraseEditDialog(
                       phrase: phrase,
-                      onSave: (updated) {
+                      onSave: (updated) async {
                         savedPhrase = updated;
+                        return PhraseUpdateResult.saved;
                       },
                     ),
                   );
@@ -272,8 +307,9 @@ void main() {
                     context: context,
                     builder: (_) => PhraseEditDialog(
                       phrase: phrase,
-                      onSave: (_) {
+                      onSave: (_) async {
                         saveCallbackCalled = true;
+                        return PhraseUpdateResult.saved;
                       },
                     ),
                   );

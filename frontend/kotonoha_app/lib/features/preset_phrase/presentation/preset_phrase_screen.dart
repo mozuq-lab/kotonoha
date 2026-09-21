@@ -124,7 +124,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
       builder: (dialogContext) => PhraseEditDialog(
         phrase: phrase,
         onSave: (updatedPhrase) {
-          notifier.updatePhrase(
+          return notifier.updatePhrase(
             updatedPhrase.id,
             content: updatedPhrase.content,
             category: updatedPhrase.category,
