@@ -1,7 +1,6 @@
 /// TextInputField ウィジェット
 /// 要件: （1000文字制限）、（フォントサイズ）
 /// 文字盤入力やテキスト入力に使用するカスタムテキストフィールド。
-/// 最大1000文字制限、クリアボタン対応、大きなフォントサイズ。
 library;
 
 import 'package:flutter/material.dart';
@@ -9,14 +8,12 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
 /// テキスト入力欄ウィジェット
 /// コミュニケーション支援アプリ用にカスタマイズされたテキスト入力フィールド。
-/// 大きなフォントサイズ（24px）、1000文字制限、クリアボタン対応。
 /// 使用例
 /// ```dart
 /// final controller = TextEditingController;
 /// TextInputField(
 /// controller: controller
 /// hintText: 'ここに入力してください'
-/// onClear:  => controller.clear
 /// )
 /// ```
 class TextInputField extends StatelessWidget {
@@ -29,10 +26,6 @@ class TextInputField extends StatelessWidget {
   /// 最大入力文字数（デフォルト: 1000文字）
   final int maxLength;
 
-  /// クリアボタンタップ時のコールバック
-  /// nullの場合、クリアボタンは表示されない
-  final VoidCallback? onClear;
-
   /// 入力が有効かどうか
   final bool enabled;
 
@@ -43,7 +36,6 @@ class TextInputField extends StatelessWidget {
   /// [controller] - テキスト編集コントローラー（必須）
   /// [hintText] - ヒントテキスト（オプション）
   /// [maxLength] - 最大文字数（デフォルト: 1000）
-  /// [onClear] - クリアボタンのコールバック（nullでボタン非表示）
   /// [enabled] - 有効状態（デフォルト: true）
   /// [readOnly] - 読み取り専用（デフォルト: false）
   const TextInputField({
@@ -51,7 +43,6 @@ class TextInputField extends StatelessWidget {
     required this.controller,
     this.hintText,
     this.maxLength = AppSizes.maxInputLength,
-    this.onClear,
     this.enabled = true,
     this.readOnly = false,
   });
@@ -70,14 +61,6 @@ class TextInputField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hintText ?? '文字を入力してください',
         border: const OutlineInputBorder(),
-        suffixIcon: onClear != null
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: onClear,
-                iconSize: AppSizes.iconSizeMedium,
-                tooltip: 'クリア',
-              )
-            : null,
       ),
     );
   }
