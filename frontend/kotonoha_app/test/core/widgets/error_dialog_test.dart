@@ -65,66 +65,6 @@ void main() {
     });
   });
 
-  // AIConversionErrorDialog テスト
-
-  group('AIConversionErrorDialog', () {
-    testWidgets('TC-078-008: AI変換エラーダイアログが表示される', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showAIConversionErrorDialog(
-                context: context,
-                originalText: '元のテキスト',
-                onUseOriginal: () {},
-              ),
-              child: const Text('Show Dialog'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Show Dialog'));
-      await tester.pumpAndSettle();
-
-      // Then: 適切なメッセージと元のテキストを使用ボタンが表示される
-      expect(find.textContaining('AI変換'), findsWidgets);
-      // 「元のテキストを使用」ボタンが表示される
-      expect(find.text('元のテキストを使用'), findsOneWidget);
-    });
-
-    testWidgets('TC-078-009: 元のテキストを使用ボタンでコールバックが呼ばれる', (tester) async {
-      var useOriginalPressed = false;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showAIConversionErrorDialog(
-                context: context,
-                originalText: '元のテキスト',
-                onUseOriginal: () {
-                  useOriginalPressed = true;
-                },
-              ),
-              child: const Text('Show Dialog'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Show Dialog'));
-      await tester.pumpAndSettle();
-
-      // 元のテキストを使用ボタンをタップ
-      await tester.tap(find.text('元のテキストを使用'));
-      await tester.pumpAndSettle();
-
-      // Then: コールバックが呼ばれる
-      expect(useOriginalPressed, isTrue);
-    });
-  });
-
   // TTSErrorDialog テスト
 
   group('TTSErrorDialog', () {

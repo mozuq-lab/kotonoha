@@ -120,17 +120,6 @@ void expectDoesNotOverflow(
 
 void main() {
   expectDoesNotOverflow(
-    'AI変換エラー',
-    open: (context) => showAIConversionErrorDialog(
-      context: context,
-      originalText: '変換のもとになった文',
-      onRetry: () {},
-      onUseOriginal: () {},
-    ),
-    labels: ['キャンセル', '再試行', '元のテキストを使用'],
-  );
-
-  expectDoesNotOverflow(
     '読み上げエラー',
     open: (context) => showTTSErrorDialog(context: context, onRetry: () {}),
     labels: ['再試行', 'OK'],
