@@ -46,29 +46,41 @@ class HistoryRepository {
   /// メソッド定義: 履歴を保存（50件超過時は自動削除）
   /// 実装内容: IDをキーとしてHive Boxに保存、50件超過時は最古履歴を削除
   /// 引数: history - 保存する履歴
-  Future<void> save(HistoryItem history) async {
-    // 上限超過時は最古履歴を削除
-    if (_box.length >= maxHistoryCount && _box.get(history.id) == null) {
-      // 新規追加の場合のみ上限チェック（上書き更新時は削除不要）
-      await _deleteOldestHistory();
-    }
+  Future<void> save(HistoryItem history) => _inOrder(() async {
+        // 上限超過時は最古履歴を削除
+        if (_box.length >= maxHistoryCount && _box.get(history.id) == null) {
+          // 新規追加の場合のみ上限チェック（上書き更新時は削除不要）
+          await _deleteOldestHistory();
+        }
 
-    // 履歴を保存（同一IDは上書き）
-    await _box.put(history.id, history);
-  }
+        // 履歴を保存（同一IDは上書き）
+        await _box.put(history.id, history);
+      });
 
   /// メソッド定義: 履歴を削除
   /// 実装内容: IDをキーとしてHive Boxから削除
   /// 引数: id - 削除する履歴のID
   /// エッジケース: 存在しないIDでも例外を投げない
-  Future<void> delete(String id) async {
-    await _box.delete(id);
-  }
+  Future<void> delete(String id) => _inOrder(() => _box.delete(id));
 
   /// メソッド定義: 全履歴を削除
   /// 実装内容: Hive Boxの全データをクリア
-  Future<void> deleteAll() async {
-    await _box.clear();
+  Future<void> deleteAll() => _inOrder(_box.clear);
+
+  Future<void>? _lastWrite;
+
+  // 上限判定・最古削除・保存を一つの操作として並べる。削除も同じ列に入れ、
+  // 待機中の保存が全削除の後に復活することを防ぐ。
+  Future<void> _inOrder(Future<void> Function() write) {
+    final previous = _lastWrite;
+    final result = previous == null ? write() : previous.then((_) => write());
+    late final Future<void> settled;
+    settled =
+        result.then<void>((_) {}, onError: (Object _) {}).whenComplete(() {
+      if (identical(_lastWrite, settled)) _lastWrite = null;
+    });
+    _lastWrite = settled;
+    return result;
   }
 
   /// メソッド定義: IDで履歴を取得

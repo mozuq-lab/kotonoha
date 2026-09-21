@@ -286,21 +286,6 @@ class PresetPhraseNotifier extends Notifier<PresetPhraseState> {
     }
   }
 
-  /// メソッド: 定型文データをリセットする
-  /// 実装内容: 全定型文を削除し、初期データを再投入
-  /// 設定画面等から呼び出され、定型文を初期状態に戻す。
-  Future<void> resetToDefaults() async {
-    // 永続化: repoがあればHiveの定型文を全削除してから再投入
-    final repo = ref.read(presetPhraseRepositoryProvider);
-    if (repo != null) {
-      await repo.deleteAll();
-    }
-    // エラークリア: ここでは行わない。phrasesを空にした直後なので
-    // 続く initializeDefaultPhrases が早期returnせず必ず clearError する。
-    state = state.copyWith(phrases: [], isLoading: true);
-    await initializeDefaultPhrases();
-  }
-
   /// プライベートメソッド: 定型文を表示順で並べ替える
   /// 設計変更: Phase 3 / WP-2 / Stage 3b - お気に入りを先頭へ寄せる規則は
   /// ここから外した。お気に入り優先表示は PhraseListWidget のセクション分割

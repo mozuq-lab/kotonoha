@@ -96,3 +96,14 @@ def test_multiple_xff_header_lines_do_not_bypass_rate_limit() -> None:
         "/a", headers=[("x-forwarded-for", "spoof-2"), ("x-forwarded-for", "5.5.5.5")]
     )
     assert [first.status_code, second.status_code] == [200, 429]
+
+
+def test_configured_window_still_rejects_after_one_second() -> None:
+    """秒数が失われて既定の1秒窓になると、同じ送信元が早く再許可される。"""
+    with _client(RateLimiter(times=1, seconds=5, trusted_proxy_count=1)) as client:
+        headers = {"X-Forwarded-For": "7.7.7.7"}
+        assert client.get("/a", headers=headers).is_success
+        time.sleep(1.1)
+        response = client.get("/a", headers=headers)
+        assert response.is_client_error
+        assert 1 < response.json()["retry_after"] <= 5

@@ -3,9 +3,8 @@
 /// 背景: `_buildBody` は `state.error != null` のときリスト全体を
 /// 「エラーが発生しました: …」に差し替える。エラーを消す経路は
 /// `loadPhrases` … lib/ に呼び出し元が無い
-/// `resetToDefaults` … lib/ に呼び出し元が無い
 /// `initializeDefaultPhrases` … `phrases` が非空だと早期returnする
-/// の3つしかないため、「初期化に失敗 → 定型文が1件でも増える」と
+/// の2つしかないため、「初期化に失敗 → 定型文が1件でも増える」と
 /// エラー表示がプロセス終了まで解除できなくなる。
 /// 成功したCRUD操作で `clearError: true` を立てることで画面が復帰する。
 library;

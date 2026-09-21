@@ -18,17 +18,22 @@ class InputLimitNotice extends ConsumerWidget {
   static const String message =
       '${InputBufferNotifier.maxLength} 文字に達しました。これ以上は入力できません';
 
+  /// 超過したテキストを設定した場合の告知。
+  static const String truncatedMessage =
+      '${InputBufferNotifier.maxLength} 文字を超えたため、超過分を切り詰めました';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reached = ref.watch(inputLimitReachedProvider);
     if (!reached) return const SizedBox.shrink();
+    final truncated = ref.watch(inputWasTruncatedProvider);
     final theme = Theme.of(context);
     return Semantics(
       liveRegion: true,
       child: Padding(
         padding: const EdgeInsets.only(top: AppSizes.paddingXSmall),
         child: Text(
-          message,
+          truncated ? truncatedMessage : message,
           style: theme.textTheme.bodyMedium
               ?.copyWith(color: theme.colorScheme.error),
         ),
