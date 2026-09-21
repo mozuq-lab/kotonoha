@@ -72,7 +72,9 @@
 - [x] L-149 release Web build から `AI_API_KEY` の workflow-level env と `dart-define` を外し、既存認証は Android / iOS job の env だけに限定した。固定 frontend export・FVM 3.38.1・dummy の旧相当 build では展開済み zip の `main.dart.js` に dummy を検出（RED）。同じ dummy を環境変数に残した修正後 command は build と zip 生成に成功し、展開後 0 件（`rg` exit 1）。実 secret は未使用 — .github/workflows/release.yml（2026-09-21 実測）
 - [x] L-150 公開 privacy-policy の日英に、通常変換と前回結果を含む再変換のデータフロー（本アプリ → ことのは backend → 設定された外部 AI provider）、backend の no-DB・処理後非保存、provider の保持・学習利用を保証しない範囲、第三者提供の例外、アプリ独自の crash 送信がない範囲を明記した。固定 source export の local HTML render・HTTP 200 と実ブラウザでの日英表示・横溢れなしを確認。Jekyll / hosted Pages、実送信・provider の実設定・外部保管実態・法的分類は未確認 — docs/privacy-policy.md、frontend/kotonoha_app/lib/features/ai_conversion/data/models/ai_conversion_request.dart、backend/app/ai/providers.py（2026-09-21 実測）
 
-- [ ] L-151 標準HomeScreen（高さ844、幅320/360/390、大設定×OS2.0＝合成2.4）で下端overflow（127/56/56px）。元main `1efba3dd` でも同値。入力上限告知の全文glyphは可視だが画面全体は未解消 — 2026-09-20 PR7のwidget測定（1000/1001文字）、frontend/kotonoha_app/lib/features/character_board/presentation/home_screen.dart。
+- [ ] L-151 標準HomeScreenの大設定×OS2.0で上部が文字盤を潰す問題は、200pxの文字盤領域確保と上下タップ移動で修正。320/360/390×844・1000/1001文字、正常AppShell、短縮遷移をwidget測定。標準縦配置が対象、実ブラウザは未確認 — 2026-09-21 L-151実装検証、home_screen_overflow_test.dart。
+- [ ] L-155 大設定×OS2.0のAppShellで320×690からオフラインになるとHome可視高が542→486pxとなり既存compactへ切り替わる。文字盤セルは25.12×44pxで幅44px未満（base/candidate同値）。標準縦配置のL-151修正の対象外 — 2026-09-21 home-overflow-boundary-{baseline,candidate}.log、home_screen.dart、character_board_widget.dart、base `84b33b85`。
+- [ ] L-156 大設定×OS2.0・幅320のオフライン表示に既存の横overflow。AppShell高さ844/690でoffline_banner.dartのRowは右247px、高さ690のcompactではai_conversion_button.dartのOfflineIndicatorも右71px（base/candidate同値）— 2026-09-21 home-overflow-boundary-{baseline,candidate}.log、base `84b33b85`。
 
 ## 判断待ち
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。通常 CI の Web 成果物には鍵を焼かない（#121 で外した。release は L-149）。決定（2026-09-20 第 2 回、決定シート）: ストア提出後に回す（A）。ADR-007 が「初回は AI 変換抜き可、リリースは backend に依存しない」と決めている。L-55（応答時間の実測）も同日に

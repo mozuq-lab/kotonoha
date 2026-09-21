@@ -417,7 +417,12 @@ void main() {
   expectMeetsContract(
     'AI変換の利用確認',
     home: HomeScreen.new,
-    open: (tester) => tester.tap(find.widgetWithText(ElevatedButton, 'AI変換')),
+    open: (tester) async {
+      final ai = find.widgetWithText(ElevatedButton, 'AI変換');
+      await tester.ensureVisible(ai);
+      await pumpFrames(tester);
+      await tester.tap(ai);
+    },
     cancelLabel: '同意しない',
     confirmLabel: '同意して利用',
     settle: pumpFrames,
