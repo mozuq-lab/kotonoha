@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/features/preset_phrase/domain/phrase_update_result.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/preset_phrase_validator.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_form_content.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
@@ -20,7 +21,7 @@ class PhraseEditDialog extends StatefulWidget {
   final PresetPhrase phrase;
 
   /// パラメータ定義: 保存時のコールバック
-  final void Function(PresetPhrase updatedPhrase)? onSave;
+  final Future<PhraseUpdateResult> Function(PresetPhrase updatedPhrase)? onSave;
 
   /// PhraseEditDialogを作成する
   const PhraseEditDialog({
@@ -37,6 +38,7 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
   late TextEditingController _contentController;
   late String _selectedCategory;
   String? _errorMessage;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -54,7 +56,8 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
 
   /// メソッド: 保存ボタン押下時の処理
   /// 実装内容: バリデーション実行後、更新済み定型文でコールバック発火
-  void _onSave() {
+  Future<void> _onSave() async {
+    if (_saving) return;
     final validationError = PresetPhraseValidator.validateContent(
       _contentController.text,
     );
@@ -73,12 +76,30 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
       updatedAt: DateTime.now(),
     );
 
-    widget.onSave?.call(updatedPhrase);
-    Navigator.of(context).pop();
+    setState(() => _saving = true);
+    var result = PhraseUpdateResult.failed;
+    try {
+      result =
+          await widget.onSave?.call(updatedPhrase) ?? PhraseUpdateResult.failed;
+    } catch (_) {
+      // 入力を残し、同じ場所で再試行できるようにする。
+    }
+    if (!mounted) return;
+    if (result == PhraseUpdateResult.saved) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() {
+        _saving = false;
+        _errorMessage = result == PhraseUpdateResult.missing
+            ? '元の定型文が見つかりません。入力内容は残っています。'
+            : '保存を確認できませんでした。入力内容を残しています。';
+      });
+    }
   }
 
   /// メソッド: キャンセルボタン押下時の処理
   void _onCancel() {
+    if (_saving) return;
     Navigator.of(context).pop();
   }
 
@@ -114,40 +135,44 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
     // 端末の戻るボタンは `barrierDismissible: false` では塞げない。
     // 入力があるうちは、閉じる前に確認する（台帳 L-136）。
     // 元の文言から変わっているかどうか。変えていなければ捨てるものが無い
-    return DiscardInputGuard(
-      // **カテゴリの変更も捨てるもの**（本文だけ見ると、チップを押しただけの
-      // 変更が黙って消える。#154 の 2 系統レビューが実測）
-      hasInput: _contentController.text != widget.phrase.content ||
-          _selectedCategory != widget.phrase.category,
-      onDiscard: _onCancel,
-      child: ConfirmationDialogLayout.build(
-        title: const Text('定型文を編集'),
-        // 自前の `SingleChildScrollView` は持たない。
-        // `ConfirmationDialogLayout.build` が `scrollable: true` を渡すので、
-        // `AlertDialog` が title と content をスクロールに入れる。重ねると
-        // 内側は無限高さ制約で `maxScrollExtent = 0` になり、ドラッグを取らない
-        // 死んだ仕組みになる（ADR-008。台帳 L-138）
-        content: PhraseFormContent(
-          controller: _contentController,
-          selectedCategory: _selectedCategory,
-          onCategoryChanged: _onCategoryChanged,
-          currentLength: _contentController.text.length,
-          errorMessage: _errorMessage,
-          onTextChanged: _onTextChanged,
-        ),
-        actions: [
-          // キャンセルボタン: ダイアログを閉じる
-          TextButton(
-            onPressed: _onCancel,
-            child: const Text('キャンセル'),
-          ),
-          // 保存ボタン: バリデーション後に保存
-          ElevatedButton(
-            onPressed: _onSave,
-            child: const Text('保存'),
-          ),
-        ],
+    final dialog = ConfirmationDialogLayout.build(
+      title: const Text('定型文を編集'),
+      // 自前の `SingleChildScrollView` は持たない。
+      // `ConfirmationDialogLayout.build` が `scrollable: true` を渡すので、
+      // `AlertDialog` が title と content をスクロールに入れる。重ねると
+      // 内側は無限高さ制約で `maxScrollExtent = 0` になり、ドラッグを取らない
+      // 死んだ仕組みになる（ADR-008。台帳 L-138）
+      content: PhraseFormContent(
+        controller: _contentController,
+        selectedCategory: _selectedCategory,
+        onCategoryChanged: _onCategoryChanged,
+        currentLength: _contentController.text.length,
+        errorMessage: _errorMessage,
+        onTextChanged: _onTextChanged,
       ),
+      actions: [
+        // キャンセルボタン: ダイアログを閉じる
+        TextButton(
+          onPressed: _saving ? null : _onCancel,
+          child: const Text('キャンセル'),
+        ),
+        // 保存ボタン: バリデーション後に保存
+        ElevatedButton(
+          onPressed: _saving ? null : _onSave,
+          child: const Text('保存'),
+        ),
+      ],
     );
+    return _saving
+        ? PopScope(
+            canPop: false,
+            child: ExcludeFocus(child: AbsorbPointer(child: dialog)),
+          )
+        : DiscardInputGuard(
+            hasInput: _contentController.text != widget.phrase.content ||
+                _selectedCategory != widget.phrase.category,
+            onDiscard: _onCancel,
+            child: dialog,
+          );
   }
 }
