@@ -29,6 +29,8 @@ final _highContrastButtonSide =
 /// 境界線: 2px以上の黒色で明確な区別
 final ThemeData highContrastTheme = ThemeData(
   brightness: Brightness.light,
+  visualDensity: VisualDensity.standard,
+  materialTapTargetSize: MaterialTapTargetSize.padded,
   colorScheme: const ColorScheme.light(
     primary: AppColors.primaryHighContrast,
     // primary(#000000)上の白文字は最大コントラスト（21:1）でAA適合。
