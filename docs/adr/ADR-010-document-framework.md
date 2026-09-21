@@ -26,7 +26,7 @@
 ## 決定
 
 文書は 5 種類。**核** `AGENTS.md`（毎回読む。120 行以内）／**決定** `docs/adr/`（触る領域のときだけ読む。未卒業 5 本以下、各 60 行以内）／
-**正本**（読者ごとに 1 つ。開発者は `README.md`、利用者・審査者は `docs/privacy-policy.md` と `docs/support.md`、仕様は `docs/spec/kotonoha-requirements.md`、API は `backend/tests/contract/openapi_baseline.json`。同じ内容を 2 箇所に書かない）／
+**正本**（読者ごとに 1 つ。開発者は `README.md`、利用者・審査者は `docs/privacy-policy.md` と `docs/support.md`、仕様は `docs/spec/kotonoha-requirements.md`。API の契約テスト基準は `backend/tests/contract/openapi_baseline.json` で、正規化ダンプのため API 仕様の正本ではない。同じ内容を 2 箇所に書かない）／
 **使い捨て**（`docs/plans/` と PR 本文。冒頭に破棄条件 1 行。完了 PR のマージで削除）／**倉庫**（`docs/archive/`。更新しない。現在の仕様として読まない）。
 卒業＝守る検査が CI にある、後続の決定に置き換えられた、または却下の記録で守る規律が核に 1 行入った。卒業した本文は `docs/archive/adr/` へ。**索引は核に未卒業だけ（1 決定 1 行）。卒業済みの索引は `docs/adr/README.md`（同じ列＋赤の見方）。**
 **検査を書ける決定は、検査と同じ PR で入れて卒業済みとして生まれる。**未卒業のまま置くなら台帳に「検査を書く」行を 1 行持つ。`docs/adr/` に残るのは検査を書けない決定と書けていない決定だけで、その合計が 5 本まで。

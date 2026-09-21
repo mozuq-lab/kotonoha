@@ -8,26 +8,16 @@ coverage:
 
   status:
     project:
-      default:
-        # Target coverage: 80% overall
-        target: 80%
-        threshold: 2%
-        # Don't fail until we reach the target
-        informational: false
-
-      flutter:
-        paths:
-          - "frontend/**"
-        target: 80%
-        threshold: 2%
-        informational: false
+      # NFR-501 is enforced in backend/pyproject.toml and flutter.yml.
+      # Disable Codecov's automatically created default project status.
+      default: false
 
       python:
         paths:
-          - "backend/**"
-        # Python backend target: 90% (business logic & API endpoints)
+          - "backend/app/**"
+        # NFR-502: all backend production code is the proposed critical scope.
         target: 90%
-        threshold: 2%
+        threshold: 0%
         informational: false
 
     patch:
@@ -69,11 +59,7 @@ ignore:
   # Generated files
   - "frontend/kotonoha_app/lib/**/*.g.dart"
   - "frontend/kotonoha_app/lib/**/*.freezed.dart"
-  - "frontend/kotonoha_app/lib/gen/**"
   # Test files (don't count test coverage of tests)
   - "frontend/kotonoha_app/test/**"
   - "frontend/kotonoha_app/integration_test/**"
   - "backend/tests/**"
-  # Configuration files
-  - "backend/alembic/**"
-  - "infra/**"

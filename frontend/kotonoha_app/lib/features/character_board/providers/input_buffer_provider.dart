@@ -32,6 +32,23 @@ final inputLimitReachedProvider = Provider<bool>(
       ref.watch(inputBufferProvider).length >= InputBufferNotifier.maxLength,
 );
 
+/// 直近のテキスト設定で超過分を切り詰めたか。削除・全消去・次の設定で解除する。
+final inputWasTruncatedProvider = Provider<bool>(
+  (ref) => ref.watch(_inputTruncationProvider),
+);
+
+final _inputTruncationProvider =
+    NotifierProvider<_InputTruncationNotifier, bool>(
+  _InputTruncationNotifier.new,
+);
+
+class _InputTruncationNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void update(bool truncated) => state = truncated;
+}
+
 /// 文字入力バッファの状態管理クラス
 /// [Notifier]を継承し、同期的な状態更新でUI応答性を維持する。
 /// 状態は[String]型で、入力された文字列を保持する。
@@ -69,11 +86,13 @@ class InputBufferNotifier extends Notifier<String> {
   /// 将来的にはgrapheme cluster単位での削除（絵文字対応）を検討。
   void deleteLastCharacter() {
     if (state.isEmpty) return;
+    ref.read(_inputTruncationProvider.notifier).update(false);
     state = state.substring(0, state.length - 1);
   }
 
   /// 入力バッファを全消去する
   void clear() {
+    ref.read(_inputTruncationProvider.notifier).update(false);
     state = '';
   }
 
@@ -81,6 +100,7 @@ class InputBufferNotifier extends Notifier<String> {
   /// [text]が[maxLength]を超える場合は切り捨てる。
   /// 既存のテキストは上書きされる。
   void setText(String text) {
+    ref.read(_inputTruncationProvider.notifier).update(text.length > maxLength);
     state = text.length > maxLength ? text.substring(0, maxLength) : text;
   }
 

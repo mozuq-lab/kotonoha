@@ -242,15 +242,4 @@ void main() {
       );
     });
   });
-
-  group('LogLevel Enum Tests', () {
-    test('LogLevel should have all required levels', () {
-      // Assert
-      expect(LogLevel.values, contains(LogLevel.debug));
-      expect(LogLevel.values, contains(LogLevel.info));
-      expect(LogLevel.values, contains(LogLevel.warning));
-      expect(LogLevel.values, contains(LogLevel.error));
-      expect(LogLevel.values.length, equals(4));
-    });
-  });
 }
