@@ -255,10 +255,15 @@ class OfflineIndicator extends ConsumerWidget {
           children: [
             Icon(Icons.wifi_off, size: 16, color: AppColors.onWarningContainer),
             SizedBox(width: 4),
-            Text(
-              'オフライン',
-              style:
-                  TextStyle(color: AppColors.onWarningContainer, fontSize: 12),
+            // Flexibleで包む理由: 2ペインの左ペインのように幅が乏しい
+            // 置き場では、OSの文字拡大で1行ぶんの文字幅が箱を超えてRowが
+            // 右へはみ出し、読めなくなる（台帳 L-156）。折り返して全文を残す。
+            Flexible(
+              child: Text(
+                'オフライン',
+                style: TextStyle(
+                    color: AppColors.onWarningContainer, fontSize: 12),
+              ),
             ),
           ],
         ),

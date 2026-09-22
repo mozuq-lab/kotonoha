@@ -90,11 +90,19 @@ class _OnlineRecoveryNotificationState
                       color: Colors.green[900],
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      'オンラインに戻りました。AI変換が利用可能です',
-                      style: TextStyle(
-                        color: Colors.green[900],
-                        fontSize: 14,
+                    // Flexibleで包む理由: 幅の狭い端末（320px）では1行ぶんの
+                    // 文字幅が帯の幅を超えてRowが右へはみ出し、文言の後半が
+                    // 読めなくなっていた（実Chromiumで右51px。OfflineBanner
+                    // と同型で、fontSize固定なのでフォント設定に依らない）。
+                    // 折り返せば全文が残る。省略（ellipsis）にはしない。
+                    Flexible(
+                      child: Text(
+                        'オンラインに戻りました。AI変換が利用可能です',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.green[900],
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],

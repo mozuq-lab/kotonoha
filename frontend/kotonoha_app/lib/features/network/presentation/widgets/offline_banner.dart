@@ -53,11 +53,20 @@ class OfflineBanner extends ConsumerWidget {
                 color: Colors.grey[900],
               ),
               const SizedBox(width: 8),
-              Text(
-                'オフライン - 基本機能のみ利用可能',
-                style: TextStyle(
-                  color: Colors.grey[900],
-                  fontSize: 14,
+              // Flexibleで包む理由: 幅の狭い端末（320px）でOSの文字拡大を
+              // 併用すると、1行ぶんの文字幅がバナーの幅を超えてRowが右へ
+              // はみ出し、文言の後半が読めなくなっていた（台帳 L-156）。
+              // 折り返せば全文が残る。省略（ellipsis）にはしない。
+              Flexible(
+                child: Text(
+                  'オフライン - 基本機能のみ利用可能',
+                  // 折り返すとFlexibleが残り幅を取るためRowのcenterが効かず
+                  // 2行目だけ左に寄る。行そのものを中央に揃える。
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey[900],
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],

@@ -1,13 +1,16 @@
 /// 低い画面・オフライン時のHome表示テストの共通土台（台帳 L-155・L-156）
 /// ファイル目的: 実AppShell・フォント設定「大」・OSの文字拡大・オフラインで
 /// Homeを立ち上げ、矩形と段落を最も外側から測るための道具を1箇所に置く。
-/// 使う側は home_screen_low_screen_board_test.dart（L-155: 文字盤のキー）。
+/// 使う側
+///   home_screen_low_screen_board_test.dart（L-155: 文字盤のキー）
+///   home_screen_low_screen_notices_test.dart（L-156: 告知の折り返し）
 /// 複製すると片方だけ弱いまま取り残されるため、ここにまとめる。
 library;
 
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +22,15 @@ import 'package:kotonoha_app/features/character_board/presentation/home_screen.d
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// オフラインバナー（画面上部）の文言
+const String offlineBannerText = 'オフライン - 基本機能のみ利用可能';
+
+/// AI変換ボタン脇の告知（OfflineIndicator）の文言
+const String offlineIndicatorText = 'オフライン';
+
+/// オンライン復帰の帯の文言
+const String onlineRecoveryText = 'オンラインに戻りました。AI変換が利用可能です';
 
 /// 文字盤の先頭2行（あ行・か行）
 const List<String> boardKeys = [
@@ -61,6 +73,61 @@ final Matcher isKnownHorizontalOverflow = predicate<Object?>(
 void expectOnlyKnownOverflow(HomeLayoutHarness harness, {String? reason}) {
   expect(harness.pumpErrors, everyElement(isKnownHorizontalOverflow),
       reason: reason ?? '既知の横overflow以外の例外が出ている: ${harness.pumpErrors}');
+}
+
+/// 告知が[box]の中に全文描かれていることを見る。
+/// 固定箱の中のTextは矩形・sizeだけを見ると常に緑になるので
+/// (1) 折り返し後に必要な行数ぶんの高さがあるか（getMaxIntrinsicWidth）
+/// (2) 文字の選択矩形が段落自身のsizeからはみ出していないか
+/// (3) 段落の矩形が告知の箱に収まっているか
+/// の3点で見る。
+void expectNoticeReadable(
+    WidgetTester tester, Finder target, Rect box, String label) {
+  final rect = tester.getRect(target);
+  expect(encloses(box, rect), isTrue,
+      reason: '$label: 告知テキスト$rectが箱$boxからはみ出している');
+
+  final paragraph = tester.renderObject<RenderParagraph>(target);
+  expect(paragraph.didExceedMaxLines, isFalse, reason: '$label: 行数制限で末尾が切れている');
+  expect(paragraph.size.width, greaterThan(0), reason: '$label: 幅が0');
+  final singleLineWidth = paragraph.getMaxIntrinsicWidth(double.infinity);
+  final oneLineHeight = paragraph.getMaxIntrinsicHeight(double.infinity);
+  final neededLines = (singleLineWidth / paragraph.size.width).ceil();
+  expect(
+    paragraph.size.height,
+    greaterThanOrEqualTo(oneLineHeight * neededLines - 0.5),
+    reason: '$label: 1行幅$singleLineWidth を幅${paragraph.size.width}へ'
+        '折り返すと$neededLines行（1行$oneLineHeight）必要だが'
+        '実際の高さは${paragraph.size.height}',
+  );
+
+  final boxes = paragraph.getBoxesForSelection(TextSelection(
+      baseOffset: 0, extentOffset: paragraph.text.toPlainText().length));
+  expect(boxes, isNotEmpty, reason: '$label: 文字が1つも描かれていない');
+  for (final glyphs in boxes) {
+    // 許容1px: 文字の矩形と段落のsizeは丸めが別々で0.1px程度ずれる。
+    // ここで見たい「切れている」は247px・71pxの桁の話なので埋もれない。
+    expect(
+        encloses(Offset.zero & paragraph.size, glyphs.toRect(), tolerance: 1),
+        isTrue,
+        reason: '$label: ${glyphs.toRect()}が段落${paragraph.size}からはみ出している');
+  }
+}
+
+/// 折り返した各行が段落の中で中央に揃っていることを見る。
+/// Row(mainAxisAlignment.center)はFlexibleが残り幅を取ると効かなくなり
+/// textAlign既定（start）では2行目だけ左に寄る。
+void expectLinesCentered(WidgetTester tester, Finder target, String label) {
+  final paragraph = tester.renderObject<RenderParagraph>(target);
+  final boxes = paragraph.getBoxesForSelection(TextSelection(
+      baseOffset: 0, extentOffset: paragraph.text.toPlainText().length));
+  expect(boxes.length, greaterThan(1), reason: '$label: 折り返していないので行揃えを見る意味がない');
+  for (final line in boxes) {
+    final rect = line.toRect();
+    // 許容1.5px: 文字の矩形と段落sizeの丸め差。行の左右の余りが等しいか。
+    expect(rect.left, closeTo(paragraph.size.width - rect.right, 1.5),
+        reason: '$label: 行$rectが段落幅${paragraph.size.width}の中で中央にない');
+  }
 }
 
 /// 実AppShellでHomeを立ち上げる土台。テストの main() で [install] を呼ぶ。
