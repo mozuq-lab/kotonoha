@@ -74,6 +74,11 @@ class PhraseDrafts {
     }
     _entries = entries;
     _loaded = true;
+    // 落とした不正entryは store との差＝「変更」。次のflushで掃除済みmapを
+    // 書く。dirtyにしないとL-159以降は書き戻されず、読込エラーの告知が起動の
+    // たびに出続ける（台帳 L-159 の副作用。監査 P1-1）。健全なstoreでは
+    // 増えないので「変わっていなければ書かない」は保たれる。
+    if (!valid) _changes++;
     _record(phraseDraftReadKey, valid);
     return true;
   }
@@ -103,7 +108,12 @@ class PhraseDrafts {
     if (_removing != null) return _removing!;
     if (!_loaded || _disposed) return Future.value(false);
     final next = {..._entries}..remove('add');
-    // 消去は明示操作。変わっていなくても必ず書く。
+    // 消すものが無く、storeが最後の成功書込と一致しているなら書かない。
+    // 書くと、下書きを1度も打っていない利用者が「キャンセル」しただけで
+    // 「下書きを消せませんでした。閉じると次回も残ります」＝事実と逆の告知を
+    // 見る（残る下書きは存在しない。L-159と同じ誤発報。監査 P1-4）。
+    if (!_entries.containsKey('add') && !_dirty) return Future.value(true);
+    // 消すものがあれば、消去は明示操作なので変わっていなくても必ず書く。
     _changes++;
     // paused中のflushもこの操作へ合流し、古いmapをclearの後へ載せない。
     return _removing = _write(next).then((succeeded) {

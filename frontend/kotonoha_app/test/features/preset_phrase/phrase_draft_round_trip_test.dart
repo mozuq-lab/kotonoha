@@ -532,6 +532,33 @@ void main() {
     expect(find.textContaining('定型文の下書きを保存できません', skipOffstage: false),
         findsNothing);
   });
+  testWidgets('読み込みで落とした不正entryは、打たなくても次のpausedで掃除される', (tester) async {
+    // F-10 / 監査 P1-1: `_load` が落とした不正 entry は store との差＝「変更」。
+    // dirty にしないと L-159 以降、入力しないまま背景へ回しても書き戻されず、
+    // 読込エラーの告知が起動のたびに出続ける（BASE では paused の無条件書込で
+    // 一掃されていた。公開文「次に書き込みに成功したとき」の実態）。
+    store.values[draftKey] = jsonEncode({
+      'add': {'id': 'draft-1', 'content': '正常な下書き', 'category': 'daily'},
+      'bogus': 1,
+    });
+    await open(tester, observe: true, banner: true);
+    expect(find.widgetWithText(TextField, '正常な下書き'), findsOneWidget);
+    expect(find.textContaining('読み込め', skipOffstage: false), findsWidgets);
+    // 何も打たずに背景へ回すだけ。
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    for (var i = 0; i < 100 && store.writes < 1; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 5)));
+      await tester.pump();
+    }
+    expect(store.writes, 1, reason: '落とした不正entryが書き戻されていない');
+    final map = jsonDecode(store.values[draftKey]! as String) as Map;
+    expect(map.keys, isNot(contains('bogus')));
+    expect((map['add'] as Map)['content'], '正常な下書き');
+  });
   testWidgets('書込に失敗した下書きは、入力を変えなくても次のpausedで再試行する', (tester) async {
     // L-159 が約束した「失敗後は dirty のまま＝次の paused で再試行される」。
     // `_written` を**成功したときだけ**進めることが効いている（F-3）。
@@ -729,6 +756,20 @@ void main() {
       expect(find.widgetWithText(TextField, '破棄失敗を保持'), findsNothing);
     });
   }
+  testWidgets('下書きが無いキャンセルは書かず、事実と逆の告知も出さない', (tester) async {
+    // F-11 / 監査 P1-4: L-159 と同じ誤発報が明示操作側に残っていた。消すものが
+    // 無いのに書きに行き、失敗すると「下書きを消せませんでした。閉じると次回も
+    // 残ります」が出る（残る下書きは存在しない）。
+    await open(tester, banner: true);
+    store.failWrite = true;
+    await submit(tester, action: 'キャンセル');
+    expect(find.byType(PhraseAddDialog), findsNothing, reason: '閉じられていない');
+    expect(find.textContaining('下書きを消せません'), findsNothing);
+    expect(find.textContaining('定型文の下書き', skipOffstage: false), findsNothing);
+    expect(store.writes, 0, reason: '消すものが無いのに書いている');
+    expect(container.read(settingsWriteFailureProvider),
+        isNot(contains(phraseDraftWriteKey)));
+  });
   testWidgets('空本文の「キャンセル」はカテゴリだけの下書きも消す', (tester) async {
     await open(tester);
     await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
