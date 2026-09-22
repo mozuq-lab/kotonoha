@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kotonoha_app/core/persistence/programming_error_report.dart';
 import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/phrase_constants.dart';
 
@@ -132,21 +133,24 @@ class PhraseDrafts {
         // 例外でもqueueを完了させ、次の明示再試行へ進める。
       }
       if (succeeded) _written = writing;
-      // 報告が1度throwすると`_tail`がrejectedになり、以後のflush/removeAddが
-      // 全部errorになる。書込は成功しているのに「消せませんでした」（事実と
-      // 逆）が出て、そのセッションの下書き操作が全部失敗する（台帳 L-162）。
-      // setStringと同じtryには入れない（throw経路で報告ごと抜けるため）。
-      try {
-        _record(phraseDraftWriteKey, succeeded);
-      } catch (_) {
-        // 報告の失敗は書込の成否と別。ここで飲んでqueueを進める。
-      }
+      _record(phraseDraftWriteKey, succeeded);
       return succeeded;
     });
   }
 
+  /// 報告は下書きの読み書きの成否と別物なので、ここで閉じる。
+  /// 外へ投げると、`_write` では `_tail` が rejected になって以後の
+  /// flush/removeAdd が全部 error になり（書込は成功しているのに
+  /// 「消せませんでした」＝事実と逆）、`_load` では `initialize()` が
+  /// reject してフォームが `_loading` のまま固まる（台帳 L-162、監査 P1-5）。
+  /// 飲むだけにせず、`Error` は端末内のログへ出す。
   void _record(String key, bool succeeded) {
-    if (!_disposed) _report(key, succeeded);
+    if (_disposed) return;
+    try {
+      _report(key, succeeded);
+    } catch (e, s) {
+      reportDraftProgrammingError(e, s);
+    }
   }
 
   void dispose() {

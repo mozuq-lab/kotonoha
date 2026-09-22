@@ -8,25 +8,13 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:kotonoha_app/core/persistence/programming_error_report.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/phrase_draft_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/phrase_constants.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/preset_phrase_validator.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_form_content.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 import 'package:kotonoha_app/shared/widgets/discard_input_guard.dart';
-
-/// 利用者を閉じ込めないための `catch` が、プログラムの誤りまで穏当な文に
-/// 隠してしまわないようにする（台帳 L-162(a)）。`Error`（`HiveError` を含む）
-/// だけを端末内のログへ流す。debug とテストで見え、release でも端末内に
-/// 留まる。送信経路は作らない（ADR-009）。
-void reportDraftProgrammingError(Object error, StackTrace stack) {
-  if (error is! Error) return;
-  FlutterError.reportError(FlutterErrorDetails(
-    exception: error,
-    stack: stack,
-    library: 'kotonoha preset_phrase draft',
-  ));
-}
 
 /// 復元した下書きのIDが、実boxのどのレコードに当たるか。
 enum PhraseDraftOwnership {
@@ -246,8 +234,11 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     var cleared = false;
     try {
       cleared = await widget.drafts!.removeAdd();
-    } catch (_) {
+    } catch (e, s) {
       // 例外でも`_saving`のまま固めない（固めると全操作が塞がる）。
+      // F-1 の後は `removeAdd` が投げる経路は無いが、`_onSave` と規則を
+      // 揃えておく（片方だけ Error を飲む形を残さない）。
+      reportDraftProgrammingError(e, s);
     }
     if (!mounted) return;
     if (cleared) {
