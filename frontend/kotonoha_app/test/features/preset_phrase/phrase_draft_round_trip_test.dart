@@ -296,6 +296,41 @@ void main() {
     expect(find.widgetWithText(TextField, '未読の本文'), findsOneWidget);
     expect(store.writes, 0);
   });
+  testWidgets('読込失敗中はカテゴリだけ選び直しても「再読み込み」を出さない', (tester) async {
+    // L-170(b): 「まだ何も打っていない」は本文だけでなくカテゴリも見る。
+    // 未読の間に選び直したカテゴリはstoreに控えが無く、読み直すと消える。
+    store.values['flutter.preset_phrase_drafts'] = jsonEncode({
+      'add': {'id': 'draft-1', 'content': '未読の本文', 'category': 'health'}
+    });
+    store.failRead = true;
+    await open(tester);
+    expect(find.text('再読み込み'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'その他'));
+    await tester.pumpAndSettle();
+    final reload = find.widgetWithText(TextButton, '再読み込み');
+    expect(
+        reload.evaluate().isEmpty ||
+            tester.widget<TextButton>(reload).onPressed == null,
+        isTrue,
+        reason: '選び直したカテゴリがあるうちは読み直せない');
+    // 読めていないことはカテゴリ変更でも消えない事実として残す。
+    expect(find.textContaining('下書きは残りません'), findsOneWidget);
+    expect(store.writes, 0);
+    expect(store.values['flutter.preset_phrase_drafts'], contains('未読の本文'));
+    // 既定へ戻せば捨てるものが無いので読み直せる。
+    store.failRead = false;
+    await tester.tap(find.widgetWithText(ChoiceChip, '日常'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('再読み込み'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, '未読の本文'), findsOneWidget);
+    expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
+            .selected,
+        isTrue);
+    expect(store.writes, 0);
+  });
   testWidgets('初期read待機では入力を止めてロード完了後に復元する', (tester) async {
     store.readGate = Completer<void>();
     await open(tester);
@@ -561,6 +596,30 @@ void main() {
     await tester.tap(find.text('書き続ける'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, '打ち直した本文'), findsOneWidget);
+  });
+  testWidgets('clear失敗の告知はカテゴリを選び直しても本文と同じ規則で消える', (tester) async {
+    // L-170(a): `_onCategoryChanged` だけ `_errorMessage` を残していたため
+    // 「閉じる」が消えたのに消去失敗の告知だけが残った。
+    await open(tester);
+    await tester.enterText(find.byType(TextField), '破棄したかった本文');
+    await tester.pump(const Duration(milliseconds: 400));
+    store.failClear = true;
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('下書きを消せません'), findsOneWidget);
+    expect(find.text('閉じる'), findsOneWidget);
+    store.failClear = false;
+    // 選び直したカテゴリも、打ち直した本文と同じくまだ守る対象。
+    await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('下書きを消せません'), findsNothing);
+    expect(find.text('閉じる'), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('破棄しますか'), findsOneWidget);
+    await tester.tap(find.text('書き続ける'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, '破棄したかった本文'), findsOneWidget);
   });
   testWidgets('保存済み＋clear失敗でも閉じられ、開き直しても本体は重複しない', (tester) async {
     await open(tester);

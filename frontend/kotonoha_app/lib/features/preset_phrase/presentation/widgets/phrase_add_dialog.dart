@@ -73,6 +73,13 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
   /// 下書きの読み書きができる状態か。読めていない間は一切書かない。
   bool get _draftsReady => widget.drafts != null && _loaded;
 
+  /// まだ何も打っていないか。読み直しで置き換えても失うものが無い状態。
+  /// 本文だけを見ると、未読のまま選び直したカテゴリ（storeに控えが無い）を
+  /// 読み直しが黙って上書きする（台帳 L-170）。
+  bool get _untouched =>
+      _contentController.text.isEmpty &&
+      _selectedCategory == PhraseConstants.defaultCategory;
+
   @override
   void initState() {
     super.initState();
@@ -87,8 +94,9 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
       );
 
   Future<void> _load() async {
-    // 未読の間に打った文はstoreに控えが無い。読み直しで置き換えない。
-    if (_contentController.text.isNotEmpty) return;
+    // 到達するのは initState（本文もカテゴリも既定）と「再読み込み」ボタン
+    // （`_untouched` のときだけ出す）の2つ。ここに重ねた本文だけのガードは
+    // UIから到達できず、消しても赤にならない防御だった（台帳 L-170(c)）。
     setState(() => _loading = true);
     final loaded = await widget.drafts!.initialize();
     if (!mounted) return;
@@ -256,8 +264,11 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
   void _onCategoryChanged(String category) {
     if (_saving || _loading || _committed) return;
     setState(() {
+      // 選び直したカテゴリも打ち直した本文と同じくまだ守る対象。
       _clearFailed = false;
       _selectedCategory = category;
+      // 読めていないことはカテゴリ変更のたびに消えてはいけない事実なので残す。
+      _errorMessage = _loaded ? null : _loadFailure;
     });
     _changeDraft();
   }
@@ -299,8 +310,9 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
                 onTextChanged: _onTextChanged,
               ))),
       actions: [
-        // 打った文があるうちは出さない。読み直しはそれを置き換えてしまう
-        if (!_loaded && !_loading && _contentController.text.isEmpty)
+        // 打った文・選び直したカテゴリがあるうちは出さない。
+        // 読み直しはそれを置き換えてしまう
+        if (!_loaded && !_loading && _untouched)
           TextButton(onPressed: _load, child: const Text('再読み込み')),
         // 消去が失敗し続けても閉じられる出口。下書きは消さずに残す
         // （閉じられないとモーダルの下の緊急ボタンへ到達できない）
