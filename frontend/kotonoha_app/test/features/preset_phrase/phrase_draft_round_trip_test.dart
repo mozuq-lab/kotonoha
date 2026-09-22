@@ -16,6 +16,7 @@ import 'package:kotonoha_app/features/app_state/providers/app_lifecycle_observer
 import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_notifier.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/phrase_draft_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/preset_phrase_screen.dart';
+import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
@@ -28,6 +29,7 @@ class DraftStore extends SharedPreferencesStorePlatform {
   Completer<void>? writeGate;
   Completer<void>? clearGate;
   bool clearStarted = false;
+  int writes = 0;
   bool failRead = false;
   bool failWrite = false;
   bool throwWrite = false;
@@ -42,6 +44,7 @@ class DraftStore extends SharedPreferencesStorePlatform {
   @override
   Future<bool> setValue(String type, String key, Object value) async {
     if (key == 'flutter.preset_phrase_drafts') {
+      writes++;
       if ((jsonDecode(value as String) as Map).containsKey('add')) {
         await writeGate?.future;
       } else {
@@ -186,22 +189,39 @@ void main() {
       });
     });
   }
-  testWidgets('初期read失敗は入力を止め再試行後だけ保存済みmapを復元する', (tester) async {
+  testWidgets('初期read失敗でも追加はでき、未読mapへは1回も書かない', (tester) async {
     store.values['flutter.preset_phrase_drafts'] = jsonEncode({
       'add': {'id': 'draft-1', 'content': '未読の本文', 'category': 'health'}
     });
     store.failRead = true;
     await open(tester);
-    expect(find.textContaining('読み込みに失敗'), findsOneWidget);
+    expect(find.text('再読み込み'), findsOneWidget);
+    // 下書きは補助。読めなくても主機能（定型文の追加）は止めない。
     await tester.tap(find.byType(TextField), warnIfMissed: false);
-    expect(tester.testTextInput.hasAnyClients, isFalse);
+    expect(tester.testTextInput.hasAnyClients, isTrue);
+    await tester.enterText(find.byType(TextField), '未読でも保存する本文');
     expect(
         tester
             .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '保存'))
             .onPressed,
-        isNull);
+        isNotNull);
+    // 保存できることを告知に含める（できないと読ませない）。
+    expect(find.textContaining('下書きは残りません'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 400));
+    await submit(tester);
+    expect(find.byType(PhraseAddDialog), findsNothing);
+    // 未読のmapは1回も上書きしない。
+    expect(store.writes, 0);
+    expect(store.values['flutter.preset_phrase_drafts'], contains('未読の本文'));
+    await tester.runAsync(() async {
+      await Hive.box<PresetPhrase>('presetPhrases').close();
+      final reopened = await Hive.openBox<PresetPhrase>('presetPhrases');
+      expect(reopened.values.where((p) => p.content.contains('未読でも保存する')),
+          hasLength(1));
+    });
+    // 読めるようになれば、残したままの下書きがそのまま戻る。
     store.failRead = false;
-    await tester.tap(find.text('再読み込み'));
+    await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, '未読の本文'), findsOneWidget);
   });
@@ -228,7 +248,7 @@ void main() {
     await tester.enterText(find.byType(TextField), '確定保存の本文');
     store.failClear = true;
     await submit(tester);
-    expect(find.textContaining('下書きの消去'), findsOneWidget);
+    expect(find.textContaining('下書きを消せません'), findsOneWidget);
     await submit(tester, action: 'キャンセル');
     expect(find.textContaining('保存済み'), findsOneWidget);
     await tester.tap(find.byType(TextField), warnIfMissed: false);
@@ -248,17 +268,36 @@ void main() {
     expect(find.widgetWithText(TextField, '確定保存の本文'), findsNothing);
   });
   for (final empty in [false, true]) {
-    testWidgets('古いwrite待機→破棄（空本文=$empty）→再起動で復活しない', (tester) async {
+    testWidgets('古いwrite待機→${empty ? '空本文のback' : '明示破棄'}→再起動（空本文=$empty）',
+        (tester) async {
       await open(tester, observe: true);
       store.writeGate = Completer<void>();
       if (!empty) await tester.enterText(find.byType(TextField), '破棄する本文');
       await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
       await tester.pump(const Duration(milliseconds: 400));
       if (empty) {
+        // 本文が空でも、システムbackは確認なしに下書きを消さない。閉じるだけ。
         await tester.binding.handlePopRoute();
-      } else {
-        await tester.tap(find.text('キャンセル'));
+        await tester.pumpAndSettle();
+        expect(find.byType(TextField), findsNothing);
+        store.writeGate!.complete();
+        for (var i = 0;
+            i < 100 &&
+                !store.values.containsKey('flutter.preset_phrase_drafts');
+            i++) {
+          await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 10)));
+          await tester.pump();
+        }
+        await restart(tester);
+        expect(
+            tester
+                .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
+                .selected,
+            isTrue);
+        return;
       }
+      await tester.tap(find.text('キャンセル'));
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsOneWidget);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
@@ -376,7 +415,7 @@ void main() {
     expect(find.widgetWithText(TextField, '未読を保持'), findsOneWidget);
   });
   for (final action in ['cancel', 'back']) {
-    testWidgets('明示破棄 $action が失敗したら閉じず再試行でだけ消す', (tester) async {
+    testWidgets('明示破棄 $action の失敗後も $action で閉じられ、下書きは残る', (tester) async {
       await open(tester);
       await tester.enterText(find.byType(TextField), '破棄失敗を保持');
       await tester.pump(const Duration(milliseconds: 400));
@@ -390,7 +429,19 @@ void main() {
       }
       await tester.pumpAndSettle();
       expect(find.widgetWithText(TextField, '破棄失敗を保持'), findsOneWidget);
-      expect(find.textContaining('下書きの消去'), findsOneWidget);
+      expect(find.textContaining('下書きを消せません'), findsOneWidget);
+      // 書込が失敗し続けても閉じる手段がある（モーダルの下の緊急ボタンへ戻れる）。
+      // backは再試行で止まらず閉じる。
+      if (action == 'back') {
+        await tester.binding.handlePopRoute();
+      } else {
+        await tester.tap(find.text('閉じる'));
+      }
+      await tester.pumpAndSettle();
+      expect(find.byType(PhraseAddDialog), findsNothing);
+      // 閉じただけなので消えていない。次に開くと戻る。
+      await restart(tester);
+      expect(find.widgetWithText(TextField, '破棄失敗を保持'), findsOneWidget);
       store.failClear = false;
       await tester.tap(find.text('キャンセル'));
       await tester.pumpAndSettle();
@@ -398,29 +449,97 @@ void main() {
       expect(find.widgetWithText(TextField, '破棄失敗を保持'), findsNothing);
     });
   }
+  testWidgets('保存済み＋clear失敗でも閉じられ、開き直しても本体は重複しない', (tester) async {
+    await open(tester);
+    await tester.enterText(find.byType(TextField), '閉じても重複しない本文');
+    store.failClear = true;
+    await submit(tester);
+    expect(find.textContaining('保存済み'), findsOneWidget);
+    await tester.tap(find.text('閉じる'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PhraseAddDialog), findsNothing);
+    expect(
+        store.values['flutter.preset_phrase_drafts'], contains('閉じても重複しない本文'));
+    // 開き直して保存を押しても、固定IDのままなので本体は増えない。
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await submit(tester);
+    store.failClear = false;
+    await submit(tester);
+    expect(find.byType(PhraseAddDialog), findsNothing);
+    await tester.runAsync(() async {
+      await Hive.box<PresetPhrase>('presetPhrases').close();
+      final reopened = await Hive.openBox<PresetPhrase>('presetPhrases');
+      expect(reopened.values.where((p) => p.content.contains('閉じても重複しない')),
+          hasLength(1));
+    });
+  });
+  testWidgets('本体保存後のremoveAddが例外でも、消えたことにせず閉じない', (tester) async {
+    // 失敗の報告そのものが壊れる経路。`removeAdd` が投げても
+    // 「保存できた」と誤判定して下書きを残したまま閉じない。
+    var armed = false;
+    final drafts = PhraseDrafts((key, succeeded) {
+      if (armed) throw StateError('report failed');
+    });
+    addTearDown(drafts.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () => showDialog<void>(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => PhraseAddDialog(
+                drafts: drafts,
+                onSave: (content, category) async {
+                  armed = true; // 本体保存の直後＝消去の手前で壊す
+                  return true;
+                },
+              ),
+            ),
+            child: const Text('開く'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('開く'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '例外でも残す本文');
+    await submit(tester);
+    expect(find.byType(PhraseAddDialog), findsOneWidget);
+    expect(find.textContaining('保存済み'), findsOneWidget);
+    expect(find.text('閉じる'), findsOneWidget);
+  });
   for (final scenario in [
     'new',
-    'matching',
+    'saved',
+    'saved-box-only',
     'collision',
     'box-only',
     'changed',
     'deleted'
   ]) {
-    testWidgets('復元IDを保持し他の内容・削除と衝突した追加を拒否する $scenario', (tester) async {
+    testWidgets('復元IDを保存のたびに実boxで照合し直す $scenario', (tester) async {
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       final box = Hive.box<PresetPhrase>('presetPhrases');
       const restored = '復元した本文';
-      final id = scenario == 'new' ? 'new-id' : 'keep';
+      // new/changed の下書きIDは、復元の時点で実boxに無い。
+      final id = scenario == 'new' || scenario == 'changed' ? 'new-id' : 'keep';
+      // 同じIDで本文・カテゴリまで一致＝その下書きは既に保存された後。
+      final alreadySaved =
+          scenario.startsWith('saved') || scenario == 'deleted';
+      final stateless = scenario == 'box-only' || scenario == 'saved-box-only';
       store.values['flutter.preset_phrase_drafts'] = jsonEncode({
         'add': {'id': id, 'content': restored, 'category': 'health'}
       });
-      if (scenario != 'new' && scenario != 'collision') {
+      if (alreadySaved) {
         await tester.runAsync(() => box.put('keep',
             box.get('keep')!.copyWith(content: restored, category: 'health')));
       }
-      if (scenario == 'box-only') {
+      if (stateless) {
+        // provider stateには無く、実boxにだけある状態を作る。
         await tester.runAsync(
             () => box.put('spare', box.get('keep')!.copyWith(id: 'spare')));
         await tester.runAsync(() => box.delete('keep'));
@@ -429,22 +548,36 @@ void main() {
             'keep',
             PresetPhrase(
                 id: 'keep',
-                content: 'boxだけにある他の本文',
-                category: 'daily',
+                content: scenario == 'box-only' ? 'boxだけにある他の本文' : restored,
+                category: scenario == 'box-only' ? 'daily' : 'health',
                 displayOrder: 0,
                 createdAt: DateTime(2026),
                 updatedAt: DateTime(2026))));
       }
       await open(tester);
-      expect(find.widgetWithText(TextField, restored), findsOneWidget);
+      if (alreadySaved) {
+        // 保存済みの下書きは復元せず、消して空の追加フォームとして開く。
+        expect(find.widgetWithText(TextField, restored), findsNothing);
+        expect(store.values['flutter.preset_phrase_drafts'],
+            isNot(contains(restored)));
+      } else {
+        expect(find.widgetWithText(TextField, restored), findsOneWidget);
+      }
       if (scenario == 'collision' || scenario == 'box-only') {
         expect(find.textContaining('コピー'), findsOneWidget);
       }
       await tester.enterText(find.byType(TextField), '今回の変更本文');
       if (scenario == 'changed') {
-        // stateは復元時のまま、実boxだけ他経路で変わった場合も拒否する。
-        await tester.runAsync(() =>
-            box.put('keep', box.get('keep')!.copyWith(content: '別経路の変更')));
+        // stateは復元時のまま、実boxだけ他経路で埋まった場合も拒否する。
+        await tester.runAsync(() => box.put(
+            'new-id',
+            PresetPhrase(
+                id: 'new-id',
+                content: '別経路の変更',
+                category: 'daily',
+                displayOrder: 9,
+                createdAt: DateTime(2026),
+                updatedAt: DateTime(2026))));
       }
       if (scenario == 'deleted') {
         await tester.runAsync(() => container
@@ -452,7 +585,8 @@ void main() {
             .deletePhrase('keep'));
       }
       await submit(tester);
-      final allowed = scenario == 'new' || scenario == 'matching';
+      const refused = ['collision', 'box-only', 'changed'];
+      final allowed = !refused.contains(scenario);
       expect(find.byType(TextField), allowed ? findsNothing : findsOneWidget);
       if (!allowed) {
         final notice = find.textContaining('コピー');
@@ -463,47 +597,73 @@ void main() {
       await tester.runAsync(() async {
         await box.close();
         final reopened = await Hive.openBox<PresetPhrase>('presetPhrases');
-        if (allowed) {
-          expect(reopened.keys, contains(id));
-          expect(reopened.values.where((p) => p.content.contains('今回の変更')),
-              hasLength(1));
-          expect(reopened.get(id)?.category, contains('health'));
-          expect(reopened.values, hasLength(scenario == 'new' ? 2 : 1));
+        final added = reopened.values.where((p) => p.content.contains('今回の変更'));
+        if (!allowed) {
+          expect(added, isEmpty);
         } else {
-          expect(reopened.values.where((p) => p.content.contains('今回の変更')),
-              isEmpty);
-          if (scenario == 'deleted') {
-            expect(reopened.keys, isNot(contains('keep')));
-          }
-          if (scenario == 'changed') {
-            expect(reopened.get('keep')?.content, contains('別経路の変更'));
-          }
-          if (scenario == 'collision') {
-            expect(reopened.get('keep')?.content, contains('既存の本文'));
-          }
-          if (scenario == 'box-only') {
-            expect(reopened.get('keep')?.content, contains('boxだけにある'));
-          }
+          expect(added, hasLength(1));
+          // 保存済みの下書きを消した後は、カテゴリも既定に戻った空フォーム。
+          expect(added.single.category,
+              contains(alreadySaved ? 'daily' : 'health'));
+        }
+        if (scenario == 'new') {
+          expect(added.single.id, contains('new-id'));
+          expect(reopened.values, hasLength(2));
+        }
+        if (alreadySaved && scenario != 'deleted') {
+          // 保存済みの本体は書き換わらない。追加は別IDで増える。
+          expect(reopened.get('keep')?.content, contains(restored));
+          expect(added.single.id, isNot('keep'));
+          expect(reopened.values, hasLength(stateless ? 3 : 2));
+        }
+        if (scenario == 'deleted') {
+          expect(reopened.keys, isNot(contains('keep')));
+          expect(added.single.id, isNot('keep'));
+        }
+        if (scenario == 'changed') {
+          expect(reopened.get('new-id')?.content, contains('別経路の変更'));
+        }
+        if (scenario == 'collision') {
+          expect(reopened.get('keep')?.content, contains('既存の本文'));
+        }
+        if (scenario == 'box-only') {
+          expect(reopened.get('keep')?.content, contains('boxだけにある'));
         }
       });
+      if (scenario == 'saved-box-only') {
+        await restart(tester);
+        expect(find.widgetWithText(TextField, restored), findsNothing);
+      }
     });
   }
-  for (final delete in [false, true]) {
-    testWidgets('flush待機中の実notifier変更（削除=$delete）は最後の照合で拒否する', (tester) async {
+  for (final route in ['notifier', 'box']) {
+    testWidgets('flush待機中に同じIDが埋まったら（$route経由）最後の照合で拒否する', (tester) async {
+      final box = Hive.box<PresetPhrase>('presetPhrases');
+      // 復元の時点ではこのIDは実boxに無い＝通常の追加として受理される。
       store.values['flutter.preset_phrase_drafts'] = jsonEncode({
-        'add': {'id': 'keep', 'content': '既存の本文', 'category': 'daily'}
+        'add': {'id': 'pending-id', 'content': '復元した本文', 'category': 'daily'}
       });
       await open(tester);
       await tester.enterText(find.byType(TextField), 'flush前の入力');
       store.writeGate = Completer<void>();
       await tester.tap(find.text('保存'));
       await tester.pump();
-      final notifier = container.read(presetPhraseNotifierProvider.notifier);
       await tester.runAsync(() async {
-        if (delete) {
-          await notifier.deletePhrase('keep');
+        if (route == 'notifier') {
+          await container
+              .read(presetPhraseNotifierProvider.notifier)
+              .addPhrase('待機中の別経路本文', 'daily', id: 'pending-id');
         } else {
-          await notifier.updatePhrase('keep', content: '待機中の別経路変更');
+          // stateには現れない、実boxだけの変化。
+          await box.put(
+              'pending-id',
+              PresetPhrase(
+                  id: 'pending-id',
+                  content: '待機中の別経路本文',
+                  category: 'daily',
+                  displayOrder: 0,
+                  createdAt: DateTime(2026),
+                  updatedAt: DateTime(2026)));
         }
       });
       store.writeGate!.complete();
@@ -513,11 +673,9 @@ void main() {
       await tester.runAsync(() async {
         await Hive.box<PresetPhrase>('presetPhrases').close();
         final reopened = await Hive.openBox<PresetPhrase>('presetPhrases');
-        if (delete) {
-          expect(reopened.keys, isNot(contains('keep')));
-        } else {
-          expect(reopened.get('keep')?.content, contains('待機中の別経路変更'));
-        }
+        expect(reopened.get('pending-id')?.content, contains('待機中の別経路本文'));
+        expect(reopened.values.where((p) => p.content.contains('flush前の入力')),
+            isEmpty);
       });
     });
   }

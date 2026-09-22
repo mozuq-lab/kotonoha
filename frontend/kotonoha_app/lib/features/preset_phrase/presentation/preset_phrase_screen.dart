@@ -158,42 +158,44 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
     final notifier = ref.read(presetPhraseNotifierProvider.notifier);
     final repo = ref.read(presetPhraseRepositoryProvider);
     final drafts = ref.read(phraseDraftProvider);
-    late PhraseDraft initial;
+    // 下書きが読めなかったときは復元自体が起きない（照合する相手がいない）。
+    PhraseDraft? initial;
     PhraseDraft? attempt;
     PhraseDraft? reflected;
-    var initiallyPresent = false;
-    var initialAccepted = false;
     String? rejectionMessage;
-    bool rejectConflict() {
+    PhraseDraftOwnership rejectConflict() {
       rejectionMessage = '保存先が下書きと一致しません。入力をコピーしてから下書きを破棄できます。';
-      return false;
+      return PhraseDraftOwnership.conflict;
     }
 
-    bool ownsId({bool first = false}) {
+    /// 実boxを真実に、下書きのIDが誰のレコードかを復元時と保存のたびに照合する。
+    /// [pending] はこれから保存しようとしている内容（復元時はnull）。
+    PhraseDraftOwnership ownsId({PhraseDraft? pending}) {
       rejectionMessage = null;
+      final draft = initial;
       try {
-        if (repo == null) return false;
+        if (repo == null) return PhraseDraftOwnership.conflict;
+        if (draft == null) return PhraseDraftOwnership.owned;
+        bool same(PresetPhrase phrase, PhraseDraft other) =>
+            phrase.content == other.content &&
+            phrase.category == other.category;
         final state = container
             .read(presetPhraseNotifierProvider)
             .phrases
-            .where((p) => p.id == initial.id)
+            .where((p) => p.id == draft.id)
             .toList();
         final stored =
-            repo.loadAllSync().where((p) => p.id == initial.id).toList();
-        if (first) {
-          initiallyPresent = state.isNotEmpty;
-          if (state.isEmpty != stored.isEmpty) return rejectConflict();
-        } else if (initiallyPresent && state.isEmpty) {
-          return rejectConflict();
+            repo.loadAllSync().where((p) => p.id == draft.id).toList();
+        final records = [...state, ...stored];
+        if (records.isEmpty) return PhraseDraftOwnership.owned;
+        // 同じIDに同じ内容が既にある＝この下書きの保存は済んでいる。
+        if (records.every((p) => same(p, pending ?? draft))) {
+          return PhraseDraftOwnership.saved;
         }
-        final owned = [...state, ...stored].every((p) =>
-            (p.content == initial.content && p.category == initial.category) ||
-            (attempt != null &&
-                p.content == attempt!.content &&
-                p.category == attempt!.category) ||
-            (reflected != null &&
-                p.content == reflected!.content &&
-                p.category == reflected!.category));
+        final owned = records.every((p) =>
+            same(p, draft) ||
+            (attempt != null && same(p, attempt!)) ||
+            (reflected != null && same(p, reflected!)));
         if (!owned) return rejectConflict();
         // 次のattemptがput前に失敗しても、実boxで確認した自分の本文を忘れない。
         if (stored.isNotEmpty) {
@@ -204,9 +206,9 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
             category: phrase.category
           );
         }
-        return true;
+        return PhraseDraftOwnership.owned;
       } catch (_) {
-        return false;
+        return PhraseDraftOwnership.conflict;
       }
     }
 
@@ -218,17 +220,30 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
         rejectionMessage: () => rejectionMessage,
         onRestore: (draft) {
           initial = draft;
-          return initialAccepted = ownsId(first: true);
+          attempt = null;
+          reflected = null;
+          return ownsId();
         },
         onSave: (content, category) {
           // dialog側のflush完了後、実boxとの照合からenqueueまでawaitしない。
-          if (!initialAccepted || !ownsId()) return Future.value(false);
-          attempt = (id: initial.id, content: content, category: category);
-          return notifier.addPhrase(
-            content,
-            category,
-            id: initial.id,
-          );
+          final draft = initial;
+          final pending = draft == null
+              ? null
+              : (id: draft.id, content: content, category: category);
+          switch (ownsId(pending: pending)) {
+            case PhraseDraftOwnership.conflict:
+              return Future.value(false);
+            case PhraseDraftOwnership.saved:
+              // 本体は書かない。dialog側が下書きの消去だけ再試行する。
+              return Future.value(true);
+            case PhraseDraftOwnership.owned:
+              attempt = pending;
+              return notifier.addPhrase(
+                content,
+                category,
+                id: draft?.id,
+              );
+          }
         },
       ),
     );
