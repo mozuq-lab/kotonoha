@@ -20,6 +20,18 @@ class PhraseDrafts {
   bool _loaded = false;
   bool _disposed = false;
 
+  /// 変更の通し番号。`changeAdd`・`removeAdd` のたびに増える。
+  int _changes = 0;
+
+  /// storeが確かに持っていると分かっている通し番号。**書込を始めた時点**の
+  /// 番号で更新する。「書込が完了したらdirtyを降ろす」にすると、書込中に
+  /// 打ち直した分まで保存済みに見え、次のflushが黙ってskipする＝打ち直した
+  /// 文が書かれないまま背景へ回る（台帳 L-159）。
+  int _written = 0;
+
+  /// 最後にstoreへ届いた内容から変わっているか。
+  bool get _dirty => _changes != _written;
+
   Future<bool> initialize() {
     if (_loaded) return Future.value(true);
     return _initializing ??= _load().whenComplete(() => _initializing = null);
@@ -70,6 +82,7 @@ class PhraseDrafts {
   void changeAdd(PhraseDraft draft) {
     if (!_loaded || _disposed || _removing != null) return;
     _entries = {..._entries, 'add': draft};
+    _changes++;
     _timer?.cancel();
     _timer = Timer(const Duration(milliseconds: 400), flush);
   }
@@ -78,6 +91,9 @@ class PhraseDrafts {
     _timer?.cancel();
     if (_removing != null) return _removing!;
     if (!_loaded || _disposed) return Future.value(false);
+    // 変わっていないなら書かない。書くと、下書きを1度も打っていない利用者が
+    // 背景へ回るたびに、存在しないものについての保存失敗を見る（台帳 L-159）。
+    if (!_dirty) return Future.value(true);
     return _write({..._entries});
   }
 
@@ -86,6 +102,8 @@ class PhraseDrafts {
     if (_removing != null) return _removing!;
     if (!_loaded || _disposed) return Future.value(false);
     final next = {..._entries}..remove('add');
+    // 消去は明示操作。変わっていなくても必ず書く。
+    _changes++;
     // paused中のflushもこの操作へ合流し、古いmapをclearの後へ載せない。
     return _removing = _write(next).then((succeeded) {
       if (succeeded) _entries = next;
@@ -94,6 +112,8 @@ class PhraseDrafts {
   }
 
   Future<bool> _write(Map<String, PhraseDraft> snapshot) {
+    // このsnapshotが表す通し番号。これ以降の変更は次のflushで書く。
+    final writing = _changes;
     return _tail = _tail.then((_) async {
       var succeeded = false;
       try {
@@ -111,6 +131,7 @@ class PhraseDrafts {
       } catch (_) {
         // 例外でもqueueを完了させ、次の明示再試行へ進める。
       }
+      if (succeeded) _written = writing;
       _record(phraseDraftWriteKey, succeeded);
       return succeeded;
     });

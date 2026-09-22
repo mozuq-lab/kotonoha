@@ -11,6 +11,7 @@ import 'package:hive/hive.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
+import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/core/widgets/persistence_banner.dart';
 import 'package:kotonoha_app/features/app_state/providers/app_lifecycle_observer.dart';
@@ -78,6 +79,9 @@ class DraftStore extends SharedPreferencesStorePlatform {
     return true;
   }
 }
+
+/// 定型文の下書きのSharedPreferencesキー（SDK境界での実体名）。
+const String draftKey = 'flutter.$phraseDraftWriteKey';
 
 /// 本文欄そのもののセマンティクス。`find.byType(TextField)` から取ると
 /// 祖先のルートノード（scopesRoute）が返り、どの状態でも同じ値になる。
@@ -473,6 +477,64 @@ void main() {
           isTrue);
     });
   }
+  testWidgets('下書きを1度も打たずにpausedしても書かず、失敗も告知しない', (tester) async {
+    // L-159: `flush()` が無条件に map 全体を書いていたため、下書きを
+    // 打っていない利用者が、背景へ回るたびに存在しないものについての
+    // 「定型文の下書きを保存できません」を見ていた（誤発報）。
+    await open(tester, observe: true, banner: true);
+    store.failWrite = true;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 20; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 5)));
+      await tester.pump();
+    }
+    expect(store.writes, 0, reason: '下書きが無いのにmap全体を書いている');
+    expect(container.read(settingsWriteFailureProvider),
+        isNot(contains(phraseDraftWriteKey)),
+        reason: '書いてもいない下書きの保存失敗を報告している');
+    expect(find.textContaining('定型文の下書きを保存できません', skipOffstage: false),
+        findsNothing);
+  });
+  testWidgets('書込中に打ち直した本文は次のpausedで必ず書かれる', (tester) async {
+    // L-159: dirty を「書込の完了」で降ろすと、snapshotを取った後に打ち直した
+    // 分が「保存済み」に見え、次のflushが黙って skip する＝打ち直した文が
+    // 書かれないまま背景へ回る（下書きが黙って消える）。
+    await open(tester, observe: true);
+    store.writeGate = Completer<void>();
+    await tester.enterText(find.byType(TextField), '書込中のA');
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(store.writes, 1, reason: 'Aのflushが始まっていない');
+    // Aの書込が止まっている間にBへ打ち直す（Bのtimerはまだ鳴らない）。
+    await tester.enterText(find.byType(TextField), '打ち直したB');
+    await tester.pump(const Duration(milliseconds: 100));
+    // Aだけを完了させる。
+    store.writeGate!.complete();
+    store.writeGate = null;
+    for (var i = 0; i < 50 && !store.values.containsKey(draftKey); i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 5)));
+      await tester.pump();
+    }
+    expect(store.values[draftKey], contains('書込中のA'));
+    // Bのtimerが鳴る前に背景へ回す。
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    for (var i = 0; i < 100 && store.writes < 2; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 5)));
+      await tester.pump();
+    }
+    expect(store.writes, 2, reason: '打ち直したBが書かれないまま背景へ回った');
+    expect(store.values[draftKey], contains('打ち直したB'));
+    await restart(tester);
+    expect(find.widgetWithText(TextField, '打ち直したB'), findsOneWidget);
+  });
   testWidgets('pausedは400ms前の入力をflushしresumeで入力を上書きしない', (tester) async {
     await open(tester, observe: true);
     await tester.enterText(find.byType(TextField), '背景へ移る直前');
