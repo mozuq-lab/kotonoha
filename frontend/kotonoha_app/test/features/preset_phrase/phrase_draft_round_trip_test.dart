@@ -79,6 +79,26 @@ class DraftStore extends SharedPreferencesStorePlatform {
   }
 }
 
+/// 本文欄そのもののセマンティクス。`find.byType(TextField)` から取ると
+/// 祖先のルートノード（scopesRoute）が返り、どの状態でも同じ値になる。
+SemanticsData textFieldSemantics(WidgetTester tester) =>
+    tester.getSemantics(find.byType(EditableText)).getSemanticsData();
+
+/// 支援技術と同じ経路で本文欄へ focus を送り、出た例外を返す（無ければ null）。
+/// `AbsorbPointer` は action に印を付けるだけで、`performAction` は素通りする。
+Future<Object?> sendSemanticsFocus(WidgetTester tester) async {
+  final node = tester.getSemantics(find.byType(EditableText));
+  Object? thrown;
+  try {
+    tester.binding.pipelineOwner.semanticsOwner!
+        .performAction(node.id, SemanticsAction.focus);
+    await tester.pumpAndSettle();
+  } catch (e) {
+    thrown = e;
+  }
+  return thrown ?? tester.takeException();
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory directory;
@@ -348,6 +368,33 @@ void main() {
     expect(store.values.keys, isNot(contains('flutter.preset_phrase_drafts')));
     await tester.pump(const Duration(milliseconds: 1));
     expect(store.values['flutter.preset_phrase_drafts'], contains('読込完了後'));
+  });
+  testWidgets('初期read待機中の本文欄は支援技術のfocusを拒み、解けたら受ける', (tester) async {
+    // L-169 / QA R-6: `ExcludeFocus`＋`AbsorbPointer` は action に印を付ける
+    // だけで `SemanticsOwner.performAction` は素通りする。凍結を `TextField`
+    // 自身へ渡さないと `text_field.dart` の `canRequestFocus` assertion に
+    // 当たる（debug は例外、release は黙って失敗）。
+    final handle = tester.ensureSemantics();
+    store.readGate = Completer<void>();
+    await open(tester);
+    var data = textFieldSemantics(tester);
+    expect(data.hasFlag(SemanticsFlag.isEnabled), isFalse,
+        reason: '読込待機中の本文欄が支援技術に「有効」と見えている');
+    expect(data.hasFlag(SemanticsFlag.isReadOnly), isTrue);
+    expect(await sendSemanticsFocus(tester), isNull,
+        reason: '読込待機中にfocusを送るとframeworkのassertionに当たる');
+    store.readGate!.complete();
+    await tester.pumpAndSettle();
+    // 凍結が解けたら、支援技術からも普通に打てる。
+    data = textFieldSemantics(tester);
+    expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue,
+        reason: '凍結が解けても本文欄が無効のままになっている');
+    expect(data.hasFlag(SemanticsFlag.isReadOnly), isFalse);
+    expect(await sendSemanticsFocus(tester), isNull);
+    await tester.enterText(find.byType(TextField), '凍結解除後の本文');
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(store.values['flutter.preset_phrase_drafts'], contains('凍結解除後の本文'));
+    handle.dispose();
   });
   testWidgets('clear失敗ではHive成功済み内容をfreezeし再試行はclearのみ', (tester) async {
     await open(tester);
@@ -645,6 +692,26 @@ void main() {
       expect(reopened.values.where((p) => p.content.contains('閉じても重複しない')),
           hasLength(1));
     });
+  });
+  testWidgets('保存済みの凍結中も本文欄は支援技術のfocusを拒む', (tester) async {
+    // L-169: `_committed` の凍結。ここで打てると保存済みの本体を書き換える。
+    final handle = tester.ensureSemantics();
+    await open(tester);
+    await tester.enterText(find.byType(TextField), '凍結される本文');
+    store.failClear = true;
+    await submit(tester);
+    expect(find.textContaining('保存済み'), findsOneWidget);
+    final data = textFieldSemantics(tester);
+    expect(data.hasFlag(SemanticsFlag.isEnabled), isFalse,
+        reason: '保存済みの凍結中に本文欄が支援技術に「有効」と見えている');
+    expect(data.hasFlag(SemanticsFlag.isReadOnly), isTrue);
+    expect(await sendSemanticsFocus(tester), isNull,
+        reason: '保存済みの凍結中にfocusを送るとframeworkのassertionに当たる');
+    // 打てなくしても読めなくはしない（何が凍結されたのか分からなくなる）。
+    expect(data.value, contains('凍結される本文'));
+    // 出口（「閉じる」）は凍結の外に残す。
+    expect(find.text('閉じる'), findsOneWidget);
+    handle.dispose();
   });
   testWidgets('本体保存後のremoveAddが例外でも、消えたことにせず閉じない', (tester) async {
     // 失敗の報告そのものが壊れる経路。`removeAdd` が投げても

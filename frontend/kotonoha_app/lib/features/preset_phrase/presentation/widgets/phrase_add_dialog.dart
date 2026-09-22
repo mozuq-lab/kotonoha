@@ -308,6 +308,8 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
                 currentLength: _contentController.text.length,
                 errorMessage: _errorMessage,
                 onTextChanged: _onTextChanged,
+                // 支援技術のfocusまで止めるのは`TextField`自身にしかできない。
+                frozen: _loading || _committed,
               ))),
       actions: [
         // 打った文・選び直したカテゴリがあるうちは出さない。
