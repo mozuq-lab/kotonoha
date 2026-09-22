@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -119,14 +120,30 @@ const String draftKey = 'flutter.$phraseDraftWriteKey';
 SemanticsData textFieldSemantics(WidgetTester tester) =>
     tester.getSemantics(find.byType(EditableText)).getSemanticsData();
 
+/// 凍結中でも本文が有効時と同じ濃さで読めること（F-2）。
+/// `enabled: false` の M3 既定は `bodyLarge.color.withOpacity(0.38)`
+/// （text_field.dart:1875-1879）で、38% では AA を満たさず
+/// 「何が保存されるのか」が読めない。`widget.style` は
+/// `_getInputStyleForState(...).merge(providedStyle)` で**最後に** merge
+/// される（:1537-1539）ので、明示した色が disabled の既定に勝つ。
+void expectContentReadable(WidgetTester tester) {
+  final editable = tester.widget<EditableText>(find.byType(EditableText));
+  final enabledColor = Theme.of(tester.element(find.byType(PhraseFormContent)))
+      .textTheme
+      .bodyLarge
+      ?.color;
+  expect(enabledColor, isNotNull);
+  expect(editable.style.color, enabledColor,
+      reason: '凍結中の本文が薄字（disabled の既定）で読めない');
+}
+
 /// 支援技術と同じ経路で本文欄へ focus を送り、出た例外を返す（無ければ null）。
 /// `AbsorbPointer` は action に印を付けるだけで、`performAction` は素通りする。
 Future<Object?> sendSemanticsFocus(WidgetTester tester) async {
   final node = tester.getSemantics(find.byType(EditableText));
   Object? thrown;
   try {
-    tester.binding.pipelineOwner.semanticsOwner!
-        .performAction(node.id, SemanticsAction.focus);
+    node.owner!.performAction(node.id, SemanticsAction.focus);
     await tester.pumpAndSettle();
   } catch (e) {
     thrown = e;
@@ -415,19 +432,22 @@ void main() {
     store.readGate = Completer<void>();
     await open(tester);
     var data = textFieldSemantics(tester);
-    expect(data.hasFlag(SemanticsFlag.isEnabled), isFalse,
+    expect(data.flagsCollection.isEnabled, Tristate.isFalse,
         reason: '読込待機中の本文欄が支援技術に「有効」と見えている');
-    expect(data.hasFlag(SemanticsFlag.isReadOnly), isTrue);
+    expect(data.flagsCollection.isReadOnly, isTrue);
     expect(await sendSemanticsFocus(tester), isNull,
         reason: '読込待機中にfocusを送るとframeworkのassertionに当たる');
+    // 打てなくしても読めなくはしない（F-2）。
+    expectContentReadable(tester);
     store.readGate!.complete();
     await tester.pumpAndSettle();
     // 凍結が解けたら、支援技術からも普通に打てる。
     data = textFieldSemantics(tester);
-    expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue,
+    expect(data.flagsCollection.isEnabled, Tristate.isTrue,
         reason: '凍結が解けても本文欄が無効のままになっている');
-    expect(data.hasFlag(SemanticsFlag.isReadOnly), isFalse);
+    expect(data.flagsCollection.isReadOnly, isFalse);
     expect(await sendSemanticsFocus(tester), isNull);
+    expectContentReadable(tester);
     await tester.enterText(find.byType(TextField), '凍結解除後の本文');
     await tester.pump(const Duration(milliseconds: 400));
     expect(store.values['flutter.preset_phrase_drafts'], contains('凍結解除後の本文'));
@@ -870,13 +890,14 @@ void main() {
     await submit(tester);
     expect(find.textContaining('保存済み'), findsOneWidget);
     final data = textFieldSemantics(tester);
-    expect(data.hasFlag(SemanticsFlag.isEnabled), isFalse,
+    expect(data.flagsCollection.isEnabled, Tristate.isFalse,
         reason: '保存済みの凍結中に本文欄が支援技術に「有効」と見えている');
-    expect(data.hasFlag(SemanticsFlag.isReadOnly), isTrue);
+    expect(data.flagsCollection.isReadOnly, isTrue);
     expect(await sendSemanticsFocus(tester), isNull,
         reason: '保存済みの凍結中にfocusを送るとframeworkのassertionに当たる');
     // 打てなくしても読めなくはしない（何が凍結されたのか分からなくなる）。
     expect(data.value, contains('凍結される本文'));
+    expectContentReadable(tester);
     // 出口（「閉じる」）は凍結の外に残す。
     expect(find.text('閉じる'), findsOneWidget);
     handle.dispose();

@@ -67,6 +67,14 @@ class PhraseFormContent extends StatelessWidget {
         TextField(
           controller: controller,
           enabled: !frozen,
+          // 凍結中（`enabled: false`）のM3既定は
+          // `bodyLarge.color.withOpacity(0.38)`（text_field.dart:1875-1879）で
+          // 38%。AAを満たさず「何が保存されるのか」が読めない。打てなくしても
+          // 読めなくはしない（台帳 L-169）。`widget.style` は
+          // `_getInputStyleForState(...).merge(providedStyle)` で**最後に**
+          // merge される（:1537-1539）ので、ここで明示した色が既定に勝つ。
+          // 色だけ指定し、字形・大きさは既定（bodyLarge）のまま。
+          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
           maxLines: 4,
           maxLength: PresetPhraseValidator.maxLength,
           maxLengthEnforcement: MaxLengthEnforcement.enforced,

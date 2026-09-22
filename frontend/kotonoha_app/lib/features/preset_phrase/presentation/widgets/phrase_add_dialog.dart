@@ -315,6 +315,13 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
                 errorMessage: _errorMessage,
                 onTextChanged: _onTextChanged,
                 // 支援技術のfocusまで止めるのは`TextField`自身にしかできない。
+                // **`_saving` は含めない**（台帳 L-177）。含めると
+                // `enabled: false` が `FocusNode.canRequestFocus` の setter
+                // 経由で `unfocus()` を呼び、保存が失敗して `_saving` が戻った
+                // ときに焦点もキーボードも戻らず、打ち直しに再タップが要る。
+                // その代わり `_saving` 中にATがfocusを送ると
+                // text_field.dart の `canRequestFocus` assertion に当たる
+                // （release では黙って拒否）。どちらを取るかは決定事項。
                 frozen: _loading || _committed,
               ))),
       actions: [
