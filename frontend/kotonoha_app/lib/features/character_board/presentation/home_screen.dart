@@ -48,25 +48,22 @@ const int _compactBoardFlex = 3;
 const double _minBoardPaneWidth =
     CharacterBoardWidget.minLayoutWidth + 2 * AppSizes.paddingSmall;
 
+/// 右ペイン幅の丸め許容（1px）
+/// [_minBoardPaneWidth] を1pxまで下回っても2ペインにする。このとき
+/// セル幅は44pxを最大0.2px下回る（例: 569×375の横持ちは右ペイン283.8px
+/// でセル43.96px）。その画面を縦積みにすると文字盤には85pxしか渡せず
+/// 2行目のセルが25pxに切れるため、0.2pxの不足より2ペインの方が使える
+/// （台帳 L-155）。幅320の右ペインは189pxで、この許容では届かない。
+const double _boardPaneWidthTolerance = 1.0;
+
 /// 縦積みで文字盤に残す高さ（カテゴリと44pxセル2行ぶん）
 const double _boardReserve = 200.0;
-
-/// 縦積みが成立するために文字盤へ渡せていないといけない高さ
-/// 内訳: カテゴリ行（ChoiceChip 1行。OSの文字拡大2.0倍で実測58px ≒
-/// 44 ＋ 8 × 2 = 60）＋ カテゴリ行とgridの間隔 8 ＋ GridViewの上下padding
-/// 8 × 2 ＋ 44pxセル2行 88 ＋ 行間隔 8 = 180px。
-const double _minStackedBoardHeight = AppSizes.minTapTarget +
-    AppSizes.paddingSmall * 2 +
-    AppSizes.paddingSmall +
-    AppSizes.paddingSmall * 2 +
-    AppSizes.minTapTarget * 2 +
-    AppSizes.characterBoardButtonSpacing;
 
 /// 縦積みにしたとき文字盤へ渡る高さ
 /// 操作群には残り（[_ScrollableHomeControls] の maxHeight）を渡す。
 /// 予約を引くと負になるほど低い画面では半分ずつに分ける。これは
 /// maxHeightが負の不正な制約になるのを防ぐための下限で、44pxの行が
-/// 入ることは保証しない（台帳 L-172）。
+/// 入ることは保証しない（可視高さ〜250未満では入らない。台帳 L-172）。
 double _stackedBoardHeight(double availableHeight) =>
     availableHeight < _boardReserve * 2 ? availableHeight / 2 : _boardReserve;
 
@@ -176,22 +173,15 @@ class HomeScreen extends ConsumerWidget {
                             (constraints.maxWidth - AppSizes.paddingXSmall) *
                                 _compactBoardFlex /
                                 (_compactControlsFlex + _compactBoardFlex);
-                        final hasBoardPaneWidth =
-                            boardPaneWidth >= _minBoardPaneWidth;
-
-                        // 逃げ先の縦積みも、文字盤に44pxセル2行ぶんを渡せる
-                        // 高さがあって初めて成立する。渡せない高さ（569×375
-                        // の可視282pxでは盤85pxで2行目が25pxに切れる）では
-                        // 縦積みの方が悪いので、幅が足りなくても2ペインを保つ
-                        // （そのときのセルは43.96pxで44pxを0.2px下回る。L-155）。
-                        final canStack =
-                            _stackedBoardHeight(constraints.maxHeight) >=
-                                _minStackedBoardHeight;
+                        // 判定は幅だけで行う。可視高さが低いことを理由に
+                        // 2ペインへ戻すと、幅320（右ペイン189px）で
+                        // セル25.12pxを選び直してしまう（台帳 L-155 そのもの）。
+                        final hasBoardPaneWidth = boardPaneWidth >=
+                            _minBoardPaneWidth - _boardPaneWidthTolerance;
 
                         // 幅320でオフラインバナーが出ると可視高さが486pxとなり
-                        // 幅が足りず高さは足りるので縦積みに入る。
-                        if (isCompactHeight &&
-                            (hasBoardPaneWidth || !canStack)) {
+                        // 幅が足りないので縦積みに入る。
+                        if (isCompactHeight && hasBoardPaneWidth) {
                           return _buildCompactLandscapeLayout(
                             context,
                             ref,

@@ -123,8 +123,11 @@ class HomeLayoutHarness {
   /// [scale]はOSの文字拡大倍率。出た例外は [pumpErrors] に全部入り
   /// 戻り値はその先頭（1件も無ければnull）。取り出さないと後続の観測と
   /// 関係のない理由でテストが落ちるため、ここで必ず取り出す。
+  /// [extraChrome] はAppShellの外側に積む帯の高さ。告知を折り返すと
+  /// オフラインバナーが56→96pxに増えるので、その差をこの土台だけで
+  /// 作るために使う（折り返しを入れる側にも実バナー込みの同じテストがある）。
   Future<Object?> pumpOffline(WidgetTester tester, Size size,
-      {double scale = 2}) async {
+      {double scale = 2, double extraChrome = 0}) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -143,7 +146,12 @@ class HomeLayoutHarness {
                   .copyWith(textScaler: TextScaler.linear(scale)),
               child: child!,
             ),
-            home: const AppShell(child: HomeScreen()),
+            home: extraChrome > 0
+                ? Column(children: [
+                    SizedBox(height: extraChrome),
+                    const Expanded(child: AppShell(child: HomeScreen())),
+                  ])
+                : const AppShell(child: HomeScreen()),
           ),
         ),
       ));

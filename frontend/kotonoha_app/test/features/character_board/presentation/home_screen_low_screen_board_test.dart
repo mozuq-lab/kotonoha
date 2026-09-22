@@ -85,21 +85,18 @@ void main() {
     });
   }
 
-  // 2ペインをやめる条件は「右ペインに文字盤を置けるか」。幅が足りていれば
-  // 可視高さが乏しくても2ペインのまま（横持ちスマホで文字盤の同時可視行を
-  // 失わない）。内部幅の境界は
-  // (W - paddingXSmall) * 3/5 >= CharacterBoardWidget.minLayoutWidth + 2*8
-  // → W >= 477.34 なので、478 で2ペイン・477 で縦積みに分かれる。
-  // 高さは「compactだが縦積みも成立する」帯に置いて幅の述語だけを見る
-  // （縦積みが成立しない高さでは幅が足りなくても2ペインになる。次のテスト）。
+  // 2ペインをやめる条件は幅だけで決まる（可視高さは見ない。低いことを
+  // 理由に2ペインへ戻すと幅320でセル25.12pxを選んでしまう）。内部幅の境界は
+  // (W - paddingXSmall) * 3/5 >= minLayoutWidth + 2*8 - 1（1pxの丸め許容）
+  // → W >= 475.67 なので、476 で2ペイン・475 で縦積みに分かれる。
   // 縦向きなので緊急帯は画面下（サイドレールではない）＝外側幅＝内部幅。
   for (final scale in [1.0, 2.0]) {
-    for (final bodyWidth in [478.0, 477.0]) {
-      final twoPane = bodyWidth >= 478;
+    for (final bodyWidth in [476.0, 475.0]) {
+      final twoPane = bodyWidth >= 476;
       testWidgets(
           '縦向き 内部幅${bodyWidth.toInt()}・OS$scale倍は'
           '${twoPane ? '2ペインを保つ' : '縦積みへ落ちる'}（L-155）', (tester) async {
-        await harness.pumpOffline(tester, Size(bodyWidth, 644), scale: scale);
+        await harness.pumpOffline(tester, Size(bodyWidth, 660), scale: scale);
         expectOnlyKnownOverflow(harness);
 
         final home = tester.getRect(find.byType(HomeScreen));
@@ -116,21 +113,25 @@ void main() {
               reason: '文字盤$boardが右ペインに置かれていない（縦積みに落ちている）');
           expect(board.height, closeTo(body, 0.5),
               reason: '文字盤$boardが可視高さ$bodyを使い切っていない');
+          // 1pxの丸め許容ぶんだけ最小幅を下回りうる（セルは43.9px台）。
           expect(board.width,
-              greaterThanOrEqualTo(CharacterBoardWidget.minLayoutWidth),
-              reason: '右ペインが文字盤の最小幅を下回っている');
+              greaterThanOrEqualTo(CharacterBoardWidget.minLayoutWidth - 1),
+              reason: '右ペインが文字盤の最小幅を1px以上下回っている');
         } else {
           expect(board.left, closeTo(home.left + AppSizes.paddingSmall, 0.01),
               reason: '文字盤$boardが全幅に置かれていない（2ペインのまま）');
           expect(board.height, lessThan(body),
               reason: '縦積みなら操作域のぶん文字盤は可視高さより低い');
         }
-        // どちらのレイアウトでも あ〜こ の2行が44px以上で出る高さを選んで
-        // いる（2ペインは可視高さ全部、縦積みは予約の200px）。
+        // どちらのレイアウトでも あ〜こ の2行が出る高さを選んでいる
+        // （2ペインは可視高さ全部、縦積みは予約の200px）。2ペイン側の幅は
+        // 1pxの丸め許容ぶん44pxを0.2pxまで下回りうる。
+        final minCellWidth =
+            twoPane ? AppSizes.minTapTarget - 0.3 : AppSizes.minTapTarget;
         for (final label in boardKeys) {
           final rect = tester.getRect(boardCell(label));
-          expect(rect.width, greaterThanOrEqualTo(AppSizes.minTapTarget),
-              reason: '「$label」のキーが$rect（幅が44px未満）');
+          expect(rect.width, greaterThanOrEqualTo(minCellWidth),
+              reason: '「$label」のキーが$rect（幅が$minCellWidth未満）');
           expect(rect.height, greaterThanOrEqualTo(AppSizes.minTapTarget),
               reason: '「$label」のキーが$rect（高さが44px未満）');
           expect(boardCell(label).hitTestable(), findsOneWidget,
@@ -158,13 +159,34 @@ void main() {
     }
   });
 
-  // 縦積みは「カテゴリ行 ＋ 44pxセル2行 ＋ 間隔」を文字盤に渡せる高さが
-  // あって初めて成立する。569x375（内部幅477・可視高282）は幅が足りない側
-  // だが、縦積みにすると文字盤は85pxしか無く2行目のセルが25pxに切れる
-  // （実Chromium）。この高さでは幅が足りなくても2ペインを保つ。
+  // 幅320は可視高さがどれだけ低くても縦積み。2ペインにすると右ペインが
+  // 189pxで五十音の5列が25.12pxまで痩せる（L-155そのもの）。告知を
+  // 折り返すとバナーが56→96pxに増えるので、その40pxを帯で足した
+  // 320x568（iPhone SE 初代の縦持ち。可視高324）でも縦積みであること。
+  testWidgets('320x568・バナー2行ぶんを足した低い画面でも縦積み（L-155）', (tester) async {
+    await harness.pumpOffline(tester, const Size(320, 568), extraChrome: 40);
+    expectOnlyKnownOverflow(harness);
+    final home = tester.getRect(find.byType(HomeScreen));
+    final board = tester.getRect(find.byType(CharacterBoardWidget));
+    expect(board.left, closeTo(home.left + AppSizes.paddingSmall, 0.01),
+        reason: '文字盤$boardが全幅に置かれていない（2ペインに落ちている）');
+    final key = tester.getRect(boardCell('あ'));
+    expect(key.width, greaterThanOrEqualTo(AppSizes.minTapTarget),
+        reason: '「あ」のキーが$key（2ペインなら25.12pxまで痩せる）');
+    expect(key.height, greaterThanOrEqualTo(AppSizes.minTapTarget),
+        reason: '「あ」のキーが$key（高さが44px未満）');
+    expect(boardCell('あ').hitTestable(), findsOneWidget);
+    // 縦積みなら操作群へタップで到達できる（2ペインには上下ボタンが無い）。
+    expect(find.text('上へ'), findsOneWidget);
+    expect(find.text('下へ'), findsOneWidget);
+  });
+
+  // 569x375（内部幅477・右ペイン283.8px）は、右ペインの幅が最小幅を
+  // 0.6px下回るだけ。縦積みにすると文字盤は85pxしか無く2行目のセルが
+  // 25pxに切れる（実Chromium）ので、1pxの丸め許容で2ペインを保つ。
   // 2ペインのセル幅は43.96pxで44pxを0.2pxだけ下回る（44px未満ではあるが
   // 縦積みの25pxより良い。台帳 L-155）。
-  testWidgets('569x375 横持ち・縦積みに2行入らない高さでは2ペインを保つ（L-155）', (tester) async {
+  testWidgets('569x375 横持ち・右ペインが1px足りないだけなら2ペインを保つ（L-155）', (tester) async {
     await harness.pumpOffline(tester, const Size(569, 375), scale: 1.0);
     expectOnlyKnownOverflow(harness);
     final home = tester.getRect(find.byType(HomeScreen));
@@ -182,11 +204,12 @@ void main() {
     expect(boardCell('あ').hitTestable(), findsOneWidget);
   });
 
-  // 幅も高さも足りない画面（320x400・OS2.0では可視高さ156px）。2ペインの
-  // セルは25px、縦積みの盤は78pxでどちらも44pxの行が入らない領域なので
-  // レイアウトの種類は主張せず、壊れないことだけを見る（台帳 L-172）。
-  // 負の制約（NOT NORMALIZED）は expectOnlyKnownOverflow が赤にする。
-  testWidgets('320x400 オフライン: 幅も高さも足りなくてもHomeが壊れない', (tester) async {
+  // 可視高さが文字盤の予約（200px）を大きく下回る画面（320x400・OS2.0では
+  // 156px → 縦積みの盤は78px）。44pxの行は入らない領域なので寸法は主張せず
+  // 壊れないことだけを見る（台帳 L-172）。幅が足りなくても2ペインには
+  // 戻さない（戻すとセル25.12px）。負の制約（NOT NORMALIZED）は
+  // expectOnlyKnownOverflow が赤にする。
+  testWidgets('320x400 オフライン: 予約を下回る可視高さでもHomeが壊れない', (tester) async {
     await harness.pumpOffline(tester, const Size(320, 400));
     expectOnlyKnownOverflow(harness);
     final home = tester.getRect(find.byType(HomeScreen));
