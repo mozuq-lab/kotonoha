@@ -41,6 +41,20 @@ class CharacterBoardWidget extends StatefulWidget {
   /// 初期表示カテゴリ
   final CharacterCategory initialCategory;
 
+  /// 五十音表の最低列数
+  /// [CharacterData] の各カテゴリは5列の表で、や行・わ行の空きセルに
+  /// 濁点・半濁点・空白キーを差してある。これを下回る列数で並べると
+  /// 行・段の対応と特殊キーの位置が崩れるため、下限として扱う。
+  static const int minColumns = 5;
+
+  /// 最低列数をタップ目標（44px）で並べるのに要る幅
+  /// 内訳: 5列 × 44px ＋ 列間隔 4 × 8px ＋ GridViewの左右padding 2 × 8px
+  /// = 268px。これを下回る幅を渡すとセルが44px未満に痩せる（台帳 L-155）。
+  /// 呼び出し側は、自分が文字盤の外に足す余白を加えて判断する。
+  static const double minLayoutWidth = minColumns * AppSizes.minTapTarget +
+      (minColumns - 1) * AppSizes.characterBoardButtonSpacing +
+      2 * AppSizes.paddingSmall;
+
   @override
   State<CharacterBoardWidget> createState() => _CharacterBoardWidgetState();
 }
@@ -109,12 +123,12 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 横幅に応じて列数を計算（最低5列）
+        // 横幅に応じて列数を計算（最低5列＝[CharacterBoardWidget.minColumns]）
         final spacing = AppSizes.characterBoardButtonSpacing;
         final availableWidth = constraints.maxWidth;
         final availableHeight = constraints.maxHeight;
         final columnsCount = (availableWidth / (buttonSize + spacing)).floor();
-        final columns = columnsCount.clamp(5, 10);
+        final columns = columnsCount.clamp(CharacterBoardWidget.minColumns, 10);
 
         // fit-to-height対応: 列数だけでなく行数・可視高さも考慮してセルの
         // 高さを決定する。スマホ縦持ちのように高さが乏しい画面では、幅基準の

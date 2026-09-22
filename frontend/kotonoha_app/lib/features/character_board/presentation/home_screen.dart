@@ -37,6 +37,36 @@ import 'package:kotonoha_app/features/history/providers/history_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 
+/// コンパクト2ペインの幅の配分（左: 操作UI 2 / 右: 文字盤 3）
+/// 2ペインにできるかの判定と実際のレイアウトで同じ値を使う。
+const int _compactControlsFlex = 2;
+const int _compactBoardFlex = 3;
+
+/// 2ペインの右ペインに文字盤を置くのに要る幅
+/// 文字盤自身の最小幅（5列 × 44px ＋ 列間隔 ＋ GridViewのpadding）に
+/// [_buildCharacterBoard] が足す左右の余白を加えた値 = 284px。
+const double _minBoardPaneWidth =
+    CharacterBoardWidget.minLayoutWidth + 2 * AppSizes.paddingSmall;
+
+/// 右ペイン幅の丸め許容（1px）
+/// [_minBoardPaneWidth] を1pxまで下回っても2ペインにする。このとき
+/// セル幅は44pxを最大0.2px下回る（例: 569×375の横持ちは右ペイン283.8px
+/// でセル43.96px）。その画面を縦積みにすると文字盤には85pxしか渡せず
+/// 2行目のセルが25pxに切れるため、0.2pxの不足より2ペインの方が使える
+/// （台帳 L-155）。幅320の右ペインは189pxで、この許容では届かない。
+const double _boardPaneWidthTolerance = 1.0;
+
+/// 縦積みで文字盤に残す高さ（カテゴリと44pxセル2行ぶん）
+const double _boardReserve = 200.0;
+
+/// 縦積みにしたとき文字盤へ渡る高さ
+/// 操作群には残り（[_ScrollableHomeControls] の maxHeight）を渡す。
+/// 予約を引くと負になるほど低い画面では半分ずつに分ける。これは
+/// maxHeightが負の不正な制約になるのを防ぐための下限で、44pxの行が
+/// 入ることは保証しない（可視高さ〜250未満では入らない。台帳 L-172）。
+double _stackedBoardHeight(double availableHeight) =>
+    availableHeight < _boardReserve * 2 ? availableHeight / 2 : _boardReserve;
+
 /// ホーム画面（文字盤画面）ウィジェット
 /// アプリケーションのメイン画面。文字盤入力機能を提供する。
 /// 実装要件
@@ -124,7 +154,7 @@ class HomeScreen extends ConsumerWidget {
                   : LayoutBuilder(
                       builder: (context, constraints) {
                         // レスポンシブ対応: 可視高さ・幅に応じてレイアウトを切り替える。
-                        // isCompactHeight: 主に横持ちスマホ（可視高さ< compactHeightThreshold）。
+                        // isCompactHeight: 可視高さが乏しい画面（主に横持ち）。
                         // 固定サイズのセクションを縦に積むと必要高さが可視高さを超え
                         // RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
                         // isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
@@ -134,7 +164,24 @@ class HomeScreen extends ConsumerWidget {
                         final isPhoneWidth =
                             constraints.maxWidth < AppSizes.phoneMaxWidth;
 
-                        if (isCompactHeight) {
+                        // 2ペインは、右ペインに文字盤をそのまま置ける幅が
+                        // あるときだけ成立する。置けない幅で2ペインにすると
+                        // 五十音の5列を44pxで並べられずセルが痩せ
+                        // （台帳 L-155: 幅320で25.12px）、左ペインでは告知が
+                        // 横にはみ出す（台帳 L-156）。
+                        final boardPaneWidth =
+                            (constraints.maxWidth - AppSizes.paddingXSmall) *
+                                _compactBoardFlex /
+                                (_compactControlsFlex + _compactBoardFlex);
+                        // 判定は幅だけで行う。可視高さが低いことを理由に
+                        // 2ペインへ戻すと、幅320（右ペイン189px）で
+                        // セル25.12pxを選び直してしまう（台帳 L-155 そのもの）。
+                        final hasBoardPaneWidth = boardPaneWidth >=
+                            _minBoardPaneWidth - _boardPaneWidthTolerance;
+
+                        // 幅320でオフラインバナーが出ると可視高さが486pxとなり
+                        // 幅が足りないので縦積みに入る。
+                        if (isCompactHeight && hasBoardPaneWidth) {
                           return _buildCompactLandscapeLayout(
                             context,
                             ref,
@@ -278,21 +325,26 @@ class HomeScreen extends ConsumerWidget {
         SizedBox(height: sectionGap),
       ],
     );
+    // 文字盤に残す高さ（[_stackedBoardHeight]）を引いた残りを操作域へ渡し
+    // 上部の超過分だけをそのスクロールへ移す。
+    final controlsMaxHeight =
+        availableHeight - _stackedBoardHeight(availableHeight);
     return Column(
       children: [
-        // カテゴリと44pxセル2行を残し、上部の超過分だけを移動する。
-        _ScrollableHomeControls(
-            maxHeight: availableHeight - 200, child: controls),
+        _ScrollableHomeControls(maxHeight: controlsMaxHeight, child: controls),
         Expanded(child: _buildCharacterBoard(ref, fontSize: fontSize)),
       ],
     );
   }
 
-  /// コンパクト2ペインレイアウト（主に横持ちスマホ、可視高さが乏しい場合）
+  /// コンパクト2ペインレイアウト（可視高さが乏しく、かつ右ペインに文字盤を
+  /// 置ける幅がある場合。主に横持ち）
   /// 縦積みだと固定セクションの必要高さが可視高さを超えRenderFlex
   /// オーバーフローが発生するため、左ペイン（各種操作UI・スクロール可）と
   /// 右ペイン（文字盤、残り全高さをExpandedで使用）の横並びに切り替える。
   /// アプリの主機能である文字盤が消えてしまう不具合を解消する。
+  /// 幅の配分は [_compactControlsFlex] : [_compactBoardFlex]。右ペインが
+  /// [_minBoardPaneWidth] を下回る幅では呼ばれない（台帳 L-155・L-156）。
   Widget _buildCompactLandscapeLayout(
     BuildContext context,
     WidgetRef ref, {
@@ -306,7 +358,7 @@ class HomeScreen extends ConsumerWidget {
       children: [
         // 左ペイン: 操作UI一式（スクロール可能にしてオーバーフローを防止）
         Expanded(
-          flex: 2,
+          flex: _compactControlsFlex,
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               vertical: AppSizes.paddingXSmall,
@@ -346,7 +398,7 @@ class HomeScreen extends ConsumerWidget {
         const SizedBox(width: AppSizes.paddingXSmall),
         // 右ペイン: 文字盤（主機能。残り全高さを使用する）
         Expanded(
-          flex: 3,
+          flex: _compactBoardFlex,
           child: _buildCharacterBoard(ref, fontSize: fontSize),
         ),
       ],
