@@ -48,6 +48,28 @@ const int _compactBoardFlex = 3;
 const double _minBoardPaneWidth =
     CharacterBoardWidget.minLayoutWidth + 2 * AppSizes.paddingSmall;
 
+/// 縦積みで文字盤に残す高さ（カテゴリと44pxセル2行ぶん）
+const double _boardReserve = 200.0;
+
+/// 縦積みが成立するために文字盤へ渡せていないといけない高さ
+/// 内訳: カテゴリ行（ChoiceChip 1行。OSの文字拡大2.0倍で実測58px ≒
+/// 44 ＋ 8 × 2 = 60）＋ カテゴリ行とgridの間隔 8 ＋ GridViewの上下padding
+/// 8 × 2 ＋ 44pxセル2行 88 ＋ 行間隔 8 = 180px。
+const double _minStackedBoardHeight = AppSizes.minTapTarget +
+    AppSizes.paddingSmall * 2 +
+    AppSizes.paddingSmall +
+    AppSizes.paddingSmall * 2 +
+    AppSizes.minTapTarget * 2 +
+    AppSizes.characterBoardButtonSpacing;
+
+/// 縦積みにしたとき文字盤へ渡る高さ
+/// 操作群には残り（[_ScrollableHomeControls] の maxHeight）を渡す。
+/// 予約を引くと負になるほど低い画面では半分ずつに分ける。これは
+/// maxHeightが負の不正な制約になるのを防ぐための下限で、44pxの行が
+/// 入ることは保証しない（台帳 L-172）。
+double _stackedBoardHeight(double availableHeight) =>
+    availableHeight < _boardReserve * 2 ? availableHeight / 2 : _boardReserve;
+
 /// ホーム画面（文字盤画面）ウィジェット
 /// アプリケーションのメイン画面。文字盤入力機能を提供する。
 /// 実装要件
@@ -149,17 +171,27 @@ class HomeScreen extends ConsumerWidget {
                         // あるときだけ成立する。置けない幅で2ペインにすると
                         // 五十音の5列を44pxで並べられずセルが痩せ
                         // （台帳 L-155: 幅320で25.12px）、左ペインでは告知が
-                        // 横にはみ出す（台帳 L-156）。そのときは可視高さが
-                        // 乏しくても縦積み（上下ボタンで移動できる操作域つき）
-                        // を使う。幅320でオフラインバナーが出ると可視高さが
-                        // 486pxとなりこの分岐に入る。
+                        // 横にはみ出す（台帳 L-156）。
                         final boardPaneWidth =
                             (constraints.maxWidth - AppSizes.paddingXSmall) *
                                 _compactBoardFlex /
                                 (_compactControlsFlex + _compactBoardFlex);
+                        final hasBoardPaneWidth =
+                            boardPaneWidth >= _minBoardPaneWidth;
 
+                        // 逃げ先の縦積みも、文字盤に44pxセル2行ぶんを渡せる
+                        // 高さがあって初めて成立する。渡せない高さ（569×375
+                        // の可視282pxでは盤85pxで2行目が25pxに切れる）では
+                        // 縦積みの方が悪いので、幅が足りなくても2ペインを保つ
+                        // （そのときのセルは43.96pxで44pxを0.2px下回る。L-155）。
+                        final canStack =
+                            _stackedBoardHeight(constraints.maxHeight) >=
+                                _minStackedBoardHeight;
+
+                        // 幅320でオフラインバナーが出ると可視高さが486pxとなり
+                        // 幅が足りず高さは足りるので縦積みに入る。
                         if (isCompactHeight &&
-                            boardPaneWidth >= _minBoardPaneWidth) {
+                            (hasBoardPaneWidth || !canStack)) {
                           return _buildCompactLandscapeLayout(
                             context,
                             ref,
@@ -303,15 +335,10 @@ class HomeScreen extends ConsumerWidget {
         SizedBox(height: sectionGap),
       ],
     );
-    // 文字盤に残す高さ。上部の超過分だけを操作域のスクロールへ移す。
-    // 可視高さが予約の2倍に満たない低い画面（幅が足りず2ペインにできない
-    // 縦積みではここまで下がりうる）では半分ずつに分ける。これは
-    // maxHeightが負の不正な制約になるのを防ぐための下限で、
-    // 可視高さ〜250未満では44pxの行は入らない（台帳 L-172）。
-    const boardReserve = 200.0;
-    final controlsMaxHeight = availableHeight < boardReserve * 2
-        ? availableHeight / 2
-        : availableHeight - boardReserve;
+    // 文字盤に残す高さ（[_stackedBoardHeight]）を引いた残りを操作域へ渡し
+    // 上部の超過分だけをそのスクロールへ移す。
+    final controlsMaxHeight =
+        availableHeight - _stackedBoardHeight(availableHeight);
     return Column(
       children: [
         _ScrollableHomeControls(maxHeight: controlsMaxHeight, child: controls),

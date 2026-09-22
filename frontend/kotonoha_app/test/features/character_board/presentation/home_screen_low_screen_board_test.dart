@@ -31,6 +31,7 @@ void main() {
   // リスク「キーを押せない」は矩形だけでなくhitTestableと実タップで見る。
   testWidgets('320x690 オフラインでも文字盤のキーは44px以上で押せる（L-155）', (tester) async {
     await harness.pumpOffline(tester, const Size(320, 690));
+    expectOnlyKnownOverflow(harness);
     expect(harness.container.read(networkProvider), NetworkState.offline);
 
     final viewport = tester.getRect(find.byType(GridView));
@@ -47,9 +48,12 @@ void main() {
     }
 
     // 押せることは矩形では分からない。実際に叩いて入力が増えるか。
+    // 1000文字に達するとInputLimitNoticeが増えて再レイアウトされるので
+    // そのフレームの例外も、既知の横overflow以外は赤にする。
     await tester.tap(boardCell('こ'));
     await tester.pumpAndSettle();
-    tester.takeException();
+    expect(tester.takeException(), anyOf(isNull, isKnownHorizontalOverflow),
+        reason: 'タップ後に既知の横overflow以外の例外が出ている');
     expect(harness.container.read(inputBufferProvider), hasLength(1000));
     expect(harness.container.read(inputBufferProvider).endsWith('こ'), isTrue);
   });
@@ -60,6 +64,7 @@ void main() {
     testWidgets('320x${height.toInt()} オフラインで緊急ボタンが誤発報しない（L-155）',
         (tester) async {
       await harness.pumpOffline(tester, Size(320, height));
+      expectOnlyKnownOverflow(harness);
       final emergency =
           tester.getRect(find.byType(EmergencyButtonWithConfirmation));
       expect(
@@ -85,20 +90,25 @@ void main() {
   // 失わない）。内部幅の境界は
   // (W - paddingXSmall) * 3/5 >= CharacterBoardWidget.minLayoutWidth + 2*8
   // → W >= 477.34 なので、478 で2ペイン・477 で縦積みに分かれる。
-  // AppShellは横持ちで右に92pxの緊急サイドレールを取るため外側幅は +92。
+  // 高さは「compactだが縦積みも成立する」帯に置いて幅の述語だけを見る
+  // （縦積みが成立しない高さでは幅が足りなくても2ペインになる。次のテスト）。
+  // 縦向きなので緊急帯は画面下（サイドレールではない）＝外側幅＝内部幅。
   for (final scale in [1.0, 2.0]) {
     for (final bodyWidth in [478.0, 477.0]) {
       final twoPane = bodyWidth >= 478;
       testWidgets(
-          '横持ち 内部幅${bodyWidth.toInt()}・OS$scale倍は'
+          '縦向き 内部幅${bodyWidth.toInt()}・OS$scale倍は'
           '${twoPane ? '2ペインを保つ' : '縦積みへ落ちる'}（L-155）', (tester) async {
-        await harness.pumpOffline(
-            tester, Size(bodyWidth + AppSizes.emergencyButtonBarThickness, 375),
-            scale: scale);
+        await harness.pumpOffline(tester, Size(bodyWidth, 644), scale: scale);
+        expectOnlyKnownOverflow(harness);
 
         final home = tester.getRect(find.byType(HomeScreen));
         final body = home.bottom - tester.getRect(find.byType(AppBar)).bottom;
         expect(home.width, closeTo(bodyWidth, 0.01), reason: '内部幅の前提が違う');
+        expect(body, lessThan(AppSizes.compactHeightThreshold),
+            reason: '前提: 可視高さ$bodyがcompactの帯に入っていない');
+        expect(body, greaterThanOrEqualTo(400),
+            reason: '前提: 可視高さ$bodyでは縦積みの文字盤が200pxに届かない');
 
         final board = tester.getRect(find.byType(CharacterBoardWidget));
         if (twoPane) {
@@ -115,10 +125,9 @@ void main() {
           expect(board.height, lessThan(body),
               reason: '縦積みなら操作域のぶん文字盤は可視高さより低い');
         }
-        // 2ペインは可視高さを全部使うので あ〜こ の2行が出る。縦積みは
-        // 文字盤の予約ぶんしか無く、低い横持ちでは1行しか出ないことがある
-        // （行数はL-155の観測点ではない）ので先頭キーだけを見る。
-        for (final label in twoPane ? boardKeys : ['あ']) {
+        // どちらのレイアウトでも あ〜こ の2行が44px以上で出る高さを選んで
+        // いる（2ペインは可視高さ全部、縦積みは予約の200px）。
+        for (final label in boardKeys) {
           final rect = tester.getRect(boardCell(label));
           expect(rect.width, greaterThanOrEqualTo(AppSizes.minTapTarget),
               reason: '「$label」のキーが$rect（幅が44px未満）');
@@ -134,6 +143,7 @@ void main() {
   // 実在端末（iPhone SE/8 横持ち 667x375 = 内部幅575）では2ペインのまま。
   testWidgets('667x375 横持ち・OS1.0倍のオフラインで2ペインを保つ（L-155）', (tester) async {
     await harness.pumpOffline(tester, const Size(667, 375), scale: 1.0);
+    expectOnlyKnownOverflow(harness);
     final home = tester.getRect(find.byType(HomeScreen));
     final body = home.bottom - tester.getRect(find.byType(AppBar)).bottom;
     final board = tester.getRect(find.byType(CharacterBoardWidget));
@@ -148,24 +158,43 @@ void main() {
     }
   });
 
-  // 可視高さが文字盤の予約分（200px）より低い画面（320x400・OS2.0では
-  // 可視高さ156px）。ここで保証するのは「負の制約を作らない」ことだけで
-  // 44pxの行が入ることは主張しない（台帳 L-172）。
-  // 負の制約はConstrainedBoxのassertでbuild時に投げるため、操作域は
-  // ErrorWidgetに置き換わる。矩形が測れること自体が観測点になる。
-  testWidgets('320x400 オフライン: 文字盤の予約高さを下回ってもHomeが壊れない', (tester) async {
-    await harness.pumpOffline(tester, const Size(320, 400));
+  // 縦積みは「カテゴリ行 ＋ 44pxセル2行 ＋ 間隔」を文字盤に渡せる高さが
+  // あって初めて成立する。569x375（内部幅477・可視高282）は幅が足りない側
+  // だが、縦積みにすると文字盤は85pxしか無く2行目のセルが25pxに切れる
+  // （実Chromium）。この高さでは幅が足りなくても2ペインを保つ。
+  // 2ペインのセル幅は43.96pxで44pxを0.2pxだけ下回る（44px未満ではあるが
+  // 縦積みの25pxより良い。台帳 L-155）。
+  testWidgets('569x375 横持ち・縦積みに2行入らない高さでは2ペインを保つ（L-155）', (tester) async {
+    await harness.pumpOffline(tester, const Size(569, 375), scale: 1.0);
+    expectOnlyKnownOverflow(harness);
     final home = tester.getRect(find.byType(HomeScreen));
-    for (final part in [
-      find.byType(CharacterBoardWidget),
-      find.byKey(const ValueKey('home-controls-scroll')),
-    ]) {
-      expect(part, findsOneWidget);
-      final rect = tester.getRect(part);
-      expect(rect.width, greaterThanOrEqualTo(0), reason: '$part: $rect が負');
-      expect(rect.height, greaterThanOrEqualTo(0), reason: '$part: $rect が負');
-      expect(encloses(home, rect), isTrue,
-          reason: '$part: $rect が画面本体$homeの外にある');
-    }
+    final body = home.bottom - tester.getRect(find.byType(AppBar)).bottom;
+    final board = tester.getRect(find.byType(CharacterBoardWidget));
+    expect(board.left, greaterThan(home.left + home.width / 3),
+        reason: '文字盤$boardが右ペインに置かれていない（縦積みに落ちている）');
+    expect(board.height, closeTo(body, 0.5),
+        reason: '文字盤$boardが可視高さ$bodyを使い切っていない');
+    final key = tester.getRect(boardCell('あ'));
+    expect(key.width, greaterThanOrEqualTo(43),
+        reason: '「あ」のキーが$key（縦積みだと2行目は25pxに切れる）');
+    expect(key.height, greaterThanOrEqualTo(AppSizes.minTapTarget),
+        reason: '「あ」のキーが$key（高さが44px未満）');
+    expect(boardCell('あ').hitTestable(), findsOneWidget);
+  });
+
+  // 幅も高さも足りない画面（320x400・OS2.0では可視高さ156px）。2ペインの
+  // セルは25px、縦積みの盤は78pxでどちらも44pxの行が入らない領域なので
+  // レイアウトの種類は主張せず、壊れないことだけを見る（台帳 L-172）。
+  // 負の制約（NOT NORMALIZED）は expectOnlyKnownOverflow が赤にする。
+  testWidgets('320x400 オフライン: 幅も高さも足りなくてもHomeが壊れない', (tester) async {
+    await harness.pumpOffline(tester, const Size(320, 400));
+    expectOnlyKnownOverflow(harness);
+    final home = tester.getRect(find.byType(HomeScreen));
+    final board = find.byType(CharacterBoardWidget);
+    expect(board, findsOneWidget);
+    final rect = tester.getRect(board);
+    expect(rect.width, greaterThanOrEqualTo(0), reason: '文字盤$rectの幅が負');
+    expect(rect.height, greaterThanOrEqualTo(0), reason: '文字盤$rectの高さが負');
+    expect(encloses(home, rect), isTrue, reason: '文字盤$rectが画面本体$homeの外にある');
   });
 }

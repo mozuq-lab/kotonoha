@@ -43,6 +43,26 @@ bool encloses(Rect outer, Rect inner, {double tolerance = .01}) =>
     outer.inflate(tolerance).contains(inner.topLeft) &&
     outer.inflate(tolerance).contains(inner.bottomRight);
 
+/// 既知の横オーバーフロー（台帳 L-156）だけに当たる matcher。
+/// 告知の折り返しを入れるまでは幅320でバナーのRowが右へはみ出すので
+/// 文字盤側のテストはこれを許すしかないが、**許すのはこれだけ**にする。
+/// 負の制約（NOT NORMALIZED）・縦のオーバーフロー・その他の framework
+/// 例外は赤にする。
+final Matcher isKnownHorizontalOverflow = predicate<Object?>(
+  (exception) =>
+      exception is FlutterError &&
+      exception.toString().contains('RenderFlex overflowed') &&
+      exception.toString().contains('on the right'),
+  '既知の横オーバーフロー（RenderFlex overflowed … on the right）',
+);
+
+/// [harness] の直前の pump で出た例外が、既知の横オーバーフローだけで
+/// あることを見る（1 件も出ていなければ当然緑）。
+void expectOnlyKnownOverflow(HomeLayoutHarness harness, {String? reason}) {
+  expect(harness.pumpErrors, everyElement(isKnownHorizontalOverflow),
+      reason: reason ?? '既知の横overflow以外の例外が出ている: ${harness.pumpErrors}');
+}
+
 /// 実AppShellでHomeを立ち上げる土台。テストの main() で [install] を呼ぶ。
 class HomeLayoutHarness {
   HomeLayoutHarness._(this._binding);
@@ -54,6 +74,12 @@ class HomeLayoutHarness {
 
   /// providerを直接読み書きして状態を作るためのコンテナ
   late ProviderContainer container;
+
+  /// 直前の [pumpOffline] で出た framework 例外（畳まずに全部）
+  /// `takeException()` は複数の例外を「Multiple exceptions (N)」1本に
+  /// 畳んでしまい、1件ずつの判定ができない。SDK境界の
+  /// `FlutterError.onError` を pump の間だけ差し替えて集める。
+  final List<Object> pumpErrors = [];
 
   /// setUp/tearDownを張って土台を返す。差し替えるのはSDK境界
   /// （connectivityのMethodChannel・SharedPreferences・実Hive）だけ。
@@ -94,33 +120,43 @@ class HomeLayoutHarness {
   }
 
   /// 実AppShellを[size]で立ち上げ、入力を抱えたままオフラインにする。
-  /// [scale]はOSの文字拡大倍率。戻り値はレイアウト例外（無ければnull）。
-  /// 取り出さないと後続の観測と関係のない理由でテストが落ちるため
-  /// ここで必ず取り出す。
+  /// [scale]はOSの文字拡大倍率。出た例外は [pumpErrors] に全部入り
+  /// 戻り値はその先頭（1件も無ければnull）。取り出さないと後続の観測と
+  /// 関係のない理由でテストが落ちるため、ここで必ず取り出す。
   Future<Object?> pumpOffline(WidgetTester tester, Size size,
       {double scale = 2}) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(UncontrolledProviderScope(
-      container: container,
-      child: Consumer(
-        builder: (context, ref, child) => MaterialApp(
-          theme: ref.watch(currentThemeProvider),
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: TextScaler.linear(scale)),
-            child: child!,
+    pumpErrors.clear();
+    final previousOnError = FlutterError.onError;
+    FlutterError.onError = (details) => pumpErrors.add(details.exception);
+    try {
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: Consumer(
+          builder: (context, ref, child) => MaterialApp(
+            theme: ref.watch(currentThemeProvider),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(scale)),
+              child: child!,
+            ),
+            home: const AppShell(child: HomeScreen()),
           ),
-          home: const AppShell(child: HomeScreen()),
         ),
-      ),
-    ));
-    await tester.pumpAndSettle();
-    container.read(inputBufferProvider.notifier).setText('あ' * 999);
-    await container.read(networkProvider.notifier).setOffline();
-    await tester.pumpAndSettle();
-    return tester.takeException();
+      ));
+      await tester.pumpAndSettle();
+      container.read(inputBufferProvider.notifier).setText('あ' * 999);
+      await container.read(networkProvider.notifier).setOffline();
+      await tester.pumpAndSettle();
+    } finally {
+      FlutterError.onError = previousOnError;
+    }
+    // 差し替えの網から漏れた分（binding が先に受けたもの）も拾う。
+    final pending = tester.takeException();
+    if (pending != null) pumpErrors.add(pending);
+    return pumpErrors.isEmpty ? null : pumpErrors.first;
   }
 }
