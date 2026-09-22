@@ -23,6 +23,8 @@ import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/providers/repository_providers.dart';
+import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_form_content.dart';
+import '../character_board/presentation/home_layout_test_support.dart';
 
 /// putは届くが例外で返る（1回目だけ）実box境界。L-143の形。
 class _AfterPutFailureBox extends Mock implements Box<PresetPhrase> {}
@@ -983,8 +985,8 @@ void main() {
       if (!allowed) {
         final notice = find.textContaining('コピー');
         expect(notice, findsOneWidget);
-        expect(tester.renderObject<RenderParagraph>(notice).didExceedMaxLines,
-            isFalse);
+        expectNoticeReadable(tester, notice,
+            tester.getRect(find.byType(PhraseFormContent)), '衝突の案内');
       }
       await tester.runAsync(() async {
         await box.close();
@@ -1050,7 +1052,10 @@ void main() {
     await submit(tester);
     // 自分が保存したのではないのだから閉じない。コピー案内も出たまま。
     expect(find.byType(PhraseAddDialog), findsOneWidget);
-    expect(find.textContaining('コピー'), findsOneWidget);
+    final notice = find.textContaining('コピー');
+    expect(notice, findsOneWidget);
+    expectNoticeReadable(tester, notice,
+        tester.getRect(find.byType(PhraseFormContent)), '衝突の案内');
     final map =
         jsonDecode(store.values['flutter.preset_phrase_drafts']! as String)
             as Map;
