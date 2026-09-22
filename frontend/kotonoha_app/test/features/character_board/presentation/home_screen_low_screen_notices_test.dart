@@ -13,6 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_button.dart';
+import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/network/presentation/widgets/offline_banner.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
@@ -70,12 +72,38 @@ void main() {
   // 入力が上限に達すると InputLimitNotice が増えて再レイアウトされる。
   // その描画フレームでも告知が横にはみ出さないこと。
   testWidgets('320x690 オフラインで入力上限の告知が増えても例外が出ない（L-156）', (tester) async {
-    await harness.pumpOffline(tester, const Size(320, 690));
+    final exception = await harness.pumpOffline(tester, const Size(320, 690));
+    expect(exception, isNull, reason: 'レイアウト例外が出ている: $exception');
     await tester.tap(boardCell('こ'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull, reason: 'タップ後にレイアウト例外が出ている');
     expect(harness.container.read(inputBufferProvider), hasLength(1000));
     expectIndicatorReadable(tester, screenOf(tester));
+  });
+
+  // 告知を折り返すとオフラインバナーが56→96pxに増え、可視高さがその分
+  // 下がる。320x568（iPhone SE 初代の縦持ち。可視高324）でも文字盤は
+  // 全幅の縦積みのままで、セルが2ペインの25.12pxに痩せないこと
+  // （バナーを2行にしたこのbranchでだけ到達する組み合わせ。台帳 L-155）。
+  testWidgets('320x568 オフライン・バナー2行でも文字盤は縦積みのまま（L-155/L-156）', (tester) async {
+    final exception = await harness.pumpOffline(tester, const Size(320, 568));
+    expect(exception, isNull, reason: 'レイアウト例外が出ている: $exception');
+    final banner = tester.getRect(find.byType(OfflineBanner));
+    expect(banner.height, greaterThan(56),
+        reason: '前提: バナーが2行（56pxを超える）になっていない: $banner');
+
+    final home = tester.getRect(find.byType(HomeScreen));
+    final board = tester.getRect(find.byType(CharacterBoardWidget));
+    expect(board.left, closeTo(home.left + AppSizes.paddingSmall, 0.01),
+        reason: '文字盤$boardが全幅に置かれていない（2ペインに落ちている）');
+    final key = tester.getRect(boardCell('あ'));
+    expect(key.width, greaterThanOrEqualTo(AppSizes.minTapTarget),
+        reason: '「あ」のキーが$key（2ペインなら25.12pxまで痩せる）');
+    expect(key.height, greaterThanOrEqualTo(AppSizes.minTapTarget),
+        reason: '「あ」のキーが$key（高さが44px未満）');
+    expect(boardCell('あ').hitTestable(), findsOneWidget);
+    expect(find.text('上へ'), findsOneWidget);
+    expect(find.text('下へ'), findsOneWidget);
   });
 
   // 2ペインの左ペインは幅が乏しく、境界付近（内部幅478）でOSの文字拡大を
@@ -101,7 +129,9 @@ void main() {
   for (final height in [844.0, 690.0]) {
     testWidgets('320x${height.toInt()} オンライン復帰の告知が切れず全文読める（L-156同型）',
         (tester) async {
-      await harness.pumpOffline(tester, Size(320, height), scale: 1.0);
+      final exception =
+          await harness.pumpOffline(tester, Size(320, height), scale: 1.0);
+      expect(exception, isNull, reason: 'レイアウト例外が出ている: $exception');
       await harness.container.read(networkProvider.notifier).setOnline();
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull, reason: '復帰フレームでレイアウト例外');
