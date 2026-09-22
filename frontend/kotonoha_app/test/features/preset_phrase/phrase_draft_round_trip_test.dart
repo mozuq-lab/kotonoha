@@ -532,6 +532,38 @@ void main() {
     expect(find.textContaining('定型文の下書きを保存できません', skipOffstage: false),
         findsNothing);
   });
+  testWidgets('書込に失敗した下書きは、入力を変えなくても次のpausedで再試行する', (tester) async {
+    // L-159 が約束した「失敗後は dirty のまま＝次の paused で再試行される」。
+    // `_written` を**成功したときだけ**進めることが効いている（F-3）。
+    await open(tester, observe: true, banner: true);
+    await tester.enterText(find.byType(TextField), '失敗しても次で書く本文');
+    store.failWrite = true;
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(store.writes, 1);
+    expect(store.values.keys, isNot(contains(draftKey)), reason: '失敗したのに書けている');
+    expect(find.textContaining('定型文の下書きを保存できません', skipOffstage: false),
+        findsWidgets);
+    // 入力は一切変えない。書けるようになってから背景へ回すだけ。
+    store.failWrite = false;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    for (var i = 0; i < 100 && store.writes < 2; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 5)));
+      await tester.pump();
+    }
+    expect(store.writes, 2, reason: '失敗した下書きが次のpausedで再試行されていない');
+    final map = jsonDecode(store.values[draftKey]! as String) as Map;
+    expect((map['add'] as Map)['content'], '失敗しても次で書く本文');
+    // 書けたので告知も消える。
+    await tester.pumpAndSettle();
+    expect(container.read(settingsWriteFailureProvider),
+        isNot(contains(phraseDraftWriteKey)));
+    expect(find.textContaining('定型文の下書きを保存できません', skipOffstage: false),
+        findsNothing);
+  });
   testWidgets('書込中に打ち直した本文は次のpausedで必ず書かれる', (tester) async {
     // L-159: dirty を「書込の完了」で降ろすと、snapshotを取った後に打ち直した
     // 分が「保存済み」に見え、次のflushが黙って skip する＝打ち直した文が
@@ -807,6 +839,44 @@ void main() {
     // 出口（「閉じる」）は凍結の外に残す。
     expect(find.text('閉じる'), findsOneWidget);
     handle.dispose();
+  });
+  testWidgets('onSaveが投げたErrorも穏当な文に隠さず報告し、入力を残す', (tester) async {
+    // F-4: `_onSave` の catch は利用者を閉じ込めないために広いままにするが、
+    // Error は端末内のログへ出す。画面側（`ownsId`）の経路しか見ていなかった
+    // ので、`_onSave` 側の `reportDraftProgrammingError` を消しても赤に
+    // ならなかった（Codex Important 3）。
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () => showDialog<void>(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => PhraseAddDialog(
+                onSave: (content, category) async =>
+                    throw StateError('onSave exploded'),
+              ),
+            ),
+            child: const Text('開く'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('開く'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '保存が壊れても残す本文');
+    final reported = await reportedDuring(tester, () => submit(tester));
+    expectReportedStateErrors(reported);
+    // 利用者には穏当な文のまま、入力は残り、同じ場所で再試行できる。
+    expect(find.byType(PhraseAddDialog), findsOneWidget);
+    expect(find.widgetWithText(TextField, '保存が壊れても残す本文'), findsOneWidget);
+    expect(find.textContaining('保存を確認できませんでした'), findsOneWidget);
+    expect(
+        tester
+            .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '保存'))
+            .onPressed,
+        isNotNull,
+        reason: '`_saving` が戻らず再試行できない');
   });
   testWidgets('読込の報告が壊れてもフォームは凍結せず、下書きは書ける', (tester) async {
     // 監査 P1-5 / F-1: `_load` の `_record` が try の外だったため、報告側が
