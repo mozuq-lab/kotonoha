@@ -261,6 +261,9 @@ class OfflineIndicator extends ConsumerWidget {
             Flexible(
               child: Text(
                 'オフライン',
+                // 折り返すとFlexibleが残り幅を取るためRowの揃えが効かず
+                // 2行目だけ左に寄る。行そのものを中央に揃える。
+                textAlign: TextAlign.center,
                 style: TextStyle(
                     color: AppColors.onWarningContainer, fontSize: 12),
               ),

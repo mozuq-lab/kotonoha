@@ -86,6 +86,13 @@ void main() {
         tester, const Size(478 + AppSizes.emergencyButtonBarThickness, 375));
     expect(exception, isNull, reason: 'レイアウト例外が出ている: $exception');
     expectIndicatorReadable(tester, screenOf(tester));
+    // この幅・倍率では折り返すので、2行目が左に寄らないことまで見る。
+    expectLinesCentered(
+        tester,
+        find.descendant(
+            of: find.byType(OfflineIndicator),
+            matching: find.text(offlineIndicatorText)),
+        'AI変換脇の告知');
   });
 
   // オフラインからオンラインに戻したフレームで、復帰の緑帯が右へはみ出して
@@ -107,6 +114,8 @@ void main() {
       expect(encloses(screen, tester.getRect(notice)), isTrue,
           reason: '復帰の文言${tester.getRect(notice)}が画面$screenの外にある');
       expectNoticeReadable(tester, notice, tester.getRect(band), '復帰の告知');
+      // 幅320では1行に収まらず折り返すので、2行目の揃えまで見る。
+      expectLinesCentered(tester, notice, '復帰の告知');
 
       // 自動で消える動きは変えていない（タイマーを残さず片付ける）。
       await tester.pump(const Duration(seconds: 4));
