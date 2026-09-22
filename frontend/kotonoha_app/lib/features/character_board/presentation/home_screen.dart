@@ -179,7 +179,7 @@ class HomeScreen extends ConsumerWidget {
                         final hasBoardPaneWidth = boardPaneWidth >=
                             _minBoardPaneWidth - _boardPaneWidthTolerance;
 
-                        // 幅320でオフラインバナーが出ると可視高さが486pxとなり
+                        // 幅320でオフラインバナーが出ると可視高さが446pxとなり
                         // 幅が足りないので縦積みに入る。
                         if (isCompactHeight && hasBoardPaneWidth) {
                           return _buildCompactLandscapeLayout(
