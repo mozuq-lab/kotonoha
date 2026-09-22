@@ -192,14 +192,19 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
             repo.loadAllSync().where((p) => p.id == draft.id).toList();
         final records = [...state, ...stored];
         if (records.isEmpty) return PhraseDraftOwnership.owned;
+        // このレコードは自分が書いた／復元した内容か。
+        bool mine(PresetPhrase phrase) =>
+            same(phrase, draft) ||
+            (attempt != null && same(phrase, attempt!)) ||
+            (reflected != null && same(phrase, reflected!));
         // 同じIDに同じ内容が既にある＝この下書きの保存は済んでいる。
-        if (records.every((p) => same(p, pending ?? draft))) {
+        // ただし「自分の」レコードと一致するときだけ。衝突で拒否されている
+        // 間に相手と同じ本文へ打ち替えただけでは保存済みにしない。
+        // 化けると、衝突の出口（コピー案内）が無言の成功になる（台帳 L-168）。
+        if (records.every((p) => same(p, pending ?? draft) && mine(p))) {
           return PhraseDraftOwnership.saved;
         }
-        final owned = records.every((p) =>
-            same(p, draft) ||
-            (attempt != null && same(p, attempt!)) ||
-            (reflected != null && same(p, reflected!)));
+        final owned = records.every(mine);
         if (!owned) return rejectConflict();
         // 次のattemptがput前に失敗しても、実boxで確認した自分の本文を忘れない。
         if (stored.isNotEmpty) {

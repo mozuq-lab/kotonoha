@@ -906,6 +906,43 @@ void main() {
       }
     });
   }
+  testWidgets('衝突で拒否された下書きを相手と同じ本文に打ち替えても無言で閉じない', (tester) async {
+    // L-168: saved は「レコードが自分の書いた／復元した内容と一致する」ときだけ。
+    // 拒否されている下書き(A)を、ぶつかっている相手(B)の本文・カテゴリへ
+    // 打ち替えると、`pending` だけで比べる判定が saved に化け、衝突の出口
+    // （コピー案内）が無言の成功になっていた。
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final box = Hive.box<PresetPhrase>('presetPhrases');
+    store.values['flutter.preset_phrase_drafts'] = jsonEncode({
+      'add': {'id': 'keep', 'content': '復元した本文', 'category': 'health'}
+    });
+    await open(tester);
+    expect(find.widgetWithText(TextField, '復元した本文'), findsOneWidget);
+    expect(find.textContaining('コピー'), findsOneWidget);
+    // ぶつかっている相手（boxのkeep）と同じ本文・カテゴリへ打ち替える。
+    await tester.enterText(find.byType(TextField), '既存の本文');
+    await tester.tap(find.widgetWithText(ChoiceChip, '日常'));
+    await tester.pumpAndSettle();
+    await submit(tester);
+    // 自分が保存したのではないのだから閉じない。コピー案内も出たまま。
+    expect(find.byType(PhraseAddDialog), findsOneWidget);
+    expect(find.textContaining('コピー'), findsOneWidget);
+    final map =
+        jsonDecode(store.values['flutter.preset_phrase_drafts']! as String)
+            as Map;
+    expect(map.keys, contains('add'), reason: '拒否されたのに下書きが消えている');
+    expect((map['add'] as Map)['content'], '既存の本文');
+    await tester.runAsync(() async {
+      await box.close();
+      final reopened = await Hive.openBox<PresetPhrase>('presetPhrases');
+      // 本体は元のまま1件。増えも書き換わりもしない。
+      expect(reopened.values, hasLength(1));
+      expect(reopened.get('keep')?.content, '既存の本文');
+      expect(reopened.get('keep')?.category, 'daily');
+    });
+  });
   for (final route in ['notifier', 'box']) {
     testWidgets('flush待機中に同じIDが埋まったら（$route経由）最後の照合で拒否する', (tester) async {
       final box = Hive.box<PresetPhrase>('presetPhrases');
