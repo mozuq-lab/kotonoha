@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
@@ -20,6 +21,10 @@ import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
+
+/// putは届くが例外で返る（1回目だけ）実box境界。L-143の形。
+class _AfterPutFailureBox extends Mock implements Box<PresetPhrase> {}
 
 // SDK境界だけを置換。false/throw時はstoreを更新せずcacheと区別する。
 class DraftStore extends SharedPreferencesStorePlatform {
@@ -224,6 +229,40 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, '未読の本文'), findsOneWidget);
+  });
+  testWidgets('初期read失敗でも再試行は同じ固定IDで、重複を作らない', (tester) async {
+    // 下書きが読めないダイアログでも、一次putが届いてから失敗した再試行が
+    // 2件目を作らない（L-143。固定IDはダイアログごとに1つ）。
+    final box = Hive.box<PresetPhrase>('presetPhrases');
+    final boundary = _AfterPutFailureBox();
+    var puts = 0;
+    registerFallbackValue(box.get('keep')!);
+    when(() => boundary.values).thenAnswer((_) => box.values);
+    when(() => boundary.put(any<dynamic>(), any())).thenAnswer((call) async {
+      puts++;
+      await box.put(call.positionalArguments[0],
+          call.positionalArguments[1] as PresetPhrase);
+      if (puts == 1) throw StateError('SDK: after put');
+    });
+    when(boundary.compact).thenAnswer((_) => box.compact());
+    when(boundary.flush).thenAnswer((_) => box.flush());
+    store.failRead = true;
+    container.dispose();
+    container = ProviderContainer(
+        overrides: [presetPhraseBoxProvider.overrideWithValue(boundary)]);
+    await open(tester);
+    await tester.enterText(find.byType(TextField), '固定IDで再試行する本文');
+    await submit(tester);
+    expect(find.textContaining('保存を確認できません'), findsOneWidget);
+    await submit(tester);
+    expect(find.byType(PhraseAddDialog), findsNothing);
+    expect(store.writes, 0);
+    await tester.runAsync(() async {
+      await box.close();
+      final reopened = await Hive.openBox<PresetPhrase>('presetPhrases');
+      expect(reopened.values.where((p) => p.content.contains('固定IDで再試行')),
+          hasLength(1));
+    });
   });
   testWidgets('読込失敗中に打った本文は「再読み込み」で消えない', (tester) async {
     store.values['flutter.preset_phrase_drafts'] = jsonEncode({

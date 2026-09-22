@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_delete_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
@@ -159,6 +160,9 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
     final repo = ref.read(presetPhraseRepositoryProvider);
     final drafts = ref.read(phraseDraftProvider);
     // 下書きが読めなかったときは復元自体が起きない（照合する相手がいない）。
+    // その場合でも再試行が同じkeyへ届くよう、ダイアログごとに固定IDを1つ持つ
+    // （L-143。毎回新しいIDだと、一次putが届いてから失敗したとき2件になる）。
+    final fallbackId = const Uuid().v4();
     PhraseDraft? initial;
     PhraseDraft? attempt;
     PhraseDraft? reflected;
@@ -241,7 +245,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
               return notifier.addPhrase(
                 content,
                 category,
-                id: draft?.id,
+                id: draft?.id ?? fallbackId,
               );
           }
         },
