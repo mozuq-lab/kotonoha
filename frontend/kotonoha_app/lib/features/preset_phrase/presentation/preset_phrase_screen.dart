@@ -4,8 +4,8 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_delete_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
@@ -18,6 +18,8 @@ import 'package:kotonoha_app/features/history/providers/history_provider.dart'
     show historyProvider;
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
+import 'package:kotonoha_app/features/preset_phrase/providers/phrase_draft_provider.dart';
 
 /// 機能概要: 定型文画面
 /// 実装方針: Scaffoldベースでお気に入り・カテゴリ別定型文リストを表示
@@ -153,18 +155,99 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
 
   /// メソッド: 追加ダイアログを表示
   void _showAddDialog(BuildContext context) {
-    final id = const Uuid().v4();
+    final container = ProviderScope.containerOf(context, listen: false);
     final notifier = ref.read(presetPhraseNotifierProvider.notifier);
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    final drafts = ref.read(phraseDraftProvider);
+    // 下書きが読めなかったときは復元自体が起きない（照合する相手がいない）。
+    // その場合でも再試行が同じkeyへ届くよう、ダイアログごとに固定IDを1つ持つ
+    // （L-143。毎回新しいIDだと、一次putが届いてから失敗したとき2件になる）。
+    final fallbackId = const Uuid().v4();
+    PhraseDraft? initial;
+    PhraseDraft? attempt;
+    PhraseDraft? reflected;
+    String? rejectionMessage;
+    PhraseDraftOwnership rejectConflict() {
+      rejectionMessage = '保存先が下書きと一致しません。入力をコピーしてから下書きを破棄できます。';
+      return PhraseDraftOwnership.conflict;
+    }
+
+    /// 実boxを真実に、下書きのIDが誰のレコードかを復元時と保存のたびに照合する。
+    /// [pending] はこれから保存しようとしている内容（復元時はnull）。
+    PhraseDraftOwnership ownsId({PhraseDraft? pending}) {
+      rejectionMessage = null;
+      final draft = initial;
+      try {
+        if (repo == null) return PhraseDraftOwnership.conflict;
+        if (draft == null) return PhraseDraftOwnership.owned;
+        bool same(PresetPhrase phrase, PhraseDraft other) =>
+            phrase.content == other.content &&
+            phrase.category == other.category;
+        final state = container
+            .read(presetPhraseNotifierProvider)
+            .phrases
+            .where((p) => p.id == draft.id)
+            .toList();
+        final stored =
+            repo.loadAllSync().where((p) => p.id == draft.id).toList();
+        final records = [...state, ...stored];
+        if (records.isEmpty) return PhraseDraftOwnership.owned;
+        // 同じIDに同じ内容が既にある＝この下書きの保存は済んでいる。
+        if (records.every((p) => same(p, pending ?? draft))) {
+          return PhraseDraftOwnership.saved;
+        }
+        final owned = records.every((p) =>
+            same(p, draft) ||
+            (attempt != null && same(p, attempt!)) ||
+            (reflected != null && same(p, reflected!)));
+        if (!owned) return rejectConflict();
+        // 次のattemptがput前に失敗しても、実boxで確認した自分の本文を忘れない。
+        if (stored.isNotEmpty) {
+          final phrase = stored.first;
+          reflected = (
+            id: phrase.id,
+            content: phrase.content,
+            category: phrase.category
+          );
+        }
+        return PhraseDraftOwnership.owned;
+      } catch (_) {
+        return PhraseDraftOwnership.conflict;
+      }
+    }
+
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => PhraseAddDialog(
+        drafts: drafts,
+        rejectionMessage: () => rejectionMessage,
+        onRestore: (draft) {
+          initial = draft;
+          attempt = null;
+          reflected = null;
+          return ownsId();
+        },
         onSave: (content, category) {
-          return notifier.addPhrase(
-            content,
-            category,
-            id: id,
-          );
+          // dialog側のflush完了後、実boxとの照合からenqueueまでawaitしない。
+          final draft = initial;
+          final pending = draft == null
+              ? null
+              : (id: draft.id, content: content, category: category);
+          switch (ownsId(pending: pending)) {
+            case PhraseDraftOwnership.conflict:
+              return Future.value(false);
+            case PhraseDraftOwnership.saved:
+              // 本体は書かない。dialog側が下書きの消去だけ再試行する。
+              return Future.value(true);
+            case PhraseDraftOwnership.owned:
+              attempt = pending;
+              return notifier.addPhrase(
+                content,
+                category,
+                id: draft?.id ?? fallbackId,
+              );
+          }
         },
       ),
     );

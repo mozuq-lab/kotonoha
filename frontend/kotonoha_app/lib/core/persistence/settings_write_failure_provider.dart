@@ -1,4 +1,4 @@
-/// 設定（SharedPreferences）の保存が失敗しているキーの集合
+/// 設定（SharedPreferences）の保存失敗と、下書きの読込問題を表すキーの集合
 ///
 /// Hive の領域は [PersistedArea] ごとに `writeFailureProvider` が持つが、
 /// 設定は Hive の box ではない（許可リスト検査の対象外）ので別に持つ。
@@ -31,9 +31,20 @@ final settingsWriteFailureProvider =
 /// 入力中の文（下書き）の SharedPreferences キー。`app_session_provider.dart` と共有する
 const String draftTextWriteKey = 'draft_text';
 
-/// 失敗しているキーを利用者向けの名前に写す（順序固定: 入力中の文 → 設定）
-/// 下書きは利用者のデータ（NFR-302）、それ以外のキーは設定として 1 語にまとめる。
+/// 定型文専用下書き。read問題は別keyで保持し、write成功で消さない。
+const String phraseDraftWriteKey = 'preset_phrase_drafts';
+
+/// 復元不能の告知。書込不能の文へは合流させない。
+const String phraseDraftReadKey = '$phraseDraftWriteKey.read';
+
+/// 失敗しているキーを利用者向けの名前に写す（順序固定: 入力中の文 → 定型文の下書き → 設定）
+/// readの復元不能はここへ合流させず、バナーが別の文で表示する。
 List<String> prefFailureNames(Set<String> failedKeys) => [
       if (failedKeys.contains(draftTextWriteKey)) '入力中の文',
-      if (failedKeys.any((key) => key != draftTextWriteKey)) '設定',
+      if (failedKeys.contains(phraseDraftWriteKey)) '定型文の下書き',
+      if (failedKeys.any((key) =>
+          key != draftTextWriteKey &&
+          key != phraseDraftWriteKey &&
+          key != phraseDraftReadKey))
+        '設定',
     ];

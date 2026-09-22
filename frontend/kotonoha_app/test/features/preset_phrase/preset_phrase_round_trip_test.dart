@@ -12,6 +12,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +49,7 @@ void main() {
   const phraseContent = 'すこし休みたいです';
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('flutter_tts'),
       (call) async => 1,
@@ -84,6 +86,64 @@ void main() {
     }
   });
 
+  testWidgets('一次put後失敗→次のput前失敗→再試行でも自分の反映済み本文を拒否しない', (tester) async {
+    final box = Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+    final boundary = _DelayedBox();
+    var puts = 0;
+    String? savedId;
+    registerFallbackValue(box.get(phraseId)!);
+    when(() => boundary.values).thenAnswer((_) => box.values);
+    when(() => boundary.put(any<dynamic>(), any())).thenAnswer((call) async {
+      puts++;
+      savedId ??= call.positionalArguments[0] as String;
+      if (puts == 2) throw StateError('SDK: before put');
+      await box.put(call.positionalArguments[0],
+          call.positionalArguments[1] as PresetPhrase);
+      if (puts == 1) throw StateError('SDK: after put');
+    });
+    when(boundary.compact).thenAnswer((_) => box.compact());
+    when(boundary.flush).thenAnswer((_) => box.flush());
+    await tester.pumpWidget(ProviderScope(
+      overrides: [presetPhraseBoxProvider.overrideWithValue(boundary)],
+      child: const MaterialApp(home: PresetPhraseScreen()),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    for (final text in ['初回本文A', '修正本文B', '修正本文C']) {
+      await tester.enterText(find.byType(TextField), text);
+      await tester.runAsync(() => tester.tap(find.text('保存')));
+      for (var i = 0; i < 100; i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump();
+        if (find.byType(TextField).evaluate().isEmpty ||
+            tester
+                    .widget<ElevatedButton>(
+                        find.widgetWithText(ElevatedButton, '保存'))
+                    .onPressed !=
+                null) {
+          break;
+        }
+      }
+      await tester.pumpAndSettle();
+      if (text != '修正本文C') {
+        expect(find.textContaining('入力内容を残しています'), findsOneWidget);
+      }
+    }
+    expect(find.byType(TextField), findsNothing,
+        reason: 'SDK障害は2回目まで。自分のAを別内容と誤判定せずCを保存して閉じる');
+    await tester.runAsync(() async {
+      await box.close();
+      final reopened =
+          await Hive.openBox<PresetPhrase>(PersistedArea.presetPhrases.boxName);
+      expect(reopened.values.where((p) => p.content.contains('修正本文C')),
+          hasLength(1));
+      expect(reopened.keys, contains(savedId));
+      expect(reopened.get(savedId)?.content, contains('修正本文C'));
+      expect(reopened.values, hasLength(2));
+    });
+  });
   final editVariant = ValueVariant<bool>({false, true});
   testWidgets('保存後のcompact失敗から同じフォームで再試行しても重複しない', (tester) async {
     final edit = editVariant.currentValue!;

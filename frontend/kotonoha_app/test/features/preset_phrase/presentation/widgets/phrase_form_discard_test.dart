@@ -11,6 +11,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/themes/light_theme.dart';
@@ -71,6 +72,7 @@ Future<bool> _systemBack(WidgetTester tester) =>
     tester.binding.handlePopRoute();
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   for (final (name, icon, label) in [
     ('定型文の追加', Icons.add, '打った文'),
     ('定型文の編集', Icons.edit, '打ち直した文'),

@@ -10,6 +10,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
@@ -146,6 +147,7 @@ BorderSide? _paintedElevatedButtonSide(WidgetTester tester, Finder button) {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   // --- ダイアログ自体が公開ウィジェット ---
 
   expectMeetsContract(
