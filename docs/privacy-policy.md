@@ -20,7 +20,7 @@ Last Updated: September 21, 2026
 - **入力履歴**: 文字盤で入力した内容（最大50件）
 - **入力中の文**: 文字盤で入力している途中の内容。アプリが終了しても入力が消えないように保存します。入力欄を空にすると削除されます
 - **定型文**: ユーザーが追加したカスタム定型文
-- **追加中の定型文の下書き**: 本文・カテゴリ・保存先を識別するID。文字盤の入力中の文とは別に端末内へ保存し、次に追加フォームを開くと復元します。下書きを読み込めていれば、保存成功、明示キャンセル、確認済み破棄で消去します。読み込めなかった場合や消去できなかった場合は、端末内に残ります。下書きの一部または全部が壊れていて読み取れなかった場合はその旨をお知らせし、壊れていた部分は次に下書きを書き込むときに端末から消え、写しを残さないため回復できません。端末の OS のバックアップ機能を有効にしている場合は、バックアップの対象になることがあります。保存時点と終了時の限界は[サポート](./support.md)をご覧ください
+- **追加中の定型文の下書き**: 本文・カテゴリ・保存先を識別するID。文字盤の入力中の文とは別に端末内へ保存し、次に追加フォームを開くと復元します。下書きを読み込めていれば、保存成功、明示キャンセル、確認済み破棄で消去します。読み込めなかった場合や消去できなかった場合は、端末内に残ります。下書きを読み込めたものの、その一部または全部が壊れていた場合はその旨をお知らせし、壊れていた部分は次に下書きの書き込みに成功したときに本アプリの保存データから消え、本アプリは回復用の写しを別に残さないため、本アプリからは回復できません。端末の OS のバックアップ機能を有効にしている場合は、バックアップの対象になることがあります。保存時点と終了時の限界は[サポート](./support.md)をご覧ください
 - **お気に入り**: お気に入りに登録したフレーズ
 - **アプリ設定**: フォントサイズ、テーマ、音声速度などの設定
 
@@ -124,7 +124,7 @@ The App stores the following data on your device. The App itself does not send t
 - **Input History**: Content entered via the keyboard (up to 50 entries)
 - **Text Being Entered**: The text you are currently typing. It is saved so that it is not lost if the App closes, and it is deleted when you clear the input field
 - **Preset Phrases**: Custom phrases added by the user
-- **Draft preset phrase additions**: Text, category, and a save ID stored locally, separately from the character-board draft, and restored on reopening the add form. If the draft was loaded successfully, saving, explicit cancellation, or confirmed discard removes it. If it could not be loaded, or removal fails, the draft stays on your device. If part or all of the draft was damaged and could not be read, the App tells you so, and the damaged part is removed from your device at the next draft write; no copy is kept, so it cannot be recovered. If you have enabled your device's OS backup, it may be included. See [Support](./support.md) for timing and termination limitations
+- **Draft preset phrase additions**: Text, category, and a save ID stored locally, separately from the character-board draft, and restored on reopening the add form. If the draft was loaded successfully, saving, explicit cancellation, or confirmed discard removes it. If it could not be loaded, or removal fails, the draft stays on your device. If the draft was read but part or all of it was damaged, the App tells you so; the damaged part is removed from the App's stored data after the next successful draft write, and the App keeps no separate recovery copy, so the App cannot recover it. If you have enabled your device's OS backup, it may be included. See [Support](./support.md) for timing and termination limitations
 - **Favorites**: Phrases registered as favorites
 - **App Settings**: Settings such as font size, theme, and speech rate
 
