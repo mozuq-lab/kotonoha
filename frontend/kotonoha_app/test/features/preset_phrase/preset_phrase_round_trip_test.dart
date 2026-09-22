@@ -232,6 +232,12 @@ void main() {
       }
       await tester.tap(find.text('保存'));
       await tester.pumpAndSettle();
+      if (!missingBox) {
+        // 閉じたboxは所有権の照合（追加フォームだけが行う）でもErrorになる。
+        // 利用者向けの文は穏当なままで、開発者には端末内のログへ届く
+        // （台帳 L-162(a)。送信経路は作らない＝ADR-009）。
+        expect(tester.takeException(), edit ? isNull : isA<HiveError>());
+      }
       expect(find.textContaining('保存を確認できません'), findsOneWidget);
       expect(find.widgetWithText(TextField, '失敗しても残す本文'), findsOneWidget);
       expect(

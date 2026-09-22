@@ -15,6 +15,19 @@ import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 import 'package:kotonoha_app/shared/widgets/discard_input_guard.dart';
 
+/// 利用者を閉じ込めないための `catch` が、プログラムの誤りまで穏当な文に
+/// 隠してしまわないようにする（台帳 L-162(a)）。`Error`（`HiveError` を含む）
+/// だけを端末内のログへ流す。debug とテストで見え、release でも端末内に
+/// 留まる。送信経路は作らない（ADR-009）。
+void reportDraftProgrammingError(Object error, StackTrace stack) {
+  if (error is! Error) return;
+  FlutterError.reportError(FlutterErrorDetails(
+    exception: error,
+    stack: stack,
+    library: 'kotonoha preset_phrase draft',
+  ));
+}
+
 /// 復元した下書きのIDが、実boxのどのレコードに当たるか。
 enum PhraseDraftOwnership {
   /// boxに無い、または自分が書いたレコード。同じIDのまま保存を通す
@@ -201,8 +214,10 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
           }
         }
       }
-    } catch (_) {
-      // 入力を残し、同じ場所で再試行できるようにする。
+    } catch (e, s) {
+      // 入力を残し、同じ場所で再試行できるようにする。catchは狭めない
+      // （`_saving` が戻らなくなる方が悪い）。Errorだけログへ流す。
+      reportDraftProgrammingError(e, s);
     }
     if (!mounted) return;
     if (succeeded) {

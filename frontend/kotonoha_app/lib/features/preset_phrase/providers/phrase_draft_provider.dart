@@ -132,7 +132,15 @@ class PhraseDrafts {
         // 例外でもqueueを完了させ、次の明示再試行へ進める。
       }
       if (succeeded) _written = writing;
-      _record(phraseDraftWriteKey, succeeded);
+      // 報告が1度throwすると`_tail`がrejectedになり、以後のflush/removeAddが
+      // 全部errorになる。書込は成功しているのに「消せませんでした」（事実と
+      // 逆）が出て、そのセッションの下書き操作が全部失敗する（台帳 L-162）。
+      // setStringと同じtryには入れない（throw経路で報告ごと抜けるため）。
+      try {
+        _record(phraseDraftWriteKey, succeeded);
+      } catch (_) {
+        // 報告の失敗は書込の成否と別。ここで飲んでqueueを進める。
+      }
       return succeeded;
     });
   }

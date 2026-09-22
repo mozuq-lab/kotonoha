@@ -216,7 +216,10 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
           );
         }
         return PhraseDraftOwnership.owned;
-      } catch (_) {
+      } catch (e, s) {
+        // 照合できない以上は拒否する。ただしプログラムの誤りは
+        // 利用者向けの穏当な文に隠さず、端末内のログへ出す。
+        reportDraftProgrammingError(e, s);
         return PhraseDraftOwnership.conflict;
       }
     }
