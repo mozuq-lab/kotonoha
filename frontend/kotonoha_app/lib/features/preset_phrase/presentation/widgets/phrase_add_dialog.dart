@@ -87,6 +87,8 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
       );
 
   Future<void> _load() async {
+    // 未読の間に打った文はstoreに控えが無い。読み直しで置き換えない。
+    if (_contentController.text.isNotEmpty) return;
     setState(() => _loading = true);
     final loaded = await widget.drafts!.initialize();
     if (!mounted) return;
@@ -218,7 +220,12 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
       return;
     }
     setState(() => _saving = true);
-    final cleared = await widget.drafts!.removeAdd();
+    var cleared = false;
+    try {
+      cleared = await widget.drafts!.removeAdd();
+    } catch (_) {
+      // 例外でも`_saving`のまま固めない（固めると全操作が塞がる）。
+    }
     if (!mounted) return;
     if (cleared) {
       Navigator.of(context).pop();
@@ -238,6 +245,8 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     if (_saving || _loading || _committed) return;
     _changeDraft();
     setState(() {
+      // 打ち直した文はまだ守る対象。backの確認（L-136）を取り戻す。
+      _clearFailed = false;
       // 読めていないことは入力のたびに消えてはいけない事実なので残す。
       _errorMessage = _loaded ? null : _loadFailure;
     });
@@ -247,6 +256,7 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
   void _onCategoryChanged(String category) {
     if (_saving || _loading || _committed) return;
     setState(() {
+      _clearFailed = false;
       _selectedCategory = category;
     });
     _changeDraft();
@@ -289,7 +299,8 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
                 onTextChanged: _onTextChanged,
               ))),
       actions: [
-        if (!_loaded && !_loading)
+        // 打った文があるうちは出さない。読み直しはそれを置き換えてしまう
+        if (!_loaded && !_loading && _contentController.text.isEmpty)
           TextButton(onPressed: _load, child: const Text('再読み込み')),
         // 消去が失敗し続けても閉じられる出口。下書きは消さずに残す
         // （閉じられないとモーダルの下の緊急ボタンへ到達できない）

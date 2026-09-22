@@ -225,6 +225,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, '未読の本文'), findsOneWidget);
   });
+  testWidgets('読込失敗中に打った本文は「再読み込み」で消えない', (tester) async {
+    store.values['flutter.preset_phrase_drafts'] = jsonEncode({
+      'add': {'id': 'draft-1', 'content': '未読の本文', 'category': 'health'}
+    });
+    store.failRead = true;
+    await open(tester);
+    expect(find.text('再読み込み'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '未読中に打った本文');
+    await tester.pump();
+    // 未読の間に打った文はどこにも控えが無い。読み直して置き換える道を出さない。
+    final reload = find.widgetWithText(TextButton, '再読み込み');
+    expect(
+        reload.evaluate().isEmpty ||
+            tester.widget<TextButton>(reload).onPressed == null,
+        isTrue,
+        reason: '打った文があるうちは読み直せない');
+    store.failRead = false;
+    if (reload.evaluate().isNotEmpty) {
+      await tester.tap(reload, warnIfMissed: false);
+      await tester.pumpAndSettle();
+    }
+    expect(find.widgetWithText(TextField, '未読中に打った本文'), findsOneWidget);
+    expect(store.writes, 0);
+    expect(store.values['flutter.preset_phrase_drafts'], contains('未読の本文'));
+    // 捨てるものが無くなれば読み直せる。
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pump();
+    await tester.tap(find.text('再読み込み'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, '未読の本文'), findsOneWidget);
+    expect(store.writes, 0);
+  });
   testWidgets('初期read待機では入力を止めてロード完了後に復元する', (tester) async {
     store.readGate = Completer<void>();
     await open(tester);
@@ -449,6 +481,48 @@ void main() {
       expect(find.widgetWithText(TextField, '破棄失敗を保持'), findsNothing);
     });
   }
+  testWidgets('空本文の「キャンセル」はカテゴリだけの下書きも消す', (tester) async {
+    await open(tester);
+    await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(store.values['flutter.preset_phrase_drafts'], contains('health'));
+    // 本文が空でも「キャンセル」は明示破棄。backと違って消す。
+    await submit(tester, action: 'キャンセル');
+    expect(find.byType(PhraseAddDialog), findsNothing);
+    final map =
+        jsonDecode(store.values['flutter.preset_phrase_drafts']! as String)
+            as Map;
+    expect(map.keys, isNot(contains('add')));
+    await restart(tester);
+    expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
+            .selected,
+        isFalse);
+    expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '日常'))
+            .selected,
+        isTrue);
+  });
+  testWidgets('clear失敗の後に打ち直した本文はbackの確認を取り戻す', (tester) async {
+    await open(tester);
+    await tester.enterText(find.byType(TextField), '破棄したかった本文');
+    await tester.pump(const Duration(milliseconds: 400));
+    store.failClear = true;
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('下書きを消せません'), findsOneWidget);
+    // 考え直して打ち直した文は、まだ守る対象。backで黙って消さない。
+    await tester.enterText(find.byType(TextField), '打ち直した本文');
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('破棄しますか'), findsOneWidget);
+    await tester.tap(find.text('書き続ける'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, '打ち直した本文'), findsOneWidget);
+  });
   testWidgets('保存済み＋clear失敗でも閉じられ、開き直しても本体は重複しない', (tester) async {
     await open(tester);
     await tester.enterText(find.byType(TextField), '閉じても重複しない本文');
@@ -509,6 +583,37 @@ void main() {
     expect(find.byType(PhraseAddDialog), findsOneWidget);
     expect(find.textContaining('保存済み'), findsOneWidget);
     expect(find.text('閉じる'), findsOneWidget);
+  });
+  testWidgets('キャンセルの消去が例外で返っても閉じ込めない', (tester) async {
+    // 報告そのものが壊れる経路。`_saving` を戻さないと全操作が塞がる。
+    var armed = false;
+    final drafts = PhraseDrafts((key, succeeded) {
+      if (armed) throw StateError('report failed');
+    });
+    addTearDown(drafts.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () => showDialog<void>(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => PhraseAddDialog(drafts: drafts),
+            ),
+            child: const Text('開く'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('開く'));
+    await tester.pumpAndSettle();
+    armed = true;
+    await submit(tester, action: 'キャンセル');
+    expect(find.byType(PhraseAddDialog), findsOneWidget);
+    expect(find.textContaining('下書きを消せません'), findsOneWidget);
+    await tester.tap(find.text('閉じる'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PhraseAddDialog), findsNothing);
   });
   for (final scenario in [
     'new',
