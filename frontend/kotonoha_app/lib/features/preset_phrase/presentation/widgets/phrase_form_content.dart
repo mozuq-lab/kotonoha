@@ -63,7 +63,8 @@ class PhraseFormContent extends StatelessWidget {
           maxLengthEnforcement: MaxLengthEnforcement.enforced,
           decoration: InputDecoration(
             hintText: '定型文を入力',
-            errorText: errorMessage,
+            // errorTextのellipsisで、失敗時の対処案内を切り捨てない。
+            error: errorMessage == null ? null : Text(errorMessage!),
             border: const OutlineInputBorder(),
             counterText: '', // デフォルトカウンターを非表示
           ),

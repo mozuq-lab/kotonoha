@@ -15,6 +15,12 @@
 - [FAQ - よくある質問](./user-guide/faq.md)
 - [トラブルシューティング](./user-guide/troubleshooting.md)
 
+### 定型文を追加中に終了した場合
+
+追加フォームの本文とカテゴリは、最後の変更から400ms後に下書きとして保存を始め、次に追加フォームを開いたときに復元します。編集フォームの下書き復元は未対応です。保存前に終了した場合や、非同期書き込み中の強制終了・タブ終了では最新の入力が失われることがあります。書き込み完了の応答も、物理ディスクへの永続化を保証しません。
+「キャンセル」または戻る操作で「破棄する」を選ぶと下書きを消去します。定型文の保存に成功した場合も消去します。消去できなければ閉じずに知らせます。定型文の保存後に消去だけ失敗した場合は、本文を変更せず「保存」で消去を再試行してください。下書きの破棄は、すでに保存された定型文の削除ではありません。
+読み込みに失敗したら「再読み込み」を押してください。復元した下書きと同じIDの定型文が別の内容になっている場合は上書きせず入力を残します。必要な内容をコピーしてから、下書きを明示的に破棄できます。
+
 ### 使い方ガイド
 
 - [iOS ガイド付きアクセス設定](./user-guide/ios-guided-access.md)
@@ -63,6 +69,12 @@ Please refer to the following documents for detailed FAQ:
 
 - [FAQ - Frequently Asked Questions](./user-guide/faq.md)
 - [Troubleshooting Guide](./user-guide/troubleshooting.md)
+
+### If the app closes while adding a preset phrase
+
+The add form starts saving its text and category as a draft 400ms after the last change and restores it when you next open the form. Draft restoration for edits is not yet supported. Closing or terminating the app or tab before or during asynchronous writing can lose recent input; a completed write response does not guarantee physical disk durability.
+Cancel or confirmed discard removes the draft, as does a successful phrase save. A failed removal keeps the form open with a message. If the phrase was saved but draft removal failed, press Save to retry removal without changing the text. Discarding a draft does not delete a phrase already saved.
+Use Reload if loading fails. If the restored ID belongs to different phrase content, saving is refused and your input is retained. You can copy it before explicitly discarding the draft.
 
 ### User Guides
 

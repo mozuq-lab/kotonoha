@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 
 import 'app_session_provider.dart';
+import 'package:kotonoha_app/features/preset_phrase/providers/phrase_draft_provider.dart';
 
 /// アプリライフサイクル監視ウィジェット
 /// アプリがバックグラウンドに移行/復帰した時に
@@ -116,6 +117,7 @@ class _AppLifecycleObserverState extends ConsumerState<AppLifecycleObserver>
 
     switch (state) {
       case AppLifecycleState.paused:
+        unawaited(ref.read(phraseDraftProvider).flush());
         // 即時保存: バックグラウンド移行時はデバウンス中の変更を
         // 取りこぼさないよう、現在の入力バッファの内容を必ず即時保存する
         _draftSaveTimer?.cancel();

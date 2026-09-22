@@ -4,7 +4,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_delete_dialog.dart';
@@ -18,6 +17,8 @@ import 'package:kotonoha_app/features/history/providers/history_provider.dart'
     show historyProvider;
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
+import 'package:kotonoha_app/features/preset_phrase/providers/phrase_draft_provider.dart';
 
 /// 機能概要: 定型文画面
 /// 実装方針: Scaffoldベースでお気に入り・カテゴリ別定型文リストを表示
@@ -153,17 +154,80 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
 
   /// メソッド: 追加ダイアログを表示
   void _showAddDialog(BuildContext context) {
-    final id = const Uuid().v4();
+    final container = ProviderScope.containerOf(context, listen: false);
     final notifier = ref.read(presetPhraseNotifierProvider.notifier);
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    final drafts = ref.read(phraseDraftProvider);
+    late PhraseDraft initial;
+    PhraseDraft? attempt;
+    PhraseDraft? reflected;
+    var initiallyPresent = false;
+    var initialAccepted = false;
+    String? rejectionMessage;
+    bool rejectConflict() {
+      rejectionMessage = '保存先が下書きと一致しません。入力をコピーしてから下書きを破棄できます。';
+      return false;
+    }
+
+    bool ownsId({bool first = false}) {
+      rejectionMessage = null;
+      try {
+        if (repo == null) return false;
+        final state = container
+            .read(presetPhraseNotifierProvider)
+            .phrases
+            .where((p) => p.id == initial.id)
+            .toList();
+        final stored =
+            repo.loadAllSync().where((p) => p.id == initial.id).toList();
+        if (first) {
+          initiallyPresent = state.isNotEmpty;
+          if (state.isEmpty != stored.isEmpty) return rejectConflict();
+        } else if (initiallyPresent && state.isEmpty) {
+          return rejectConflict();
+        }
+        final owned = [...state, ...stored].every((p) =>
+            (p.content == initial.content && p.category == initial.category) ||
+            (attempt != null &&
+                p.content == attempt!.content &&
+                p.category == attempt!.category) ||
+            (reflected != null &&
+                p.content == reflected!.content &&
+                p.category == reflected!.category));
+        if (!owned) return rejectConflict();
+        // 次のattemptがput前に失敗しても、実boxで確認した自分の本文を忘れない。
+        if (stored.isNotEmpty) {
+          final phrase = stored.first;
+          reflected = (
+            id: phrase.id,
+            content: phrase.content,
+            category: phrase.category
+          );
+        }
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => PhraseAddDialog(
+        drafts: drafts,
+        rejectionMessage: () => rejectionMessage,
+        onRestore: (draft) {
+          initial = draft;
+          return initialAccepted = ownsId(first: true);
+        },
         onSave: (content, category) {
+          // dialog側のflush完了後、実boxとの照合からenqueueまでawaitしない。
+          if (!initialAccepted || !ownsId()) return Future.value(false);
+          attempt = (id: initial.id, content: content, category: category);
           return notifier.addPhrase(
             content,
             category,
-            id: id,
+            id: initial.id,
           );
         },
       ),

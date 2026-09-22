@@ -20,6 +20,7 @@ Last Updated: September 21, 2026
 - **入力履歴**: 文字盤で入力した内容（最大50件）
 - **入力中の文**: 文字盤で入力している途中の内容。アプリが終了しても入力が消えないように保存します。入力欄を空にすると削除されます
 - **定型文**: ユーザーが追加したカスタム定型文
+- **追加中の定型文の下書き**: 本文・カテゴリ・保存先を識別するID。文字盤の入力中の文とは別に端末内へ保存し、次に追加フォームを開くと復元します。保存成功、明示キャンセル、確認済み破棄で消去します。消去失敗時は通知し、再試行するまで残ります。OSバックアップの対象にもなります。保存時点と終了時の限界は[サポート](./support.md)をご覧ください
 - **お気に入り**: お気に入りに登録したフレーズ
 - **アプリ設定**: フォントサイズ、テーマ、音声速度などの設定
 
@@ -122,6 +123,7 @@ The App stores the following data on your device. The App itself does not send t
 - **Input History**: Content entered via the keyboard (up to 50 entries)
 - **Text Being Entered**: The text you are currently typing. It is saved so that it is not lost if the App closes, and it is deleted when you clear the input field
 - **Preset Phrases**: Custom phrases added by the user
+- **Draft preset phrase additions**: Text, category, and a save ID stored locally, separately from the character-board draft, and restored on reopening the add form. Successful saving, explicit cancellation, or confirmed discard removes the draft. Failed removal is reported and the draft remains until retry succeeds. OS backups may include it. See [Support](./support.md) for timing and termination limitations.
 - **Favorites**: Phrases registered as favorites
 - **App Settings**: Settings such as font size, theme, and speech rate
 
