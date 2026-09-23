@@ -345,9 +345,12 @@ void main() {
             'keep', box.get(phraseId)!.copyWith(id: 'keep', displayOrder: 99));
         final delayed = _DelayedBox();
         final gate = Completer<void>();
+        // put が始まったkey。during は「put の最中に消えた」を通す（F-13）。
+        final puts = <Object?>[];
         registerFallbackValue(box.get(phraseId)!);
         when(() => delayed.values).thenAnswer((_) => box.values);
         when(() => delayed.put(any<dynamic>(), any())).thenAnswer((call) async {
+          puts.add(call.positionalArguments[0]);
           await gate.future;
           if (race == 'during-failed') throw StateError('SDK put failed');
           await box.put(call.positionalArguments[0],
@@ -401,13 +404,24 @@ void main() {
             expect(phrases.map((p) => p.id), containsAll([phraseId, 'added']));
             expect(phrases.map((p) => p.id), isNot(contains('keep')));
           } else {
+            // before は put の前に、during は put の最中に消えた（updatePhrase の
+            // put 後に確かめる枝）。flush が onSave の前に入っても取り違えない。
+            expect(puts.contains(phraseId), race != 'before', reason: '$puts');
+            // 元の定型文が消えた下書きの閲覧へ移る。本文とカテゴリは下書きに残る。
+            final dialog = find.byType(AlertDialog);
             expect(find.textContaining('見つかりません'), findsOneWidget);
-            expect(find.widgetWithText(TextField, '競合しても残す本文'), findsOneWidget);
             expect(
-                tester
-                    .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
-                    .selected,
-                isTrue);
+                find.descendant(
+                    of: dialog, matching: find.textContaining('体調')),
+                findsOneWidget);
+            expect(
+                find.descendant(
+                    of: dialog, matching: find.textContaining('競合しても残す本文')),
+                findsOneWidget);
+            expect(
+                (await SharedPreferences.getInstance())
+                    .getString('preset_phrase_drafts'),
+                contains('競合しても残す本文'));
             expect(phrases.map((p) => p.id), isNot(contains(phraseId)));
           }
           await box.close();

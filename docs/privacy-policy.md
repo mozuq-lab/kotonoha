@@ -1,7 +1,7 @@
 # プライバシーポリシー / Privacy Policy
 
-最終更新日: 2026年9月21日
-Last Updated: September 21, 2026
+最終更新日: 2026年9月23日
+Last Updated: September 23, 2026
 
 ---
 
@@ -20,7 +20,7 @@ Last Updated: September 21, 2026
 - **入力履歴**: 文字盤で入力した内容（最大50件）
 - **入力中の文**: 文字盤で入力している途中の内容。アプリが終了しても入力が消えないように保存します。入力欄を空にすると削除されます
 - **定型文**: ユーザーが追加したカスタム定型文
-- **追加中の定型文の下書き**: 本文・カテゴリ・保存先を識別するID。文字盤の入力中の文とは別に端末内へ保存し、次に追加フォームを開くと復元します。下書きを読み込めていれば、保存成功、明示キャンセル、確認済み破棄で消去します。読み込めなかった場合や消去できなかった場合は、端末内に残ります。下書きを読み込めたものの、その一部または全部が壊れていた場合はその旨をお知らせし、壊れていた部分は次に下書きの書き込みに成功したときに本アプリの保存データから消え、本アプリは回復用の写しを別に残さないため、本アプリからは回復できません。端末の OS のバックアップ機能を有効にしている場合は、バックアップの対象になることがあります。保存時点と終了時の限界は[サポート](./support.md)をご覧ください
+- **追加・編集中の定型文の下書き**: 本文・カテゴリ・保存先または編集対象を識別するID。文字盤の入力中の文とは別に端末内へ保存し、次に同じフォームを開くと復元します（編集の下書きは定型文画面の「下書き」からも開けます）。下書きを読み込めていれば、保存成功、明示キャンセル、確認済み破棄、「下書きを破棄」で消去します。編集元の定型文が削除されても編集の下書きは残り、「下書きを破棄」で明示的に消せます。読み込めなかった場合や消去できなかった場合は、端末内に残ります。Web で同じアプリを複数のタブで開いていると、下書きが消えたり古い内容に戻ったりすることがあります。「コピー」を押すと本文を端末の OS のクリップボードに置きます。クリップボードに置いた本文は、OS の機能（端末間のクリップボード共有、他のアプリによる読み取りなど）によって、端末の外へ出たり他のアプリに読まれたりすることがあります。下書きを読み込めたものの、その一部または全部が壊れていた場合はその旨をお知らせし、壊れていた部分は次に下書きの書き込みに成功したときに本アプリの保存データから消え、本アプリは回復用の写しを別に残さないため、本アプリからは回復できません。端末の OS のバックアップ機能を有効にしている場合は、バックアップの対象になることがあります。保存時点と終了時の限界は[サポート](./support.md)をご覧ください
 - **お気に入り**: お気に入りに登録したフレーズ
 - **アプリ設定**: フォントサイズ、テーマ、音声速度などの設定
 
@@ -81,7 +81,7 @@ AI変換機能（オプション）を使用すると、以下のデータが本
 
 - アプリ内の履歴画面・お気に入り画面から、履歴とお気に入りを個別または全件削除
 - アプリ内の定型文画面から、定型文を個別に削除
-- 定型文の追加フォームで下書きを読み込めていれば、「キャンセル」（または戻る操作で「破棄する」）で、追加中の下書きを削除。フォームを閉じるだけでは残ります
+- 定型文の追加・編集フォームで下書きを読み込めていれば、「キャンセル」（または戻る操作で「破棄する」）で、そのフォームの下書きを削除。編集元の定型文が削除された下書きは、定型文画面の「下書き」から開いて「下書きを破棄」を押し、確認のうえ削除。フォームを閉じるだけでは残ります
 - アプリをアンインストールすることで、すべてのローカルデータが削除されます
 
 アプリ内で削除したデータが、すでに取られた OS のバックアップに含まれている場合、その削除はバックアップには及びません。端末の復元や再インストールで戻ることがあります。
@@ -124,7 +124,7 @@ The App stores the following data on your device. The App itself does not send t
 - **Input History**: Content entered via the keyboard (up to 50 entries)
 - **Text Being Entered**: The text you are currently typing. It is saved so that it is not lost if the App closes, and it is deleted when you clear the input field
 - **Preset Phrases**: Custom phrases added by the user
-- **Draft preset phrase additions**: Text, category, and a save ID stored locally, separately from the character-board draft, and restored on reopening the add form. If the draft was loaded successfully, saving, explicit cancellation, or confirmed discard removes it. If it could not be loaded, or removal fails, the draft stays on your device. If the draft was read but part or all of it was damaged, the App tells you so; the damaged part is removed from the App's stored data after the next successful draft write, and the App keeps no separate recovery copy, so the App cannot recover it. If you have enabled your device's OS backup, it may be included. See [Support](./support.md) for timing and termination limitations
+- **Draft preset phrase additions and edits**: Text, category, and an ID identifying where it will be saved or which phrase is being edited, stored locally, separately from the character-board draft, and restored on reopening the same form (edit drafts can also be opened from Drafts on the Preset Phrases screen). If the draft was loaded successfully, saving, explicit cancellation, confirmed discard, or Discard draft removes it. If the phrase being edited is deleted, its edit draft remains, and you can explicitly remove it with Discard draft. If it could not be loaded, or removal fails, the draft stays on your device. If the App is open in more than one browser tab on the Web, drafts may disappear or revert to older content. Pressing Copy places the text on your device's OS clipboard; through OS features (such as clipboard sharing between devices or other apps reading the clipboard), text on the clipboard may leave your device or be read by other apps. If the draft was read but part or all of it was damaged, the App tells you so; the damaged part is removed from the App's stored data after the next successful draft write, and the App keeps no separate recovery copy, so the App cannot recover it. If you have enabled your device's OS backup, it may be included. See [Support](./support.md) for timing and termination limitations
 - **Favorites**: Phrases registered as favorites
 - **App Settings**: Settings such as font size, theme, and speech rate
 
@@ -185,7 +185,7 @@ Users can delete data in the following ways:
 
 - Delete history and favorites individually or entirely, from the History and Favorites screens in the App
 - Delete preset phrases individually, from the Preset Phrases screen in the App
-- If the draft was loaded, delete it with Cancel in the add form (or Discard when going back); merely closing the form keeps it
+- If the draft was loaded, delete it with Cancel in the add or edit form (or Discard when going back); for a draft whose phrase was deleted, open it from Drafts on the Preset Phrases screen, press Discard draft, and confirm. Merely closing the form keeps it
 - Uninstalling the app deletes all local data
 
 If data you delete within the App is already included in an OS backup, deleting it in the App does not remove it from that backup. It may come back when you restore your device or reinstall the App.

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:kotonoha_app/core/persistence/programming_error_report.dart';
+import 'package:kotonoha_app/features/preset_phrase/domain/phrase_constants.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_delete_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
@@ -20,6 +21,7 @@ import 'package:kotonoha_app/features/history/providers/history_provider.dart'
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/providers/repository_providers.dart';
+import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/phrase_draft_provider.dart';
 
 /// 機能概要: 定型文画面
@@ -63,6 +65,12 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('定型文'),
+        actions: [
+          TextButton(
+            onPressed: _showDrafts,
+            child: const Text('下書き'),
+          ),
+        ],
       ),
       body: _buildBody(phrasesState, favoritePresetIds),
       floatingActionButton: FloatingActionButton(
@@ -119,13 +127,17 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
   }
 
   /// メソッド: 編集処理
-  void _onEdit(PresetPhrase phrase) {
+  /// [phrase] が null なら、元の定型文が消えた下書き（[draftId]）を開く。
+  void _onEdit(PresetPhrase? phrase, [String? draftId]) {
     final notifier = ref.read(presetPhraseNotifierProvider.notifier);
+    final drafts = ref.read(phraseDraftProvider);
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => PhraseEditDialog(
         phrase: phrase,
+        draftId: draftId,
+        drafts: drafts,
         onSave: (updatedPhrase) {
           return notifier.updatePhrase(
             updatedPhrase.id,
@@ -153,6 +165,108 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
       ),
     );
   }
+
+  /// メソッド: 編集の下書き（元の定型文が消えたものも含む）を選んで開く入口
+  Future<void> _showDrafts() async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final repo = ref.read(presetPhraseRepositoryProvider);
+    final drafts = ref.read(phraseDraftProvider);
+    // 先に一覧のダイアログを開き、読込はその中で待つ。待つ間はモーダルの
+    // バリアが画面全体を覆うので、別のフォームも入口の再押下も届かない
+    // （下書きの消去は 1 つのモーダルが 1 つの操作を待つ前提）。画面の route を
+    // 見る判定は、画面が ShellRoute の内側の Navigator にありダイアログが root に
+    // 積まれる実アプリでは効かなかった（Task 2 再レビュー F-8・再監査 N-1）。
+    final loaded = drafts.initialize();
+    final picked = await showDialog<PhraseDraft>(
+      context: context,
+      // バリアを押しても閉じない（押し損じで待機中の一覧が消えないように。
+      // 閉じるのは「閉じる」か戻る操作）。
+      barrierDismissible: false,
+      builder: (dialogContext) => ConfirmationDialogLayout.build(
+        title: const Text('編集の下書き'),
+        content: FutureBuilder<bool>(
+          future: loaded,
+          builder: (context, snapshot) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (snapshot.connectionState != ConnectionState.done)
+                const Text('下書きを読み込んでいます。')
+              // 読めないことを「下書きが無い」にしない。未読のmapには触れない。
+              else if (snapshot.data != true)
+                const Text('下書きを読み込めませんでした。閉じてから、もう一度「下書き」を押してください。')
+              else if (drafts.edits.isEmpty)
+                const Text('編集の下書きはありません')
+              else
+                for (final draft in drafts.edits)
+                  TextButton(
+                    style:
+                        TextButton.styleFrom(alignment: Alignment.centerLeft),
+                    onPressed: () => Navigator.of(dialogContext).pop(draft),
+                    child: Text(
+                      '${PhraseConstants.getCategoryLabel(draft.category)}: '
+                      '${draft.content}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+            ],
+          ),
+        ),
+        // 閉じても何も消さない。
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
+    );
+    if (picked == null || !mounted) return;
+    // 選んだ後の現在で、元の定型文の有無を確かめる。確かめられないことを
+    // 「無い」にしない（残っている定型文から切り離した孤立として開いてしまう）。
+    bool? exists;
+    try {
+      final state = container.read(presetPhraseNotifierProvider);
+      final inState = state.phrases.any((p) => p.id == picked.id);
+      if (!state.isLoading &&
+          state.error == null &&
+          repo != null &&
+          inState == repo.loadAllSync().any((p) => p.id == picked.id)) {
+        exists = inState;
+      }
+    } catch (e, s) {
+      reportDraftProgrammingError(e, s);
+    }
+    if (!mounted) return;
+    if (exists == null) {
+      return _notify('元の定型文を確認できませんでした。下書きは残っています。');
+    }
+    // 本文が下書きと本体で違うのは編集の目的なので、追加の所有権照合は写さない。
+    _onEdit(
+        exists
+            ? container
+                .read(presetPhraseNotifierProvider)
+                .phrases
+                .firstWhere((p) => p.id == picked.id)
+            : null,
+        picked.id);
+  }
+
+  /// 利用者が閉じるまで残る告知（自動で消える SnackBar は使わない）。
+  Future<void> _notify(String message) => showDialog<void>(
+        context: context,
+        builder: (dialogContext) => ConfirmationDialogLayout.build(
+          title: const Text('編集の下書き'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('閉じる'),
+            ),
+          ],
+        ),
+      );
 
   /// メソッド: 追加ダイアログを表示
   void _showAddDialog(BuildContext context) {

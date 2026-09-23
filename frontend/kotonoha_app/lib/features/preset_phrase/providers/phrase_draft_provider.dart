@@ -9,7 +9,8 @@ import 'package:kotonoha_app/features/preset_phrase/domain/phrase_constants.dart
 
 typedef PhraseDraft = ({String id, String content, String category});
 
-/// 追加下書きと他の有効entryを単一mapで保持する。SDKのcacheは成功判定に使わない。
+/// 追加（`add`）と編集（`edit:<id>`）の下書きを単一mapで保持する（台帳 L-158）。
+/// SDKのcacheは成功判定に使わない。
 class PhraseDrafts {
   PhraseDrafts(this._report);
   final void Function(String key, bool succeeded) _report;
@@ -21,7 +22,7 @@ class PhraseDrafts {
   bool _loaded = false;
   bool _disposed = false;
 
-  /// 変更の通し番号。`changeAdd`・`removeAdd` のたびに増える。
+  /// 変更の通し番号。`_change`・`_remove` のたびに増える。
   int _changes = 0;
 
   /// storeが確かに持っていると分かっている通し番号。**書込を始めた時点**の
@@ -85,9 +86,21 @@ class PhraseDrafts {
 
   PhraseDraft? readAdd() => _entries['add'];
 
-  void changeAdd(PhraseDraft draft) {
+  PhraseDraft? readEdit(String id) => _entries['edit:$id'];
+
+  /// 編集entry。元の定型文が消えたもの（孤立）も含む。
+  Iterable<PhraseDraft> get edits => [
+        for (final e in _entries.entries)
+          if (e.key.startsWith('edit:')) e.value,
+      ];
+
+  void changeAdd(PhraseDraft draft) => _change('add', draft);
+
+  void changeEdit(PhraseDraft draft) => _change('edit:${draft.id}', draft);
+
+  void _change(String key, PhraseDraft draft) {
     if (!_loaded || _disposed || _removing != null) return;
-    _entries = {..._entries, 'add': draft};
+    _entries = {..._entries, key: draft};
     _changes++;
     _timer?.cancel();
     _timer = Timer(const Duration(milliseconds: 400), flush);
@@ -103,16 +116,23 @@ class PhraseDrafts {
     return _write({..._entries});
   }
 
-  Future<bool> removeAdd() {
-    _timer?.cancel();
+  Future<bool> removeAdd() => _remove('add');
+
+  Future<bool> removeEdit(String id) => _remove('edit:$id');
+
+  /// 対象entryだけを消す。他のentryはそのまま書き戻す。
+  Future<bool> _remove(String key) {
     if (_removing != null) return _removing!;
     if (!_loaded || _disposed) return Future.value(false);
-    final next = {..._entries}..remove('add');
-    // 消すものが無く、storeが最後の成功書込と一致しているなら書かない。
-    // 書くと、下書きを1度も打っていない利用者が「キャンセル」しただけで
-    // 「下書きを消せませんでした。閉じると次回も残ります」＝事実と逆の告知を
-    // 見る（残る下書きは存在しない。L-159と同じ誤発報。監査 P1-4）。
-    if (!_entries.containsKey('add') && !_dirty) return Future.value(true);
+    // 消すものが無ければ書かない。書くと、下書きを1度も打っていない利用者が
+    // 「キャンセル」しただけで、書込が失敗したとき「下書きを消せませんでした。
+    // 閉じると次回も残ります」＝事実と逆の告知を見る（L-159と同じ誤発報。
+    // 監査 P1-4）。dirty は map 全体の数なので、他のentryの未書込も理由に
+    // しない（Task 2 監査 A-4）。その未書込は自分のtimerとpausedのflushが書く
+    // ので、ここでtimerも止めない。
+    if (!_entries.containsKey(key)) return Future.value(true);
+    _timer?.cancel();
+    final next = {..._entries}..remove(key);
     // 消すものがあれば、消去は明示操作なので変わっていなくても必ず書く。
     _changes++;
     // paused中のflushもこの操作へ合流し、古いmapをclearの後へ載せない。

@@ -20,6 +20,7 @@ import 'package:kotonoha_app/features/preset_phrase/providers/preset_phrase_noti
 import 'package:kotonoha_app/features/preset_phrase/providers/phrase_draft_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/preset_phrase_screen.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
+import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
@@ -32,6 +33,9 @@ class _AfterPutFailureBox extends Mock implements Box<PresetPhrase> {}
 
 /// 読取（`values`）がErrorを投げる実box境界。L-162(a)の形。
 class _ReadFailureBox extends Mock implements Box<PresetPhrase> {}
+
+/// 一括保存が終わらない実box境界。既定の定型文の投入中＝一覧が読込中のまま。
+class _PendingSaveBox extends Mock implements Box<PresetPhrase> {}
 
 // SDK境界だけを置換。false/throw時はstoreを更新せずcacheと区別する。
 class DraftStore extends SharedPreferencesStorePlatform {
@@ -46,6 +50,9 @@ class DraftStore extends SharedPreferencesStorePlatform {
   bool failWrite = false;
   bool throwWrite = false;
   bool failClear = false;
+
+  /// 消去を見分ける対象entry。他のentryが残るmapでも、対象の有無で判定する。
+  String targetEntry = 'add';
   @override
   Future<Map<String, Object>> getAll() async {
     await readGate?.future;
@@ -57,7 +64,7 @@ class DraftStore extends SharedPreferencesStorePlatform {
   Future<bool> setValue(String type, String key, Object value) async {
     if (key == 'flutter.preset_phrase_drafts') {
       writes++;
-      if ((jsonDecode(value as String) as Map).containsKey('add')) {
+      if ((jsonDecode(value as String) as Map).containsKey(targetEntry)) {
         await writeGate?.future;
       } else {
         clearStarted = true;
@@ -65,7 +72,7 @@ class DraftStore extends SharedPreferencesStorePlatform {
       }
       if (throwWrite) throw StateError('SDK write');
       if (failWrite ||
-          (failClear && !(jsonDecode(value) as Map).containsKey('add'))) {
+          (failClear && !(jsonDecode(value) as Map).containsKey(targetEntry))) {
         return false;
       }
     }
@@ -84,6 +91,17 @@ class DraftStore extends SharedPreferencesStorePlatform {
     values.remove(key);
     return true;
   }
+}
+
+/// 共通ケースの追加/編集 variant。素の `ValueVariant` は `currentValue` を
+/// tearDown で戻さず、後続の variant 無しケースへ漏れる（追加のつもりで編集を開く）。
+class FormVariant extends ValueVariant<String> {
+  FormVariant() : super({'add', 'edit:keep'});
+  String? form;
+  @override
+  Future<String> setUp(String value) async => form = value;
+  @override
+  Future<void> tearDown(String value, String memento) async => form = null;
 }
 
 /// [action] の間に `FlutterError.reportError` へ出た例外を全部集める。
@@ -184,8 +202,12 @@ void main() {
     await directory.delete(recursive: true);
     SharedPreferences.resetStatic();
   });
+  final formVariant = FormVariant();
+
+  /// [form] は開くフォーム: 'add'＝FAB、'edit:keep'＝実 `Icons.edit`、
+  /// 'drafts'＝本番の「下書き」入口。省略時は variant（無ければ追加）。
   Future<void> open(WidgetTester tester,
-      {bool observe = false, bool banner = false}) async {
+      {bool observe = false, bool banner = false, String? form}) async {
     Widget home = Column(children: [
       if (banner) const PersistenceBanner(),
       const Expanded(child: PresetPhraseScreen())
@@ -194,19 +216,45 @@ void main() {
     await tester.pumpWidget(UncontrolledProviderScope(
         container: container, child: MaterialApp(home: home)));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(FloatingActionButton));
+    final entry = form ?? formVariant.form ?? 'add';
+    store.targetEntry = entry == 'drafts' ? 'edit:keep' : entry;
+    await tester.tap(switch (entry) {
+      'add' => find.byType(FloatingActionButton),
+      'drafts' => find.text('下書き'),
+      _ => find.byIcon(Icons.edit).first,
+    });
     await tester.pumpAndSettle();
   }
 
-  Future<void> restart(WidgetTester tester) async {
+  Future<void> restart(WidgetTester tester, {String? form}) async {
     await tester.pumpWidget(const SizedBox());
     container.dispose();
     SharedPreferences.resetStatic();
     store = DraftStore(store.values);
     SharedPreferencesStorePlatform.instance = store;
     container = ProviderContainer();
-    await open(tester);
+    await open(tester, form: form);
   }
+
+  /// 孤立下書きの「下書きを破棄」を押し、確認で「破棄する」を選ぶ。
+  Future<void> discardOrphan(WidgetTester tester) async {
+    await tester.tap(find.text('下書きを破棄'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('破棄する'));
+    await tester.pumpAndSettle();
+  }
+
+  /// SDK storeに届いた下書きmap（raw JSON）。
+  Map<String, dynamic> storedDrafts() =>
+      jsonDecode(store.values[draftKey] as String? ?? '{}')
+          as Map<String, dynamic>;
+
+  /// 実boxを閉じて開き直した中身。UIを触り終えてから呼ぶ。
+  Future<Box<PresetPhrase>> reopened(WidgetTester tester) async =>
+      (await tester.runAsync(() async {
+        await Hive.box<PresetPhrase>('presetPhrases').close();
+        return Hive.openBox<PresetPhrase>('presetPhrases');
+      }))!;
 
   Future<void> submit(WidgetTester tester, {String action = '保存'}) async {
     await tester.runAsync(() => tester.tap(find.text(action)));
@@ -227,11 +275,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('追加画面から400ms後のSDK storeだけで再起動すると本文とカテゴリが戻る', (tester) async {
+  testWidgets('400ms後のSDK storeだけで再起動すると本文とカテゴリが戻り、保存で確定する', (tester) async {
     await open(tester);
+    final entry = store.targetEntry;
     await tester.enterText(find.byType(TextField), 'お水をお願いします');
     await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 399));
+    expect(storedDrafts().keys, isNot(contains(entry)));
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(storedDrafts().keys, contains(entry));
     await restart(tester);
     expect(find.widgetWithText(TextField, 'お水をお願いします'), findsOneWidget);
     expect(
@@ -239,7 +291,19 @@ void main() {
             .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
             .selected,
         isTrue);
-  });
+    await submit(tester);
+    expect(find.byType(TextField), findsNothing);
+    expect(storedDrafts().keys, isNot(contains(entry)));
+    // 開き直すと、編集は確定した本文（古い本文や空と取り違えない）、追加は空。
+    await open(tester);
+    expect(find.widgetWithText(TextField, 'お水をお願いします'),
+        entry == 'add' ? findsNothing : findsOneWidget);
+    final box = await reopened(tester);
+    final saved = box.values.where((p) => p.content.contains('お水をお願いします'));
+    expect(saved.single.category, contains('health'));
+    expect(box.values, hasLength(entry == 'add' ? 2 : 1));
+    if (entry != 'add') expect(saved.single.id, contains('keep'));
+  }, variant: formVariant);
   for (final failure in ['false', 'throw']) {
     testWidgets('下書きflush $failure ではHive保存を止め再試行で1件保存する', (tester) async {
       await open(tester, banner: true);
@@ -264,11 +328,16 @@ void main() {
         expect(
             box.values.where((p) => p.content.contains('失敗でも')), hasLength(1));
       });
-    });
+    }, variant: formVariant);
   }
-  testWidgets('初期read失敗でも追加はでき、未読mapへは1回も書かない', (tester) async {
+  testWidgets('初期read失敗でも追加・編集はでき、未読mapへは1回も書かない', (tester) async {
+    final entry = formVariant.form!;
     store.values['flutter.preset_phrase_drafts'] = jsonEncode({
-      'add': {'id': 'draft-1', 'content': '未読の本文', 'category': 'health'}
+      entry: {
+        'id': entry == 'add' ? 'draft-1' : 'keep',
+        'content': '未読の本文',
+        'category': 'health'
+      }
     });
     store.failRead = true;
     await open(tester);
@@ -285,16 +354,20 @@ void main() {
     // 保存できることを告知に含める（できないと読ませない）。
     expect(find.textContaining('下書きは残りません'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 400));
+    // 打った内容を読み直しで置き換える道を出さない。
+    expect(find.text('再読み込み'), findsNothing);
     await submit(tester);
-    expect(find.byType(PhraseAddDialog), findsNothing);
+    expect(find.byType(TextField), findsNothing);
     // 未読のmapは1回も上書きしない。
     expect(store.writes, 0);
     expect(store.values['flutter.preset_phrase_drafts'], contains('未読の本文'));
     // 読めるようになれば、残したままの下書きがそのまま戻る。
     store.failRead = false;
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
+    await open(tester);
     expect(find.widgetWithText(TextField, '未読の本文'), findsOneWidget);
+    // 編集では保存済みの本文より古い下書きが出る。黙って出さず、そう告げる（F-1）。
+    expect(find.textContaining('保存されていない下書き'),
+        entry == 'add' ? findsNothing : findsOneWidget);
     // box再openによる永続化の確認は最後に。閉じたままUIを触ると、実アプリには
     // 無い「閉じたboxを読む」状態を作る（`ownsId` がHiveErrorを投げる）。
     await tester.runAsync(() async {
@@ -303,7 +376,7 @@ void main() {
       expect(reopened.values.where((p) => p.content.contains('未読でも保存する')),
           hasLength(1));
     });
-  });
+  }, variant: formVariant);
   testWidgets('初期read失敗でも再試行は同じ固定IDで、重複を作らない', (tester) async {
     // 下書きが読めないダイアログでも、一次putが届いてから失敗した再試行が
     // 2件目を作らない（L-143。固定IDはダイアログごとに1つ）。
@@ -465,7 +538,7 @@ void main() {
     expect(tester.testTextInput.hasAnyClients, isFalse);
     final box = Hive.box<PresetPhrase>('presetPhrases');
     final saved = box.values.where((p) => p.content.contains('確定保存')).single;
-    // SDK boxを閉じてもclearだけなら完了できる。再addは失敗する。
+    // SDK boxを閉じてもclearだけなら完了できる。再add・再updateは失敗する。
     await tester.runAsync(box.close);
     store.failClear = false;
     await submit(tester);
@@ -475,8 +548,11 @@ void main() {
       expect(reopened.get(saved.id)?.content, contains('確定保存'));
     });
     await restart(tester);
-    expect(find.widgetWithText(TextField, '確定保存の本文'), findsNothing);
-  });
+    // 下書きは消えている。編集は確定した本文を開く（追加は空）。
+    expect(storedDrafts().keys, isNot(contains(store.targetEntry)));
+    expect(find.widgetWithText(TextField, '確定保存の本文'),
+        store.targetEntry == 'add' ? findsNothing : findsOneWidget);
+  }, variant: formVariant);
   for (final empty in [false, true]) {
     testWidgets('古いwrite待機→${empty ? '空本文のback' : '明示破棄'}→再起動（空本文=$empty）',
         (tester) async {
@@ -528,7 +604,8 @@ void main() {
               .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '日常'))
               .selected,
           isTrue);
-    });
+      // 編集はカテゴリを変えただけでも元と違うので、空本文のbackは追加だけ。
+    }, variant: empty ? const DefaultTestVariant() : formVariant);
   }
   testWidgets('下書きを1度も打たずにpausedしても書かず、失敗も告知しない', (tester) async {
     // L-159: `flush()` が無条件に map 全体を書いていたため、下書きを
@@ -668,7 +745,7 @@ void main() {
     await tester.pump();
     expect(find.widgetWithText(TextField, '復帰後の最新本文'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 400));
-  });
+  }, variant: formVariant);
   for (final broken in [false, true]) {
     testWidgets('decode破損（全体=$broken）を通知し正常entryは保持する', (tester) async {
       store.values['flutter.draft_text'] = '文字盤は別';
@@ -765,7 +842,7 @@ void main() {
         await tester.tap(find.text('閉じる'));
       }
       await tester.pumpAndSettle();
-      expect(find.byType(PhraseAddDialog), findsNothing);
+      expect(find.byType(TextField), findsNothing);
       // 閉じただけなので消えていない。次に開くと戻る。
       await restart(tester);
       expect(find.widgetWithText(TextField, '破棄失敗を保持'), findsOneWidget);
@@ -774,7 +851,7 @@ void main() {
       await tester.pumpAndSettle();
       await restart(tester);
       expect(find.widgetWithText(TextField, '破棄失敗を保持'), findsNothing);
-    });
+    }, variant: formVariant);
   }
   testWidgets('下書きが無いキャンセルは書かず、事実と逆の告知も出さない', (tester) async {
     // F-11 / 監査 P1-4: L-159 と同じ誤発報が明示操作側に残っていた。消すものが
@@ -1387,5 +1464,481 @@ void main() {
       expect(reopened.values.where((p) => p.content.contains('消去待機中')),
           hasLength(1));
     });
+  });
+  testWidgets('元の定型文が消えた編集の下書きは残り、入口から読む・コピー・破棄できる', (tester) async {
+    // keepを消しても一覧を空にしない（空だと既定の定型文の投入が走る）。
+    final box = Hive.box<PresetPhrase>('presetPhrases');
+    await tester.runAsync(() => box.put(
+        'other',
+        box
+            .get('keep')!
+            .copyWith(id: 'other', content: '残る定型文', displayOrder: 1)));
+    final copied = <String>[];
+    var copyFails = true;
+    Completer<void>? copyGate;
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method != 'Clipboard.setData') return null;
+      await copyGate?.future;
+      if (copyFails) throw PlatformException(code: 'clipboard');
+      copied.add((call.arguments as Map)['text'] as String);
+      return null;
+    });
+    addTearDown(() =>
+        messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await open(tester, form: 'edit:keep');
+    await tester.enterText(find.byType(TextField), '消えた定型文の下書き');
+    await tester.tap(find.widgetWithText(ChoiceChip, 'その他'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.runAsync(() => container
+        .read(presetPhraseNotifierProvider.notifier)
+        .deletePhrase('keep'));
+    store.failWrite = true;
+    await submit(tester);
+    expect(find.textContaining('入力内容を残しています'), findsOneWidget);
+    store.failWrite = false;
+    await submit(tester);
+    // missing を保存済みにも追加にも変えず、保存ボタンの無い閲覧へ移る。
+    // 前の失敗の告知（フォームの入力についての文）は持ち込まない（F-9）。
+    expect(find.textContaining('元の定型文が見つかりません'), findsOneWidget);
+    expect(find.textContaining('入力内容を残しています'), findsNothing);
+    expect(find.text('保存'), findsNothing);
+    await restart(tester, form: 'drafts');
+    final option = find.textContaining('消えた定型文の下書き');
+    await tester.tap(option);
+    await tester.pumpAndSettle();
+    final dialog = find.byType(AlertDialog);
+    expect(find.text('消えた定型文の下書き'), findsOneWidget);
+    expect(find.descendant(of: dialog, matching: find.textContaining('その他')),
+        findsOneWidget);
+    // 「下書きを破棄」と「コピー」を隣り合わせない。間に「閉じる」（F-2）。
+    final copyAt = tester.getCenter(find.text('コピー'));
+    final closeAt = tester.getCenter(find.text('閉じる'));
+    final discardAt = tester.getCenter(find.text('下書きを破棄'));
+    bool between(double a, double b, double c) =>
+        (a < b && b < c) || (c < b && b < a);
+    expect(
+        between(copyAt.dx, closeAt.dx, discardAt.dx) ||
+            between(copyAt.dy, closeAt.dy, discardAt.dy),
+        isTrue,
+        reason: '「下書きを破棄」が「コピー」の隣にある');
+    // コピーは成功するまで成功を告げず、失敗しても閉じない。
+    await tester.tap(find.text('コピー'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('コピーできません'), findsOneWidget);
+    expect(find.textContaining('コピーしました'), findsNothing);
+    // コピーの待機中は破棄できない。失敗すれば唯一の本文を失う（F-3）。
+    // 待っていることを告知の場所に出し（QA C-4）、前の結果はいったん消す。
+    // 同じ失敗が続いても告知が出直す＝読み上げが届く（G-2）。
+    copyGate = Completer<void>();
+    await tester.tap(find.text('コピー'));
+    await tester.pump();
+    expect(find.textContaining('コピーしています'), findsOneWidget);
+    expect(find.textContaining('コピーできません'), findsNothing);
+    await tester.tap(find.text('下書きを破棄'), warnIfMissed: false);
+    await tester.pump();
+    expect(find.textContaining('戻せません'), findsNothing);
+    expect(storedDrafts().keys, contains('edit:keep'));
+    copyGate.complete();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('コピーできません'), findsOneWidget);
+    copyGate = null;
+    copyFails = false;
+    await tester.tap(find.text('コピー'));
+    await tester.pumpAndSettle();
+    expect(copied.single, contains('消えた定型文の下書き'));
+    expect(find.textContaining('コピーしました'), findsOneWidget);
+    // 「閉じる」は閉じるだけ。入口からもう一度開ける。
+    await tester.tap(find.text('閉じる'));
+    await tester.pumpAndSettle();
+    expect(dialog, findsNothing);
+    await tester.tap(find.text('下書き'));
+    await tester.pumpAndSettle();
+    await tester.tap(option);
+    await tester.pumpAndSettle();
+    // 破棄は確認を挟む。取り消せば何も消さない（F-2）。
+    await tester.tap(find.text('下書きを破棄'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('戻せません'), findsOneWidget);
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(find.text('消えた定型文の下書き'), findsOneWidget);
+    expect(storedDrafts().keys, contains('edit:keep'));
+    store.failClear = true;
+    await discardOrphan(tester);
+    expect(find.textContaining('下書きを消せません'), findsOneWidget);
+    expect(storedDrafts().keys, contains('edit:keep'));
+    store.failClear = false;
+    await discardOrphan(tester);
+    expect(dialog, findsNothing);
+    expect(storedDrafts().keys, isNot(contains('edit:keep')));
+    // 元IDを復活させていない。
+    expect((await reopened(tester)).keys, isNot(contains('keep')));
+  });
+  testWidgets('編集Aの破棄は追加・編集B・文字盤の下書きを巻き込まない', (tester) async {
+    store.values['flutter.draft_text'] = '文字盤は別';
+    store.values[draftKey] = jsonEncode({
+      'add': {'id': 'add-1', 'content': '追加の下書き', 'category': 'health'},
+      'edit:keep': {'id': 'keep', 'content': '編集Aの下書き', 'category': 'other'},
+      'edit:gone': {'id': 'gone', 'content': '編集Bの下書き', 'category': 'daily'},
+    });
+    await open(tester, form: 'edit:keep');
+    expect(find.widgetWithText(TextField, '編集Aの下書き'), findsOneWidget);
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    await restart(tester, form: 'add');
+    expect(find.widgetWithText(TextField, '追加の下書き'), findsOneWidget);
+    expect(storedDrafts().keys, isNot(contains('edit:keep')));
+    expect((storedDrafts()['edit:gone'] as Map)['content'], contains('編集B'));
+    expect(store.values['flutter.draft_text'], contains('文字盤は別'));
+  });
+  testWidgets('一覧から元の定型文がある下書きを選ぶと、通常の編集フォームで開いて保存できる', (tester) async {
+    // 元が残っているのに孤立と告げると、編集を続けられず破棄しか選べない
+    // （最終レビュー I-1）。取り違えを赤にするため、別の定型文も置く。
+    final box = Hive.box<PresetPhrase>('presetPhrases');
+    await tester.runAsync(() => box.put(
+        'other',
+        box
+            .get('keep')!
+            .copyWith(id: 'other', content: '別の定型文', displayOrder: 1)));
+    store.values[draftKey] = jsonEncode({
+      'edit:keep': {'id': 'keep', 'content': '一覧から戻す下書き', 'category': 'health'}
+    });
+    await open(tester, form: 'drafts');
+    await tester.tap(find.textContaining('一覧から戻す下書き'));
+    await tester.pumpAndSettle();
+    expect(find.text('定型文を編集'), findsOneWidget);
+    expect(find.text('定型文の下書き'), findsNothing);
+    expect(find.widgetWithText(TextField, '一覧から戻す下書き'), findsOneWidget);
+    expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
+            .selected,
+        isTrue);
+    expect(find.textContaining('保存されていない下書き'), findsOneWidget);
+    await submit(tester);
+    expect(find.byType(TextField), findsNothing);
+    expect(storedDrafts().keys, isNot(contains('edit:keep')));
+    // 同じIDのまま本体を更新し、件数は変わらず、別の定型文には触れない。
+    final saved = await reopened(tester);
+    expect(saved.values, hasLength(2));
+    expect(saved.get('keep')?.content, contains('一覧から戻す下書き'));
+    expect(saved.get('keep')?.category, contains('health'));
+    expect(saved.get('other')?.content, contains('別の定型文'));
+  });
+  testWidgets('入口は元の定型文を確認できなければ孤立で開かず、開けば全文を読めbackでは残す', (tester) async {
+    tester.view.physicalSize = const Size(400, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    // OS の文字拡大も掛ける。等倍では告知の隠れ方が数 px で、見張りが弱い。
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final box = Hive.box<PresetPhrase>('presetPhrases');
+    final boundary = _ReadFailureBox();
+    var armed = false;
+    when(() => boundary.values).thenAnswer((_) {
+      if (armed) throw StateError('SDK: values');
+      return box.values;
+    });
+    container.dispose();
+    container = ProviderContainer(
+        overrides: [presetPhraseBoxProvider.overrideWithValue(boundary)]);
+    final long = '${'消えた定型文の長い下書き'.padRight(498, 'あ')}末尾';
+    store.values[draftKey] = jsonEncode({
+      'edit:gone': {'id': 'gone', 'content': long, 'category': 'health'}
+    });
+    var copyFails = true;
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method != 'Clipboard.setData') return null;
+      if (copyFails) throw PlatformException(code: 'clipboard');
+      return null;
+    });
+    addTearDown(() =>
+        messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    final handle = tester.ensureSemantics();
+    store.failRead = true;
+    await open(tester, form: 'drafts');
+    // 読めないことを「下書きが無い」にしない。閉じるまで残し、再押下で読み直す。
+    expect(find.textContaining('読み込めませんでした'), findsOneWidget);
+    expect(find.textContaining('ありません'), findsNothing);
+    await tester.tap(find.text('閉じる'));
+    await tester.pumpAndSettle();
+    store.failRead = false;
+    await tester.tap(find.text('下書き'));
+    await tester.pumpAndSettle();
+    armed = true;
+    final option = find.textContaining('消えた定型文の長い下書き');
+    await tester.tap(option);
+    await tester.pumpAndSettle();
+    // 確かめられないことを「元の定型文が無い」に変えない。Errorは報告する。
+    expect(tester.takeException(), isA<StateError>());
+    expect(find.textContaining('確認できませんでした'), findsOneWidget);
+    expect(find.text(long), findsNothing);
+    await tester.tap(find.text('閉じる'));
+    await tester.pumpAndSettle();
+    armed = false;
+    await tester.tap(find.text('下書き'));
+    await tester.pumpAndSettle();
+    await tester.tap(option);
+    await tester.pump();
+    // 最初のフレームから孤立の表示。編集フォームの見出しを一瞬も出さない（F-11）。
+    expect(find.text('定型文を編集'), findsNothing);
+    expect(find.text('定型文の下書き'), findsOneWidget);
+    await tester.pumpAndSettle();
+    // 500字を4行の枠に押し込めず、スクロールで末尾まで読める（R4）。
+    final text = find.text(long);
+    final paragraph = tester.renderObject<RenderParagraph>(text);
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(
+        paragraph.size.height,
+        greaterThanOrEqualTo(
+            paragraph.getMaxIntrinsicHeight(paragraph.size.width) - 1));
+    final scroll = find.ancestor(of: text, matching: find.byType(Scrollable));
+    Future<void> scrollTo(double dy) async {
+      await tester.drag(scroll.first, Offset(0, dy));
+      await tester.pumpAndSettle();
+    }
+
+    await scrollTo(-2000);
+    expect(tester.getRect(text).bottom,
+        lessThanOrEqualTo(tester.getRect(scroll.first).bottom));
+    // 結果の告知は、本文の末尾にいても先頭にいても画面内に出て、読み上げにも
+    // 届く（F-4）。閉じない操作なので、見えないと成否を区別できない。
+    void expectNoticeVisible(String notice) {
+      final found = find.textContaining(notice);
+      expect(found, findsOneWidget);
+      final rect = tester.getRect(found);
+      final viewport = tester.getRect(scroll.first);
+      expect(rect.top, greaterThanOrEqualTo(viewport.top), reason: notice);
+      expect(rect.bottom, lessThanOrEqualTo(viewport.bottom), reason: notice);
+      expect(tester.getSemantics(found), containsSemantics(isLiveRegion: true));
+    }
+
+    await tester.tap(find.text('コピー'));
+    await tester.pumpAndSettle();
+    expectNoticeVisible('コピーできません');
+    await scrollTo(2000);
+    copyFails = false;
+    await tester.tap(find.text('コピー'));
+    await tester.pumpAndSettle();
+    expectNoticeVisible('コピーしました');
+    store.failClear = true;
+    await discardOrphan(tester);
+    expectNoticeVisible('下書きを消せません');
+    await scrollTo(-2000);
+    // 同じ失敗が続いても、試すたびに告知をいったん消して出し直す（G-2）。
+    store.clearGate = Completer<void>();
+    await tester.tap(find.text('下書きを破棄'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('破棄する'));
+    await tester.pump();
+    expect(find.textContaining('下書きを消せません'), findsNothing);
+    store.clearGate!.complete();
+    await tester.pumpAndSettle();
+    expectNoticeVisible('下書きを消せません');
+    store.failClear = false;
+    // system back は閉じるだけで、下書きを消さない。
+    final writes = store.writes;
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(text, findsNothing);
+    expect(storedDrafts().keys, contains('edit:gone'));
+    expect(store.writes, writes);
+    handle.dispose();
+  });
+  for (final failRead in [true, false]) {
+    testWidgets('孤立で開いた下書きが読めない・無いときは、そう告げて閉じられる（読めない=$failRead）',
+        (tester) async {
+      store.failRead = failRead;
+      final drafts = PhraseDrafts((key, succeeded) {});
+      addTearDown(drafts.dispose);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showDialog<void>(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) =>
+                    PhraseEditDialog(draftId: 'gone', drafts: drafts),
+              ),
+              child: const Text('開く'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('開く'));
+      await tester.pumpAndSettle();
+      // 読めないことを「見つからない」にしない（F-10）。無いなら無いと言う（F-12）。
+      expect(find.textContaining('読み込めませんでした'),
+          failRead ? findsOneWidget : findsNothing);
+      expect(find.textContaining('見つかりません'),
+          failRead ? findsNothing : findsOneWidget);
+      expect(find.text('コピー'), findsNothing);
+      expect(find.text('下書きを破棄'), findsNothing);
+      await tester.tap(find.text('閉じる'));
+      await tester.pumpAndSettle();
+      expect(find.byType(PhraseEditDialog), findsNothing);
+      expect(store.writes, 0);
+    });
+  }
+  for (final unconfirmed in ['loading', 'mismatch']) {
+    testWidgets('入口は一覧の読込中・stateと実boxの食い違いでも孤立で開かない（$unconfirmed）',
+        (tester) async {
+      store.values[draftKey] = jsonEncode({
+        'edit:keep': {
+          'id': 'keep',
+          'content': '確かめられない下書き',
+          'category': 'other'
+        }
+      });
+      final saving = Completer<void>();
+      if (unconfirmed == 'loading') {
+        // 実boxが空に見え、既定の定型文の一括保存が終わらない＝一覧は読込中のまま。
+        final boundary = _PendingSaveBox();
+        registerFallbackValue(<dynamic, PresetPhrase>{});
+        when(() => boundary.values).thenReturn(<PresetPhrase>[]);
+        when(() => boundary.putAll(any())).thenAnswer((_) => saving.future);
+        when(boundary.compact).thenAnswer((_) async {});
+        when(boundary.flush).thenAnswer((_) async {});
+        container.dispose();
+        container = ProviderContainer(
+            overrides: [presetPhraseBoxProvider.overrideWithValue(boundary)]);
+      } else {
+        // stateにはあり、実boxからは（notifierを通さず）消えている。
+        container.read(presetPhraseNotifierProvider);
+        await tester.runAsync(
+            () => Hive.box<PresetPhrase>('presetPhrases').delete('keep'));
+      }
+      await tester.pumpWidget(UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: PresetPhraseScreen())));
+      await tester.pump();
+      await tester.tap(find.text('下書き'));
+      await tester.pump(const Duration(seconds: 1));
+      // 一覧はダイアログの中で読込の完了を受けて出る（1 フレーム後）。
+      await tester.pump();
+      await tester.tap(find.textContaining('確かめられない下書き'));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.textContaining('確認できませんでした'), findsOneWidget);
+      expect(find.text('定型文の下書き'), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      expect(storedDrafts().keys, contains('edit:keep'));
+      expect(store.writes, 0);
+      saving.complete();
+      await tester.pump(const Duration(seconds: 1));
+    });
+  }
+  testWidgets('「下書き」の読込待機中は一覧のダイアログが覆い、別のフォームを開けない', (tester) async {
+    store.values[draftKey] = jsonEncode({
+      'edit:keep': {'id': 'keep', 'content': '重ならない下書き', 'category': 'other'}
+    });
+    store.readGate = Completer<void>();
+    await open(tester, form: 'drafts');
+    // 先に一覧のダイアログを開き、その中で読み込む（G-1）。待機中の FAB・
+    // 編集アイコン・「下書き」の再押下はモーダルのバリアに当たる。
+    expect(find.textContaining('読み込んでいます'), findsOneWidget);
+    await tester.tap(find.byType(FloatingActionButton), warnIfMissed: false);
+    await tester.tap(find.byIcon(Icons.edit).first, warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(find.byType(PhraseAddDialog), findsNothing);
+    expect(find.text('定型文を編集'), findsNothing);
+    store.readGate!.complete();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('読み込んでいます'), findsNothing);
+    expect(find.textContaining('重ならない下書き'), findsOneWidget);
+  });
+  testWidgets('コピーの待機中は閉じられず、応答が無くても上限で失敗として閉じられる', (tester) async {
+    // 閉じて開き直すと新しい画面は待機中を知らず、確認経由で破棄できてしまう
+    // （Codex I-1 PARTIAL）。ただし閉じ込めない（G-8）。
+    store.values[draftKey] = jsonEncode({
+      'edit:gone': {'id': 'gone', 'content': '返事の無いコピー', 'category': 'daily'}
+    });
+    final copyGate = Completer<void>();
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') await copyGate.future;
+      return null;
+    });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      if (!copyGate.isCompleted) copyGate.complete();
+    });
+    await open(tester, form: 'drafts');
+    await tester.tap(find.textContaining('返事の無いコピー'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('コピー'));
+    await tester.pump();
+    TextButton close() =>
+        tester.widget<TextButton>(find.widgetWithText(TextButton, '閉じる'));
+    expect(close().onPressed, isNull, reason: '待機中に閉じられる');
+    await tester.binding.handlePopRoute();
+    // 閉じる動きが終わるまで進める（上限の5秒よりずっと短い）。
+    await tester.pumpAndSettle();
+    expect(find.text('定型文の下書き'), findsOneWidget, reason: 'backで閉じた');
+    // 上限まで応答が無ければ失敗として告げ、「閉じる」を戻す。
+    await tester.pump(PhraseEditDialog.copyTimeout);
+    await tester.pump();
+    expect(find.textContaining('コピーできません'), findsOneWidget);
+    expect(close().onPressed, isNotNull, reason: '上限を過ぎても閉じられない');
+    await tester.tap(find.text('閉じる'));
+    await tester.pumpAndSettle();
+    expect(find.text('定型文の下書き'), findsNothing);
+    expect(storedDrafts().keys, contains('edit:gone'));
+  });
+  testWidgets('下書きの無い消去は、他のentryの400ms待ちのtimerを止めない', (tester) async {
+    // F-6 の後半を独立に見る（Codex Minor）。pausedは起こさず、時間だけ進める。
+    await open(tester, form: 'add');
+    // 本文が空なので、戻る操作は下書きを消さずに閉じる。timerはまだ鳴っていない。
+    await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.edit).first);
+    await tester.pump();
+    await tester.pump();
+    // 閉じかけの追加フォームも木に残っているので、編集フォームの側を押す。
+    await tester.tap(find.descendant(
+        of: find.byType(PhraseEditDialog), matching: find.text('キャンセル')));
+    await tester.pump();
+    expect(storedDrafts().keys, isNot(contains('add')), reason: '400ms前に書いた');
+    await tester.pump(const Duration(milliseconds: 400));
+    expect((storedDrafts()['add'] as Map?)?['category'], contains('health'),
+        reason: '他のentryの消去で追加の下書きのtimerが止まった');
+  });
+  testWidgets('下書きの無い編集のキャンセルは、他のentryの書込失敗で「消せません」と言わない', (tester) async {
+    await open(tester, observe: true, form: 'add');
+    store.failWrite = true;
+    await tester.enterText(find.byType(TextField), '書けない追加の本文');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('下書きを消せません'), findsOneWidget);
+    await tester.tap(find.text('閉じる'));
+    await tester.pumpAndSettle();
+    // 下書きの無い編集フォームを開いて、何も打たずにキャンセルする。
+    final writes = store.writes;
+    store.targetEntry = 'edit:keep';
+    await tester.tap(find.byIcon(Icons.edit).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    // 消すものが無いのだから書かず、事実と逆の告知で止めない（F-6）。
+    expect(find.byType(TextField), findsNothing, reason: '消すものが無いのに閉じられない');
+    expect(find.textContaining('下書きを消せません'), findsNothing);
+    expect(store.writes, writes, reason: '消すものが無いのに書いている');
+    // 追加の未書込は失われず、書けるようになれば次のpausedで書く。
+    store.failWrite = false;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    for (var i = 0; i < 100 && store.writes == writes; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 5)));
+      await tester.pump();
+    }
+    expect((storedDrafts()['add'] as Map)['content'], contains('書けない追加の本文'));
   });
 }

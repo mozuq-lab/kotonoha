@@ -51,6 +51,8 @@ void main() {
       await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
       await tester.tap(find.text('保存'));
       await tester.pumpAndSettle();
+      // Errorは穏当な文に隠さず端末内のログへ出す（追加フォームと同じ）。
+      expect(tester.takeException(), throws ? isA<StateError>() : isNull);
       expect(find.textContaining('保存を確認できません'), findsOneWidget);
       expect(find.widgetWithText(TextField, '保持する変更本文'), findsOneWidget);
       expect(
