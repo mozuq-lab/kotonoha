@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -1957,6 +1958,46 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     });
   }
+  testWidgets('一覧を開いたまま画面が破棄されても（Webの戻る）、選んだ下書きを開いて保存できる', (tester) async {
+    // L-186: 本番と同じく画面は ShellRoute の内側、一覧は root に積む。戻るで
+    // 画面だけが破棄され、選んでも `!mounted` で何も開かなかった。
+    store.values[draftKey] = jsonEncode({
+      'edit:keep': {'id': 'keep', 'content': '戻った後の下書き', 'category': 'daily'}
+    });
+    final router = GoRouter(initialLocation: '/presets', routes: [
+      ShellRoute(
+          builder: (context, state, child) => Scaffold(body: child),
+          routes: [
+            GoRoute(path: '/', builder: (context, state) => const Text('ホーム')),
+            GoRoute(
+                path: '/presets',
+                builder: (context, state) => const PresetPhraseScreen()),
+          ]),
+    ]);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(UncontrolledProviderScope(
+        container: container, child: MaterialApp.router(routerConfig: router)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('下書き'));
+    await tester.pumpAndSettle();
+    // Web の戻るは popRoute ではなく pushRouteInformation として届く（L-143）。
+    await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        SystemChannels.navigation.name,
+        SystemChannels.navigation.codec.encodeMethodCall(
+            const MethodCall('pushRouteInformation', {'location': '/'})),
+        (_) {});
+    await tester.pumpAndSettle();
+    expect(find.text('ホーム'), findsOneWidget);
+    expect(find.byType(PresetPhraseScreen), findsNothing);
+    await tester.tap(find.textContaining('戻った後の下書き'));
+    await tester.pumpAndSettle();
+    expect(find.text('定型文を編集'), findsOneWidget, reason: '選んでも何も開かない');
+    await tester.enterText(find.byType(TextField), '戻った後に保存した本文');
+    await submit(tester);
+    expect(find.byType(TextField), findsNothing);
+    expect(storedDrafts().keys, isNot(contains('edit:keep')));
+    expect((await reopened(tester)).get('keep')?.content, contains('戻った後に保存'));
+  });
   testWidgets('「下書き」の読込待機中は一覧のダイアログが覆い、別のフォームを開けない', (tester) async {
     store.values[draftKey] = jsonEncode({
       'edit:keep': {'id': 'keep', 'content': '重ならない下書き', 'category': 'other'}

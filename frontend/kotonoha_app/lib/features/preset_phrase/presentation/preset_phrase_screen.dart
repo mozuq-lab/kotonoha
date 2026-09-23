@@ -128,11 +128,13 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
 
   /// メソッド: 編集処理
   /// [phrase] が null なら、元の定型文が消えた下書き（[draftId]）を開く。
-  void _onEdit(PresetPhrase? phrase, [String? draftId]) {
-    final notifier = ref.read(presetPhraseNotifierProvider.notifier);
-    final drafts = ref.read(phraseDraftProvider);
+  /// [at] は画面が破棄された後でも開ける root の context（L-186）。
+  void _onEdit(PresetPhrase? phrase, [String? draftId, BuildContext? at]) {
+    final container = ProviderScope.containerOf(at ?? context, listen: false);
+    final notifier = container.read(presetPhraseNotifierProvider.notifier);
+    final drafts = container.read(phraseDraftProvider);
     showDialog<void>(
-      context: context,
+      context: at ?? context,
       barrierDismissible: false,
       builder: (dialogContext) => PhraseEditDialog(
         phrase: phrase,
@@ -171,6 +173,9 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
     final container = ProviderScope.containerOf(context, listen: false);
     final repo = ref.read(presetPhraseRepositoryProvider);
     final drafts = ref.read(phraseDraftProvider);
+    // 一覧の間に Web の戻るで画面が破棄されても続きを開けるよう、ダイアログを
+    // 積む root の Navigator を先に取る（画面の `mounted` は見ない。L-186）。
+    final root = Navigator.of(context, rootNavigator: true).context;
     // 先に一覧のダイアログを開き、読込はその中で待つ。待つ間はモーダルの
     // バリアが画面全体を覆うので、別のフォームも入口の再押下も届かない
     // （下書きの消去は 1 つのモーダルが 1 つの操作を待つ前提）。画面の route を
@@ -225,7 +230,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
         ],
       ),
     );
-    if (picked == null || !mounted) return;
+    if (picked == null || !root.mounted) return;
     // 選んだ後の現在で、元の定型文の有無を確かめる。確かめられないことを
     // 「無い」にしない（残っている定型文から切り離した孤立として開いてしまう）。
     bool? exists;
@@ -241,9 +246,9 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
     } catch (e, s) {
       reportDraftProgrammingError(e, s);
     }
-    if (!mounted) return;
+    if (!root.mounted) return;
     if (exists == null) {
-      return _notify('元の定型文を確認できませんでした。下書きは残っています。');
+      return _notify(root, '元の定型文を確認できませんでした。下書きは残っています。');
     }
     // 本文が下書きと本体で違うのは編集の目的なので、追加の所有権照合は写さない。
     _onEdit(
@@ -253,12 +258,13 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
                 .phrases
                 .firstWhere((p) => p.id == picked.id)
             : null,
-        picked.id);
+        picked.id,
+        root);
   }
 
   /// 利用者が閉じるまで残る告知（自動で消える SnackBar は使わない）。
-  Future<void> _notify(String message) => showDialog<void>(
-        context: context,
+  Future<void> _notify(BuildContext at, String message) => showDialog<void>(
+        context: at,
         builder: (dialogContext) => ConfirmationDialogLayout.build(
           title: const Text('編集の下書き'),
           content: Text(message),
