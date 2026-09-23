@@ -158,9 +158,9 @@ class PhraseDrafts {
     _changes++;
     _typed.remove(key);
     // paused中のflushもこの操作へ合流し、古いmapをclearの後へ載せない。
-    return _removing = _write(next, clearing: key).then((succeeded) {
-      if (succeeded) _entries = next;
-      return succeeded;
+    return _removing = _write(next, clearing: key).then((done) {
+      if (done) _entries = next;
+      return done;
     }).whenComplete(() => _removing = null);
   }
 
@@ -196,7 +196,9 @@ class PhraseDrafts {
       if (succeeded || _stored.contains(clearing)) {
         _record(phraseDraftClearKey, succeeded);
       }
-      return succeeded;
+      // store に無い entry は、消去の書込が失敗しても残るものが無い。メモリからも
+      // 落として消去済みにする（残すと開き直しで出て、store が戻ると書き戻される）。
+      return succeeded || (clearing != null && !_stored.contains(clearing));
     });
   }
 
