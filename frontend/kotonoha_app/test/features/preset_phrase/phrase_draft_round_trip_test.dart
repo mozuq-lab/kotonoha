@@ -867,6 +867,35 @@ void main() {
     expect(container.read(settingsWriteFailureProvider),
         isNot(contains(phraseDraftWriteKey)));
   });
+  testWidgets('消去の失敗は「消せません」と告げ、未書込が無ければ「消えます」と言わない', (tester) async {
+    // L-182: 消去と保存の失敗を同じkeyで報告し、下書きが残るのに常設バナーが
+    // 「アプリを閉じると消えます」と告げていた（ダイアログの「次回も残ります」と逆）。
+    Finder banner(String text) => find.descendant(
+        of: find.byType(PersistenceBanner),
+        matching: find.textContaining(text),
+        skipOffstage: false);
+    await open(tester, banner: true);
+    await tester.enterText(find.byType(TextField), '消せない本文');
+    await tester.pump(const Duration(milliseconds: 400));
+    store.failClear = true;
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(banner('消えます'), findsNothing, reason: '下書きは残るのに消えると告げている');
+    expect(banner('消せません'), findsOneWidget);
+    // 次の書込が成功すれば解消する。
+    store.failClear = false;
+    await tester.enterText(find.byType(TextField), '打ち直した本文');
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(banner('定型文の下書き'), findsNothing);
+    // 書けていない入力があるうちに消去も失敗したら、どちらも事実なので両方告げる。
+    store.failWrite = true;
+    await tester.enterText(find.byType(TextField), '書けない本文');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(banner('消せません'), findsOneWidget);
+    expect(banner('保存できません'), findsOneWidget);
+  }, variant: formVariant);
   testWidgets('空本文の「キャンセル」はカテゴリだけの下書きも消す', (tester) async {
     await open(tester);
     await tester.tap(find.widgetWithText(ChoiceChip, '体調'));

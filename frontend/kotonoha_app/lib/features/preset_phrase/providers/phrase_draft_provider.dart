@@ -136,13 +136,14 @@ class PhraseDrafts {
     // 消すものがあれば、消去は明示操作なので変わっていなくても必ず書く。
     _changes++;
     // paused中のflushもこの操作へ合流し、古いmapをclearの後へ載せない。
-    return _removing = _write(next).then((succeeded) {
+    return _removing = _write(next, clearing: true).then((succeeded) {
       if (succeeded) _entries = next;
       return succeeded;
     }).whenComplete(() => _removing = null);
   }
 
-  Future<bool> _write(Map<String, PhraseDraft> snapshot) {
+  Future<bool> _write(Map<String, PhraseDraft> snapshot,
+      {bool clearing = false}) {
     // このsnapshotが表す通し番号。これ以降の変更は次のflushで書く。
     final writing = _changes;
     return _tail = _tail.then((_) async {
@@ -162,8 +163,12 @@ class PhraseDrafts {
       } catch (_) {
         // 例外でもqueueを完了させ、次の明示再試行へ進める。
       }
+      // 消去の失敗では下書きが残るので、保存の失敗（閉じると消える）と分けて
+      // 報告する（L-182）。消去より前の未書込があれば、保存の失敗も事実。
+      final unsaved = !succeeded && (!clearing || _written != writing - 1);
       if (succeeded) _written = writing;
-      _record(phraseDraftWriteKey, succeeded);
+      _record(phraseDraftWriteKey, !unsaved);
+      if (succeeded || clearing) _record(phraseDraftClearKey, succeeded);
       return succeeded;
     });
   }
