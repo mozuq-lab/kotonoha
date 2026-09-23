@@ -198,7 +198,7 @@ L-143 の再現（ブラウザで確かめること）: 定型文ダイアログ
 ### C2 — mutmut の対象固定を外す（L-65）— C1 のマージ後
 
 `backend/pyproject.toml` の `[tool.mutmut]` は `source_paths` が 4 ファイル固定で、テストを増やしても走らず kill rate が理由なく下がる。`also_copy` で `app/` 全体を写して指定を無くせるか試す。
-**できなければ「できなかった理由」を台帳に書いて `[ ]` のまま残す**（無理に通さない）。変更の前後で kill rate を両方測り、分母が変わったことを明示する。
+**できなければ「できなかった理由」を台帳に書いて `[ ]` のまま残す**（無理に通さない）。（2026-09-23: 実施済み・不採用で、台帳の受け入れた限界 L-211 へ移した）変更の前後で kill rate を両方測り、分母が変わったことを明示する。
 
 ### C3 — Actions を SHA にピン留め（L-92）
 
@@ -222,7 +222,7 @@ SHA は `gh api repos/<owner>/<repo>/git/ref/tags/<tag>` で解決する。
 - **L-67** お気に入りが `lib/features/favorite/`（ロジック 3 ファイル）と `lib/features/favorites/`（UI 4 ファイル）に分かれたまま。
   ADR-005 が「お気に入りの正は `favoriteProvider`」と決めており、それは `favorite/` にあるので**`favorites/` を `favorite/` へ寄せる**。
   参照は **lib 8 + test 19 = 27 ファイル**あり、移動分と合わせて 34 で **12 ファイルの上限を超える**。PR を割ること
-- **L-97**（**この 1 件だけ台帳に決定が無い。着手前に利用者へ確認すること**）pytest の非推奨警告 2 件（fastapi/starlette の `TestClient`、anyio の別名）。
+- **L-97**（2026-09-23 に台帳の受け入れた限界 L-212 へ移した。backend の依存更新の後に再測定する）pytest の非推奨警告 2 件（fastapi/starlette の `TestClient`、anyio の別名）。
   **いま `filterwarnings` を書かない。**L-87 で pip の dependabot PR は作り直されるので、fastapi の更新で消えるかを先に見る。
   消えなければ、その 2 件だけを狙った `filterwarnings` を足す（先に書くと上流が直った後も残り「効かない仕組み」になる）
 

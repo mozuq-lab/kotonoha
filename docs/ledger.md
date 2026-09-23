@@ -63,7 +63,7 @@
 
 - [ ] L-145 Android のクローズドテストが未実行（代行サービスの選定、12 人以上 × 14 日連続のオプトイン、その後 production access を申請）。申請フォームはテスターの募集のしやすさ・全機能を使ったか・本番利用者の使い方と一致したか・集めたフィードバックの要約と収集方法を問う（2026-09-20 に公式ページで確認）。代行で計数要件は満たせるが、回答は実際に起きたことで書く — ADR-007 条件 4（L-108 の決定。人が動かす。L-84 の開発者登録の後、Android 公開の直前の律速）
 - [ ] L-146 Play Console のプライバシーポリシー URL（「アプリのコンテンツ」）は fastlane の metadata に無く、コンソールで設定する（iOS は `privacy_url.txt` が正）。L-86 の差し替えと同じ URL にする — ADR-007 条件 4（人が動かす。開発者登録 L-84 の後）
-- [ ] L-147 「経緯は書かない」（本文書 3 行目）に反して伸びた行が裾にある。未対応 55 行のうち 200 字以下は 27 行だが、401 字超が 10 行（最長 839 字の L-125）。上限の数字を置くか決める（`scripts/inventory.sh` は台帳の 3 状態を既に数えている） — ADR-010、L-106 と同形。10 月の棚卸し観点 6。決定（2026-09-20 第 2 回、決定シート）: 10 月の棚卸しで 200 字の上限を ADR-010 の改訂として置く（A）
+- [ ] L-147 「経緯は書かない」（本文書 3 行目）に反して伸びた行が裾にある。未対応 55 行のうち 200 字以下は 27 行だが、401 字超が 10 行（最長 839 字の L-125）。上限の数字を置くか決める（`scripts/inventory.sh` は台帳の 4 状態を既に数えている） — ADR-010、L-106 と同形。10 月の棚卸し観点 6。決定（2026-09-20 第 2 回、決定シート）: 10 月の棚卸しで 200 字の上限を ADR-010 の改訂として置く（A）
 - [x] L-148 pre-commit の Flutter hook が PATH 上の SDK を使い `pubspec.lock` を drift させる問題を、既存の `unset` を保ったまま `.fvmrc` の FVM 3.38.1 と `--no-pub`／非書換え format へ統一して解消。実 hook は analyze 成功（error 0 / warning 0、info 82）、format 成功（389 files、0 changed）で、lock と frontend source は不変 — .pre-commit-config.yaml（2026-09-21 実測。旧 RED は 2026-09-20 の L-148 実行証拠）
 - [x] L-149 release Web build から `AI_API_KEY` の workflow-level env と `dart-define` を外し、既存認証は Android / iOS job の env だけに限定した。固定 frontend export・FVM 3.38.1・dummy の旧相当 build では展開済み zip の `main.dart.js` に dummy を検出（RED）。同じ dummy を環境変数に残した修正後 command は build と zip 生成に成功し、展開後 0 件（`rg` exit 1）。実 secret は未使用 — .github/workflows/release.yml（2026-09-21 実測）
 - [x] L-150 公開 privacy-policy の日英に、通常変換と前回結果を含む再変換のデータフロー（本アプリ → ことのは backend → 設定された外部 AI provider）、backend の no-DB・処理後非保存、provider の保持・学習利用を保証しない範囲、第三者提供の例外、アプリ独自の crash 送信がない範囲を明記した。PR #190 head `84b33b8507163222a46c84d0b0e2eb38da9d9cf0` の実 Pages CI は build success / deploy skipped（run `35568601040`）。配信 artifact `10625126388` の HTML（SHA256 `fcf7c3c6d435deb767d6fcee02639ec231e0cb515815514b0535fd6a48eeb92f`）を実ブラウザで確認し、日英表示・横溢れなし・error 0・home link HTTP 200。本追補はこの固定検証後の docs-only commit。公開 deploy、実送信・provider の実設定・外部保管実態・法的分類は未確認 — docs/privacy-policy.md、frontend/kotonoha_app/lib/features/ai_conversion/data/models/ai_conversion_request.dart、backend/app/ai/providers.py（2026-09-21 実測）
@@ -123,18 +123,28 @@
 - [x] L-171 追加フォームは下書きの書込（flush）が失敗すると本体保存に進まない（承認済み候補の設計）。下書き store が書けない端末（localStorage quota、Android `commit()` false）では Hive が健全でも定型文を追加できない。読込失敗は F-3 で通したので非対称。設計を維持するか、flush 失敗でも本体保存を試すか — phrase_add_dialog.dart `_onSave`、docs/support.md（fix/phrase-draft-add 最終レビュー I-2。案 (2) 設計維持＋開示で PR 化）。決定（2026-09-22、決定シート）: 維持（A）。B（flush 失敗でも本体保存を試す）にしても、書込が失敗し続ける端末では保存後の下書きを消せず次回は凍結か衝突で開くため、追加できるのは 1 回だけ。「書込失敗が続いたら下書きを無効化して素通し」は実フィードバック（ADR-005 再訪条件）が出てから。決定（2026-09-23、決定シート）: 編集だけ B（下書きの書込が失敗しても本体保存へ進む。BASE では Hive だけで保存できた。Task 2 監査 A-3、fix/phrase-draft-edit）。追加は A のまま。解消（2026-09-23、fix/phrase-draft-followups。編集の `_onSave` は flush を試してから結果によらず保存し、保存後の消去が失敗したら従来どおり凍結して消去だけ再試行。support.md 日英を追加と編集で分けた。NFR-302 は変えない（flush 失敗で止めるとは書いていない）。観測点: `下書きflush false/throw では追加は保存を止めて再試行で1件にし、編集は1回で1件保存する`（追加・編集））
 
 ## 受け入れた限界（記録のみ。2026-09-23 の仕分けで作った）
-規律 7 の基準（結果が最悪 × リリース対象の端末 × ふつうの操作か故障 1 つで届く）を満たさないので直さないが、知っていることとして残す。機序ごとに 1 行。利用者の声が届くか、基準を満たす経路が見つかったら `[ ]` に戻して「未対応」へ移す。旧行の本文は `git log -p -S 'L-NN' -- docs/ledger.md` で引ける。
-- [~] L-198 下書きの保存領域への書込が失敗し、別の失敗が重なったときの告知と残り方の細部。データは失われない（消せなかった下書きが後の書込で保存され告知が消える、2 つの文が並ぶ、missing で「残っています」、復元のまま保存して「消えます」、破損の告知を閉じられない、Android の `commit()` で捨てた下書きが戻り得る〈未確認〉） — phrase_draft_provider.dart・persistence_banner.dart（旧 L-187・L-189・L-193・L-194・L-195・L-196）
-- [~] L-199 Web だけで起きること: 複数タブで下書きや削除した定型文が消える・戻る（公開文で開示）、ストレージ無効で設定が既定に戻り pageerror、localStorage の値が JSON でないと SDK が黙って捨てる — phrase_draft_provider.dart・preset_phrase_notifier.dart・app_session_provider.dart（旧 L-158・L-183・L-184・L-190）
-- [~] L-200 下書きの設計の限界: 読込失敗の識別子を接尾辞の規約で持つ、古い版が新しい entry 種別を落とす、読込失敗中の「再読み込み」がカテゴリを置き換える、元と同じ内容の編集下書きが一覧に残る、base を持たず古い下書きは告知だけ — phrase_draft_provider.dart・phrase_add_dialog.dart・phrase_edit_dialog.dart（旧 L-160・L-161・L-179・L-180・L-181）
-- [~] L-201 iOS は下書きの書込失敗を検出できない（`UserDefaults.set` は結果を返さない）。公開文は Web/Android 限定と明記済み — shared_preferences_foundation（旧 L-165）
-- [~] L-202 検査・計測の穴: 新しい SharedPreferences キーを機械で見ない（ADR-008）、mutmut の `also_copy` 実験は不採用で新 kill rate 未測定、pytest が third-party の非推奨警告 2 件を出す — hive_schema_allowlist_test.dart・backend/pyproject.toml（旧 L-167・L-65・L-97）
-- [~] L-203 Web の debug で `text_painter.dart:1351` の `debugSize == size` assert が稀に出る（テストの「AI変換」とアプリの「閉じる」。release では 0、再現せず） — character_input_tts_test.dart・phrase_edit_dialog.dart（旧 L-129・L-191）
-- [~] L-204 保存の待機中もカテゴリの chip が Web の DOM で Tab 順に残る。chip で操作が届くかは未観測（本文欄には届かない） — phrase_form_content.dart（旧 L-192）
-- [~] L-205 狭い画面の配置: 可視高さ 250 未満で 44px を保証しない、320×690・1000 文字で入力上限の告知の末尾が切れる、2 ペインでフォント大のプレースホルダが切れる — home_screen.dart・input_limit_notice.dart（旧 L-172・L-174・L-175）
-- [~] L-206 定型文由来のお気に入りの重複判定が `sourceId` だけで、同文のお気に入りが 2 件並び得る（お気に入り画面から消せる） — favorite_provider.dart（旧 L-99）
-- [~] L-207 フォント設定がサイズを持たないスタイル（ダイアログの見出し等）に効かない（今はやらない決定） — アプリのテーマ（旧 L-111）
-- [~] L-208 公開 FAQ に定型文の下書きの 3 つの告知（消せない・読めない・壊れていた）の項が無い — docs/user-guide/faq.md（旧 L-188）
+規律 7 の基準を満たさないか、直す手段が無いと決めたので直さないが、知っていることとして残す。機序ごとに 1 行。利用者の声が届くか、基準を満たす経路が見つかったら `[ ]` に戻して「未対応」へ移す。旧行の全文は `git log -p -G '\] L-NN ' -- docs/ledger.md` で引ける（`-S` は「旧 L-NN」が残るので今回の移動に当たらない）。
+- [~] L-198 下書きの書込が失敗しているときの告知の出し分け: 消せなかった下書きが後の書込で保存され「消せません」が消え、開き直した本文は入力に数えない／「保存できません…消えます」と「消せません…残ります」が並ぶ／書込失敗のまま missing になると孤立の閲覧が「残っています」と告げるが最新版が store に無いことがある（常設バナーは保存失敗を告げている）／復元のまま保存して書込失敗だと store に同じ内容があっても「消えます」（安全側） — phrase_draft_provider.dart・persistence_banner.dart・phrase_edit_dialog.dart（旧 L-187・L-193・L-194・L-195）
+- [~] L-199 下書きの破損の告知はセッション中閉じられず、文字盤の上に残る（Hive の喪失の告知は「閉じる」で消せる） — persistence_banner.dart、`phraseDraftCorruptKey`（旧 L-189）
+- [~] L-200 Android の `commit()` は失敗しても値をプロセス内に残すので、store に無いとみなして消去済みにした下書きが、別キーの commit の成否の順序次第で次回戻り得る（告知なし。失われるものは無い。未確認） — phrase_draft_provider.dart `_stored`（旧 L-196）
+- [~] L-201 Web の複数タブ: 1 キーの map を古い cache から書き戻して他のタブの下書きが消える／別タブの編集の保存が、このタブで削除した定型文を戻す。公開文と NFR-302 で開示。決定: 単一 map のまま受け入れる（R1） — phrase_draft_provider.dart `_write`、preset_phrase_notifier.dart `updatePhrase`（旧 L-158・L-184）
+- [~] L-202 Web でストレージが無効（getItem が throw）だと設定（フォント）が既定に戻り、未処理例外（pageerror）が出る。#193 より前から — app_session_provider.dart か tutorial_provider.dart（旧 L-183）
+- [~] L-203 Web で localStorage の下書きの値が JSON でないと SDK が key ごと黙って捨て、破損の告知も出ない（SDK は非 JSON を書かない） — shared_preferences_web `_decodeValue`（旧 L-190）
+- [~] L-204 下書きの読込失敗を書込失敗の集合へ接尾辞の規約（`<writeKey>.read` 等）で相乗りさせ、除外は 2 箇所の合意で決まる（別 provider か {key, kind} で表現不可能にできる） — settings_write_failure_provider.dart、persistence_banner.dart（旧 L-160）
+- [~] L-205 古い版（OS バックアップ復元・古い Web バンドル）は新しい entry 種別を壊れているとして落とし、次の paused で落とした map を書き戻す（`edit:<id>` はどの版も受け付ける） — phrase_draft_provider.dart `_load`（旧 L-161）
+- [~] L-206 追加フォームの読込失敗中に別カテゴリ → 既定へ戻すと、「再読み込み」が下書きのカテゴリで黙って置き換える（触ったかの旗で消えるが状態が 1 つ増える） — phrase_add_dialog.dart `_untouched`（旧 L-179）
+- [~] L-207 元と同じ内容に戻した編集下書きが一覧に残る（「キャンセル」で消える。元を削除すると孤立として残る）。決定: 記録のみ — phrase_edit_dialog.dart（旧 L-180）
+- [~] L-208 編集の下書きは base を持たないので、保存済みより古い下書きが出ることがある（開いた時点で告げ、「キャンセル」で戻る）。決定: 告知のみ。base を持つ案は採らず、実フィードバックで再訪 — phrase_edit_dialog.dart `_load`（旧 L-181）
+- [~] L-209 iOS は下書きの書込失敗を検出できない（`UserDefaults.set` は結果を返さない）。基準は満たすが直す手段が無い。読み戻し検証は cache が返り偽の緑になるので採らない。公開文は Web/Android 限定と明記 — shared_preferences_foundation（旧 L-165）
+- [~] L-210 新しい SharedPreferences キー（永続化面）を機械で見る検査が無く、層 1 だけが受け皿。ADR-008 により自作の検出器は作らない — hive_schema_allowlist_test.dart は Hive だけ（旧 L-167）
+- [~] L-211 mutmut の固定 4 テスト指定を外す `also_copy` 実験は、別 cwd で設定起点を渡せず不採用。新 kill rate は未測定（旧値 165/184） — backend/pyproject.toml [tool.mutmut]（旧 L-65）
+- [~] L-212 pytest が third-party 由来の非推奨警告 2 件を出す（fastapi/starlette の TestClient、anyio の別名）。backend の依存更新の後に再測定し、消えていれば閉じる — backend（旧 L-97）
+- [~] L-213 Web で `text_painter.dart:1351` の `debugSize == size` assert がまれに出る（integration test の「AI変換」、debug の「閉じる」。再現せず release では 0）。決定: 現状維持。再発したら #134 のボタンラベルの倍率がけを疑う — character_input_tts_test.dart、phrase_edit_dialog.dart（旧 L-129・L-191）
+- [~] L-214 保存の待機中もカテゴリの chip が Web の DOM で Tab 順に残り、焦点が移る（本文欄には届かない。chip で操作が届くかは未観測） — phrase_form_content.dart（旧 L-192）
+- [~] L-215 狭い画面での配置の余裕不足: 可視高さ 250 未満では 44px を保証しない／320×690・1000 文字で入力上限の告知の末尾が切れる／2 ペインでフォント大のプレースホルダが切れ、AI ボタンと offline チップはスクロールで届く — home_screen.dart・input_limit_notice.dart（旧 L-172・L-174・L-175）
+- [~] L-216 定型文由来のお気に入りの重複判定が `sourceId` だけで、同文のお気に入りが 2 件並び得る（お気に入り画面から消せる）。決定: 受け入れ。content でも判定する案は「同じ文の別の定型文」を持てなくするので採らない — favorite_provider.dart（旧 L-99）
+- [~] L-217 フォント設定がサイズを持たないスタイル（ダイアログの見出し等）に効かず、REQ-2007「すべてのテキスト要素」は未達。決定: 根治（アプリ根の textScaler）は今はやらない。移るときはテーマの倍率がけ `_scaled` を同時に外す（残すと二重掛け） — theme_provider.dart（旧 L-111）
+- [~] L-218 公開 FAQ に下書きの 3 つの告知（消せない・読めない・壊れていた）の項が無い。近い「…の一部を読み込めませんでした」の項は退避と「閉じる」を案内するが、下書きの破損の告知は閉じられず退避の写しも無い — docs/user-guide/faq.md（旧 L-188）
 
 ## 計測（棚卸しの記録。最新の 1 回だけ残す）
 | 日付 | 核 | 未卒業 ADR | 台帳 未対応/対応済/却下 | 出力ゼロの仕組み | 実在しないパス参照 | kill rate | 製品/全体（30 日） |
