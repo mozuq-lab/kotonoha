@@ -81,7 +81,7 @@ AI変換機能（オプション）を使用すると、以下のデータが本
 
 - アプリ内の履歴画面・お気に入り画面から、履歴とお気に入りを個別または全件削除
 - アプリ内の定型文画面から、定型文を個別に削除
-- 定型文の追加・編集フォームで下書きを読み込めていれば、「キャンセル」（または戻る操作で「破棄する」）で、そのフォームの下書きを削除。編集元の定型文が削除された下書きは、定型文画面の「下書き」から開いて「下書きを破棄」で削除。フォームを閉じるだけでは残ります
+- 定型文の追加・編集フォームで下書きを読み込めていれば、「キャンセル」（または戻る操作で「破棄する」）で、そのフォームの下書きを削除。編集元の定型文が削除された下書きは、定型文画面の「下書き」から開いて「下書きを破棄」を押し、確認のうえ削除。フォームを閉じるだけでは残ります
 - アプリをアンインストールすることで、すべてのローカルデータが削除されます
 
 アプリ内で削除したデータが、すでに取られた OS のバックアップに含まれている場合、その削除はバックアップには及びません。端末の復元や再インストールで戻ることがあります。
@@ -185,7 +185,7 @@ Users can delete data in the following ways:
 
 - Delete history and favorites individually or entirely, from the History and Favorites screens in the App
 - Delete preset phrases individually, from the Preset Phrases screen in the App
-- If the draft was loaded, delete it with Cancel in the add or edit form (or Discard when going back); for a draft whose phrase was deleted, open it from Drafts on the Preset Phrases screen and press Discard draft. Merely closing the form keeps it
+- If the draft was loaded, delete it with Cancel in the add or edit form (or Discard when going back); for a draft whose phrase was deleted, open it from Drafts on the Preset Phrases screen, press Discard draft, and confirm. Merely closing the form keeps it
 - Uninstalling the app deletes all local data
 
 If data you delete within the App is already included in an OS backup, deleting it in the App does not remove it from that backup. It may come back when you restore your device or reinstall the App.
