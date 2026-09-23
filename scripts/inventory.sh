@@ -10,9 +10,9 @@ wc -l AGENTS.md docs/adr/*.md README.md docs/spec/kotonoha-requirements.md docs/
 printf 'AGENTS.md %s 行（上限 120）／未卒業 ADR %s 本（上限 5）\n' "$(wc -l < AGENTS.md)" "$(ls docs/adr/ADR-*.md 2>/dev/null | wc -l | tr -d ' ')"
 for f in docs/adr/ADR-*.md; do n=$(wc -l < "$f"); [ "$n" -gt 60 ] && printf '  60 行超: %s (%s)\n' "$f" "$n"; done
 
-h "台帳 docs/ledger.md（未対応 / 対応済み / 却下）"
+h "台帳 docs/ledger.md（未対応 / 対応済み / 却下 / 受け入れた限界）"
 if [ -f docs/ledger.md ]; then
-  printf '%s / %s / %s\n' "$(grep -c '^- \[ \]' docs/ledger.md)" "$(grep -c '^- \[x\]' docs/ledger.md)" "$(grep -c '^- \[-\]' docs/ledger.md)"
+  printf '%s / %s / %s / %s\n' "$(grep -c '^- \[ \]' docs/ledger.md)" "$(grep -c '^- \[x\]' docs/ledger.md)" "$(grep -c '^- \[-\]' docs/ledger.md)" "$(grep -c '^- \[~\]' docs/ledger.md)"
 else echo "docs/ledger.md が無い"; fi
 
 h "直近 30 日のコミット（製品: frontend/kotonoha_app/lib・backend/app を変えたもの / 全体）"
