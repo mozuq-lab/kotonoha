@@ -40,12 +40,18 @@ class DiscardInputGuard extends StatelessWidget {
   /// 包む中身
   final Widget child;
 
+  /// 保存や消去を待っている間。戻る操作では閉じず、確認も出さない。
+  /// 待機のたびに包みを別の型へ替えると、子孫の State（本文欄・スクロール）が
+  /// 作り直されるので、この旗で切り替える（台帳 L-177）
+  final bool busy;
+
   /// DiscardInputGuardを作成する
   const DiscardInputGuard({
     super.key,
     required this.hasInput,
     required this.onDiscard,
     required this.child,
+    this.busy = false,
   });
 
   /// 確認の見出し
@@ -65,9 +71,9 @@ class DiscardInputGuard extends StatelessWidget {
     return PopScope(
       // 入力があるあいだは戻る操作でそのまま閉じさせない。
       // 閉じるかどうかは、下の確認を経てから決める
-      canPop: !hasInput,
+      canPop: !busy && !hasInput,
       onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
+        if (didPop || busy) return;
         final discard = await showDialog<bool>(
           context: context,
           barrierDismissible: false,

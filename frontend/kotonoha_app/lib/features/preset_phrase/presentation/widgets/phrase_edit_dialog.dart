@@ -406,14 +406,15 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
     if (_orphaned) {
       // 「閉じる」も戻る操作も閉じるだけで下書きは残るので、確認して守る
       // ものが無い。「下書きを破棄」とコピーの待機中だけ止める（コピーは
-      // `copyTimeout` で必ず戻る）。
-      final orphan = _buildOrphan();
-      return _saving || _copying
-          ? PopScope(
-              canPop: false,
-              child: ExcludeFocus(child: AbsorbPointer(child: orphan)),
-            )
-          : orphan;
+      // `copyTimeout` で必ず戻る）。包みの型は替えない（替えるとスクロール
+      // 位置が先頭へ戻る。台帳 L-185）。
+      final busy = _saving || _copying;
+      return PopScope(
+        canPop: !busy,
+        child: ExcludeFocus(
+            excluding: busy,
+            child: AbsorbPointer(absorbing: busy, child: _buildOrphan())),
+      );
     }
     // 並びは `ConfirmationDialog` と同じものを使う（台帳 L-130）。
     // 本文がフォーム（文字数カウンタ・カテゴリ選択・エラー表示）なので
@@ -430,7 +431,8 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
     // 端末の戻るボタンは `barrierDismissible: false` では塞げない。
     // 入力があるうちは、閉じる前に確認する（台帳 L-136）。
     // 元の文言から変わっているかどうか。変えていなければ捨てるものが無い
-    final frozen = _loading || _committed;
+    // 保存の待機中も凍結する（台帳 L-177。追加フォームと同じ）。
+    final frozen = _loading || _committed || _saving;
     final dialog = ConfirmationDialogLayout.build(
       title: const Text('定型文を編集'),
       // 自前の `SingleChildScrollView` は持たない。
@@ -449,7 +451,6 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
                 currentLength: _contentController.text.length,
                 errorMessage: _errorMessage,
                 onTextChanged: _onTextChanged,
-                // `_saving` は含めない（台帳 L-177。追加フォームと同じ）。
                 frozen: frozen,
               ))),
       actions: [
@@ -476,17 +477,15 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
       ],
     );
     // 戻る操作は閉じるだけで、下書きを消さない。消えるのは「キャンセル」と、
-    // 確認で「破棄する」を選んだときだけ。
-    return _saving
-        ? PopScope(
-            canPop: false,
-            child: ExcludeFocus(child: AbsorbPointer(child: dialog)),
-          )
-        : DiscardInputGuard(
-            // 消去に失敗した後は、閉じても下書きは残るので確認して守るものが無い
-            hasInput: !_clearFailed && !_untouched,
-            onDiscard: _onCancel,
-            child: dialog,
-          );
+    // 確認で「破棄する」を選んだときだけ。待機中も包みの型は替えない。
+    return DiscardInputGuard(
+      busy: _saving,
+      // 消去に失敗した後は、閉じても下書きは残るので確認して守るものが無い
+      hasInput: !_clearFailed && !_untouched,
+      onDiscard: _onCancel,
+      child: ExcludeFocus(
+          excluding: _saving,
+          child: AbsorbPointer(absorbing: _saving, child: dialog)),
+    );
   }
 }

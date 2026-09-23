@@ -1011,6 +1011,74 @@ void main() {
     expect(find.text('閉じる'), findsOneWidget);
     handle.dispose();
   });
+  testWidgets('保存の待機が複数フレームにまたがっても本文欄は支援技術のfocusを拒む', (tester) async {
+    // L-177: `_saving` 中も本文欄は enabled のままで、focus を送ると
+    // `canRequestFocus` assertion に当たった。I/O を gate で止めて待機を伸ばす。
+    final handle = tester.ensureSemantics();
+    await open(tester);
+    await tester.enterText(find.byType(TextField), '保存を待つ本文');
+    store.writeGate = Completer<void>();
+    await tester.tap(find.text('保存'));
+    await tester.pump();
+    await tester.pump();
+    expect(store.writes, 1, reason: '下書きの書込が待機に入っていない');
+    expect(await sendSemanticsFocus(tester), isNull,
+        reason: '保存の待機中にfocusを送るとframeworkのassertionに当たる');
+    expectContentReadable(tester);
+    handle.dispose();
+  }, variant: formVariant);
+  testWidgets('消去の再試行の待機中は、確認なしで閉じる状態でも戻る操作で閉じない', (tester) async {
+    await open(tester);
+    await tester.enterText(find.byType(TextField), '再試行を待つ本文');
+    await tester.pump(const Duration(milliseconds: 400));
+    store.failClear = true;
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(find.text('閉じる'), findsOneWidget);
+    store.failClear = false;
+    store.clearGate = Completer<void>();
+    await tester.tap(find.text('キャンセル'));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsOneWidget, reason: '消去の待機中に戻る操作で閉じた');
+    store.clearGate!.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+  }, variant: formVariant);
+  testWidgets('孤立の閲覧は破棄の待機が複数フレームにまたがってもスクロール位置を保つ', (tester) async {
+    // L-185: 待機中の描画で根の widget の型が替わり、スクロールの State が
+    // 作り直されて先頭へ戻っていた（I/O が同じフレームで終わる mock では見えない）。
+    tester.view.physicalSize = const Size(400, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final long = '${'長い孤立の下書き'.padRight(498, 'あ')}末尾';
+    store.values[draftKey] = jsonEncode({
+      'edit:gone': {'id': 'gone', 'content': long, 'category': 'daily'}
+    });
+    await open(tester, form: 'drafts');
+    await tester.tap(find.textContaining('長い孤立の下書き'));
+    await tester.pumpAndSettle();
+    final scroll = find
+        .ancestor(of: find.text(long), matching: find.byType(Scrollable))
+        .first;
+    double offset() => tester.state<ScrollableState>(scroll).position.pixels;
+    await tester.drag(scroll, const Offset(0, -2000));
+    await tester.pumpAndSettle();
+    final end = offset();
+    expect(end, greaterThan(100));
+    store.clearGate = Completer<void>();
+    await tester.tap(find.text('下書きを破棄'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('破棄する'));
+    await tester.pump();
+    await tester.pump();
+    expect(store.clearStarted, isTrue, reason: '消去が待機に入っていない');
+    expect(offset(), closeTo(end, 1), reason: '待機中にスクロール位置が先頭へ戻った');
+    store.clearGate!.complete();
+    await tester.pumpAndSettle();
+    expect(storedDrafts().keys, isNot(contains('edit:gone')));
+  });
   testWidgets('onSaveが投げたErrorも穏当な文に隠さず報告し、入力を残す', (tester) async {
     // F-4: `_onSave` の catch は利用者を閉じ込めないために広いままにするが、
     // Error は端末内のログへ出す。画面側（`ownsId`）の経路しか見ていなかった

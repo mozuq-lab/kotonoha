@@ -296,6 +296,8 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     // 端末の戻るボタンは `barrierDismissible: false` では塞げない。
     // 入力があるうちは、閉じる前に確認する（台帳 L-136）。
     // 新しく打った文があるかどうか。空なら捨てるものが無い
+    // 保存の待機中も凍結する（L-177。失敗で解けても焦点は戻らない＝受け入れ済み）。
+    final frozen = _loading || _committed || _saving;
     final dialog = ConfirmationDialogLayout.build(
       title: const Text('定型文を追加'),
       // 自前の `SingleChildScrollView` は持たない。
@@ -304,9 +306,9 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
       // 内側は無限高さ制約で `maxScrollExtent = 0` になり、ドラッグを取らない
       // 死んだ仕組みになる（ADR-008。台帳 L-138）
       content: ExcludeFocus(
-          excluding: _loading || _committed,
+          excluding: frozen,
           child: AbsorbPointer(
-              absorbing: _loading || _committed,
+              absorbing: frozen,
               child: PhraseFormContent(
                 controller: _contentController,
                 selectedCategory: _selectedCategory,
@@ -315,14 +317,7 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
                 errorMessage: _errorMessage,
                 onTextChanged: _onTextChanged,
                 // 支援技術のfocusまで止めるのは`TextField`自身にしかできない。
-                // **`_saving` は含めない**（台帳 L-177）。含めると
-                // `enabled: false` が `FocusNode.canRequestFocus` の setter
-                // 経由で `unfocus()` を呼び、保存が失敗して `_saving` が戻った
-                // ときに焦点もキーボードも戻らず、打ち直しに再タップが要る。
-                // その代わり `_saving` 中にATがfocusを送ると
-                // text_field.dart の `canRequestFocus` assertion に当たる
-                // （release では黙って拒否）。どちらを取るかは決定事項。
-                frozen: _loading || _committed,
+                frozen: frozen,
               ))),
       actions: [
         // 打った文・選び直したカテゴリがあるうちは出さない。
@@ -350,18 +345,16 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     );
     // 戻る操作は閉じるだけで、下書きを消さない（本文が空でも同じ）。
     // 消えるのは「キャンセル」と、確認で「破棄する」を選んだときだけ。
-    return _saving
-        ? PopScope(
-            canPop: false,
-            child: ExcludeFocus(child: AbsorbPointer(child: dialog)),
-          )
-        : DiscardInputGuard(
-            // 消去に失敗した後は、backも再試行で止まらずそのまま閉じる。
-            // 閉じても下書きは残るので、確認して守るものが無い
-            hasInput:
-                !_clearFailed && _contentController.text.trim().isNotEmpty,
-            onDiscard: _onCancel,
-            child: dialog,
-          );
+    // 待機中も包みの型は替えない（替えると子孫の State が作り直される）。
+    return DiscardInputGuard(
+      busy: _saving,
+      // 消去に失敗した後は、backも再試行で止まらずそのまま閉じる。
+      // 閉じても下書きは残るので、確認して守るものが無い
+      hasInput: !_clearFailed && _contentController.text.trim().isNotEmpty,
+      onDiscard: _onCancel,
+      child: ExcludeFocus(
+          excluding: _saving,
+          child: AbsorbPointer(absorbing: _saving, child: dialog)),
+    );
   }
 }
