@@ -38,6 +38,9 @@ class PhraseDrafts {
   final Map<String, int> _typed = {};
 
   /// store にあると分かっている entry（読めた分か、最後に書けた snapshot）。
+  /// ここに無いものは store に無いとみなし、消去が失敗したときの告知と、
+  /// メモリから落とすかをこれで決める。書くのはこのアプリだけで、失敗した
+  /// 書込は store を変えない、という前提に立つ（台帳 L-196）。
   Set<String> _stored = {};
 
   /// 最後にstoreへ届いた内容から変わっているか。
