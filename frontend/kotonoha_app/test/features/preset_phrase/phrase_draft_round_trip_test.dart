@@ -323,7 +323,8 @@ void main() {
       // 編集は下書きを書けなくても本体を保存し、再試行は消去だけ（L-171 決定 B）。
       expect(
           find.textContaining(add ? '入力内容を残しています' : '保存済みですが'), findsOneWidget);
-      expect(find.textContaining('定型文の下書き', skipOffstage: false), findsWidgets);
+      // 編集で書けなかったのは保存済みの本文だけなので「消えます」と言わない（P2）。
+      expect(bannerText('保存できません'), add ? findsOneWidget : findsNothing);
       expect(
           Hive.box<PresetPhrase>('presetPhrases')
               .values
@@ -877,31 +878,104 @@ void main() {
     expect(container.read(settingsWriteFailureProvider),
         isNot(contains(phraseDraftWriteKey)));
   });
-  testWidgets('消去の失敗は「消せません」と告げ、未書込が無ければ「消えます」と言わない', (tester) async {
+  testWidgets('消去の失敗は「消せません」と告げ、捨てる打鍵や消去の再失敗で「消えます」と言わない', (tester) async {
     // L-182: 消去と保存の失敗を同じkeyで報告し、下書きが残るのに常設バナーが
     // 「アプリを閉じると消えます」と告げていた（ダイアログの「次回も残ります」と逆）。
     await open(tester, banner: true);
     await tester.enterText(find.byType(TextField), '消せない本文');
     await tester.pump(const Duration(milliseconds: 400));
     store.failClear = true;
-    await tester.tap(find.text('キャンセル'));
-    await tester.pumpAndSettle();
-    expect(bannerText('消えます'), findsNothing, reason: '下書きは残るのに消えると告げている');
-    expect(bannerText('消せません'), findsOneWidget);
+    // 失敗した消去の試行は、続けて失敗しても書けていない入力に数えない（C-1）。
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      await tester.tap(find.text('キャンセル'));
+      await tester.pumpAndSettle();
+      expect(bannerText('消えます'), findsNothing,
+          reason: '$attempt 回目: 下書きは残るのに消えると告げている');
+      expect(bannerText('消せません'), findsOneWidget);
+    }
     // 次の書込が成功すれば解消する。
     store.failClear = false;
     await tester.enterText(find.byType(TextField), '打ち直した本文');
     await tester.pump(const Duration(milliseconds: 400));
     expect(bannerText('定型文の下書き'), findsNothing);
-    // 書けていない入力があるうちに消去も失敗したら、どちらも事実なので両方告げる。
+    // 書けた後にさらに打ち、400ms 以内に「キャンセル」して消去も失敗した（P1）。
+    // 書けていないのは捨てると決めた打鍵だけなので「消えます」とは言わない。
+    await tester.enterText(find.byType(TextField), '捨てる打鍵');
+    await tester.pump(const Duration(milliseconds: 100));
+    store.failClear = true;
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(bannerText('消えます'), findsNothing, reason: '捨てた打鍵を理由に消えると告げている');
+    expect(bannerText('消せません'), findsOneWidget);
+  }, variant: formVariant);
+  testWidgets('一度も書けていない下書きの消去が失敗しても「次回も残ります」と言わない', (tester) async {
+    // P3: 残るものが無いのに、バナーが「消せませんでした。次回も残ります」と告げていた。
+    await open(tester, banner: true);
     store.failWrite = true;
-    await tester.enterText(find.byType(TextField), '書けない本文');
+    await tester.enterText(find.byType(TextField), '書けたことの無い本文');
     await tester.pump(const Duration(milliseconds: 400));
+    expect(bannerText('消えます'), findsOneWidget);
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(bannerText('次回も残ります'), findsNothing, reason: '残るものが無いのに残ると告げている');
+    // 書けていないのは捨てると決めた本文だけなので「消えます」も言わない。
+    expect(bannerText('消えます'), findsNothing);
+    await restart(tester);
+    expect(find.widgetWithText(TextField, '書けたことの無い本文'), findsNothing);
+  }, variant: formVariant);
+  testWidgets('書込の待機中に「キャンセル」した消去の失敗は、先の書込が届いた後の store で判定する', (tester) async {
+    // F-2: 消せなかった entry が store にあるかは、直列の queue の中で先行する
+    // 書込の結果を反映してから見る（書けて残った下書きなら「次回も残ります」）。
+    await open(tester, banner: true);
+    await tester.enterText(find.byType(TextField), '書込待ちの本文');
+    store.writeGate = Completer<void>();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(store.writes, 1, reason: '書込が待機に入っていない');
+    store.failClear = true;
+    await tester.tap(find.text('キャンセル'));
+    await tester.pump();
+    store.writeGate!.complete();
+    await tester.pumpAndSettle();
+    expect(storedDrafts().keys, contains(store.targetEntry));
+    expect(bannerText('消せません'), findsOneWidget, reason: '残った下書きの消去失敗を告げていない');
+  }, variant: formVariant);
+  testWidgets('破損の掃除だけが書けていないときの消去失敗では「消えます」と言わない', (tester) async {
+    // A-5: 読込で落とした entry の掃除は入力ではない（掃除の書き戻しは L-159 のまま）。
+    final entry = formVariant.form!;
+    store.values[draftKey] = jsonEncode({
+      entry: {
+        'id': entry == 'add' ? 'draft-1' : 'keep',
+        'content': '読めた下書き',
+        'category': 'daily'
+      },
+      'bogus': 1,
+    });
+    await open(tester, banner: true);
+    store.failClear = true;
     await tester.tap(find.text('キャンセル'));
     await tester.pumpAndSettle();
     expect(bannerText('消せません'), findsOneWidget);
-    expect(bannerText('保存できません'), findsOneWidget);
+    expect(bannerText('消えます'), findsNothing, reason: '失うのは破損の掃除だけなのに消えると告げている');
   }, variant: formVariant);
+  testWidgets('他のentryに書けていない入力があるうちは、消去が失敗しても「消えます」を出し続ける', (tester) async {
+    // R-A の後半: この消去以外の未書込は、閉じると消えるのが事実なので告げ続ける。
+    await open(tester, banner: true, form: 'add');
+    store.failWrite = true;
+    // 本文が空でカテゴリだけ選んだ追加は、戻る操作で下書きを消さずに閉じる。
+    await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(bannerText('消えます'), findsOneWidget);
+    store.targetEntry = 'edit:keep';
+    await tester.tap(find.byIcon(Icons.edit).first);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '捨てる編集');
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(find.text('閉じる'), findsOneWidget, reason: '消去が失敗していない');
+    expect(bannerText('消えます'), findsOneWidget, reason: '追加の未書込が残るのに告知が消えた');
+  });
   testWidgets('読めない下書きは読み直せると、壊れていた下書きは戻せないと分けて告げる', (tester) async {
     // L-176: 読込失敗（読み直せる）と破損（落とした分は戻らない）が同じ文で、
     // 一覧は破損で落とした分があっても「ありません」とだけ言っていた。
@@ -1039,17 +1113,33 @@ void main() {
     expect(find.text('閉じる'), findsOneWidget);
     handle.dispose();
   });
-  testWidgets('保存の待機が複数フレームにまたがっても本文欄は支援技術のfocusを拒む', (tester) async {
+  testWidgets('保存の待機が複数フレームにまたがっても本文欄は支援技術のfocusを拒み、スクロール位置を保つ',
+      (tester) async {
     // L-177: `_saving` 中も本文欄は enabled のままで、focus を送ると
-    // `canRequestFocus` assertion に当たった。I/O を gate で止めて待機を伸ばす。
+    // `canRequestFocus` assertion に当たった。I/O を gate で止めて待機を伸ばす
+    // （gate は開けない。開けると FakeAsync の中で実 Hive の I/O が走って止まる）。
     final handle = tester.ensureSemantics();
     await open(tester);
-    await tester.enterText(find.byType(TextField), '保存を待つ本文');
+    await tester.enterText(
+        find.byType(TextField), '${'保存を待つ本文'.padRight(300, 'あ')}末尾');
+    // 末尾の caret を見せるスクロール（100ms）を、400ms 後の書込より前に終える。
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pump(const Duration(milliseconds: 150));
+    // 待機中に包みの型が替わると本文欄の State が作り直され、先頭へ戻る（M-1）。
+    final inner = find
+        .descendant(
+            of: find.byType(EditableText), matching: find.byType(Scrollable))
+        .first;
+    double offset() => tester.state<ScrollableState>(inner).position.pixels;
+    final end = offset();
+    expect(end, greaterThan(0));
     store.writeGate = Completer<void>();
     await tester.tap(find.text('保存'));
     await tester.pump();
     await tester.pump();
     expect(store.writes, 1, reason: '下書きの書込が待機に入っていない');
+    expect(offset(), closeTo(end, 1), reason: '保存の待機中に本文欄が先頭へ戻った');
     expect(await sendSemanticsFocus(tester), isNull,
         reason: '保存の待機中にfocusを送るとframeworkのassertionに当たる');
     expectContentReadable(tester);
