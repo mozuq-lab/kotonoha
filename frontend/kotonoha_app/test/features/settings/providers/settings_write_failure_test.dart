@@ -1,7 +1,7 @@
 /// 設定（SharedPreferences）の保存失敗を利用者へ伝える（ADR-005、L-83）
 ///
 /// 失敗の注入は shared_preferences の外部 SDK 境界（SharedPreferencesStorePlatform）で
-/// 行う（AGENTS.md 規律 5: モックは外部 SDK とネットワーク境界にだけ）。
+/// 行う（AGENTS.md「変えない原則」: モックは外部 SDK とネットワーク境界にだけ）。
 /// 自分の関数は patch しない。
 library;
 

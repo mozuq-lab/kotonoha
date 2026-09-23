@@ -107,14 +107,13 @@ fvm dart format --output=none --set-exit-if-changed .
 全体:
 
 ```bash
-scripts/inventory.sh                                                    # 月 1 の棚卸し。数えるだけ
+scripts/inventory.sh                                                    # 監査の計測。数えるだけ
 ```
 
 ## CI（`.github/workflows/`）
 
 - `python.yml` — backend の lint・型・層契約・ゲート・テストを `main` / `develop` への push・PR で実行
 - `flutter.yml` — frontend の analyze・format・test・ビルドを `main` / `develop` への push・PR で実行
-- `inventory-reminder.yml` — 毎月 1 日に棚卸しの Issue を立てる
 - `release.yml` — タグ push でストア配布物（Android AAB 等）を作る
 
 ## 規約
@@ -132,11 +131,9 @@ scripts/inventory.sh                                                    # 月 1 
 - 同時に開くブランチは**2本まで**（セキュリティ対応は1本）。寿命は原則1営業日
 - CIが緑の小さい独立差分は、大きな作業の完了を待たずに先へマージする
 - `main` は日次で push して「正」を1つに保つ
-- 1つの変更の上限は**400行 / 12ファイル**（`git diff --stat` で判定。超えるなら分割）
+- 変更は小さく分ける（目安 400 行）
 - **マージの引き金は完了条件であって「レビュー指摘ゼロ」ではない**
-- 指摘のトリアージ（定義の正は `AGENTS.md` 規律 7）:
-  P0（到達経路を示せる、かつ実際に赤を見せた）はその場で直す。P1 / P2 は台帳（`docs/ledger.md`）へ
-- PR本文には、着手前の索引チェック（未卒業ADRの各行に対する yes/no）と完了条件を書く
+- 等級・指摘の仕分け・人が決めることは `AGENTS.md`「判断の手順」が正。PR 本文は `.github/pull_request_template.md` の形
 
 ## ディレクトリ
 

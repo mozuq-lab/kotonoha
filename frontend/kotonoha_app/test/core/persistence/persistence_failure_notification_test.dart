@@ -2,7 +2,7 @@
 /// なぜ AppShell ごと描画するか: PersistenceBanner 単体を叩くテストは
 /// AppShell への配線が外れても緑のままになる。「保存できたように見えて消える」
 /// を防げているかは、実際に画面へ出るかどうかでしか確かめられない。
-/// 検証は最も外側の境界（描画されたウィジェット）で行う（AGENTS.md 規律 5）。
+/// 検証は最も外側の境界（描画されたウィジェット）で行う（AGENTS.md「変えない原則」）。
 library;
 
 import 'package:flutter/material.dart';
