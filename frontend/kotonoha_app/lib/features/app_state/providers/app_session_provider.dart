@@ -23,6 +23,9 @@ class _SessionKeys {
 
   /// セッションタイムスタンプ
   static const String sessionTimestamp = 'session_timestamp';
+
+  /// 消した機能（定型文フォームの下書き）が使っていたキー。読み書きはしない
+  static const String retiredPhraseDrafts = 'preset_phrase_drafts';
 }
 
 // AppSessionState
@@ -176,6 +179,18 @@ class AppSessionNotifier extends Notifier<AppSessionState> {
     ref
         .read(settingsWriteFailureProvider.notifier)
         .record(key: key, succeeded: succeeded);
+  }
+
+  /// 消した機能のデータを端末から消す（起動時に 1 回）
+  /// 定型文フォームの下書きは要件から外して機能ごと消した（NFR-302 は文字盤の
+  /// 入力中の文だけ）。公開文からも記述を消したので、それ以前に使った端末に
+  /// 残すと公開文と食い違う。失敗しても利用者のデータは失われないので告げず、
+  /// 次の起動でまた消す。
+  Future<void> removeRetiredData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_SessionKeys.retiredPhraseDrafts);
+    } catch (_) {}
   }
 
   /// アプリがフォアグラウンドに復帰した時の処理

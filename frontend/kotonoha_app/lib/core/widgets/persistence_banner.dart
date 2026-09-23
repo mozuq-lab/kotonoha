@@ -136,24 +136,11 @@ class PersistenceBanner extends ConsumerWidget {
     final recreatedText = lossTexts.isNotEmpty
         ? '${lossTexts.join('。')}。元のデータは端末内に退避しています'
         : null;
-    // 下書きの消去失敗・復元不能は、今の書込不能やHiveの退避済み通知とは分ける。
-    // 消去の失敗では下書きは残る（「閉じると消えます」と逆。L-182）。
-    final draftTexts = [
-      if (failedPrefKeys.contains(phraseDraftClearKey))
-        '定型文の下書きを消せませんでした。次回も残ります',
-      // 読めなかった分は読み直せるが、壊れていた分は戻らない（L-176）。
-      if (failedPrefKeys.contains(phraseDraftReadKey))
-        '定型文の下書きを読み込めませんでした。開き直すと読み直します',
-      if (failedPrefKeys.contains(phraseDraftCorruptKey))
-        '定型文の下書きの一部または全部が壊れていて読み込めませんでした。その分は元に戻せません',
-    ];
-    if (failureText == null && recreatedText == null && draftTexts.isEmpty) {
+    if (failureText == null && recreatedText == null) {
       return const SizedBox.shrink();
     }
     final colors = failureColors ?? recoverableBannerColors();
-    final message = [failureText, recreatedText, ...draftTexts]
-        .whereType<String>()
-        .join(' ');
+    final message = [failureText, recreatedText].whereType<String>().join(' ');
     // 「閉じる」は作り直しの文が実際に出ているときだけ（見えない告知を捨てない）
     final showRecreated = recreatedText != null;
 

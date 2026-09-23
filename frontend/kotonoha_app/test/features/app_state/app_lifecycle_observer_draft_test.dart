@@ -97,7 +97,24 @@ void main() {
       );
     });
 
-    testWidgets('TC-INT-005: 入力バッファを全消去するとドラフトも即時に消去される', (tester) async {
+    // 定型文フォームの下書きは機能ごと消した。それ以前に使った端末に残る分を
+    // 起動時に消す（公開文から下書きの記述を消したので、残すと食い違う）。
+    testWidgets('起動すると、消した機能の定型文の下書きが端末から消える', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'preset_phrase_drafts': '{"add":{"id":"x","content":"古い下書き",'
+            '"category":"daily"}}',
+        'draft_text': '残す入力中の文',
+      });
+
+      final container = await pumpObserver(tester);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.containsKey('preset_phrase_drafts'), isFalse);
+      expect(prefs.getString('draft_text'), '残す入力中の文');
+      expect(container.read(inputBufferProvider), '残す入力中の文');
+    });
+
+    testWidgets('TC-INT-005:入力バッファを全消去するとドラフトも即時に消去される', (tester) async {
       final container = await pumpObserver(tester);
 
       // Given: デバウンスを経て保存済みのテキストがある状態
