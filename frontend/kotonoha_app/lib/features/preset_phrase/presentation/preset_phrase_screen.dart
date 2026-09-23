@@ -37,9 +37,6 @@ class PresetPhraseScreen extends ConsumerStatefulWidget {
 
 class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
     with DebounceMixin<PresetPhraseScreen> {
-  /// 「下書き」入口が下書きを読み込んでいる間。
-  bool _openingDrafts = false;
-
   @override
   void initState() {
     super.initState();
@@ -69,9 +66,8 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
       appBar: AppBar(
         title: const Text('定型文'),
         actions: [
-          // 読み込み待機中は二重に開かない（無効表示で待機が見える）。
           TextButton(
-            onPressed: _openingDrafts ? null : _showDrafts,
+            onPressed: _showDrafts,
             child: const Text('下書き'),
           ),
         ],
@@ -175,39 +171,47 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
     final container = ProviderScope.containerOf(context, listen: false);
     final repo = ref.read(presetPhraseRepositoryProvider);
     final drafts = ref.read(phraseDraftProvider);
-    setState(() => _openingDrafts = true);
-    final bool loaded;
-    try {
-      loaded = await drafts.initialize();
-    } finally {
-      if (mounted) setState(() => _openingDrafts = false);
-    }
-    // 待つ間に別のフォームが開いていたら、その上に重ねない（下書きの消去は
-    // 1 つのモーダルが 1 つの操作を待つ前提。Task 2 Claude Minor 4）。
-    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
-    // 読めないことを「下書きが無い」にしない。未読のmapには触れない。
-    if (!loaded) return _notify('下書きを読み込めませんでした。もう一度「下書き」を押してください。');
+    // 先に一覧のダイアログを開き、読込はその中で待つ。待つ間はモーダルの
+    // バリアが画面全体を覆うので、別のフォームも入口の再押下も届かない
+    // （下書きの消去は 1 つのモーダルが 1 つの操作を待つ前提）。画面の route を
+    // 見る判定は、画面が ShellRoute の内側の Navigator にありダイアログが root に
+    // 積まれる実アプリでは効かなかった（Task 2 再レビュー F-8・再監査 N-1）。
+    final loaded = drafts.initialize();
     final picked = await showDialog<PhraseDraft>(
       context: context,
+      // バリアを押しても閉じない（押し損じで待機中の一覧が消えないように。
+      // 閉じるのは「閉じる」か戻る操作）。
+      barrierDismissible: false,
       builder: (dialogContext) => ConfirmationDialogLayout.build(
         title: const Text('編集の下書き'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (drafts.edits.isEmpty) const Text('編集の下書きはありません'),
-            for (final draft in drafts.edits)
-              TextButton(
-                style: TextButton.styleFrom(alignment: Alignment.centerLeft),
-                onPressed: () => Navigator.of(dialogContext).pop(draft),
-                child: Text(
-                  '${PhraseConstants.getCategoryLabel(draft.category)}: '
-                  '${draft.content}',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-          ],
+        content: FutureBuilder<bool>(
+          future: loaded,
+          builder: (context, snapshot) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (snapshot.connectionState != ConnectionState.done)
+                const Text('下書きを読み込んでいます。')
+              // 読めないことを「下書きが無い」にしない。未読のmapには触れない。
+              else if (snapshot.data != true)
+                const Text('下書きを読み込めませんでした。閉じてから、もう一度「下書き」を押してください。')
+              else if (drafts.edits.isEmpty)
+                const Text('編集の下書きはありません')
+              else
+                for (final draft in drafts.edits)
+                  TextButton(
+                    style:
+                        TextButton.styleFrom(alignment: Alignment.centerLeft),
+                    onPressed: () => Navigator.of(dialogContext).pop(draft),
+                    child: Text(
+                      '${PhraseConstants.getCategoryLabel(draft.category)}: '
+                      '${draft.content}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+            ],
+          ),
         ),
         // 閉じても何も消さない。
         actions: [

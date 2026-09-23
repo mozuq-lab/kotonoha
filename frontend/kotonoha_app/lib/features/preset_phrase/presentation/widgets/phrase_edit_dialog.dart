@@ -35,6 +35,10 @@ class PhraseEditDialog extends StatefulWidget {
   /// 元の定型文が見つからない下書きの対象ID（[phrase] が無いとき）。
   final String? draftId;
 
+  /// 孤立下書きのコピーの応答を待つ上限。待つ間は閉じさせないので、応答が
+  /// 返らないままモーダルに閉じ込めないよう、過ぎたら失敗として戻す。
+  static const copyTimeout = Duration(seconds: 5);
+
   /// PhraseEditDialogを作成する
   const PhraseEditDialog({
     super.key,
@@ -261,21 +265,35 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
         message: 'この下書きを破棄しますか？元の定型文は削除済みのため、破棄すると戻せません。',
         cancelLabel: 'キャンセル',
         confirmLabel: '破棄する',
+        // 戻せないのは破棄側。既定に頼らず明示する（DiscardInputGuard と同じ）
+        kind: ConfirmKind.destructive,
         onCancel: () => Navigator.of(dialogContext).pop(false),
         onConfirm: () => Navigator.of(dialogContext).pop(true),
       ),
     );
     if (!mounted || !(discard ?? false)) return;
+    // 前の結果をいったん消す。同じ失敗が続いても告知が出直し、読み上げが届く。
+    setState(() => _errorMessage = null);
     await _onCancel();
   }
 
   /// 孤立下書きの本文をOSのクリップボードへ置く。成功するまで成功と言わない。
   Future<void> _onCopy() async {
     if (_saving || _copying) return;
-    setState(() => _copying = true);
+    // 待つ間は閉じさせない（閉じて開き直した画面は待機を知らず、破棄できて
+    // しまう。Task 2 Codex I-1）。止まっている理由を告知の場所に出す。前の結果は
+    // これで消えるので、同じ結果が続いても告知が出直す。
+    setState(() {
+      _copying = true;
+      _errorMessage = 'コピーしています…';
+    });
+    _revealNotice();
     var copied = false;
     try {
-      await Clipboard.setData(ClipboardData(text: _orphan!.content));
+      // 応答が返らないまま閉じ込めない。上限を過ぎたら失敗として戻す
+      // （後から届いても「コピーしました」とは言わない側に倒す）。
+      await Clipboard.setData(ClipboardData(text: _orphan!.content))
+          .timeout(PhraseEditDialog.copyTimeout);
       copied = true;
     } catch (e, s) {
       reportDraftProgrammingError(e, s);
@@ -368,7 +386,7 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
             child: const Text('コピー'),
           ),
         TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          onPressed: busy ? null : () => Navigator.of(context).pop(),
           child: const Text('閉じる'),
         ),
         if (draft != null)
@@ -384,9 +402,10 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
   Widget build(BuildContext context) {
     if (_orphaned) {
       // 「閉じる」も戻る操作も閉じるだけで下書きは残るので、確認して守る
-      // ものが無い。「下書きを破棄」の待機中だけ止める。
+      // ものが無い。「下書きを破棄」とコピーの待機中だけ止める（コピーは
+      // `copyTimeout` で必ず戻る）。
       final orphan = _buildOrphan();
-      return _saving
+      return _saving || _copying
           ? PopScope(
               canPop: false,
               child: ExcludeFocus(child: AbsorbPointer(child: orphan)),
