@@ -401,13 +401,17 @@ void main() {
             expect(phrases.map((p) => p.id), containsAll([phraseId, 'added']));
             expect(phrases.map((p) => p.id), isNot(contains('keep')));
           } else {
+            // 元の定型文が消えた下書きの閲覧へ移る。本文とカテゴリは下書きに残る。
+            final dialog = find.byType(AlertDialog);
             expect(find.textContaining('見つかりません'), findsOneWidget);
-            expect(find.widgetWithText(TextField, '競合しても残す本文'), findsOneWidget);
             expect(
-                tester
-                    .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
-                    .selected,
-                isTrue);
+                find.descendant(
+                    of: dialog, matching: find.textContaining('体調')),
+                findsOneWidget);
+            expect(
+                (await SharedPreferences.getInstance())
+                    .getString('preset_phrase_drafts'),
+                contains('競合しても残す本文'));
             expect(phrases.map((p) => p.id), isNot(contains(phraseId)));
           }
           await box.close();
