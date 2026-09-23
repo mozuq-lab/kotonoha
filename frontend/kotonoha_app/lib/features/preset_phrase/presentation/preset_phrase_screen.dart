@@ -210,6 +210,9 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+              // 落とした分は追加か編集か分からないので「下書き」と言う（L-176）。
+              if (snapshot.data == true && drafts.dropped)
+                const Text('壊れていて読み込めなかった下書きがあります（元に戻せません）。'),
             ],
           ),
         ),

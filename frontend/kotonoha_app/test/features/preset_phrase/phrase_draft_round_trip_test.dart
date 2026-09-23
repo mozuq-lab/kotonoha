@@ -169,6 +169,12 @@ Future<Object?> sendSemanticsFocus(WidgetTester tester) async {
   return thrown ?? tester.takeException();
 }
 
+/// 常設バナーに出ている文（ダイアログの告知と取り違えない）。
+Finder bannerText(String text) => find.descendant(
+    of: find.byType(PersistenceBanner),
+    matching: find.textContaining(text),
+    skipOffstage: false);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory directory;
@@ -873,32 +879,53 @@ void main() {
   testWidgets('消去の失敗は「消せません」と告げ、未書込が無ければ「消えます」と言わない', (tester) async {
     // L-182: 消去と保存の失敗を同じkeyで報告し、下書きが残るのに常設バナーが
     // 「アプリを閉じると消えます」と告げていた（ダイアログの「次回も残ります」と逆）。
-    Finder banner(String text) => find.descendant(
-        of: find.byType(PersistenceBanner),
-        matching: find.textContaining(text),
-        skipOffstage: false);
     await open(tester, banner: true);
     await tester.enterText(find.byType(TextField), '消せない本文');
     await tester.pump(const Duration(milliseconds: 400));
     store.failClear = true;
     await tester.tap(find.text('キャンセル'));
     await tester.pumpAndSettle();
-    expect(banner('消えます'), findsNothing, reason: '下書きは残るのに消えると告げている');
-    expect(banner('消せません'), findsOneWidget);
+    expect(bannerText('消えます'), findsNothing, reason: '下書きは残るのに消えると告げている');
+    expect(bannerText('消せません'), findsOneWidget);
     // 次の書込が成功すれば解消する。
     store.failClear = false;
     await tester.enterText(find.byType(TextField), '打ち直した本文');
     await tester.pump(const Duration(milliseconds: 400));
-    expect(banner('定型文の下書き'), findsNothing);
+    expect(bannerText('定型文の下書き'), findsNothing);
     // 書けていない入力があるうちに消去も失敗したら、どちらも事実なので両方告げる。
     store.failWrite = true;
     await tester.enterText(find.byType(TextField), '書けない本文');
     await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.text('キャンセル'));
     await tester.pumpAndSettle();
-    expect(banner('消せません'), findsOneWidget);
-    expect(banner('保存できません'), findsOneWidget);
+    expect(bannerText('消せません'), findsOneWidget);
+    expect(bannerText('保存できません'), findsOneWidget);
   }, variant: formVariant);
+  testWidgets('読めない下書きは読み直せると、壊れていた下書きは戻せないと分けて告げる', (tester) async {
+    // L-176: 読込失敗（読み直せる）と破損（落とした分は戻らない）が同じ文で、
+    // 一覧は破損で落とした分があっても「ありません」とだけ言っていた。
+    store.failRead = true;
+    await open(tester, banner: true, form: 'drafts');
+    expect(bannerText('開き直すと読み直します'), findsOneWidget);
+    await tester.tap(find.text('閉じる'));
+    await tester.pumpAndSettle();
+    store.failRead = false;
+    store.values[draftKey] = jsonEncode({'bogus': 1});
+    await tester.tap(find.text('下書き'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ありません'), findsOneWidget);
+    expect(find.textContaining('壊れていて読み込めなかった下書き'), findsOneWidget);
+    expect(bannerText('戻せません'), findsOneWidget);
+    expect(bannerText('読み直します'), findsNothing, reason: '戻らない破損に読み直しを案内');
+    // 読めた下書きが並ぶときも添える（落ちたのが追加か編集かは判別できない）。
+    store.values[draftKey] = jsonEncode({
+      'bogus': 1,
+      'edit:keep': {'id': 'keep', 'content': '読めた下書き', 'category': 'daily'}
+    });
+    await restart(tester, form: 'drafts');
+    expect(find.textContaining('読めた下書き'), findsOneWidget);
+    expect(find.textContaining('壊れていて読み込めなかった下書き'), findsOneWidget);
+  });
   testWidgets('空本文の「キャンセル」はカテゴリだけの下書きも消す', (tester) async {
     await open(tester);
     await tester.tap(find.widgetWithText(ChoiceChip, '体調'));

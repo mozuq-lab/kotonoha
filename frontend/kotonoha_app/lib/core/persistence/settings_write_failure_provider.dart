@@ -40,8 +40,12 @@ const String phraseDraftReadKey = '$phraseDraftWriteKey.read';
 /// 下書きの消去の失敗。下書きは残るので「閉じると消えます」へは合流させない（L-182）。
 const String phraseDraftClearKey = '$phraseDraftWriteKey.clear';
 
+/// 読めた下書きの壊れていた分を落とした。戻らないので、書込の成功や読み直しでは
+/// 解消しない（読めなかった＝読み直せる [phraseDraftReadKey] と分ける。L-176）。
+const String phraseDraftCorruptKey = '$phraseDraftWriteKey.corrupt';
+
 /// 失敗しているキーを利用者向けの名前に写す（順序固定: 入力中の文 → 定型文の下書き → 設定）
-/// 下書きの書込以外（read・clear）はここへ合流させず、バナーが別の文で表示する。
+/// 下書きの書込以外（read・clear・corrupt）はここへ合流させず、バナーが別の文で表示する。
 List<String> prefFailureNames(Set<String> failedKeys) => [
       if (failedKeys.contains(draftTextWriteKey)) '入力中の文',
       if (failedKeys.contains(phraseDraftWriteKey)) '定型文の下書き',

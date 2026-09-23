@@ -141,8 +141,11 @@ class PersistenceBanner extends ConsumerWidget {
     final draftTexts = [
       if (failedPrefKeys.contains(phraseDraftClearKey))
         '定型文の下書きを消せませんでした。次回も残ります',
+      // 読めなかった分は読み直せるが、壊れていた分は戻らない（L-176）。
       if (failedPrefKeys.contains(phraseDraftReadKey))
-        '定型文の下書きの一部または全部を読み込めませんでした',
+        '定型文の下書きを読み込めませんでした。開き直すと読み直します',
+      if (failedPrefKeys.contains(phraseDraftCorruptKey))
+        '定型文の下書きの一部または全部が壊れていて読み込めませんでした。その分は元に戻せません',
     ];
     if (failureText == null && recreatedText == null && draftTexts.isEmpty) {
       return const SizedBox.shrink();

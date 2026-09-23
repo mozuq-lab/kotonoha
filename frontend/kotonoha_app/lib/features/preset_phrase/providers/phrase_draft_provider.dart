@@ -79,10 +79,20 @@ class PhraseDrafts {
     // 書く。dirtyにしないとL-159以降は書き戻されず、読込エラーの告知が起動の
     // たびに出続ける（台帳 L-159 の副作用。監査 P1-1）。健全なstoreでは
     // 増えないので「変わっていなければ書かない」は保たれる。
-    if (!valid) _changes++;
-    _record(phraseDraftReadKey, valid);
+    // 落とした分は戻らないので、読めなかった（読み直せる）とは分けて告げ、
+    // このセッションの間は解消しない（台帳 L-176）。
+    if (!valid) {
+      _changes++;
+      _dropped = true;
+      _record(phraseDraftCorruptKey, false);
+    }
+    _record(phraseDraftReadKey, true);
     return true;
   }
+
+  /// 読めた下書きのうち、壊れていた分を落としたか。
+  bool get dropped => _dropped;
+  bool _dropped = false;
 
   PhraseDraft? readAdd() => _entries['add'];
 
