@@ -36,15 +36,15 @@ Hive が開けないと黙ってインメモリで動き続けた（`frontend/ko
 ## 限界
 
 永続フィールドを伴わない「UI ロジックだけの重複」は許可リストで捕まえられない。
-許可リスト検査が守るのは起動時の共有登録経路だけで、共有関数を経由しない直接の `Hive.registerAdapter` / `Hive.openBox` は守れない。Dart には「この API を他所で呼ばせない」構造が無く、開かれている box を列挙する公開 API も Hive に無い。**自作の検出器は作らない**（AGENTS.md 規律 8 ／ADR-008）。
+許可リスト検査が守るのは起動時の共有登録経路だけで、共有関数を経由しない直接の `Hive.registerAdapter` / `Hive.openBox` は守れない。Dart には「この API を他所で呼ばせない」構造が無く、開かれている box を列挙する公開 API も Hive に無い。**自作の検出器は作らない**（AGENTS.md「判断の手順」7 ／ADR-008）。
 「トップレベル可変変数の禁止」は analyzer では実現できない（`avoid_top_level_mutable_variables` も `avoid_global_state` も存在せず `undefined_lint` になる。2026-08-31 実測）。記録して受け入れた。
 Hive が報告しない書き込み失敗（box が開いたままのディスクフル。hive 2.2.3 `box_impl.dart:82`）は伝えられない。EDGE-003（容量不足の警告）は未達のまま受け入れる。設定・下書き・チュートリアル完了フラグの保存失敗は同じセッション内でしか伝えられない（保存先が壊れている以上、再起動後に戻った理由を残せない）。同文のお気に入りが 2 件並び得る（L-99）。
 
 ## 検査
 
-(i) 層 1 — 永続化（`lib/shared/models/*_adapter.dart` と `frontend/kotonoha_app/lib/core/utils/hive_init.dart` に触れる変更は、着手前に規律 4 で本 ADR の行に当たる）。
+(i) 着手時 — 永続化（`lib/shared/models/*_adapter.dart` と `frontend/kotonoha_app/lib/core/utils/hive_init.dart` に触れる変更は A 級。着手時に本 ADR の却下した案と照らす）。
 (ii) `frontend/kotonoha_app/test/core/persistence/hive_schema_allowlist_test.dart`（`typeId`・永続フィールド。本番と同じ `registerPersistedTypeAdapters()` が登録した実体だけを見る。設計の経緯はファイル冒頭）／往復テスト 4 本（`frontend/kotonoha_app/test/features/*/*_round_trip_test.dart`。守る lint 4 つは `analysis_options.yaml` で warning に昇格）／`favorite_sync_test.dart` の TC-SYNC-202（削除しても残る）／破損と保存失敗の注入テスト（`test/core/utils/hive_init_*_test.dart`、`test/features/settings/providers/settings_write_failure_test.dart`）。
-(iii) UI ロジックだけの重複は層 3（差分レビュー）と月 1 の棚卸しだけ。
+(iii) UI ロジックだけの重複は差分レビューと監査（ADR-010）だけ。
 
 ## 再訪条件
 
