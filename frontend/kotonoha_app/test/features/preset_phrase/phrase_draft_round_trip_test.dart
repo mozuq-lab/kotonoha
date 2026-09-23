@@ -330,7 +330,7 @@ void main() {
     if (entry != 'add') expect(saved.single.id, contains('keep'));
   }, variant: formVariant);
   for (final failure in ['false', 'throw']) {
-    testWidgets('下書きflush $failure では追加は保存を止め、編集は保存し、再試行で1件になる',
+    testWidgets('下書きflush $failure では追加は保存を止めて再試行で1件にし、編集は1回で1件保存する',
         (tester) async {
       final add = formVariant.form == 'add';
       await open(tester, banner: true);
@@ -1022,17 +1022,26 @@ void main() {
     // 他の entry が書けていれば、消去の失敗で「消えます」と言わない（G-2）。
     await discardEdit();
     expect(bannerText('消えます'), findsNothing, reason: '書けている追加を未書込と数えた');
+    // 追加の下書きもいったん消せた（store に無い）後で、書けないまま選び直す。
+    store.failWrite = false;
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    store.failWrite = true;
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     await chooseAddCategory('その他');
     expect(bannerText('消えます'), findsOneWidget);
     await discardEdit();
     expect(bannerText('消えます'), findsOneWidget, reason: '追加の未書込が残るのに告知が消えた');
-    // 捨てた編集はメモリからも落ち、store が戻ると追加の入力だけが書かれる（G-1）。
+    // 捨てた編集だけがメモリから落ち、store に無い追加の入力は残って、store が
+    // 戻ると書かれる（G-1 が落とすのは消そうとした entry だけ）。
     store.failWrite = false;
     await pauseUntilWritten(tester);
     expect(storedDrafts().keys, isNot(contains('edit:keep')));
-    expect((storedDrafts()['add'] as Map)['category'], 'other');
+    expect((storedDrafts()['add'] as Map?)?['category'], 'other',
+        reason: '捨てた編集と一緒に、書けていない追加の入力を落とした');
   });
   testWidgets('読めない下書きは読み直せると、壊れていた下書きは戻せないと分けて告げる', (tester) async {
     // L-176: 読込失敗（読み直せる）と破損（落とした分は戻らない）が同じ文で、
