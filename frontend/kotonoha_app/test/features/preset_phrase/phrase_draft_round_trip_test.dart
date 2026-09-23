@@ -1593,6 +1593,40 @@ void main() {
     expect((storedDrafts()['edit:gone'] as Map)['content'], contains('編集B'));
     expect(store.values['flutter.draft_text'], contains('文字盤は別'));
   });
+  testWidgets('一覧から元の定型文がある下書きを選ぶと、通常の編集フォームで開いて保存できる', (tester) async {
+    // 元が残っているのに孤立と告げると、編集を続けられず破棄しか選べない
+    // （最終レビュー I-1）。取り違えを赤にするため、別の定型文も置く。
+    final box = Hive.box<PresetPhrase>('presetPhrases');
+    await tester.runAsync(() => box.put(
+        'other',
+        box
+            .get('keep')!
+            .copyWith(id: 'other', content: '別の定型文', displayOrder: 1)));
+    store.values[draftKey] = jsonEncode({
+      'edit:keep': {'id': 'keep', 'content': '一覧から戻す下書き', 'category': 'health'}
+    });
+    await open(tester, form: 'drafts');
+    await tester.tap(find.textContaining('一覧から戻す下書き'));
+    await tester.pumpAndSettle();
+    expect(find.text('定型文を編集'), findsOneWidget);
+    expect(find.text('定型文の下書き'), findsNothing);
+    expect(find.widgetWithText(TextField, '一覧から戻す下書き'), findsOneWidget);
+    expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
+            .selected,
+        isTrue);
+    expect(find.textContaining('保存されていない下書き'), findsOneWidget);
+    await submit(tester);
+    expect(find.byType(TextField), findsNothing);
+    expect(storedDrafts().keys, isNot(contains('edit:keep')));
+    // 同じIDのまま本体を更新し、件数は変わらず、別の定型文には触れない。
+    final saved = await reopened(tester);
+    expect(saved.values, hasLength(2));
+    expect(saved.get('keep')?.content, contains('一覧から戻す下書き'));
+    expect(saved.get('keep')?.category, contains('health'));
+    expect(saved.get('other')?.content, contains('別の定型文'));
+  });
   testWidgets('入口は元の定型文を確認できなければ孤立で開かず、開けば全文を読めbackでは残す', (tester) async {
     tester.view.physicalSize = const Size(400, 844);
     tester.view.devicePixelRatio = 1;
