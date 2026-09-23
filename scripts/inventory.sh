@@ -7,7 +7,7 @@ h() { printf '\n== %s\n' "$1"; }
 
 h "文書の行数（核 / 決定 / 正本）"
 wc -l AGENTS.md docs/adr/*.md README.md docs/spec/kotonoha-requirements.md docs/privacy-policy.md docs/support.md 2>/dev/null | tail -1
-printf 'AGENTS.md %s 行（上限 120）／未卒業 ADR %s 本（上限 5）\n' "$(wc -l < AGENTS.md)" "$(ls docs/adr/ADR-*.md 2>/dev/null | wc -l | tr -d ' ')"
+printf 'AGENTS.md %s 字／未卒業 ADR %s 本（上限 5）\n' "$(wc -m < AGENTS.md | tr -d ' ')" "$(ls docs/adr/ADR-*.md 2>/dev/null | wc -l | tr -d ' ')"
 for f in docs/adr/ADR-*.md; do n=$(wc -l < "$f"); [ "$n" -gt 60 ] && printf '  60 行超: %s (%s)\n' "$f" "$n"; done
 
 h "台帳 docs/ledger.md（未対応 / 対応済み / 却下 / 受け入れた限界）"

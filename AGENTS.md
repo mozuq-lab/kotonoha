@@ -13,11 +13,11 @@
 
 1. **何をするか**: `docs/now.md` の最短経路にある仕事と、人の依頼だけをする。レビュー指摘や思いついた改善は仕事の入口にしない。最短経路に動かせるものが無ければ、止まって待ってよい（仕事を作らない）。
 2. **等級**: 差分（修正の差分も）が触るパスで最低等級が決まり、エージェントは上げるだけ。挙動を変えない差分（文書・コメント・テストだけ）は C。`lib/…` は `frontend/kotonoha_app/lib/`。
-   - **A**（最悪の結果に届き得る）: 保存と消去（`lib/core/persistence/`・`lib/core/utils/hive_*`・`lib/shared/models/*_adapter.dart`・`lib/features/*/data/`・SharedPreferences を読み書きするコード）、緊急と読み上げ（`lib/features/emergency/domain/`・`lib/features/emergency/presentation/providers/`・`lib/shared/widgets/emergency_button.dart`・`lib/features/tts/domain/`・`lib/features/tts/providers/`）、端末の外（`lib/features/ai_conversion/data/`・`backend/app/`・権限・依存・`.github/workflows/`）
+   - **A**（最悪の結果に届き得る）: 保存と消去（`lib/core/persistence/`・`lib/core/utils/hive_*`・`lib/shared/models/*_adapter.dart`・`lib/features/*/data/` とそれを呼んで保存・削除する provider（例: `preset_phrase_notifier.dart`）・SharedPreferences を読み書きするコード）、緊急と読み上げ（`lib/features/emergency/domain/`・`lib/features/emergency/presentation/providers/`・`lib/shared/widgets/emergency_button.dart`・`lib/features/tts/domain/`・`lib/features/tts/providers/`）、端末の外（`lib/features/ai_conversion/data/`・`backend/app/`・権限・依存・`.github/workflows/`）
    - **B**: それ以外のコード（画面・文言・配色・確認ダイアログを含む）
    - **C**: 文書・コメント・テストだけ・挙動を変えない整理
 3. **検証の重さ**: A はテストを先に書いて赤を見る、レビュー 1 系統、実物での確認（iOS シミュレータ・Android エミュレータ・実 Chromium。物理実機はストア提出の前）。保存・送信の経路を変えるときは、文脈を持たない担当がコードから公開文（`docs/privacy-policy.md`・`docs/support.md`）へ読む独立監査も通す。B はテストとレビュー 1 系統（画面を変えたら実物で見る）。C はビルドと既存テストだけ。
-4. **指摘の仕分け**: レビューは縛らない。指摘は既定で捨て、記録しない。直すのは、証拠（赤くなるテスト・スクリーンショット・実測値）で最悪の結果に届くと示せたものと、数行で局所的に直せるもの（再レビューしない）。修正の等級は指摘の等級で決める。再現していない重大な経路は PR に 1 行だけ書き、持ち越さない。
+4. **指摘の仕分け**: レビューは縛らない。指摘は既定で捨て、記録しない。直すのは、証拠（赤くなるテスト・スクリーンショット・実測値）で最悪の結果に届くと示せたものと、数行で局所的に直せるもの（再レビューしない）。修正の差分も、触るパスで最低等級を決める。最悪の結果に届かない指摘への修正には、再レビューを付けない。再現していない重大な経路は PR に 1 行だけ書き、持ち越さない。
 5. **行き詰まったら**: 同じ関数を 2 回変えることになったら、次の一手の候補を「設計を変える」「削る」「閉じる」にし、履歴を渡さない新しい文脈で「この問題を消す設計は何か」を問う。判断が割れたら議論せず、2〜3 案を作ってスクリーンショットで見せる。
 6. **人が決めること**: 外への影響（main への merge・ストア・支払い・秘密・リポジトリ設定・他人の PR）、製品の約束（最悪の結果・公開文のプライバシーと医療的な表現・データの扱い）、取り返しのつかないデータ移行。それ以外はエージェントが決め、PR 本文の「私が決めたこと」に書く（人は事後に覆す）。
 7. **教訓**: コード（型・網羅する switch・本番構成のテストヘルパー）にするか、捨てる。文書やメモリに規則を足さない。自作の検出器（grep の検査・ゲート）は作らない（倉庫の ADR-008）。決定を変える・A に着手するときは、下の索引の「却下した案」と照らす。
