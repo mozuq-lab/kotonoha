@@ -31,6 +31,18 @@ class PhraseDrafts {
   /// 文が書かれないまま背景へ回る（台帳 L-159）。
   int _written = 0;
 
+  /// 利用者の入力を entry ごとに、最後に変えた通し番号で持つ。書込の失敗を
+  /// 「保存できません…消えます」と告げるのは、ここにある入力が store に届いて
+  /// いないときだけ。消そうとした entry（捨てると決めた入力）・失敗した消去の
+  /// 試行・破損の掃除は入れない（台帳 L-182）。
+  final Map<String, int> _typed = {};
+
+  /// store にあると分かっている entry（読めた分か、最後に書けた snapshot）。
+  /// ここに無いものは store に無いとみなし、消去が失敗したときの告知と、
+  /// メモリから落とすかをこれで決める。書くのはこのアプリだけで、失敗した
+  /// 書込は store を変えない、という前提に立つ（台帳 L-196）。
+  Set<String> _stored = {};
+
   /// 最後にstoreへ届いた内容から変わっているか。
   bool get _dirty => _changes != _written;
 
@@ -74,15 +86,26 @@ class PhraseDrafts {
       }
     }
     _entries = entries;
+    _stored = {...entries.keys};
     _loaded = true;
     // 落とした不正entryは store との差＝「変更」。次のflushで掃除済みmapを
     // 書く。dirtyにしないとL-159以降は書き戻されず、読込エラーの告知が起動の
     // たびに出続ける（台帳 L-159 の副作用。監査 P1-1）。健全なstoreでは
     // 増えないので「変わっていなければ書かない」は保たれる。
-    if (!valid) _changes++;
-    _record(phraseDraftReadKey, valid);
+    // 落とした分は戻らないので、読めなかった（読み直せる）とは分けて告げ、
+    // このセッションの間は解消しない（台帳 L-176）。
+    if (!valid) {
+      _changes++;
+      _dropped = true;
+      _record(phraseDraftCorruptKey, false);
+    }
+    _record(phraseDraftReadKey, true);
     return true;
   }
+
+  /// 読めた下書きのうち、壊れていた分を落としたか。
+  bool get dropped => _dropped;
+  bool _dropped = false;
 
   PhraseDraft? readAdd() => _entries['add'];
 
@@ -101,7 +124,7 @@ class PhraseDrafts {
   void _change(String key, PhraseDraft draft) {
     if (!_loaded || _disposed || _removing != null) return;
     _entries = {..._entries, key: draft};
-    _changes++;
+    _typed[key] = ++_changes;
     _timer?.cancel();
     _timer = Timer(const Duration(milliseconds: 400), flush);
   }
@@ -134,15 +157,17 @@ class PhraseDrafts {
     _timer?.cancel();
     final next = {..._entries}..remove(key);
     // 消すものがあれば、消去は明示操作なので変わっていなくても必ず書く。
+    // 捨てると決めた入力は、消去が失敗しても「消えます」の理由にしない。
     _changes++;
+    _typed.remove(key);
     // paused中のflushもこの操作へ合流し、古いmapをclearの後へ載せない。
-    return _removing = _write(next).then((succeeded) {
-      if (succeeded) _entries = next;
-      return succeeded;
+    return _removing = _write(next, clearing: key).then((done) {
+      if (done) _entries = next;
+      return done;
     }).whenComplete(() => _removing = null);
   }
 
-  Future<bool> _write(Map<String, PhraseDraft> snapshot) {
+  Future<bool> _write(Map<String, PhraseDraft> snapshot, {String? clearing}) {
     // このsnapshotが表す通し番号。これ以降の変更は次のflushで書く。
     final writing = _changes;
     return _tail = _tail.then((_) async {
@@ -162,9 +187,21 @@ class PhraseDrafts {
       } catch (_) {
         // 例外でもqueueを完了させ、次の明示再試行へ進める。
       }
-      if (succeeded) _written = writing;
-      _record(phraseDraftWriteKey, succeeded);
-      return succeeded;
+      if (succeeded) {
+        _written = writing;
+        _stored = snapshot.keys.toSet();
+      }
+      // 消去の失敗は保存の失敗（閉じると消える）と分けて報告する（L-182）。
+      // 「消えます」は残したい入力が届いていないときだけ、「消せません」は
+      // 消せなかった entry が store にあるときだけ（先行する書込の結果の後で見る）。
+      final unsaved = !succeeded && _typed.values.any((n) => n > _written);
+      _record(phraseDraftWriteKey, !unsaved);
+      if (succeeded || _stored.contains(clearing)) {
+        _record(phraseDraftClearKey, succeeded);
+      }
+      // store に無い entry は、消去の書込が失敗しても残るものが無い。メモリからも
+      // 落として消去済みにする（残すと開き直しで出て、store が戻ると書き戻される）。
+      return succeeded || (clearing != null && !_stored.contains(clearing));
     });
   }
 
