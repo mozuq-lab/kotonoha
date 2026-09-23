@@ -35,6 +35,13 @@ class PhraseFormContent extends StatelessWidget {
   /// パラメータ定義: 現在の文字数
   final int currentLength;
 
+  /// パラメータ定義: 凍結中（読込待機・保存確定後）か
+  /// 凍結中は本文欄を無効にする。`ExcludeFocus`/`AbsorbPointer` は
+  /// ポインタとtraversalを止めるだけで、支援技術が送る
+  /// `SemanticsAction.focus` は素通りし、`TextField` の
+  /// `canRequestFocus` assertion に当たる（台帳 L-169）。
+  final bool frozen;
+
   /// PhraseFormContentを作成する
   const PhraseFormContent({
     super.key,
@@ -44,6 +51,7 @@ class PhraseFormContent extends StatelessWidget {
     required this.currentLength,
     this.errorMessage,
     this.onTextChanged,
+    this.frozen = false,
   });
 
   @override
@@ -58,6 +66,15 @@ class PhraseFormContent extends StatelessWidget {
         // テキスト入力フィールド: 定型文内容の入力
         TextField(
           controller: controller,
+          enabled: !frozen,
+          // 凍結中（`enabled: false`）のM3既定は
+          // `bodyLarge.color.withOpacity(0.38)`（text_field.dart:1875-1879）で
+          // 38%。AAを満たさず「何が保存されるのか」が読めない。打てなくしても
+          // 読めなくはしない（台帳 L-169）。`widget.style` は
+          // `_getInputStyleForState(...).merge(providedStyle)` で**最後に**
+          // merge される（:1537-1539）ので、ここで明示した色が既定に勝つ。
+          // 色だけ指定し、字形・大きさは既定（bodyLarge）のまま。
+          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
           maxLines: 4,
           maxLength: PresetPhraseValidator.maxLength,
           maxLengthEnforcement: MaxLengthEnforcement.enforced,

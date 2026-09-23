@@ -8,6 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:kotonoha_app/core/persistence/programming_error_report.dart';
 import 'package:kotonoha_app/features/preset_phrase/providers/phrase_draft_provider.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/phrase_constants.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/preset_phrase_validator.dart';
@@ -73,6 +74,13 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
   /// 下書きの読み書きができる状態か。読めていない間は一切書かない。
   bool get _draftsReady => widget.drafts != null && _loaded;
 
+  /// まだ何も打っていないか。読み直しで置き換えても失うものが無い状態。
+  /// 本文だけを見ると、未読のまま選び直したカテゴリ（storeに控えが無い）を
+  /// 読み直しが黙って上書きする（台帳 L-170）。
+  bool get _untouched =>
+      _contentController.text.isEmpty &&
+      _selectedCategory == PhraseConstants.defaultCategory;
+
   @override
   void initState() {
     super.initState();
@@ -87,8 +95,9 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
       );
 
   Future<void> _load() async {
-    // 未読の間に打った文はstoreに控えが無い。読み直しで置き換えない。
-    if (_contentController.text.isNotEmpty) return;
+    // 到達するのは initState（本文もカテゴリも既定）と「再読み込み」ボタン
+    // （`_untouched` のときだけ出す）の2つ。ここに重ねた本文だけのガードは
+    // UIから到達できず、消しても赤にならない防御だった（台帳 L-170(c)）。
     setState(() => _loading = true);
     final loaded = await widget.drafts!.initialize();
     if (!mounted) return;
@@ -193,8 +202,10 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
           }
         }
       }
-    } catch (_) {
-      // 入力を残し、同じ場所で再試行できるようにする。
+    } catch (e, s) {
+      // 入力を残し、同じ場所で再試行できるようにする。catchは狭めない
+      // （`_saving` が戻らなくなる方が悪い）。Errorだけログへ流す。
+      reportDraftProgrammingError(e, s);
     }
     if (!mounted) return;
     if (succeeded) {
@@ -223,8 +234,11 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     var cleared = false;
     try {
       cleared = await widget.drafts!.removeAdd();
-    } catch (_) {
+    } catch (e, s) {
       // 例外でも`_saving`のまま固めない（固めると全操作が塞がる）。
+      // F-1 の後は `removeAdd` が投げる経路は無いが、`_onSave` と規則を
+      // 揃えておく（片方だけ Error を飲む形を残さない）。
+      reportDraftProgrammingError(e, s);
     }
     if (!mounted) return;
     if (cleared) {
@@ -256,8 +270,11 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
   void _onCategoryChanged(String category) {
     if (_saving || _loading || _committed) return;
     setState(() {
+      // 選び直したカテゴリも打ち直した本文と同じくまだ守る対象。
       _clearFailed = false;
       _selectedCategory = category;
+      // 読めていないことはカテゴリ変更のたびに消えてはいけない事実なので残す。
+      _errorMessage = _loaded ? null : _loadFailure;
     });
     _changeDraft();
   }
@@ -297,10 +314,20 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
                 currentLength: _contentController.text.length,
                 errorMessage: _errorMessage,
                 onTextChanged: _onTextChanged,
+                // 支援技術のfocusまで止めるのは`TextField`自身にしかできない。
+                // **`_saving` は含めない**（台帳 L-177）。含めると
+                // `enabled: false` が `FocusNode.canRequestFocus` の setter
+                // 経由で `unfocus()` を呼び、保存が失敗して `_saving` が戻った
+                // ときに焦点もキーボードも戻らず、打ち直しに再タップが要る。
+                // その代わり `_saving` 中にATがfocusを送ると
+                // text_field.dart の `canRequestFocus` assertion に当たる
+                // （release では黙って拒否）。どちらを取るかは決定事項。
+                frozen: _loading || _committed,
               ))),
       actions: [
-        // 打った文があるうちは出さない。読み直しはそれを置き換えてしまう
-        if (!_loaded && !_loading && _contentController.text.isEmpty)
+        // 打った文・選び直したカテゴリがあるうちは出さない。
+        // 読み直しはそれを置き換えてしまう
+        if (!_loaded && !_loading && _untouched)
           TextButton(onPressed: _load, child: const Text('再読み込み')),
         // 消去が失敗し続けても閉じられる出口。下書きは消さずに残す
         // （閉じられないとモーダルの下の緊急ボタンへ到達できない）
