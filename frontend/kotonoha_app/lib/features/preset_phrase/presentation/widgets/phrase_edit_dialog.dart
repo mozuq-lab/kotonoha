@@ -179,7 +179,10 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
     try {
       if (_committed) {
         cleared = await widget.drafts!.removeEdit(_id);
-      } else if (!ready || await widget.drafts!.flush()) {
+      } else {
+        // 下書きへ書けなくても本体は保存する（書ければ最新が store に入る）。
+        // 追加フォームは書けなければ進まない（台帳 L-171 の決定）。
+        if (ready) await widget.drafts!.flush();
         // 更新処理: updatedAt自動更新
         result = await widget.onSave?.call(widget.phrase!.copyWith(
               content: _contentController.text,

@@ -305,20 +305,23 @@ void main() {
     if (entry != 'add') expect(saved.single.id, contains('keep'));
   }, variant: formVariant);
   for (final failure in ['false', 'throw']) {
-    testWidgets('下書きflush $failure ではHive保存を止め再試行で1件保存する', (tester) async {
+    testWidgets('下書きflush $failure では追加は保存を止め、編集は保存し、再試行で1件になる',
+        (tester) async {
+      final add = formVariant.form == 'add';
       await open(tester, banner: true);
       await tester.enterText(find.byType(TextField), '失敗でも保持する本文');
       store.failWrite = failure == 'false';
       store.throwWrite = failure == 'throw';
-      await tester.tap(find.text('保存'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('入力内容を残しています'), findsOneWidget);
+      await submit(tester);
+      // 編集は下書きを書けなくても本体を保存し、再試行は消去だけ（L-171 決定 B）。
+      expect(
+          find.textContaining(add ? '入力内容を残しています' : '保存済みですが'), findsOneWidget);
       expect(find.textContaining('定型文の下書き', skipOffstage: false), findsWidgets);
       expect(
           Hive.box<PresetPhrase>('presetPhrases')
               .values
               .where((p) => p.content.contains('失敗でも')),
-          isEmpty);
+          hasLength(add ? 0 : 1));
       store.failWrite = store.throwWrite = false;
       await submit(tester);
       expect(find.byType(TextField), findsNothing);
@@ -1519,18 +1522,17 @@ void main() {
     await tester.enterText(find.byType(TextField), '消えた定型文の下書き');
     await tester.tap(find.widgetWithText(ChoiceChip, 'その他'));
     await tester.pump(const Duration(milliseconds: 400));
+    // 開き直すと、保存済みと違う下書きだという告知が出る。
+    await restart(tester, form: 'edit:keep');
+    expect(find.textContaining('保存されていない下書き'), findsOneWidget);
     await tester.runAsync(() => container
         .read(presetPhraseNotifierProvider.notifier)
         .deletePhrase('keep'));
-    store.failWrite = true;
-    await submit(tester);
-    expect(find.textContaining('入力内容を残しています'), findsOneWidget);
-    store.failWrite = false;
     await submit(tester);
     // missing を保存済みにも追加にも変えず、保存ボタンの無い閲覧へ移る。
-    // 前の失敗の告知（フォームの入力についての文）は持ち込まない（F-9）。
+    // 前の告知（フォームの入力についての文）は持ち込まない（F-9）。
     expect(find.textContaining('元の定型文が見つかりません'), findsOneWidget);
-    expect(find.textContaining('入力内容を残しています'), findsNothing);
+    expect(find.textContaining('保存されていない下書き'), findsNothing);
     expect(find.text('保存'), findsNothing);
     await restart(tester, form: 'drafts');
     final option = find.textContaining('消えた定型文の下書き');
