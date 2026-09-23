@@ -122,15 +122,17 @@ class PhraseDrafts {
 
   /// 対象entryだけを消す。他のentryはそのまま書き戻す。
   Future<bool> _remove(String key) {
-    _timer?.cancel();
     if (_removing != null) return _removing!;
     if (!_loaded || _disposed) return Future.value(false);
+    // 消すものが無ければ書かない。書くと、下書きを1度も打っていない利用者が
+    // 「キャンセル」しただけで、書込が失敗したとき「下書きを消せませんでした。
+    // 閉じると次回も残ります」＝事実と逆の告知を見る（L-159と同じ誤発報。
+    // 監査 P1-4）。dirty は map 全体の数なので、他のentryの未書込も理由に
+    // しない（Task 2 監査 A-4）。その未書込は自分のtimerとpausedのflushが書く
+    // ので、ここでtimerも止めない。
+    if (!_entries.containsKey(key)) return Future.value(true);
+    _timer?.cancel();
     final next = {..._entries}..remove(key);
-    // 消すものが無く、storeが最後の成功書込と一致しているなら書かない。
-    // 書くと、下書きを1度も打っていない利用者が「キャンセル」しただけで
-    // 「下書きを消せませんでした。閉じると次回も残ります」＝事実と逆の告知を
-    // 見る（残る下書きは存在しない。L-159と同じ誤発報。監査 P1-4）。
-    if (!_entries.containsKey(key) && !_dirty) return Future.value(true);
     // 消すものがあれば、消去は明示操作なので変わっていなくても必ず書く。
     _changes++;
     // paused中のflushもこの操作へ合流し、古いmapをclearの後へ載せない。

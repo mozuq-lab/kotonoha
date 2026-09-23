@@ -176,9 +176,15 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
     final repo = ref.read(presetPhraseRepositoryProvider);
     final drafts = ref.read(phraseDraftProvider);
     setState(() => _openingDrafts = true);
-    final loaded = await drafts.initialize();
-    if (!mounted) return;
-    setState(() => _openingDrafts = false);
+    final bool loaded;
+    try {
+      loaded = await drafts.initialize();
+    } finally {
+      if (mounted) setState(() => _openingDrafts = false);
+    }
+    // 待つ間に別のフォームが開いていたら、その上に重ねない（下書きの消去は
+    // 1 つのモーダルが 1 つの操作を待つ前提。Task 2 Claude Minor 4）。
+    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
     // 読めないことを「下書きが無い」にしない。未読のmapには触れない。
     if (!loaded) return _notify('下書きを読み込めませんでした。もう一度「下書き」を押してください。');
     final picked = await showDialog<PhraseDraft>(

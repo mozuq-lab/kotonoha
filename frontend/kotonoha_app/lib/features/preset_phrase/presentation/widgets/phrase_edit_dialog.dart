@@ -61,9 +61,18 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
   /// 元の定型文が見つからない下書きを閲覧している。保存は出さない。
   bool _orphaned = false;
   PhraseDraft? _orphan;
+
+  /// 孤立下書きの本文をクリップボードへ置いている間。コピーが失敗すれば
+  /// 唯一の写しになるので、この間は破棄させない（Task 2 Codex I-1）。
+  bool _copying = false;
+
+  /// 孤立下書きの告知。結果を出すたびに画面内へ寄せる。
+  final _noticeKey = GlobalKey();
   static const _savedClearFailure = '定型文は保存済みですが、下書きを消せませんでした。閉じると次回も残ります。';
   static const _clearFailure = '下書きを消せませんでした。閉じると次回も残ります。';
   static const _loadFailure = '下書きを読み込めませんでした。入力は保存できますが、下書きは残りません。';
+  static const _staleDraft =
+      '保存されていない下書きを表示しています。「キャンセル」で下書きを消すと、保存済みの内容に戻ります。';
 
   /// 対象ID。新しいIDは作らない（元の定型文と下書きを結ぶのはこのIDだけ）。
   String get _id => widget.phrase?.id ?? widget.draftId!;
@@ -89,6 +98,9 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
         TextEditingController(text: widget.phrase?.content ?? '');
     _selectedCategory =
         widget.phrase?.category ?? PhraseConstants.defaultCategory;
+    // 入口から開いた孤立下書きは、読込を待つ間も孤立の表示にする。編集フォームの
+    // 見出しを一瞬出すと、支援技術が違う見出しを読み上げる。
+    _orphaned = widget.phrase == null;
     _loaded = widget.drafts == null;
     if (!_loaded) _load();
   }
@@ -105,13 +117,17 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
       // 下書きは補助機能。読めなくても編集そのものは止めない（ADR-005）。
       _errorMessage = loaded ? null : _loadFailure;
       if (widget.phrase == null) {
-        // 入口から開いた孤立下書き。間に消えていれば「見つからない」を出す。
-        _orphaned = true;
+        // 入口から開いた孤立下書き。読めない・間に消えたは見出しで告げる
+        // （入力欄が無いので、入力についての文は出さない）。
         _orphan = draft;
+        _errorMessage = null;
       } else if (draft != null) {
         // 復元そのものは変更ではないので書かない。古い本文で戻さない。
         _contentController.text = draft.content;
         _selectedCategory = draft.category;
+        // 保存済みの本文と違う下書きを黙って出さない。読めない間に保存した後や
+        // Web の複数タブの後は、保存済みより古い下書きが出る（台帳 L-181）。
+        if (!_untouched) _errorMessage = _staleDraft;
       }
     });
   }
@@ -191,8 +207,10 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
       } else if (result == PhraseUpdateResult.missing && ready) {
         // 元の定型文が消えた。下書きを残して閲覧へ移る。保存済みにも
         // 追加にも変えない（消えた定型文を元のIDで復活させない）。
+        // フォームの入力についての前の告知は持ち込まない。
         _orphaned = true;
         _orphan = widget.drafts!.readEdit(_id);
+        _errorMessage = null;
       } else {
         _errorMessage = result == PhraseUpdateResult.missing
             ? '元の定型文が見つかりません。入力内容は残っています。'
@@ -227,11 +245,34 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
         _clearFailed = true;
         _errorMessage = _committed ? _savedClearFailure : _clearFailure;
       });
+      _revealNotice();
     }
+  }
+
+  /// 孤立下書きの「下書きを破棄」。元の定型文は削除済みで、これが唯一の写しに
+  /// なりうる。定型文の削除と同じく、取り消せない実行として確かめてから消す。
+  Future<void> _confirmDiscard() async {
+    if (_saving || _copying) return;
+    final discard = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => ConfirmationDialog(
+        title: '下書きの破棄',
+        message: 'この下書きを破棄しますか？元の定型文は削除済みのため、破棄すると戻せません。',
+        cancelLabel: 'キャンセル',
+        confirmLabel: '破棄する',
+        onCancel: () => Navigator.of(dialogContext).pop(false),
+        onConfirm: () => Navigator.of(dialogContext).pop(true),
+      ),
+    );
+    if (!mounted || !(discard ?? false)) return;
+    await _onCancel();
   }
 
   /// 孤立下書きの本文をOSのクリップボードへ置く。成功するまで成功と言わない。
   Future<void> _onCopy() async {
+    if (_saving || _copying) return;
+    setState(() => _copying = true);
     var copied = false;
     try {
       await Clipboard.setData(ClipboardData(text: _orphan!.content));
@@ -240,8 +281,20 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
       reportDraftProgrammingError(e, s);
     }
     if (!mounted) return;
-    setState(
-        () => _errorMessage = copied ? 'コピーしました。' : 'コピーできませんでした。下書きは残っています。');
+    setState(() {
+      _copying = false;
+      _errorMessage = copied ? 'コピーしました。' : 'コピーできませんでした。下書きは残っています。';
+    });
+    _revealNotice();
+  }
+
+  /// 孤立下書きの告知を画面内へ寄せる。どちらも閉じない操作の結果なので、
+  /// 長い本文の末尾にいて告知が見えないと、成否を区別できない（Task 2 Codex
+  /// I-2）。見えていれば動かさない。
+  void _revealNotice() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _noticeKey.currentContext?.findRenderObject()?.showOnScreen();
+    });
   }
 
   /// メソッド: テキスト変更時の処理
@@ -272,42 +325,57 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
   /// 押し込めず、全文を読めるようにする。AlertDialog がスクロールを持つ。
   Widget _buildOrphan() {
     final draft = _orphan;
+    final busy = _saving || _copying;
     return ConfirmationDialogLayout.build(
       title: const Text('定型文の下書き'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(draft == null ? '下書きが見つかりません。' : '元の定型文が見つかりません。下書きは残っています。'),
+          Text(_loading
+              ? '下書きを読み込んでいます。'
+              // 読めないことを「見つからない」にしない。
+              : !_loaded
+                  ? '下書きを読み込めませんでした。閉じてから、もう一度「下書き」を押してください。'
+                  : draft == null
+                      ? '下書きが見つかりません。'
+                      : '元の定型文が見つかりません。下書きは残っています。'),
+          // 告知は本文より前に置き、読み上げにも届ける。
+          if (_errorMessage != null) ...[
+            const SizedBox(height: AppSizes.paddingMedium),
+            Semantics(
+              key: _noticeKey,
+              container: true,
+              liveRegion: true,
+              child: Text(_errorMessage!),
+            ),
+          ],
           if (draft != null) ...[
             const SizedBox(height: AppSizes.paddingMedium),
             Text('カテゴリ: ${PhraseConstants.getCategoryLabel(draft.category)}'),
             const SizedBox(height: AppSizes.paddingSmall),
             Text(draft.content),
           ],
-          if (_errorMessage != null) ...[
-            const SizedBox(height: AppSizes.paddingMedium),
-            Text(_errorMessage!),
-          ],
         ],
       ),
       // 「閉じる」と戻る操作は下書きを残す。消すのは「下書きを破棄」だけで、
-      // 押し間違いではなく意思表示なので訊き返さない（DiscardInputGuard と同じ）。
+      // 確認を挟む（`_confirmDiscard`）。間に「閉じる」を置き、無害な「コピー」の
+      // 押し損じが破棄に当たらないようにする（縦積みでも隣り合わない）。
       actions: [
+        if (draft != null)
+          TextButton(
+            onPressed: busy ? null : _onCopy,
+            child: const Text('コピー'),
+          ),
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
           child: const Text('閉じる'),
         ),
-        if (draft != null) ...[
+        if (draft != null)
           TextButton(
-            onPressed: _saving ? null : _onCopy,
-            child: const Text('コピー'),
-          ),
-          TextButton(
-            onPressed: _saving ? null : _onCancel,
+            onPressed: busy ? null : _confirmDiscard,
             child: const Text('下書きを破棄'),
           ),
-        ],
       ],
     );
   }
