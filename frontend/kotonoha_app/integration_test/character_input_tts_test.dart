@@ -3,6 +3,7 @@
 @Tags(['e2e'])
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/test_helpers.dart';
@@ -99,6 +100,10 @@ void main() {
 
     testWidgets(
       'TC-E2E-082-006: 読み上げ中に停止ボタンで停止できる',
+      // Web では走らせない: ヘッドレス Chrome は音が出せず、読み上げを拒否する
+      // （not-allowed）ので、止める相手が残らない。Web は保証の対象外（NFR-401）。
+      // iOS シミュレータと Android エミュレータで確かめる。
+      skip: kIsWeb,
       (tester) async {
         // テストデータ準備: アプリを初期化
         await pumpApp(tester);

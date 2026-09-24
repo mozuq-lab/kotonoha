@@ -3,6 +3,7 @@
 @Tags(['e2e'])
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/emergency/presentation/screens/emergency_alert_screen.dart';
@@ -67,6 +68,10 @@ void main() {
 
     testWidgets(
       'TC-E2E-084-005: 大ボタン連続タップがデバウンスされる',
+      // Web では走らせない: デバウンスは壁時計で 300ms を見るが、CI のヘッドレス
+      // Chrome（デバッグ版）は遅く、100ms 間隔のタップの間に 300ms を超える。
+      // Web は保証の対象外（NFR-401）。iOS シミュレータと Android エミュレータで確かめる。
+      skip: kIsWeb,
       (tester) async {
         // テストデータ準備: アプリを初期化
         await pumpApp(tester);
