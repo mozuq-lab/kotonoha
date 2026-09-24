@@ -1,6 +1,8 @@
 /// VolumeWarningProvider テスト
 library;
 
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
@@ -144,6 +146,27 @@ void main() {
           isFalse,
         );
       });
+    });
+
+    // 音量の問い合わせを待つ間に破棄されても、破棄済みの状態を書き換えない
+    // （Android の結合テストで、問い合わせが終わる前にテストが終わると
+    // UnmountedRefException が出た。2026-09-25）
+    test('音量の問い合わせを待つ間に破棄されても、例外を出さない', () async {
+      final volume = Completer<double>();
+      when(() => mockVolumeController.getVolume())
+          .thenAnswer((_) => volume.future);
+      final other = ProviderContainer(overrides: [
+        volumeServiceProvider.overrideWithValue(
+          VolumeService(volumeController: mockVolumeController),
+        ),
+      ]);
+      final checking =
+          other.read(volumeWarningProvider.notifier).checkVolumeBeforeSpeak();
+      other.dispose();
+
+      volume.complete(0.5);
+
+      await expectLater(checking, completes);
     });
   });
 }

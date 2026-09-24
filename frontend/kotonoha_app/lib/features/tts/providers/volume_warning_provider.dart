@@ -74,6 +74,8 @@ class VolumeWarningNotifier extends Notifier<VolumeWarningState> {
     try {
       final isZero = await _volumeService.isVolumeZero();
       final volume = await _volumeService.getCurrentVolume();
+      // 待つ間に破棄されたら状態に触らない（破棄済みの Ref は例外を投げる）
+      if (!ref.mounted) return !isZero;
 
       if (isZero) {
         state = state.copyWith(
@@ -90,7 +92,7 @@ class VolumeWarningNotifier extends Notifier<VolumeWarningState> {
       }
     } catch (e) {
       // エラー時は警告を出さず、読み上げを続行（準拠）
-      state = state.copyWith(showWarning: false);
+      if (ref.mounted) state = state.copyWith(showWarning: false);
       return true;
     }
   }
