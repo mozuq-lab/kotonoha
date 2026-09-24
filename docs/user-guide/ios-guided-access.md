@@ -6,8 +6,8 @@
 
 ## 対象デバイス
 
-- iPad（iOS 14.0以上）
-- iPhone（iOS 14.0以上）
+- iPad（iOS 15.0以上）
+- iPhone（iOS 15.0以上）
 
 ## 設定手順
 
