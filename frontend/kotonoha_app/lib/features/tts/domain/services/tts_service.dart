@@ -243,14 +243,18 @@ class TTSService {
       // 状態更新: 読み上げ中状態に遷移
       state = TTSState.speaking;
       errorMessage = null;
+      // 呼び出しが返るのを待たずに画面へ知らせる（「停止」をすぐ出す。
+      // 呼び出しが遅い環境でも、読み上げを頼んだことが画面に届く）
+      onStateChanged?.call();
 
       // 読み上げ開始: OS標準TTSエンジンで読み上げ（1秒以内を目標）。
       // エンジンへの接続が使えないと、プラグインは呼び出しを保留したまま
       // 返さない（flutter_tts 4.2.5 の Android）。上限を置く。
       await tts.speak(text).timeout(speakTimeout);
     } on TimeoutException {
-      // 待つ間に止められた・次の読み上げに替わったなら、その読み上げを失敗にしない
-      if (utterance == _utterance && state == TTSState.speaking) {
+      // 待つ間に止められた・次の読み上げに替わったなら、その読み上げを失敗にしない。
+      // 開始か完了の知らせを聞いていれば、呼び出しが遅いだけで読み上げている。
+      if (!_heard && utterance == _utterance && state == TTSState.speaking) {
         _fail('読み上げを始められませんでした');
       }
       return;

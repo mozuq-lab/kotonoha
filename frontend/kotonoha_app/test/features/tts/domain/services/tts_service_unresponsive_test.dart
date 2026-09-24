@@ -231,4 +231,32 @@ void main() {
 
     expect(notified, before, reason: '破棄した後に知らせた');
   });
+
+  test('読み上げを頼んだ時点で、呼び出しが返るのを待たずに読み上げ中を知らせる', () async {
+    final pending = Completer<dynamic>();
+    when(() => tts.speak(any())).thenAnswer((_) => pending.future);
+    await service.initialize();
+    final before = notified;
+
+    final speaking = service.speak('いいえ');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(service.state, TTSState.speaking);
+    expect(notified, greaterThan(before), reason: '呼び出しが返るまで画面は読み上げ中を知らない');
+    pending.complete(1);
+    await speaking;
+  });
+
+  test('呼び出しが遅く返っても、開始の知らせを聞いていれば失敗と告げない', () async {
+    when(() => tts.speak(any())).thenAnswer((_) async {
+      onStart!();
+      await Future<void>.delayed(speakTimeout * 3);
+      return 1;
+    });
+    await service.initialize();
+
+    await service.speak('長い文');
+
+    expect(service.state, TTSState.speaking, reason: '読み上げているのに失敗と告げた');
+  });
 }

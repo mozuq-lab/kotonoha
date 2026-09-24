@@ -170,6 +170,8 @@ class TTSNotifier extends Notifier<TTSServiceState> {
 
   /// TTSServiceの状態変更時に呼ばれるコールバック
   void _onServiceStateChanged() {
+    // 破棄の後に届いた知らせ（見張り・エンジンの知らせ）では状態に触らない
+    if (!ref.mounted) return;
     _syncStateFromService();
   }
 
@@ -212,6 +214,8 @@ class TTSNotifier extends Notifier<TTSServiceState> {
   /// [text] 読み上げるテキスト
   Future<void> speak(String text) async {
     await _service.speak(text);
+    // 呼び出しを待つ間に破棄されたら状態に触らない（破棄済みの Ref は例外を投げる）
+    if (!ref.mounted) return;
     _syncStateFromService();
   }
 
@@ -219,6 +223,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
   /// 現在の読み上げを即座に停止する。
   Future<void> stop() async {
     await _service.stop();
+    if (!ref.mounted) return;
     _syncStateFromService();
   }
 
