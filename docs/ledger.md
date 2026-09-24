@@ -46,8 +46,6 @@
 - [~] L-198 下書きの書込が失敗しているときの告知の出し分け: 消せなかった下書きが後の書込で保存され「消せません」が消える／開き直した本文は入力に数えないので、その後の書込が失敗しても「消えます」と告げない（打ち直せば数える）／「保存できません…消えます」と「消せません…残ります」が並ぶ／書込失敗のまま missing になると孤立の閲覧が「残っています」と告げるが最新版が store に無いことがある（常設バナーは保存失敗を告げている）／復元のまま保存して書込失敗だと store に同じ内容があっても「消えます」（安全側） — phrase_draft_provider.dart・persistence_banner.dart・phrase_edit_dialog.dart（旧 L-187・L-193・L-194・L-195）
 - [~] L-199 下書きの破損の告知はセッション中閉じられず、文字盤の上に残る（Hive の喪失の告知は「閉じる」で消せる） — persistence_banner.dart、`phraseDraftCorruptKey`（旧 L-189）
 - [~] L-200 Android の `commit()` は失敗しても値をプロセス内に残すので、store に無いとみなして消去済みにした下書きが、別キーの commit の成否の順序次第で次回戻り得る（告知なし。support.md:21「消去できなかったときはその旨をお知らせします」と食い違う向き。失われるものは無い。未確認） — phrase_draft_provider.dart `_stored`（旧 L-196）
-- [~] L-201 Web の複数タブで、下書きの 1 キーの map を古い cache から書き戻して他のタブの下書きが消える。同 ID・同内容を他タブが書くと自分のレコードと判定し得る。公開文と NFR-302 で開示。決定: 単一 map のまま受け入れ、編集の下書きも同じ map に載せる（R1） — phrase_draft_provider.dart `_write`、preset_phrase_screen.dart `ownsId`（旧 L-158）
-- [~] L-202 Web でストレージが無効（getItem が throw）だと設定（フォント）が既定に戻り、未処理例外（pageerror）が出る。#193 より前から — app_session_provider.dart か tutorial_provider.dart（旧 L-183）
 - [~] L-206 追加フォームの読込失敗中に別カテゴリ → 既定へ戻すと、「再読み込み」が下書きのカテゴリで黙って置き換える（触ったかの旗で消えるが状態が 1 つ増える） — phrase_add_dialog.dart `_untouched`（旧 L-179）
 - [~] L-207 元と同じ内容に戻した編集下書きが一覧に残る（「キャンセル」で消える。元を削除すると孤立として残る）。決定: 記録のみ — phrase_edit_dialog.dart（旧 L-180）
 - [~] L-208 編集の下書きは base を持たないので、保存済みより古い下書きが出ることがある（開いた時点で告げ、「キャンセル」で戻る）。決定: 告知のみ。base を持つ案は採らず、実フィードバックで再訪 — phrase_edit_dialog.dart `_load`（旧 L-181）
@@ -56,7 +54,6 @@
 - [~] L-216 定型文由来のお気に入りの重複判定が `sourceId` だけで、同文のお気に入りが 2 件並び得る（お気に入り画面から消せる）。決定: 受け入れ。content でも判定する案は「同じ文の別の定型文」を持てなくするので採らない — favorite_provider.dart（旧 L-99）
 - [~] L-217 フォント設定がサイズを持たないスタイル（ダイアログの見出し等）に効かず、REQ-2007「すべてのテキスト要素」は未達。決定: 根治（アプリ根の textScaler）は今はやらない。移るときはテーマの倍率がけ `_scaled` を同時に外す（残すと二重掛け） — theme_provider.dart（旧 L-111）
 - [~] L-218 公開 FAQ に下書きの 3 つの告知（消せない・読めない・壊れていた）の項が無い。近い「…の一部を読み込めませんでした」の項は退避と「閉じる」を案内するが、下書きの破損の告知は閉じられず退避の写しも無い — docs/user-guide/faq.md（旧 L-188）
-- [~] L-219 Web の複数タブで、別タブの編集の保存（自タブの state だけを見る）が、このタブで削除した定型文を IndexedDB へ書き戻し得る。BASE から。公開文と NFR-302 で開示 — preset_phrase_notifier.dart `updatePhrase`、hive `storage_backend_js.dart`（旧 L-184）
 - [~] L-220 320×690・1000 文字で入力上限の告知の末尾が操作域の下端で切れて見える（未計測、screenshot のみ） — input_limit_notice.dart、home_screen.dart（旧 L-174）
 - [~] L-221 2 ペインの左ペインでフォント大のプレースホルダが 2 行に折り返して 1 行目が切れる。上下ボタンが無く、AI ボタンと offline チップはスクロールで届く（BASE から） — home_screen.dart `_buildCompactLandscapeLayout`（旧 L-175）
 
