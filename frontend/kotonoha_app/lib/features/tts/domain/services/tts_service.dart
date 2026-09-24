@@ -8,6 +8,8 @@
 /// 保守性: flutter_ttsパッケージへの依存を一元管理
 library;
 
+import 'dart:async';
+
 import 'package:flutter_tts/flutter_tts.dart';
 import '../models/tts_speed.dart';
 import '../models/tts_state.dart';
@@ -40,7 +42,18 @@ class TTSService {
   /// テスト環境
   /// final service = TTSService(tts: mockFlutterTts);
   /// ```
-  TTSService({required this.tts, this.onStateChanged});
+  TTSService({
+    required this.tts,
+    this.onStateChanged,
+    this.speakTimeout = const Duration(seconds: 3),
+    this.startTimeout = const Duration(seconds: 6),
+  });
+
+  /// `speak`・`stop` の呼び出しが返るのを待つ上限
+  final Duration speakTimeout;
+
+  /// 読み上げを頼んでから、開始か完了の知らせが来るのを待つ上限
+  final Duration startTimeout;
 
   /// FlutterTtsインスタンス
   /// 役割: OS標準TTSエンジンとの通信を担当
@@ -77,6 +90,24 @@ class TTSService {
   /// 防御的プログラミング: 初期化前のspeak呼び出しを防止
   bool _isInitialized = false;
 
+  /// 読み上げの通し番号。前の読み上げの知らせや見張りを、次の読み上げに効かせない
+  int _utterance = 0;
+
+  /// いまの読み上げについて、エンジンから開始か完了の知らせを聞いたか
+  bool _heard = false;
+
+  /// 開始の知らせの見張り。[startTimeout] を過ぎても何も聞こえなければエラーにする
+  Timer? _startWatch;
+
+  /// エラーにして画面へ知らせる。エンジンが応答しないとき、黙ったまま
+  /// 「読み上げ中」に残さない（守る約束 ④。Android エミュレータで実測、2026-09-24）
+  void _fail(String message) {
+    _startWatch?.cancel();
+    state = TTSState.error;
+    errorMessage = message;
+    onStateChanged?.call();
+  }
+
   /// TTS初期化
   /// flutter_ttsの初期化、言語設定、速度設定を行う。
   /// 処理内容
@@ -107,9 +138,20 @@ class TTSService {
 
       // 完了コールバック登録: 読み上げ完了時に状態をidleに戻す
       tts.setCompletionHandler(() {
+        _heard = true;
+        _startWatch?.cancel();
         state = TTSState.idle;
         onStateChanged?.call();
       });
+
+      // 開始の知らせ: 聞こえたら見張りを止める（長い文でもエラーにしない）
+      tts.setStartHandler(() {
+        _heard = true;
+        _startWatch?.cancel();
+      });
+
+      // エンジンのエラーの知らせ: 受け取らないと、失敗しても黙ったままになる
+      tts.setErrorHandler((dynamic _) => _fail('読み上げに失敗しました'));
 
       // 初期化完了: フラグを設定し、読み上げ可能な状態にする
       _isInitialized = true;
@@ -162,20 +204,43 @@ class TTSService {
     if (state == TTSState.speaking) {
       // 前の読み上げを停止: 新しいテキストの読み上げを開始する前に現在の読み上げを停止
       await stop();
+      // 止められなかった（エンジンが応答しない）なら、頼んでも返らない
+      if (state == TTSState.error) return;
     }
 
+    final utterance = ++_utterance;
+    _heard = false;
+    _startWatch?.cancel();
     try {
       // 状態更新: 読み上げ中状態に遷移
       state = TTSState.speaking;
+      errorMessage = null;
 
-      // 読み上げ開始: OS標準TTSエンジンで読み上げ（1秒以内を目標）
-      await tts.speak(text);
+      // 読み上げ開始: OS標準TTSエンジンで読み上げ（1秒以内を目標）。
+      // エンジンへの接続が使えないと、プラグインは呼び出しを保留したまま
+      // 返さない（flutter_tts 4.2.5 の Android）。上限を置く。
+      await tts.speak(text).timeout(speakTimeout);
+    } on TimeoutException {
+      _fail('読み上げを始められませんでした');
+      return;
     } catch (e) {
       // エラー処理: 対応 - 読み上げエラー時も継続動作
       state = TTSState.error;
       errorMessage = '読み上げに失敗しました';
       // 準拠: エラーでもアプリは継続、テキスト表示は維持
+      return;
     }
+
+    // 呼び出しが返っても、エンジンが実際に読み上げたとは限らない。
+    // 開始か完了の知らせを待ち、来なければエラーにする。
+    if (_heard || utterance != _utterance || state != TTSState.speaking) {
+      return;
+    }
+    _startWatch = Timer(startTimeout, () {
+      if (!_heard && utterance == _utterance && state == TTSState.speaking) {
+        _fail('読み上げを始められませんでした');
+      }
+    });
   }
 
   /// 読み上げを停止
@@ -186,12 +251,15 @@ class TTSService {
   /// 冪等性: 読み上げ中でない状態で呼ばれてもエラーにならない（安全な実装）
   /// パフォーマンス: 準拠 - 即座に停止（100ms以内）
   Future<void> stop() async {
+    _startWatch?.cancel();
     try {
-      // 停止処理: OS標準TTSエンジンに停止命令を送信
-      await tts.stop();
+      // 停止処理: OS標準TTSエンジンに停止命令を送信。返らなければエラーにする
+      await tts.stop().timeout(speakTimeout);
 
       // 状態更新: 停止状態に遷移
       state = TTSState.stopped;
+    } on TimeoutException {
+      _fail('読み上げを止められませんでした');
     } catch (e) {
       // エラー処理: 準拠 - エラー時も基本機能は継続動作
       // 停止エラーが発生しても、アプリはクラッシュしない
@@ -243,6 +311,7 @@ class TTSService {
   /// 呼び出しタイミング: アプリ終了時、サービス破棄時
   /// メモリリーク防止: disposeを適切に呼ぶことでメモリリークを防止
   Future<void> dispose() async {
+    _startWatch?.cancel();
     // リソース解放: 読み上げを停止してリソースを解放
     await tts.stop();
   }
