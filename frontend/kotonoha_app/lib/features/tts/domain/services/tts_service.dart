@@ -99,10 +99,14 @@ class TTSService {
   /// 開始の知らせの見張り。[startTimeout] を過ぎても何も聞こえなければエラーにする
   Timer? _startWatch;
 
+  /// 破棄した後は、見張りを作らず、画面へも知らせない
+  bool _disposed = false;
+
   /// エラーにして画面へ知らせる。エンジンが応答しないとき、黙ったまま
   /// 「読み上げ中」に残さない（守る約束 ④。Android エミュレータで実測、2026-09-24）
   void _fail(String message) {
     _startWatch?.cancel();
+    if (_disposed) return;
     state = TTSState.error;
     errorMessage = message;
     onStateChanged?.call();
@@ -145,13 +149,30 @@ class TTSService {
       });
 
       // 開始の知らせ: 聞こえたら見張りを止める（長い文でもエラーにしない）
+      // 待ち時間切れの後で、保留されていた読み上げが実際に始まることがある。
+      // そのときは失敗を取り消して読み上げ中に戻す（読み上げているのに
+      // 失敗と告げ続けない）。
       tts.setStartHandler(() {
         _heard = true;
         _startWatch?.cancel();
+        if (_disposed || state == TTSState.speaking) return;
+        state = TTSState.speaking;
+        errorMessage = null;
+        onStateChanged?.call();
       });
 
-      // エンジンのエラーの知らせ: 受け取らないと、失敗しても黙ったままになる
-      tts.setErrorHandler((dynamic _) => _fail('読み上げに失敗しました'));
+      // エンジンのエラーの知らせ: 受け取らないと、失敗しても黙ったままになる。
+      // ただし止めた・次に割り込まれた読み上げの知らせ（Web の interrupted・
+      // canceled）と、読み上げ中でないときの知らせは失敗として扱わない。
+      tts.setErrorHandler((dynamic message) {
+        final text = '$message';
+        if (state != TTSState.speaking ||
+            text.contains('interrupted') ||
+            text.contains('canceled')) {
+          return;
+        }
+        _fail('読み上げに失敗しました');
+      });
 
       // 初期化完了: フラグを設定し、読み上げ可能な状態にする
       _isInitialized = true;
@@ -193,7 +214,14 @@ class TTSService {
 
     // 自動初期化: 未初期化の場合は自動的に初期化を実行
     if (!_isInitialized) {
-      final success = await initialize();
+      // 起動時からエンジンが応答しないと、初期化の呼び出しが返らない。
+      // 読み上げを頼んだときだけ上限を置く（初期化そのものに置くと、
+      // 読み上げを頼まない画面でもタイマーが走る）。
+      final success = await initialize().timeout(speakTimeout, onTimeout: () {
+        state = TTSState.error;
+        errorMessage = '読み上げを始められませんでした';
+        return false;
+      });
       if (!success) {
         // 初期化失敗時はエラー状態のまま終了
         return;
@@ -221,7 +249,10 @@ class TTSService {
       // 返さない（flutter_tts 4.2.5 の Android）。上限を置く。
       await tts.speak(text).timeout(speakTimeout);
     } on TimeoutException {
-      _fail('読み上げを始められませんでした');
+      // 待つ間に止められた・次の読み上げに替わったなら、その読み上げを失敗にしない
+      if (utterance == _utterance && state == TTSState.speaking) {
+        _fail('読み上げを始められませんでした');
+      }
       return;
     } catch (e) {
       // エラー処理: 対応 - 読み上げエラー時も継続動作
@@ -233,7 +264,10 @@ class TTSService {
 
     // 呼び出しが返っても、エンジンが実際に読み上げたとは限らない。
     // 開始か完了の知らせを待ち、来なければエラーにする。
-    if (_heard || utterance != _utterance || state != TTSState.speaking) {
+    if (_disposed ||
+        _heard ||
+        utterance != _utterance ||
+        state != TTSState.speaking) {
       return;
     }
     _startWatch = Timer(startTimeout, () {
@@ -251,6 +285,7 @@ class TTSService {
   /// 冪等性: 読み上げ中でない状態で呼ばれてもエラーにならない（安全な実装）
   /// パフォーマンス: 準拠 - 即座に停止（100ms以内）
   Future<void> stop() async {
+    _utterance++;
     _startWatch?.cancel();
     try {
       // 停止処理: OS標準TTSエンジンに停止命令を送信。返らなければエラーにする
@@ -311,6 +346,7 @@ class TTSService {
   /// 呼び出しタイミング: アプリ終了時、サービス破棄時
   /// メモリリーク防止: disposeを適切に呼ぶことでメモリリークを防止
   Future<void> dispose() async {
+    _disposed = true;
     _startWatch?.cancel();
     // リソース解放: 読み上げを停止してリソースを解放
     await tts.stop();
