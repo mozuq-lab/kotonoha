@@ -103,6 +103,8 @@ class HistoryNotifier extends Notifier<HistoryState> {
     if (repo != null) {
       // 永続化: 保存後、Hiveから再読込（50件上限の自動削除を反映）
       await repo.save(_toItem(newHistory));
+      // 保存を待つ間に破棄されたら状態に触らない（保存そのものは済んでいる）
+      if (!ref.mounted) return;
       state = state.copyWith(
         histories: repo.loadAllSortedSync().map(_toDomain).toList(),
       );

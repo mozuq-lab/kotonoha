@@ -45,6 +45,7 @@ import 'package:kotonoha_app/features/help/providers/tutorial_provider.dart';
 import 'package:kotonoha_app/features/network/presentation/widgets/offline_banner.dart';
 import 'package:kotonoha_app/features/network/presentation/widgets/online_recovery_notification.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
+import 'package:kotonoha_app/features/tts/presentation/widgets/tts_failure_banner.dart';
 import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
 
 /// AppShellで使用する定数
@@ -175,6 +176,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       child: Column(
         children: [
           const PersistenceBanner(),
+          const TtsFailureBanner(),
           const OfflineBanner(),
           Expanded(child: widget.child),
         ],

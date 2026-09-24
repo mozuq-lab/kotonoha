@@ -39,6 +39,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue('');
     registerFallbackValue(0.0);
+    registerFallbackValue(() {});
   });
 
   setUp(() {
@@ -47,7 +48,7 @@ void main() {
     mockFlutterTts = MockFlutterTts();
     when(() => mockFlutterTts.setLanguage(any())).thenAnswer((_) async => 1);
     when(() => mockFlutterTts.setSpeechRate(any())).thenAnswer((_) async => 1);
-    when(() => mockFlutterTts.speak(any())).thenAnswer((_) async => 1);
+    stubSpeakThatStarts(mockFlutterTts);
     when(() => mockFlutterTts.stop()).thenAnswer((_) async => 1);
     when(() => mockFlutterTts.setCompletionHandler(any())).thenReturn(null);
 

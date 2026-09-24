@@ -3,6 +3,7 @@
 @Tags(['e2e'])
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/emergency/presentation/screens/emergency_alert_screen.dart';
@@ -39,10 +40,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 「はい」ボタンをタップ
-        await tapButton(tester, 'はい');
-
-        // 結果検証: TTS読み上げが開始される（停止ボタン表示で確認）
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('はい'));
       },
     );
 
@@ -53,10 +51,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 「いいえ」ボタンをタップ
-        await tapButton(tester, 'いいえ');
-
-        // 結果検証: TTS読み上げが開始される
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('いいえ'));
       },
     );
 
@@ -67,15 +62,16 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 「わからない」ボタンをタップ
-        await tapButton(tester, 'わからない');
-
-        // 結果検証: TTS読み上げが開始される
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('わからない'));
       },
     );
 
     testWidgets(
       'TC-E2E-084-005: 大ボタン連続タップがデバウンスされる',
+      // Web では走らせない: デバウンスは壁時計で 300ms を見るが、CI のヘッドレス
+      // Chrome（デバッグ版）は遅く、100ms 間隔のタップの間に 300ms を超える。
+      // Web は保証の対象外（NFR-401）。iOS シミュレータと Android エミュレータで確かめる。
+      skip: kIsWeb,
       (tester) async {
         // テストデータ準備: アプリを初期化
         await pumpApp(tester);
@@ -90,9 +86,11 @@ void main() {
         await tester.tap(yesButton);
         await tester.pumpAndSettle();
 
-        // 結果検証: アプリがクラッシュせず正常動作していること
-        // デバウンス機能により、2回目のタップは無視される
-        expect(find.text('停止'), findsOneWidget);
+        // 結果検証: デバウンス機能により、2回目のタップは無視される。
+        // 受け付けた押下は 1 回ごとに履歴へ残るので、履歴の件数で確かめる
+        // （「停止」ボタンは読み上げが終わると消えるので、無視されたかの証拠にならない）
+        await navigateTo(tester, '履歴');
+        expect(find.text('はい'), findsOneWidget, reason: '2回目のタップが無視されていない');
       },
     );
   });
@@ -107,21 +105,21 @@ void main() {
 
         // 結果検証: 必須の状態ボタンが表示される
         // 検証項目: 「痛い」ボタンの存在確認
-        expect(find.text('痛い'), findsOneWidget);
+        await revealStatusButton(tester, '痛い');
         // 検証項目: 「トイレ」ボタンの存在確認
-        expect(find.text('トイレ'), findsOneWidget);
+        await revealStatusButton(tester, 'トイレ');
         // 検証項目: 「暑い」ボタンの存在確認
-        expect(find.text('暑い'), findsOneWidget);
+        await revealStatusButton(tester, '暑い');
         // 検証項目: 「寒い」ボタンの存在確認
-        expect(find.text('寒い'), findsOneWidget);
+        await revealStatusButton(tester, '寒い');
         // 検証項目: 「水」ボタンの存在確認
-        expect(find.text('水'), findsOneWidget);
+        await revealStatusButton(tester, '水');
         // 検証項目: 「眠い」ボタンの存在確認
-        expect(find.text('眠い'), findsOneWidget);
+        await revealStatusButton(tester, '眠い');
         // 検証項目: 「助けて」ボタンの存在確認
-        expect(find.text('助けて'), findsOneWidget);
+        await revealStatusButton(tester, '助けて');
         // 検証項目: 「待って」ボタンの存在確認
-        expect(find.text('待って'), findsOneWidget);
+        await revealStatusButton(tester, '待って');
       },
     );
 
@@ -132,10 +130,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 「痛い」ボタンをタップ
-        await tapButton(tester, '痛い');
-
-        // 結果検証: TTS読み上げが開始される
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('痛い'));
       },
     );
 
@@ -146,10 +141,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 「トイレ」ボタンをタップ
-        await tapButton(tester, 'トイレ');
-
-        // 結果検証: TTS読み上げが開始される
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('トイレ'));
       },
     );
 
@@ -173,14 +165,11 @@ void main() {
 
         for (final buttonLabel in requiredButtons) {
           // ボタンをタップ
-          await tapButton(tester, buttonLabel);
+          await revealStatusButton(tester, buttonLabel);
+          await tapAndExpectSpeech(tester, find.text(buttonLabel));
 
-          // 結果検証: TTS読み上げが開始される
-          expect(find.text('停止'), findsOneWidget,
-              reason: '$buttonLabel ボタンで読み上げが開始されること');
-
-          // 読み上げを停止して次のテストに備える
-          await tapButton(tester, '停止');
+          // 読み上げを停止して次のテストに備える（短い語は既に終わっていることがある）
+          await stopSpeechIfSpeaking(tester);
         }
       },
     );
@@ -263,12 +252,15 @@ void main() {
         // ボタン型に依存しない: 実装は ElevatedButton だが、テストは
         // TextButton を前提にしていて 0 件になっていた（Issue #84）。
         // AlertDialog の子孫に限定して引く。
-        await tapDialogButton(tester, 'はい');
+        await confirmEmergency(tester);
 
         // 結果検証: 緊急画面が表示される
         expect(find.text('緊急呼び出し中'), findsOneWidget);
         // 結果検証: リセットボタンが表示される
         expect(find.text('リセット'), findsOneWidget);
+
+        // 後片付け: 緊急音を止める（鳴らしたままだと次のテストに残る）
+        await resetEmergency(tester);
       },
     );
 
@@ -280,13 +272,13 @@ void main() {
 
         // 前提条件設定: 緊急状態にする
         await tapIconButton(tester, Icons.notifications_active);
-        await tapDialogButton(tester, 'はい');
+        await confirmEmergency(tester);
 
         // 前提条件確認: 緊急画面が表示されている
         expect(find.text('緊急呼び出し中'), findsOneWidget);
 
         // 実際の処理実行: リセットボタンをタップ
-        await tapButton(tester, 'リセット');
+        await resetEmergency(tester);
 
         // 結果検証: 緊急画面が消える
         expect(find.text('緊急呼び出し中'), findsNothing);
@@ -305,13 +297,10 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 「はい」ボタンをタップ
-        await tapButton(tester, 'はい');
-
-        // 結果検証: アプリがクラッシュせず正常動作
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('はい'));
 
         // 結果検証: ホーム画面が引き続き表示されること
-        await tapButton(tester, '停止');
+        await stopSpeechIfSpeaking(tester);
         expect(find.text('kotonoha'), findsOneWidget);
       },
     );
@@ -379,9 +368,7 @@ void main() {
           '大ボタン読み上げ開始',
           maxMilliseconds: 1000,
           action: () async {
-            await tapButton(tester, 'はい');
-            // 停止ボタン表示でTTS開始を確認
-            await waitForWidget(tester, find.text('停止'));
+            await tapAndExpectSpeech(tester, find.text('はい'));
           },
         );
       },
@@ -398,9 +385,7 @@ void main() {
           '状態ボタン読み上げ開始',
           maxMilliseconds: 1000,
           action: () async {
-            await tapButton(tester, '痛い');
-            // 停止ボタン表示でTTS開始を確認
-            await waitForWidget(tester, find.text('停止'));
+            await tapAndExpectSpeech(tester, find.text('痛い'));
           },
         );
       },
@@ -416,13 +401,10 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 「はい」ボタンをタップして読み上げ
-        await tapButton(tester, 'はい');
-
-        // 結果検証: TTS読み上げが開始される
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('はい'));
 
         // 実際の処理実行: 停止して履歴画面に遷移
-        await tapButton(tester, '停止');
+        await stopSpeechIfSpeaking(tester);
         await navigateTo(tester, '履歴');
 
         // 結果検証: 履歴に「はい」が保存されている
@@ -444,14 +426,14 @@ void main() {
             findsOneWidget);
 
         // ステップ2: 「はい」をタップ
-        await tapDialogButton(tester, 'はい');
+        await confirmEmergency(tester);
 
         // 結果検証: 緊急画面が表示される
         expect(find.text('緊急呼び出し中'), findsOneWidget);
         expect(find.text('リセット'), findsOneWidget);
 
         // ステップ3: リセットボタンをタップ
-        await tapButton(tester, 'リセット');
+        await resetEmergency(tester);
 
         // 結果検証: 通常画面に戻る
         expect(find.text('緊急呼び出し中'), findsNothing);

@@ -3,6 +3,7 @@
 @Tags(['e2e'])
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/test_helpers.dart';
@@ -36,10 +37,7 @@ void main() {
         await typeOnCharacterBoard(tester, 'こんにちは');
 
         // 実際の処理実行: 読み上げボタンをタップ
-        await tapButton(tester, '読み上げ');
-
-        // 結果検証: TTS読み上げが開始される（ボタンが停止ボタンに変化）
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('読み上げ'));
       },
     );
 
@@ -102,6 +100,10 @@ void main() {
 
     testWidgets(
       'TC-E2E-082-006: 読み上げ中に停止ボタンで停止できる',
+      // Web では走らせない: ヘッドレス Chrome は音が出せず、読み上げを拒否する
+      // （not-allowed）ので、止める相手が残らない。Web は保証の対象外（NFR-401）。
+      // iOS シミュレータと Android エミュレータで確かめる。
+      skip: kIsWeb,
       (tester) async {
         // テストデータ準備: アプリを初期化
         await pumpApp(tester);
@@ -114,10 +116,7 @@ void main() {
         await typeOnCharacterBoard(tester, 'こんにちはさようなら');
 
         // 実際の処理実行: 読み上げボタンをタップ
-        await tapButton(tester, '読み上げ');
-
-        // 結果検証: 停止ボタンが表示されること
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('読み上げ'));
 
         // 実際の処理実行: 停止ボタンをタップ
         await tapButton(tester, '停止');
@@ -188,10 +187,7 @@ void main() {
         expect(find.text('あ'), findsWidgets);
 
         // 実際の処理実行: 読み上げボタンをタップ
-        await tapButton(tester, '読み上げ');
-
-        // 結果検証: TTS読み上げが開始される（停止ボタン表示）
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('読み上げ'));
       },
     );
 
@@ -206,10 +202,7 @@ void main() {
         // （E2Eテストでは現実的でないためスキップ）
 
         // 実際の処理実行: 読み上げボタンをタップ
-        await tapButton(tester, '読み上げ');
-
-        // 結果検証: TTS読み上げが開始される
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('読み上げ'));
       },
     );
 
@@ -293,9 +286,7 @@ void main() {
           'TTS読み上げ開始',
           maxMilliseconds: 1000,
           action: () async {
-            await tapButton(tester, '読み上げ');
-            // 停止ボタン表示でTTS開始を確認
-            await waitForWidget(tester, find.text('停止'));
+            await tapAndExpectSpeech(tester, find.text('読み上げ'));
           },
         );
       },
@@ -348,13 +339,10 @@ void main() {
         await typeOnCharacterBoard(tester, 'こんにちは');
 
         // 実際の処理実行: 読み上げボタンをタップ
-        await tapButton(tester, '読み上げ');
-
-        // 結果検証: TTS読み上げが開始される
-        expect(find.text('停止'), findsOneWidget);
+        await tapAndExpectSpeech(tester, find.text('読み上げ'));
 
         // 実際の処理実行: 停止して履歴画面に遷移
-        await tapButton(tester, '停止');
+        await stopSpeechIfSpeaking(tester);
         await navigateTo(tester, '履歴');
 
         // 結果検証: 履歴に「こんにちは」が保存されていること
@@ -375,9 +363,8 @@ void main() {
           await typeOnCharacterBoard(tester, text);
 
           // サイクル: 読み上げ
-          await tapButton(tester, '読み上げ');
-          await waitForWidget(tester, find.text('停止'));
-          await tapButton(tester, '停止');
+          await tapAndExpectSpeech(tester, find.text('読み上げ'));
+          await stopSpeechIfSpeaking(tester);
 
           // サイクル: 全消去
           await tapIconButton(tester, Icons.delete_outline);
