@@ -4,7 +4,7 @@
 # kotonoha Web Build Script
 #
 # This script builds Flutter Web application with various configurations.
-# Supports multiple build modes and deployment targets.
+# Web is for development and checking only; it is not deployed (NFR-401).
 #
 # Usage:
 #   ./scripts/build-web.sh [command] [options]
@@ -305,14 +305,7 @@ Examples:
   ./scripts/build-web.sh release --wasm
   ./scripts/build-web.sh serve --port 3000
 
-Deployment:
-  For Vercel:
-    1. Build: ./scripts/build-web.sh release
-    2. Deploy: vercel --prod (from frontend/kotonoha_app directory)
-
-  For Netlify:
-    1. Build: ./scripts/build-web.sh release
-    2. Deploy: netlify deploy --prod --dir=build/web
+Web は開発・確認用で、配信はしない（NFR-401）。
 
 EOF
 }

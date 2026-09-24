@@ -27,45 +27,6 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
-  build-web:
-    name: Build Web Release
-    runs-on: ubuntu-latest
-    needs: validate-tag
-
-    defaults:
-      run:
-        working-directory: frontend/kotonoha_app
-
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build Web (Release)
-        run: >
-          flutter build web --release
-          --dart-define=API_BASE_URL="${API_BASE_URL}"
-
-      - name: Create Web archive
-        run: |
-          cd build/web
-          zip -r ../../kotonoha-web-${{ needs.validate-tag.outputs.version }}.zip .
-
-      - name: Upload Web build
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: web-release
-          path: frontend/kotonoha_app/kotonoha-web-${{ needs.validate-tag.outputs.version }}.zip
-          retention-days: 90
-
   build-android:
     name: Build Android Release
     runs-on: ubuntu-latest
@@ -220,7 +181,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [validate-tag, build-web, build-android, build-ios]
+    needs: [validate-tag, build-android, build-ios]
 
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -238,81 +199,8 @@ jobs:
           prerelease: ${{ contains(needs.validate-tag.outputs.version, 'beta') || contains(needs.validate-tag.outputs.version, 'alpha') }}
           generate_release_notes: true
           files: |
-            release-artifacts/web-release/*.zip
             release-artifacts/android-apk-release/*.apk
             release-artifacts/android-aab-release/*.aab
             release-artifacts/ios-release/*.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy-web:
-    name: Deploy Web to Production
-    runs-on: ubuntu-latest
-    needs: [validate-tag, build-web]
-    environment:
-      name: production
-      url: ${{ steps.deploy.outputs.preview-url }}
-
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-
-      - name: Download Web artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
-        with:
-          name: web-release
-          path: ./
-
-      - name: Extract Web build
-        run: |
-          unzip kotonoha-web-${{ needs.validate-tag.outputs.version }}.zip -d web-build
-
-      - name: Add Vercel config to build output
-        run: |
-          set -euo pipefail
-          # vercel.json はリポジトリ側にあり、成果物(build/web)には含まれないため、
-          # デプロイ対象ディレクトリへコピーする。これが無いと SPA rewrites と
-          # セキュリティヘッダーが本番で失われる。
-          # デプロイ対象は build/web の中身そのものなので outputDirectory は "." に上書きする。
-          python3 - <<'EOF'
-          import json
-          cfg = json.load(open('frontend/kotonoha_app/vercel.json'))
-          cfg['outputDirectory'] = '.'
-          json.dump(cfg, open('./web-build/vercel.json', 'w'), indent=2, ensure_ascii=False)
-          EOF
-          test -f ./web-build/vercel.json
-
-      - name: Check Vercel secrets
-        id: vercel_check
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          set -euo pipefail
-          # secrets コンテキストは job-level `if:` で参照できないため、
-          # env 経由でステップ出力に落として後続ステップを条件分岐させる。
-          if [ -n "$VERCEL_TOKEN" ] && [ -n "$VERCEL_ORG_ID" ] && [ -n "$VERCEL_PROJECT_ID" ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::Vercel secrets が未設定のためデプロイをスキップします（VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID）"
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # secrets 設定済みのときのみ実行し、その場合の失敗はジョブ失敗として扱う
-      # （continue-on-error は付けない）。握り潰すと vercel.json のコピー漏れ等に
-      # 気付けないため。未設定環境では上の Check ステップでスキップされる。
-      - name: Deploy to Vercel
-        id: deploy
-        if: steps.vercel_check.outputs.configured == 'true'
-        uses: amondnet/vercel-action@16e87c0a08142b0d0d33b76aeaf20823c381b9b9 # v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./web-build
-          vercel-args: '--prod'
-
-      - name: Deployment status
-        if: steps.vercel_check.outputs.configured == 'true'
-        run: |
-          echo "✅ Deployed to: ${{ steps.deploy.outputs.preview-url }}"
