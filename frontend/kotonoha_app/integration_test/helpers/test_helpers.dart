@@ -475,6 +475,9 @@ Future<void> tapAndExpectSpeech(WidgetTester tester, Finder target) async {
       ttsProvider, (_, next) => seen.add(next.state));
   try {
     await tester.tap(target);
+    // 読み上げ中はタップの中で同期的に知らされるので、描き直さないまま
+    // ループを抜けることがある。少なくとも 1 回描き直す。
+    await tester.pump();
     for (var i = 0; i < 60 && !seen.contains(TTSState.speaking); i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
