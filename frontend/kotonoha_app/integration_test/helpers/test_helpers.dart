@@ -10,10 +10,14 @@ import 'package:integration_test/integration_test.dart';
 import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
+import 'package:kotonoha_app/features/status_buttons/presentation/widgets/status_button.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_list_item.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
+import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
+import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 export 'package:flutter/material.dart' show Icons;
@@ -209,15 +213,54 @@ Future<void> waitForWidget(
 /// 文字盤で文字を入力
 /// [tester]: WidgetTester
 /// [character]: 入力する文字
+/// 電話の画面では文字盤の一部の行しか描画されない（GridView.builder）ので、
+/// 利用者と同じく文字盤をなぞって目的の文字を出してから押す。
+/// 文字はキーの `ValueKey` で引く（入力欄に同じ文字が出ていても取り違えない）。
 Future<void> tapCharacterOnBoard(
   WidgetTester tester,
   String character,
 ) async {
-  final finder = find.text(character);
+  final finder = find.byKey(ValueKey('character_button_$character'));
+  final grid = find.descendant(
+    of: find.byType(CharacterBoardWidget),
+    matching: find.byType(GridView),
+  );
+  for (final dy in [-150.0, 150.0]) {
+    for (var i = 0; i < 12 && finder.evaluate().isEmpty; i++) {
+      await tester.dragFrom(tester.getRect(grid).center, Offset(0, dy));
+      await tester.pumpAndSettle();
+    }
+  }
   expect(finder, findsOneWidget,
       reason: 'Character "$character" not found on board');
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
   await tester.tap(finder);
   await tester.pump();
+}
+
+/// ホームの状態ボタンの列（横スクロールの 1 行）で、[label] のボタンを画面に出す
+/// 電話の画面では「眠い」以降が描画されていない。
+Future<void> revealStatusButton(WidgetTester tester, String label) async {
+  final target = find.descendant(
+    of: find.byType(StatusButton),
+    matching: find.text(label),
+  );
+  Finder strip() => find
+      .ancestor(
+        of: find.byType(StatusButton).first,
+        matching: find.byType(Scrollable),
+      )
+      .first;
+  for (final dx in [-150.0, 150.0]) {
+    for (var i = 0; i < 10 && target.evaluate().isEmpty; i++) {
+      await tester.dragFrom(tester.getRect(strip()).center, Offset(dx, 0));
+      await tester.pumpAndSettle();
+    }
+  }
+  expect(target, findsOneWidget, reason: '状態ボタン「$label」に届かない');
+  await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
 }
 
 /// 複数の文字を順番に入力
@@ -412,4 +455,62 @@ Future<void> takeScreenshot(
   String name,
 ) async {
   await binding.takeScreenshot(name);
+}
+
+/// 読み上げを始める操作（[target] のタップ）をして、読み上げ中を通ったことを確かめる
+/// 読み上げ中を見届けたらすぐ返す（画面の動きが止まるのを待たない）ので、
+/// 返った直後は「停止」ボタンがまだ出ている。
+/// なぜ「停止」を `pumpAndSettle` の後に探さないか: 実機では `pumpAndSettle` が
+/// 読み上げの終わりまで待ってしまい、「停止」はもう消えている。逆に音の出ない
+/// ヘッドレス Chrome では、以前は「読み上げ中」のまま固まっていたので「停止」が
+/// 出続け、読み上げていないのに通っていた（偽の緑。読み上げが応答しないときに
+/// エラーにするようにしたので、今は消える）。押す前から状態の移り変わりを記録し、
+/// speaking を通ったかを見る。
+Future<void> tapAndExpectSpeech(WidgetTester tester, Finder target) async {
+  expect(target, findsOneWidget, reason: '読み上げを始める操作の対象が見つからない');
+  final container =
+      ProviderScope.containerOf(tester.element(find.byType(KotonohaApp)));
+  final seen = <TTSState>[];
+  final sub = container.listen<TTSServiceState>(
+      ttsProvider, (_, next) => seen.add(next.state));
+  try {
+    await tester.tap(target);
+    for (var i = 0; i < 60 && !seen.contains(TTSState.speaking); i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  } finally {
+    sub.close();
+  }
+  expect(seen, contains(TTSState.speaking),
+      reason: '読み上げが始まらない（状態の移り変わり: $seen）');
+}
+
+/// 緊急の確認ダイアログで「はい」を押し、緊急画面が出るまで待つ
+/// なぜ `pumpAndSettle` で待たないか: 緊急音が鳴っている間、Android では
+/// 描画の予約が止まらず（3 秒間で 30/30 回。無音にすると 0 回）、`pumpAndSettle`
+/// が終わらない。緊急画面そのものは出ている。時間を区切って待つ。
+Future<void> confirmEmergency(WidgetTester tester) async {
+  final yes = find.descendant(
+    of: find.byType(AlertDialog),
+    matching: find.text('はい'),
+  );
+  expect(yes, findsOneWidget, reason: '緊急の確認ダイアログが出ていない');
+  await tester.tap(yes);
+  await tester.pump(const Duration(seconds: 2));
+}
+
+/// 緊急画面の「リセット」を押し、通常の画面に戻るまで待つ
+Future<void> resetEmergency(WidgetTester tester) async {
+  await tester.tap(find.text('リセット'));
+  await tester.pump(const Duration(seconds: 2));
+  await tester.pumpAndSettle();
+}
+
+/// まだ読み上げ中なら「停止」で止める（短い文は既に終わっていることがある）
+/// 止める操作そのものを確かめるテストでは使わず、`tapButton(tester, '停止')` を使う。
+Future<void> stopSpeechIfSpeaking(WidgetTester tester) async {
+  if (find.text('停止').evaluate().isNotEmpty) {
+    await tester.tap(find.text('停止'));
+  }
+  await tester.pumpAndSettle();
 }
