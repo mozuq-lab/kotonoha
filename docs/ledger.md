@@ -32,7 +32,7 @@
 - [ ] L-152 main の classic protection は 404、適用ルールは `[]`。active ruleset 10494480 も `include=[]` で、required contexts `Python CI` / `Flutter CI` は workflow の job 名と一致しないため、CI 成功を main 更新の必須条件にできているとは確認できない。実 push の拒否は未検証 — `gh api repos/mozuq-lab/kotonoha/{branches/main/protection,rules/branches/main,rulesets/10494480}`（2026-09-21T05:25:32Z live API 再確認）、.github/workflows/{python,flutter}.yml
 - [ ] L-173 OfflineBanner の Semantics label（「基本機能…」）が Web の semantics tree に出ない（全条件0件）。読み上げ利用者に offline が伝わらない可能性 — offline_banner.dart、fix/home-overflow QA F-2（2026-09-22）。決定（2026-09-23、仕分け）: iOS/Android の実機 QA（L-25）で読み上げに出るかを見て、出なければ直し、出れば閉じる
 - [ ] L-178 常設バナー（persistence_banner.dart）の文言が Web の DOM/semantics ツリーに一切出ない（debug/release とも。同じ検出器はダイアログ告知と `aria-label="日常"` を拾う）。`Semantics(label:)` を根 1 ノードに置いているが Web の semantics には現れず、読み上げ利用者に保存失敗が伝わらない可能性。L-173（OfflineBanner）と同型 — persistence_banner.dart:156-157、fix/phrase-draft-small-fixes QA Q-4（2026-09-23）。決定（2026-09-23、仕分け）: iOS/Android の実機 QA（L-25）で読み上げに出るかを見て、出なければ直し、出れば閉じる
-- [ ] L-197 定型文の保存と下書きの消去の待機には上限が無い。SharedPreferences や Hive の書込が返らないと、ダイアログは凍結したまま緊急ボタンの上に残り、閉じる・戻るも止まる（コピーには 5 秒の上限がある）。BASE から — phrase_add_dialog.dart・phrase_edit_dialog.dart の `_saving`（Task 2b 最終レビュー、監査 1 の未確認事項）。決定（2026-09-23、仕分け）: 直す（AGENTS.md の最悪の結果に当たる。上限の値と、上限の後に遅れて成功した保存の扱いは実装時に決める）
+- [ ] L-197 定型文の保存の待機には上限が無い。Hive の書込が返らないと、ダイアログは凍結したまま緊急ボタンの上に残り、閉じる・戻るも止まる。BASE から — phrase_add_dialog.dart・phrase_edit_dialog.dart の `_saving`（Task 2b 最終レビュー、監査 1 の未確認事項）。決定（2026-09-23、仕分け）: 直す（AGENTS.md の守る約束 ①「緊急が確実に届く」を破り得る。上限の値と、上限の後に遅れて成功した保存の扱いは実装時に決める）
 
 ## 判断待ち
 - [ ] L-58 の残り: backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復） — ADR-002。通常 CI の Web 成果物には鍵を焼かない（#121 で外した。release は L-149）。決定（2026-09-20 第 2 回、決定シート）: ストア提出後に回す（A）。ADR-007 が「初回は AI 変換抜き可、リリースは backend に依存しない」と決めている。L-55（応答時間の実測）も同日に
@@ -43,17 +43,9 @@
 
 ## 受け入れた限界（直さないと決めた、利用者に見える限界）
 利用者の声が届くか、守る約束を破る経路が見つかったら `[ ]` に戻す。
-- [~] L-198 下書きの書込が失敗しているときの告知の出し分け: 消せなかった下書きが後の書込で保存され「消せません」が消える／開き直した本文は入力に数えないので、その後の書込が失敗しても「消えます」と告げない（打ち直せば数える）／「保存できません…消えます」と「消せません…残ります」が並ぶ／書込失敗のまま missing になると孤立の閲覧が「残っています」と告げるが最新版が store に無いことがある（常設バナーは保存失敗を告げている）／復元のまま保存して書込失敗だと store に同じ内容があっても「消えます」（安全側） — phrase_draft_provider.dart・persistence_banner.dart・phrase_edit_dialog.dart（旧 L-187・L-193・L-194・L-195）
-- [~] L-199 下書きの破損の告知はセッション中閉じられず、文字盤の上に残る（Hive の喪失の告知は「閉じる」で消せる） — persistence_banner.dart、`phraseDraftCorruptKey`（旧 L-189）
-- [~] L-200 Android の `commit()` は失敗しても値をプロセス内に残すので、store に無いとみなして消去済みにした下書きが、別キーの commit の成否の順序次第で次回戻り得る（告知なし。support.md:21「消去できなかったときはその旨をお知らせします」と食い違う向き。失われるものは無い。未確認） — phrase_draft_provider.dart `_stored`（旧 L-196）
-- [~] L-206 追加フォームの読込失敗中に別カテゴリ → 既定へ戻すと、「再読み込み」が下書きのカテゴリで黙って置き換える（触ったかの旗で消えるが状態が 1 つ増える） — phrase_add_dialog.dart `_untouched`（旧 L-179）
-- [~] L-207 元と同じ内容に戻した編集下書きが一覧に残る（「キャンセル」で消える。元を削除すると孤立として残る）。決定: 記録のみ — phrase_edit_dialog.dart（旧 L-180）
-- [~] L-208 編集の下書きは base を持たないので、保存済みより古い下書きが出ることがある（開いた時点で告げ、「キャンセル」で戻る）。決定: 告知のみ。base を持つ案は採らず、実フィードバックで再訪 — phrase_edit_dialog.dart `_load`（旧 L-181）
-- [~] L-209 iOS は下書きの書込失敗を検出できない（`UserDefaults.set` は結果を返さない）。基準は満たすが直す手段が無い。読み戻し検証は cache が返り偽の緑になるので採らない。公開文は Web/Android 限定と明記 — shared_preferences_foundation（旧 L-165）
 - [~] L-215 可視高さ 250 未満では縦積みでも文字盤と操作群に 44px の行が入らない（幅が足りなくても 2 ペインには戻さない。戻すとセル 25.12px。高さ境界 399/400・倍率 1.3 は未検査） — home_screen.dart `availableHeight` の下限（旧 L-172）
 - [~] L-216 定型文由来のお気に入りの重複判定が `sourceId` だけで、同文のお気に入りが 2 件並び得る（お気に入り画面から消せる）。決定: 受け入れ。content でも判定する案は「同じ文の別の定型文」を持てなくするので採らない — favorite_provider.dart（旧 L-99）
 - [~] L-217 フォント設定がサイズを持たないスタイル（ダイアログの見出し等）に効かず、REQ-2007「すべてのテキスト要素」は未達。決定: 根治（アプリ根の textScaler）は今はやらない。移るときはテーマの倍率がけ `_scaled` を同時に外す（残すと二重掛け） — theme_provider.dart（旧 L-111）
-- [~] L-218 公開 FAQ に下書きの 3 つの告知（消せない・読めない・壊れていた）の項が無い。近い「…の一部を読み込めませんでした」の項は退避と「閉じる」を案内するが、下書きの破損の告知は閉じられず退避の写しも無い — docs/user-guide/faq.md（旧 L-188）
 - [~] L-220 320×690・1000 文字で入力上限の告知の末尾が操作域の下端で切れて見える（未計測、screenshot のみ） — input_limit_notice.dart、home_screen.dart（旧 L-174）
 - [~] L-221 2 ペインの左ペインでフォント大のプレースホルダが 2 行に折り返して 1 行目が切れる。上下ボタンが無く、AI ボタンと offline チップはスクロールで届く（BASE から） — home_screen.dart `_buildCompactLandscapeLayout`（旧 L-175）
 

@@ -15,11 +15,11 @@ import 'package:flutter/foundation.dart';
 ///
 /// `Exception` は想定済みの失敗（利用者へは呼び出し側が穏当な文で伝える）だが、
 /// `Error` はプログラムの誤りなので、穏当な文に隠したままにしない。
-void reportDraftProgrammingError(Object error, StackTrace stack) {
+void reportProgrammingError(Object error, StackTrace stack) {
   if (error is! Error) return;
   FlutterError.reportError(FlutterErrorDetails(
     exception: error,
     stack: stack,
-    library: 'kotonoha preset_phrase draft',
+    library: 'kotonoha preset_phrase',
   ));
 }

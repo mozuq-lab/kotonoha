@@ -45,6 +45,7 @@ void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory tempDir;
+  final editVariant = ValueVariant<bool>({false, true});
   const phraseId = 'p-1';
   const phraseContent = 'すこし休みたいです';
 
@@ -85,6 +86,31 @@ void main() {
       await tempDir.delete(recursive: true);
     }
   });
+
+  // 定型文フォームの下書きは要件から外して機能ごと消した（NFR-302 は文字盤の
+  // 入力中の文だけ）。公開文にも書いていないので、端末へ何も残さない。
+  testWidgets('追加・編集のフォームで打っても保存しても、定型文の下書きは端末に残らない', (tester) async {
+    final edit = editVariant.currentValue!;
+    await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: PresetPhraseScreen())));
+    await tester.pumpAndSettle();
+    await tester.tap(
+        edit ? find.byIcon(Icons.edit) : find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '残さない本文');
+    await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
+    // 旧実装の書込（400ms のデバウンス）が走るだけ待つ。
+    await tester.pump(const Duration(seconds: 1));
+    await tester
+        .runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getKeys(), isEmpty);
+    await tester.runAsync(() => tester.tap(find.text('保存')));
+    await _waitForSave(tester);
+    expect(prefs.getKeys(), isEmpty);
+    // 下書きを開く入口も無い。
+    expect(find.text('下書き'), findsNothing);
+  }, variant: editVariant);
 
   testWidgets('一次put後失敗→次のput前失敗→再試行でも自分の反映済み本文を拒否しない', (tester) async {
     final box = Hive.box<PresetPhrase>(PersistedArea.presetPhrases.boxName);
@@ -144,7 +170,6 @@ void main() {
       expect(reopened.values, hasLength(2));
     });
   });
-  final editVariant = ValueVariant<bool>({false, true});
   testWidgets('保存後のcompact失敗から同じフォームで再試行しても重複しない', (tester) async {
     final edit = editVariant.currentValue!;
     late Box<PresetPhrase> box;
@@ -232,12 +257,6 @@ void main() {
       }
       await tester.tap(find.text('保存'));
       await tester.pumpAndSettle();
-      if (!missingBox) {
-        // 閉じたboxは所有権の照合（追加フォームだけが行う）でもErrorになる。
-        // 利用者向けの文は穏当なままで、開発者には端末内のログへ届く
-        // （台帳 L-162(a)。送信経路は作らない＝ADR-009）。
-        expect(tester.takeException(), edit ? isNull : isA<HiveError>());
-      }
       expect(find.textContaining('保存を確認できません'), findsOneWidget);
       expect(find.widgetWithText(TextField, '失敗しても残す本文'), findsOneWidget);
       expect(
@@ -407,21 +426,15 @@ void main() {
             // before は put の前に、during は put の最中に消えた（updatePhrase の
             // put 後に確かめる枝）。flush が onSave の前に入っても取り違えない。
             expect(puts.contains(phraseId), race != 'before', reason: '$puts');
-            // 元の定型文が消えた下書きの閲覧へ移る。本文とカテゴリは下書きに残る。
-            final dialog = find.byType(AlertDialog);
-            expect(find.textContaining('見つかりません'), findsOneWidget);
-            expect(
-                find.descendant(
-                    of: dialog, matching: find.textContaining('体調')),
+            // 元の定型文が消えたと告げ、フォームに本文とカテゴリを残す。
+            expect(find.textContaining('元の定型文が見つかりません。入力内容は残っています'),
                 findsOneWidget);
+            expect(find.widgetWithText(TextField, '競合しても残す本文'), findsOneWidget);
             expect(
-                find.descendant(
-                    of: dialog, matching: find.textContaining('競合しても残す本文')),
-                findsOneWidget);
-            expect(
-                (await SharedPreferences.getInstance())
-                    .getString('preset_phrase_drafts'),
-                contains('競合しても残す本文'));
+                tester
+                    .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '体調'))
+                    .selected,
+                isTrue);
             expect(phrases.map((p) => p.id), isNot(contains(phraseId)));
           }
           await box.close();
