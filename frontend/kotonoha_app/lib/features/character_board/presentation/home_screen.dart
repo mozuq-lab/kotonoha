@@ -10,7 +10,6 @@ import 'package:kotonoha_app/features/ai_conversion/domain/exceptions/ai_convers
 import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
 import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_button.dart';
 import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_result_dialog.dart';
-import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/politeness_level_selector.dart';
 import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_provider.dart';
 import 'package:kotonoha_app/features/character_board/domain/character_data.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
@@ -22,8 +21,6 @@ import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
 import 'package:kotonoha_app/features/face_to_face/providers/face_to_face_provider.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
-import 'package:kotonoha_app/features/input_candidates/presentation/widgets/input_candidate_chips.dart';
-import 'package:kotonoha_app/features/input_candidates/providers/input_candidates_provider.dart';
 import 'package:kotonoha_app/features/simple_mode/presentation/simple_mode_view.dart';
 import 'package:kotonoha_app/features/status_buttons/status_buttons.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
@@ -55,6 +52,10 @@ const double _minBoardPaneWidth =
 /// 2行目のセルが25pxに切れるため、0.2pxの不足より2ペインの方が使える
 /// （台帳 L-155）。幅320の右ペインは189pxで、この許容では届かない。
 const double _boardPaneWidthTolerance = 1.0;
+
+/// 状態ボタン1個に要る最小幅
+/// 8個を1行に並べるか、4列×2行にするかの判定に使う。
+const double _minStatusButtonWidth = 80.0;
 
 /// 縦積みで文字盤に残す高さ（カテゴリと44pxセル2行ぶん）
 const double _boardReserve = 200.0;
@@ -287,7 +288,8 @@ class HomeScreen extends ConsumerWidget {
     required bool compact,
     required double availableHeight,
   }) {
-    final sectionGap = compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall;
+    // すべての行の左右端を、クイック応答ボタンの左右端にそろえる。
+    final gutter = compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;
 
     final controls = Column(
       mainAxisSize: MainAxisSize.min,
@@ -296,10 +298,15 @@ class HomeScreen extends ConsumerWidget {
         _buildQuickResponseSection(
           ref,
           fontSize: fontSize,
-          padding: compact ? AppSizes.paddingSmall : AppSizes.paddingMedium,
+          padding: EdgeInsets.all(gutter),
           compact: compact,
         ),
-        _buildStatusButtonsSection(ref, fontSize: fontSize),
+        _buildStatusButtonsSection(
+          ref,
+          fontSize: fontSize,
+          gutter: gutter,
+          compact: compact,
+        ),
         // 入力表示エリア
         _buildInputArea(
           context,
@@ -308,21 +315,16 @@ class HomeScreen extends ConsumerWidget {
           compact: compact,
           availableHeight: availableHeight,
         ),
-        // 入力候補チップ行（頻度ベース）: 候補がない/入力が空の場合は
-        // ウィジェット自身が高さ0になるため、ここでの追加の余白調整は不要。
-        _buildInputCandidatesSection(ref, fontSize: fontSize),
-        SizedBox(height: sectionGap),
-        // コントロールボタン（削除、全消去、読み上げ）
-        _buildControlRow(ref, inputBuffer: inputBuffer),
-        SizedBox(height: sectionGap),
-        _buildPolitenessAIRow(
+        // 操作ボタン（削除、全消去、AI変換、読み上げ）
+        _buildControlRow(
           context,
           ref,
-          aiPoliteness: aiPoliteness,
           inputBuffer: inputBuffer,
+          aiPoliteness: aiPoliteness,
+          gutter: gutter,
           compact: compact,
         ),
-        SizedBox(height: sectionGap),
+        const SizedBox(height: AppSizes.paddingSmall),
       ],
     );
     // 文字盤に残す高さ（[_stackedBoardHeight]）を引いた残りを操作域へ渡し
@@ -368,11 +370,18 @@ class HomeScreen extends ConsumerWidget {
                 _buildQuickResponseSection(
                   ref,
                   fontSize: fontSize,
-                  padding: AppSizes.paddingXSmall,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingSmall,
+                    vertical: AppSizes.paddingXSmall,
+                  ),
                   compact: true,
                 ),
-                // 左ペインのスクロール領域内、横スクロール1行ストリップとして配置。
-                _buildStatusButtonsSection(ref, fontSize: fontSize),
+                _buildStatusButtonsSection(
+                  ref,
+                  fontSize: fontSize,
+                  gutter: AppSizes.paddingSmall,
+                  compact: true,
+                ),
                 _buildInputArea(
                   context,
                   inputBuffer: inputBuffer,
@@ -380,15 +389,12 @@ class HomeScreen extends ConsumerWidget {
                   compact: true,
                   availableHeight: availableHeight,
                 ),
-                _buildInputCandidatesSection(ref, fontSize: fontSize),
-                const SizedBox(height: AppSizes.paddingXSmall),
-                _buildControlRow(ref, inputBuffer: inputBuffer),
-                const SizedBox(height: AppSizes.paddingXSmall),
-                _buildPolitenessAIRow(
+                _buildControlRow(
                   context,
                   ref,
-                  aiPoliteness: aiPoliteness,
                   inputBuffer: inputBuffer,
+                  aiPoliteness: aiPoliteness,
+                  gutter: AppSizes.paddingSmall,
                   compact: true,
                 ),
               ],
@@ -416,11 +422,11 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildQuickResponseSection(
     WidgetRef ref, {
     required FontSize fontSize,
-    required double padding,
+    required EdgeInsets padding,
     required bool compact,
   }) {
     return Padding(
-      padding: EdgeInsets.all(padding),
+      padding: padding,
       child: QuickResponseButtons(
         onResponse: (type) {
           _saveToHistory(ref, type.label, HistoryType.quickButton);
@@ -436,34 +442,64 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// 「痛い」「トイレ」「暑い」「寒い」等の状態ボタンをホーム画面に統合する。
-  /// 縦スペースが貴重なため、StatusButtons（4列グリッド）はそのまま使わず
-  /// 高さ約56px（[AppSizes.statusButtonStripHeight]）の横スクロール1行
-  /// ストリップとして必須8個を表示する。タップで即座にTTS読み上げ＋
-  /// 履歴保存（大ボタン扱い: HistoryType.quickButton）を行う。
+  /// 必須8個をスワイプなしで全部見せる。幅が足りれば1行に8個、足りなければ
+  /// 4列×2行に並べる。タップで即座にTTS読み上げ＋履歴保存（大ボタン扱い:
+  /// HistoryType.quickButton）を行う。
   Widget _buildStatusButtonsSection(
     WidgetRef ref, {
     required FontSize fontSize,
+    required double gutter,
+    required bool compact,
   }) {
-    return SizedBox(
-      height: AppSizes.statusButtonStripHeight,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.paddingMedium,
-        ),
-        itemCount: defaultStatusTypes.length,
-        separatorBuilder: (context, index) =>
-            const SizedBox(width: AppSizes.paddingSmall),
-        itemBuilder: (context, index) {
-          final type = defaultStatusTypes[index];
-          return StatusButton(
-            statusType: type,
-            width: AppSizes.statusButtonStripItemWidth,
-            height: AppSizes.statusButtonStripHeight,
-            fontSize: fontSize,
-            onTTSSpeak: (text) => ref.read(ttsProvider.notifier).speak(text),
-            onPressed: () =>
-                _saveToHistory(ref, type.label, HistoryType.quickButton),
+    const gap = AppSizes.paddingSmall;
+    final height =
+        compact ? AppSizes.minTapTarget : AppSizes.recommendedTapTarget;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: gutter),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final count = defaultStatusTypes.length;
+          bool fits(int columns, double minWidth) =>
+              constraints.maxWidth >= columns * minWidth + (columns - 1) * gap;
+          // 2ペインの狭い左ペインでも1個44px以上を保つよう、列を減らす。
+          final columns = fits(count, _minStatusButtonWidth)
+              ? count
+              : fits(count ~/ 2, AppSizes.minTapTarget)
+                  ? count ~/ 2
+                  : count ~/ 4;
+          final colors = Theme.of(context).colorScheme;
+          Widget button(StatusButtonType type) => Expanded(
+                child: StatusButton(
+                  statusType: type,
+                  height: height,
+                  fontSize: fontSize,
+                  backgroundColor: Color.lerp(
+                    colors.surface,
+                    StatusButtonColors.getColor(type),
+                    0.16,
+                  ),
+                  textColor: colors.onSurface,
+                  onTTSSpeak: (text) =>
+                      ref.read(ttsProvider.notifier).speak(text),
+                  onPressed: () =>
+                      _saveToHistory(ref, type.label, HistoryType.quickButton),
+                ),
+              );
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var start = 0; start < count; start += columns) ...[
+                if (start > 0) const SizedBox(height: gap),
+                Row(
+                  children: [
+                    for (var i = start; i < start + columns; i++) ...[
+                      if (i > start) const SizedBox(width: gap),
+                      button(defaultStatusTypes[i]),
+                    ],
+                  ],
+                ),
+              ],
+            ],
           );
         },
       ),
@@ -501,7 +537,10 @@ class HomeScreen extends ConsumerWidget {
       children: [
         Container(
           width: double.infinity,
-          margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
+          margin: EdgeInsets.symmetric(
+            horizontal: horizontalMargin,
+            vertical: AppSizes.paddingSmall,
+          ),
           padding: EdgeInsets.all(contentPadding),
           decoration: BoxDecoration(
             border: Border.all(
@@ -540,133 +579,112 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  /// 入力候補チップ行セクションを構築する（頻度ベースの入力候補）
-  /// 履歴・定型文・お気に入りから前方一致で算出された候補を、入力表示
-  /// エリアの直下に横スクロールのチップ行として表示する。候補が0件
-  /// または入力バッファが空の場合はウィジェット自身が高さ0になる。
-  /// タップで入力バッファを候補テキストに置換する（前方一致のため
-  /// 自然な補完になる）。
-  Widget _buildInputCandidatesSection(
-    WidgetRef ref, {
-    required FontSize fontSize,
-  }) {
-    final candidates = ref.watch(inputCandidatesProvider);
-    return InputCandidateChips(
-      candidates: candidates,
-      fontSize: fontSize,
-      onSelect: (text) {
-        ref.read(inputBufferProvider.notifier).setText(text);
-      },
-    );
-  }
-
-  /// コントロールボタン行（削除・全消去・読み上げ）を構築する
-  /// バグ修正: コンパクト2ペインレイアウトの左ペイン（幅の狭いExpanded flex:2）
-  /// では、固定サイズのボタン群がRow(mainAxisAlignment.spaceBetween)の
-  /// 幅を超えRenderFlexオーバーフローが発生していた。Wrapに変更することで
-  /// 幅に余裕がある場合は従来通り1行（spaceBetween相当）で表示しつつ
-  /// 幅が不足する場合はスワイプ操作を必要とせず2行に折り返して収める
-  /// （タップ操作のみで完結させるための対応）。
+  /// 操作ボタン行（削除・全消去・AI変換・読み上げ）を構築する
+  /// 幅に余裕がある場合は1行（左に削除・全消去、右にAI変換・読み上げ）で
+  /// 表示し、コンパクト2ペインの左ペインや大きい文字のように幅が不足する
+  /// 場合は、スワイプ操作を必要とせず2行に折り返して収める。
+  /// オフラインでAI変換が使えないことは、ボタンの幅を広げて並びを
+  /// 崩さないよう、行の下に右寄せで出す。
   Widget _buildControlRow(
+    BuildContext context,
     WidgetRef ref, {
     required String inputBuffer,
+    required PolitenessLevel aiPoliteness,
+    required double gutter,
+    required bool compact,
   }) {
+    const gap = AppSizes.paddingSmall;
+    final height = compact
+        ? AppSizes.quickResponseButtonHeightCompact
+        : AppSizes.recommendedTapTarget;
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.paddingMedium,
-      ),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: AppSizes.paddingSmall,
-        runSpacing: AppSizes.paddingSmall,
+      padding: EdgeInsets.symmetric(horizontal: gutter),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // バグ修正: 削除・全消去ボタン（各60px推奨サイズ）は、コンパクト
-          // 2ペインレイアウトの左ペインのように2ボタン分の幅すら確保できない
-          // 極端に狭い幅では、この内側グループ自体もWrapにしないと
-          // オーバーフローする（外側WrapはRunをまたぐ折り返しのみ制御し
-          // 単一の子の内部レイアウトまでは救えないため）。
           Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: AppSizes.paddingSmall,
-            runSpacing: AppSizes.paddingSmall,
+            alignment: WrapAlignment.spaceBetween,
+            // 片方のグループが折り返しても、もう片方を上端にそろえる。
+            crossAxisAlignment: WrapCrossAlignment.start,
+            spacing: gap,
+            runSpacing: gap,
             children: [
-              DeleteButton(
-                enabled: inputBuffer.isNotEmpty,
-                onPressed: () {
-                  ref.read(inputBufferProvider.notifier).deleteLastCharacter();
-                },
+              // 内側のグループもWrapにする。外側のWrapは子をまたぐ折り返し
+              // しか制御せず、2ボタン分の幅すら無い極端に狭い幅では
+              // 単一の子の中でオーバーフローするため。
+              Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  DeleteButton(
+                    size: height,
+                    enabled: inputBuffer.isNotEmpty,
+                    onPressed: () {
+                      ref
+                          .read(inputBufferProvider.notifier)
+                          .deleteLastCharacter();
+                    },
+                  ),
+                  ClearAllButton(
+                    size: height,
+                    enabled: inputBuffer.isNotEmpty,
+                    onConfirmed: () {
+                      ref.read(inputBufferProvider.notifier).clear();
+                    },
+                  ),
+                ],
               ),
-              ClearAllButton(
-                enabled: inputBuffer.isNotEmpty,
-                onConfirmed: () {
-                  ref.read(inputBufferProvider.notifier).clear();
-                },
+              Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  AIConversionButton(
+                    inputText: inputBuffer,
+                    politenessLevel: aiPoliteness,
+                    height: height,
+                    onConvert: () => _convertWithAI(
+                      context,
+                      ref,
+                      inputBuffer,
+                      aiPoliteness,
+                    ),
+                    onConversionComplete: (convertedText) {
+                      if (!context.mounted) return;
+                      _showConversionResult(
+                        context,
+                        ref,
+                        inputBuffer,
+                        convertedText,
+                        aiPoliteness,
+                      );
+                    },
+                    onConversionError: (error) {
+                      if (!context.mounted) return;
+                      _showAIConversionError(context, error);
+                    },
+                  ),
+                  TTSButton(
+                    text: inputBuffer,
+                    height: height,
+                    onSpeak: () {
+                      if (inputBuffer.isNotEmpty) {
+                        _saveToHistory(
+                            ref, inputBuffer, HistoryType.manualInput);
+                      }
+                    },
+                  ),
+                ],
               ),
             ],
           ),
-          TTSButton(
-            text: inputBuffer,
-            onSpeak: () {
-              if (inputBuffer.isNotEmpty) {
-                _saveToHistory(ref, inputBuffer, HistoryType.manualInput);
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 丁寧さレベル選択＋AI変換ボタンのセクションを構築する
-  Widget _buildPolitenessAIRow(
-    BuildContext context,
-    WidgetRef ref, {
-    required PolitenessLevel aiPoliteness,
-    required String inputBuffer,
-    required bool compact,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.paddingMedium,
-      ),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: AppSizes.paddingMedium,
-        runSpacing: compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall,
-        children: [
-          PolitenessLevelSelector(
-            selectedLevel: aiPoliteness,
-            onLevelChanged: (level) {
-              ref
-                  .read(settingsNotifierProvider.notifier)
-                  .setAIPoliteness(level);
-            },
-          ),
-          AIConversionButton(
-            inputText: inputBuffer,
-            politenessLevel: aiPoliteness,
-            onConvert: () => _convertWithAI(
-              context,
-              ref,
-              inputBuffer,
-              aiPoliteness,
+          // 文字数不足の案内は出さない。入力のたびに出入りして行の高さが
+          // 変わり、押そうとした文字盤のキーが指の下で動いてしまうため。
+          const Padding(
+            padding: EdgeInsets.only(top: AppSizes.paddingXSmall),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: OfflineIndicator(),
             ),
-            onConversionComplete: (convertedText) {
-              if (!context.mounted) return;
-              _showConversionResult(
-                context,
-                ref,
-                inputBuffer,
-                convertedText,
-                aiPoliteness,
-              );
-            },
-            onConversionError: (error) {
-              if (!context.mounted) return;
-              _showAIConversionError(context, error);
-            },
           ),
         ],
       ),
@@ -833,12 +851,14 @@ class HomeScreen extends ConsumerWidget {
           try {
             final result = await _regenerateWithAI(context, ref);
             if (!context.mounted) return;
+            // ダイアログ内で丁寧さを選び直していれば、再生成もその丁寧さで
+            // 行われる（aiConversionProvider が最後の丁寧さを持つ）。
             _showConversionResult(
               context,
               ref,
               originalText,
               result,
-              politenessLevel,
+              ref.read(aiConversionProvider).politenessLevel ?? politenessLevel,
             );
           } catch (e) {
             if (context.mounted) {
@@ -849,6 +869,12 @@ class HomeScreen extends ConsumerWidget {
       },
       onUseOriginal: (original) {
         ref.read(inputBufferProvider.notifier).setText(original);
+      },
+      onLevelChanged: (level) {
+        // 選び直した丁寧さを次回の既定にし、その丁寧さで変換し直す。
+        // 結果はダイアログ内で差し替わる（ダイアログは閉じない）。
+        ref.read(settingsNotifierProvider.notifier).setAIPoliteness(level);
+        return _convertWithAI(context, ref, originalText, level);
       },
     );
   }

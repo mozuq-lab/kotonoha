@@ -8,7 +8,9 @@ import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/core/constants/app_text_styles.dart';
+import 'package:kotonoha_app/features/ai_conversion/domain/exceptions/ai_conversion_exception.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
+import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/politeness_level_selector.dart';
 
 /// ダイアログの最大幅
 const double kDialogMaxWidth = 400.0;
@@ -74,6 +76,12 @@ class AIConversionResultDialog extends StatefulWidget {
   /// 「元の文を使う」タップ時コールバック
   final void Function(String original) onUseOriginal;
 
+  /// 丁寧さを選び直したときの変換処理。
+  /// 今と違う丁寧さを選ぶと呼ばれ、返った文でダイアログ内の変換結果を
+  /// 差し替える（ダイアログは閉じない）。失敗は例外で返し、ダイアログ内に
+  /// 告げる。変換を待つ間も「採用」「元の文を使う」は押せる（閉じ込めない）。
+  final Future<String> Function(PolitenessLevel level) onLevelChanged;
+
   /// AIConversionResultDialogを作成する
   /// [originalText] - 元の入力テキスト（必須）
   /// [convertedText] - 変換後のテキスト（必須）
@@ -89,6 +97,7 @@ class AIConversionResultDialog extends StatefulWidget {
     required this.onAdopt,
     required this.onRegenerate,
     required this.onUseOriginal,
+    required this.onLevelChanged,
   });
 
   /// ダイアログを表示するヘルパーメソッド
@@ -105,6 +114,7 @@ class AIConversionResultDialog extends StatefulWidget {
     required void Function(String result) onAdopt,
     required VoidCallback onRegenerate,
     required void Function(String original) onUseOriginal,
+    required Future<String> Function(PolitenessLevel level) onLevelChanged,
   }) {
     return showDialog<void>(
       context: context,
@@ -125,6 +135,7 @@ class AIConversionResultDialog extends StatefulWidget {
           Navigator.of(dialogContext).pop();
           onUseOriginal(original);
         },
+        onLevelChanged: onLevelChanged,
       ),
     );
   }
@@ -138,6 +149,16 @@ class AIConversionResultDialog extends StatefulWidget {
 class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   /// 処理中フラグ（連続タップ防止用）
   bool _isProcessing = false;
+
+  /// 表示中の変換結果と丁寧さ（丁寧さを選び直すと差し替わる）
+  late String _convertedText = widget.convertedText;
+  late PolitenessLevel _politenessLevel = widget.politenessLevel;
+
+  /// 丁寧さを選び直して変換し直している最中か
+  bool _isChangingLevel = false;
+
+  /// 選び直した丁寧さでの変換に失敗したときの告知
+  String? _levelChangeError;
 
   /// 高コントラストモードかどうか判定
   bool _isHighContrastMode(ThemeData theme) =>
@@ -165,34 +186,12 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   /// 使っていたため、実際の色はダイアログ背景との合成結果に依存し
   /// コントラスト比を計算・検証できなかった。合成後と同じ色を不透明な
   /// 定数として持つことで、見た目を変えずに検証可能にする。
-  /// 丁寧さタグは元から別の色（alpha 0.2）なので
-  /// [_getPolitenessTagBackgroundColor] を使うこと。
   Color _getResultBackgroundColor(ThemeData theme) {
     if (_isHighContrastMode(theme)) {
       return AppColors.aiResultContainerHighContrast;
     }
     if (_isDarkMode(theme)) return AppColors.aiResultContainerDark;
     return AppColors.aiResultContainerLight;
-  }
-
-  /// テーマに応じた丁寧さタグの背景色を取得
-  /// 変換結果ボックスと分けている理由: 一時、タグの背景に
-  /// [_getResultBackgroundColor] を流用していたが、タグは元々
-  /// 「primary を alpha 0.2 で重ねた色」であり、結果ボックス（ライトは alpha 0.1
-  /// 高コントラストは黄色）とは別の色だった。流用によってライトでは
-  /// #CBE2F5 → #E0ECF5 と淡くなり、高コントラストでは #CCCCCC（灰）→ #FFF9C4
-  /// （淡黄）と**色相まで変わって**、黒白で構成された高コントラストテーマに
-  /// 黄色が持ち込まれていた。元の見た目に戻す。
-  /// 定数ではなく実行時合成にしている理由: 合成後の色を定数で持つと
-  /// 元になる surface や primary を変えたときに黙って食い違う（テストも同じ
-  /// 定数を読み返すので気付けない）。[Color.alphaBlend] で実テーマから導出する。
-  /// ダイアログの背景が `colorScheme.surface` と一致することは
-  /// test/accessibility/ai_conversion_result_dialog_contrast_test.dart で固定している。
-  Color _getPolitenessTagBackgroundColor(ThemeData theme) {
-    return Color.alphaBlend(
-      _getPrimaryButtonColor(theme).withValues(alpha: 0.2),
-      theme.colorScheme.surface,
-    );
   }
 
   /// テーマに応じた変換結果の枠線色を取得
@@ -206,6 +205,32 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
     }
     if (_isDarkMode(theme)) return AppColors.aiResultOutlineDark;
     return AppColors.aiResultOutlineLight;
+  }
+
+  /// 丁寧さを選び直し、その丁寧さで変換し直した結果に差し替える
+  Future<void> _changeLevel(PolitenessLevel level) async {
+    if (level == _politenessLevel || _isProcessing || _isChangingLevel) return;
+    setState(() {
+      _isChangingLevel = true;
+      _levelChangeError = null;
+    });
+    try {
+      final text = await widget.onLevelChanged(level);
+      if (!mounted) return;
+      setState(() {
+        _convertedText = text;
+        _politenessLevel = level;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _levelChangeError = e is AIConversionException
+            ? e.message
+            : 'AI変換に失敗しました。しばらく待ってから再度お試しください。';
+      });
+    } finally {
+      if (mounted) setState(() => _isChangingLevel = false);
+    }
   }
 
   /// ボタンタップ処理（連続タップ防止付き）
@@ -325,26 +350,33 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
                 color: theme.colorScheme.onSurface,
               ),
             ),
-            const SizedBox(width: AppSizes.paddingSmall),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.paddingSmall,
-                vertical: AppSizes.paddingXSmall,
-              ),
-              decoration: BoxDecoration(
-                color: _getPolitenessTagBackgroundColor(theme),
-                borderRadius: BorderRadius.circular(AppSizes.borderRadiusSmall),
-              ),
-              child: Text(
-                widget.politenessLevel.displayName,
-                style: AppTextStyles.bodySmall.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: AppSizes.paddingXSmall),
+        // 丁寧さの選択は結果の文より上に置く。結果が長いときや文字を
+        // 拡大したときに、ダイアログ内をスクロールしないと届かない位置へ
+        // 押し出されないようにするため。
+        PolitenessLevelSelector(
+          selectedLevel: _politenessLevel,
+          enabled: !_isProcessing && !_isChangingLevel,
+          onLevelChanged: _changeLevel,
+        ),
+        if (_isChangingLevel)
+          const Padding(
+            padding: EdgeInsets.only(top: AppSizes.paddingXSmall),
+            child: LinearProgressIndicator(),
+          ),
+        if (_levelChangeError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSizes.paddingXSmall),
+            child: Text(
+              _levelChangeError!,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
+        const SizedBox(height: AppSizes.paddingSmall),
         Container(
           width: double.infinity,
           constraints: const BoxConstraints(
@@ -361,7 +393,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
           ),
           child: SingleChildScrollView(
             child: Text(
-              widget.convertedText,
+              _convertedText,
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -388,7 +420,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
       child: ElevatedButton(
         onPressed: _isProcessing
             ? null
-            : () => _handleTap(() => widget.onAdopt(widget.convertedText)),
+            : () => _handleTap(() => widget.onAdopt(_convertedText)),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
@@ -407,7 +439,9 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
     return SizedBox(
       height: AppSizes.minTapTarget,
       child: ElevatedButton(
-        onPressed: _isProcessing ? null : () => _handleTap(widget.onRegenerate),
+        onPressed: _isProcessing || _isChangingLevel
+            ? null
+            : () => _handleTap(widget.onRegenerate),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: textColor,
@@ -416,7 +450,10 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
             AppSizes.minTapTarget,
           ),
         ),
-        child: Text('再生成', style: AppTextStyles.button),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text('再生成', style: AppTextStyles.button),
+        ),
       ),
     );
   }
@@ -441,7 +478,10 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
             color: _getResultOutlineColor(theme),
           ),
         ),
-        child: Text('元の文を使う', style: AppTextStyles.button),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text('元の文を使う', style: AppTextStyles.button),
+        ),
       ),
     );
   }

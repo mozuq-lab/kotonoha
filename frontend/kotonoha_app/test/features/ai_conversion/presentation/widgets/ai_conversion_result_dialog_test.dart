@@ -40,6 +40,7 @@ void main() {
                   onAdopt: onAdopt,
                   onRegenerate: onRegenerate,
                   onUseOriginal: onUseOriginal,
+                  onLevelChanged: (_) async => convertedText,
                 );
               },
               child: const Text('Open'),
@@ -444,6 +445,7 @@ void main() {
                 onAdopt: (_) => callCount++,
                 onRegenerate: () {},
                 onUseOriginal: (_) {},
+                onLevelChanged: (_) async => '',
               ),
             ),
           ),

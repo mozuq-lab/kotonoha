@@ -1,9 +1,8 @@
 /// DeleteButton ウィジェット
 /// 入力バッファの最後の1文字を削除するためのボタン。
-/// アクセシビリティ要件（: 44px以上、: 60px推奨）に準拠。
+/// 正方形のタップ領域（既定60px、44px以上）を確保する。
 /// 削除ボタンで最後の1文字を削除する機能を提供
 /// タップターゲットのサイズは44px x 44px以上
-/// タップ領域は60px x 60px以上推奨
 library;
 
 import 'package:flutter/material.dart';
@@ -11,7 +10,7 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
 /// 削除ボタンウィジェット
 /// 入力バッファの最後の1文字を削除するためのボタン。
-/// アクセシビリティ要件（: 44px以上、: 60px推奨）に準拠。
+/// 正方形のタップ領域（既定60px、44px以上）を確保する。
 class DeleteButton extends StatelessWidget {
   /// ボタンタップ時のコールバック
   final VoidCallback? onPressed;
@@ -19,16 +18,21 @@ class DeleteButton extends StatelessWidget {
   /// ボタンの有効/無効状態
   final bool enabled;
 
+  /// ボタンの一辺の長さ（正方形。[AppSizes.minTapTarget] 未満にはしない）
+  final double size;
+
   /// DeleteButtonを作成する
   const DeleteButton({
     super.key,
     this.onPressed,
     this.enabled = true,
+    this.size = AppSizes.recommendedTapTarget,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final side = size < AppSizes.minTapTarget ? AppSizes.minTapTarget : size;
 
     return Semantics(
       label: '削除',
@@ -37,12 +41,14 @@ class DeleteButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: enabled ? onPressed : null,
         style: ElevatedButton.styleFrom(
-          minimumSize: const Size(
-            AppSizes.recommendedTapTarget,
-            AppSizes.recommendedTapTarget,
+          minimumSize: Size.square(side),
+          fixedSize: Size.square(side),
+          padding: EdgeInsets.zero,
+          backgroundColor: theme.colorScheme.surface,
+          foregroundColor: theme.colorScheme.onSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           ),
-          backgroundColor: theme.colorScheme.secondary,
-          foregroundColor: theme.colorScheme.onSecondary,
           disabledBackgroundColor: theme.disabledColor.withValues(alpha: 0.12),
           disabledForegroundColor: theme.disabledColor.withValues(alpha: 0.38),
         ),
