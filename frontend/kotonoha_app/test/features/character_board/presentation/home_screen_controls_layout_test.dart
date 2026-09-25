@@ -133,6 +133,21 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  for (final width in [320.0, 390.0]) {
+    testWidgets('幅${width.toInt()}で文字種の切り替え5つが切れずに並ぶ', (tester) async {
+      await _pumpHome(tester, Size(width, 844));
+
+      final chips = find.byType(ChoiceChip);
+      expect(chips, findsNWidgets(5));
+      for (var i = 0; i < 5; i++) {
+        final rect = tester.getRect(chips.at(i));
+        expect(rect.left, greaterThanOrEqualTo(0), reason: '文字種$i: $rect');
+        expect(rect.right, lessThanOrEqualTo(width), reason: '文字種$i: $rect');
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('タブレットでは状態ボタン8個を1行に並べ、操作ボタンは60px', (tester) async {
     await _pumpHome(tester, const Size(820, 1180));
 

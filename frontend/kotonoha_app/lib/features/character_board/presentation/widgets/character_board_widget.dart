@@ -87,18 +87,38 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
     );
   }
 
+  /// 文字種の切り替え（基本・濁音・半濁音・小文字・記号）
+  /// 横スクロールにすると狭い画面で右端のラベルが切れて見えるため、
+  /// 5つを等幅の1行に並べる。長いラベルは折り返さずに縮めて1行に保つ。
+  /// 選択中は色に加えて太字・下線でも示す（色だけに頼らない）。
   Widget _buildCategoryTabs(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: CharacterCategory.values.map((category) {
-          final isSelected = category == _currentCategory;
-          return Padding(
+    return Row(
+      children: CharacterCategory.values.map((category) {
+        final isSelected = category == _currentCategory;
+        return Expanded(
+          child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSizes.paddingXSmall,
             ),
             child: ChoiceChip(
-              label: Text(category.displayName),
+              showCheckmark: false,
+              labelPadding: EdgeInsets.zero,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.paddingXSmall,
+              ),
+              label: SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    category.displayName,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : null,
+                      decoration: isSelected ? TextDecoration.underline : null,
+                    ),
+                  ),
+                ),
+              ),
               selected: isSelected,
               onSelected: widget.isEnabled
                   ? (selected) {
@@ -110,9 +130,9 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
                     }
                   : null,
             ),
-          );
-        }).toList(),
-      ),
+          ),
+        );
+      }).toList(),
     );
   }
 
