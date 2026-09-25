@@ -82,6 +82,7 @@ void main() {
                               useOriginalCallCount++;
                               usedOriginalText = original;
                             },
+                            onLevelChanged: (_) async => '',
                           );
                         },
                         child: const Text('ShowDialog'),

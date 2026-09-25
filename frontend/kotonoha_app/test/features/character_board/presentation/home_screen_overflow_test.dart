@@ -19,11 +19,8 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/input
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_button_with_confirmation.dart';
 import 'package:kotonoha_app/features/help/providers/tutorial_provider.dart';
-import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
-import 'package:kotonoha_app/features/history/providers/history_provider.dart';
 import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
-import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -197,11 +194,8 @@ void main() {
       find.byType(InputLimitNotice),
       action(DeleteButton),
       action(ClearAllButton),
+      button('AI変換'),
       button('読み上げ'),
-      button('カジュアル'),
-      button('普通'),
-      button('丁寧'),
-      button('AI変換')
     ];
     for (final target in targets) {
       await reach(tester, target);
@@ -213,12 +207,6 @@ void main() {
           emergency);
       boardVisible(tester);
     }
-    await reach(tester, button('丁寧'));
-    await tester.tap(button('丁寧'));
-    await settle(tester);
-    expect(
-        container.read(settingsNotifierProvider).requireValue.aiPoliteness.name,
-        contains('polite'));
     expect(tester.widget<ElevatedButton>(button('AI変換')).onPressed, isNotNull);
     expect(tester.widget<ElevatedButton>(button('読み上げ')).onPressed, isNotNull);
     for (var i = 0; i < 3; i++) {
@@ -240,15 +228,6 @@ void main() {
     await tester.tap(cell('あ'));
     await settle(tester);
     expect(container.read(inputBufferProvider), hasLength(1000));
-    await tester.runAsync(() => container
-        .read(historyProvider.notifier)
-        .addHistory('あいうえお', HistoryType.manualInput));
-    input.setText('あ');
-    await settle(tester);
-    expect(find.text('あいうえお'), findsOneWidget);
-    input.clear();
-    await settle(tester);
-    expect(find.text('あいうえお'), findsNothing);
     await reach(tester, find.text('はい'));
     for (var i = 0; i < 3; i++) {
       await tester.tap(button('上へ'));

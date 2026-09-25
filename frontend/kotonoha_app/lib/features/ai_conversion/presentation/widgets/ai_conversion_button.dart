@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
 import '../../../network/domain/models/network_state.dart';
 import '../../../network/providers/network_provider.dart';
 import '../../domain/models/politeness_level.dart';
@@ -57,6 +58,7 @@ class AIConversionButton extends ConsumerStatefulWidget {
     this.onConversionStart,
     this.onConversionComplete,
     this.onConversionError,
+    this.height = kMinTapTargetSize,
   });
 
   /// プロパティ定義: 変換対象の入力テキスト
@@ -82,6 +84,9 @@ class AIConversionButton extends ConsumerStatefulWidget {
   /// プロパティ定義: 変換失敗時のコールバック（オプション）
   /// 用途: 親ウィジェットでエラー表示を行う
   final void Function(Object error)? onConversionError;
+
+  /// ボタンの高さ（[kMinTapTargetSize] 未満にはしない）
+  final double height;
 
   @override
   ConsumerState<AIConversionButton> createState() => _AIConversionButtonState();
@@ -156,62 +161,44 @@ class _AIConversionButtonState extends ConsumerState<AIConversionButton> {
     // リアクティブ更新: ネットワーク状態変化時に自動再描画
     final networkState = ref.watch(networkProvider);
     final isEnabled = _isButtonEnabled(networkState);
-    final isOffline = networkState != NetworkState.online;
-    final shortfall = kMinInputLength - widget.inputText.length;
 
     // UI構築: AI変換ボタン
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Semantics(
-          // アクセシビリティ: スクリーンリーダー用ラベル
-          label: _isLoading ? 'AI変換中' : 'AI変換ボタン',
-          button: true,
-          enabled: isEnabled,
-          child: SizedBox(
-            // アクセシビリティ対応: 最小タップターゲットサイズを保証
-            height: kMinTapTargetSize,
-            child: ElevatedButton(
-              // タップ処理: 有効時のみ変換を実行
-              onPressed: isEnabled ? _executeConversion : null,
-              child: _isLoading
-                  // ローディング表示: 変換中はインジケーターを表示
-                  ? const SizedBox(
-                      width: _loadingIndicatorSize,
-                      height: _loadingIndicatorSize,
-                      child: CircularProgressIndicator(
-                        strokeWidth: _loadingIndicatorStrokeWidth,
-                      ),
-                    )
-                  // 通常表示: 「AI変換」ラベル
-                  : const Text('AI変換'),
+    // 無効な理由（オフライン）は、並びを崩さないよう呼び出し側が
+    // [OfflineIndicator] を別の行に置く。
+    return Semantics(
+      // アクセシビリティ: スクリーンリーダー用ラベル
+      label: _isLoading ? 'AI変換中' : 'AI変換ボタン',
+      button: true,
+      enabled: isEnabled,
+      child: SizedBox(
+        // アクセシビリティ対応: 最小タップターゲットサイズを保証
+        height: widget.height < kMinTapTargetSize
+            ? kMinTapTargetSize
+            : widget.height,
+        child: ElevatedButton(
+          // タップ処理: 有効時のみ変換を実行
+          onPressed: isEnabled ? _executeConversion : null,
+          // 隣に並ぶ削除・読み上げボタンと同じ角丸・配色にそろえる。
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
             ),
           ),
+          child: _isLoading
+              // ローディング表示: 変換中はインジケーターを表示
+              ? const SizedBox(
+                  width: _loadingIndicatorSize,
+                  height: _loadingIndicatorSize,
+                  child: CircularProgressIndicator(
+                    strokeWidth: _loadingIndicatorStrokeWidth,
+                  ),
+                )
+              // 通常表示: 「AI変換」ラベル
+              : const Text('AI変換'),
         ),
-        // 無効理由の可視化(fix/improvement-p0-p2): ボタンが無効な場合
-        // オフライン・文字数不足のどちらが理由かをユーザーに見えるようにする。
-        // ローディング中（一時的にisEnabled=falseになる）は理由表示を出さない。
-        if (!_isLoading && !isEnabled)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: isOffline
-                ? const OfflineIndicator()
-                : (shortfall > 0
-                    ? Text(
-                        'あと$shortfall文字入力してください',
-                        // AA対応: Colors.grey.shade700は背景がScaffoldの
-                        // 暗い背景色（ダークテーマ）になる場合、コントラスト比が
-                        // 約2.7:1程度までしか出ずWCAG AA（4.5:1）未達となる。
-                        // colorScheme.onSurfaceは各テーマのサーフェス系背景との
-                        // 組み合わせでAAを満たすよう定義済みのため、これを使う。
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 12,
-                        ),
-                      )
-                    : const SizedBox.shrink()),
-          ),
-      ],
+      ),
     );
   }
 }

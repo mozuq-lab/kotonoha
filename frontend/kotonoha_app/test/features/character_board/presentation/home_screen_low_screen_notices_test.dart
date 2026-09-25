@@ -114,13 +114,6 @@ void main() {
         tester, const Size(478 + AppSizes.emergencyButtonBarThickness, 375));
     expect(exception, isNull, reason: 'レイアウト例外が出ている: $exception');
     expectIndicatorReadable(tester, screenOf(tester));
-    // この幅・倍率では折り返すので、2行目が左に寄らないことまで見る。
-    expectLinesCentered(
-        tester,
-        find.descendant(
-            of: find.byType(OfflineIndicator),
-            matching: find.text(offlineIndicatorText)),
-        'AI変換脇の告知');
   });
 
   // オフラインからオンラインに戻したフレームで、復帰の緑帯が右へはみ出して

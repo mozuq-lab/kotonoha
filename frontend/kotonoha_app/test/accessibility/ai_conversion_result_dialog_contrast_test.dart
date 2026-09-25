@@ -2,7 +2,7 @@
 /// テスト対象
 /// lib/features/ai_conversion/presentation/widgets/ai_conversion_result_dialog.dart
 /// WCAG 2.1 AA を満たし続けることを保証する。
-/// 背景（実障害）: 変換結果ボックスと丁寧さタグの背景を
+/// 背景（実障害）: 変換結果ボックスの背景を
 /// `withValues(alpha:)` の半透明色にしていたため、実際の色はダイアログ背景との
 /// 合成結果に依存していた。さらに枠線にはテーマのプライマリ色をそのまま使って
 /// おり、ライトテーマで 2.59:1（ボックス背景に対して）／2.87:1（ダイアログ背景に
@@ -64,6 +64,7 @@ Future<void> _pumpDialog(WidgetTester tester, ThemeData theme) async {
                 onAdopt: (_) {},
                 onRegenerate: () {},
                 onUseOriginal: (_) {},
+                onLevelChanged: (_) async => '',
               ),
             ),
             child: const Text('open'),
@@ -129,30 +130,6 @@ void main() {
               '${borderRatio.toStringAsFixed(2)}:1 で非テキスト基準 (3:1) 未達',
         );
       });
-
-      testWidgets('${entry.key}テーマで丁寧さタグが 4.5:1 以上', (tester) async {
-        await _pumpDialog(tester, entry.value);
-
-        final labelFinder = find.text(_politenessLevel.displayName);
-        final chipFinder = find
-            .ancestor(of: labelFinder, matching: find.byType(Container))
-            .first;
-        final decoration =
-            tester.widget<Container>(chipFinder).decoration! as BoxDecoration;
-        final background = decoration.color!;
-        final text = resolvedTextColor(tester, labelFinder);
-
-        expectOpaque(background, '${entry.key}テーマの丁寧さタグ背景');
-        expectOpaque(text, '${entry.key}テーマの丁寧さタグ文字');
-
-        final ratio = contrastRatio(text, background);
-        expect(
-          ratio,
-          greaterThanOrEqualTo(4.5),
-          reason: '${entry.key}テーマの丁寧さタグのコントラスト比が '
-              '${ratio.toStringAsFixed(2)}:1 で WCAG 2.1 AA (4.5:1) 未達',
-        );
-      });
     }
   });
 
@@ -199,7 +176,12 @@ void main() {
         );
       });
 
-      for (final label in const ['採用', '再生成']) {
+      // 丁寧さの3択（選択中の「丁寧」だけ色味を付けている）
+      for (final label in [
+        '採用',
+        '再生成',
+        for (final level in PolitenessLevel.values) level.displayName,
+      ]) {
         testWidgets('${entry.key}テーマで「$label」ボタンの文字が 4.5:1 以上', (tester) async {
           await _pumpDialog(tester, entry.value);
 
@@ -226,84 +208,6 @@ void main() {
           );
         });
       }
-    }
-  });
-
-  group('丁寧さタグの背景', () {
-    // この回帰テストの理由: 半透明を不透明化する変更のとき、タグの背景に
-    // 変換結果ボックスの色を流用してしまい、「見た目は変わらないまま」という
-    // コメントに反して実際には変わっていた。とくに高コントラストでは
-    // #CCCCCC（灰）→ #FFF9C4（淡黄）と色相まで変わり、黒白で構成された
-    // テーマに黄色が持ち込まれていた。コントラストは通るためAAのテストでは
-    // 検出できない。元の色そのものを固定する。
-
-    /// タグの背景色（元の定義: primary を alpha 0.2 で surface に重ねた色）
-    const expected = <String, Color>{
-      'ライト': Color(0xFFCBE2F5),
-      'ダーク': Color(0xFF1D3042),
-      '高コントラスト': Color(0xFFCCCCCC),
-    };
-
-    for (final entry in _themes.entries) {
-      testWidgets('${entry.key}テーマで元の色が保たれている', (tester) async {
-        await _pumpDialog(tester, entry.value);
-
-        final tag = tester.widget<Container>(
-          find
-              .ancestor(
-                of: find.text(_politenessLevel.displayName),
-                matching: find.byType(Container),
-              )
-              .first,
-        );
-        final background = (tag.decoration! as BoxDecoration).color!;
-
-        expectOpaque(background, '${entry.key}テーマの丁寧さタグ背景');
-        expectSameRenderedColor(
-          background,
-          expected[entry.key]!,
-          '${entry.key}テーマの丁寧さタグ背景',
-        );
-      });
-
-      testWidgets('${entry.key}テーマでタグの文字が 4.5:1 以上', (tester) async {
-        await _pumpDialog(tester, entry.value);
-
-        final tag = tester.widget<Container>(
-          find
-              .ancestor(
-                of: find.text(_politenessLevel.displayName),
-                matching: find.byType(Container),
-              )
-              .first,
-        );
-        final background = (tag.decoration! as BoxDecoration).color!;
-        final text =
-            resolvedTextColor(tester, find.text(_politenessLevel.displayName));
-
-        final ratio = contrastRatio(text, background);
-        expect(
-          ratio,
-          greaterThanOrEqualTo(4.5),
-          reason: '${entry.key}テーマの丁寧さタグの文字が '
-              '${ratio.toStringAsFixed(2)}:1 で WCAG 2.1 AA (4.5:1) 未達',
-        );
-      });
-
-      testWidgets('${entry.key}テーマでダイアログ背景が colorScheme.surface と一致する',
-          (tester) async {
-        // この前提を固定する理由: タグの色は Color.alphaBlend で
-        // colorScheme.surface に重ねて求めている。ダイアログの実背景が
-        // surface と食い違うと、合成の土台がずれて実際の見え方と計算が乖離する。
-        await _pumpDialog(tester, entry.value);
-
-        expect(
-          _dialogBackground(tester),
-          equals(entry.value.colorScheme.surface),
-          reason: '${entry.key}テーマのダイアログ背景が colorScheme.surface と異なる。'
-              '丁寧さタグの合成の土台がずれる',
-        );
-      });
     }
   });
 }

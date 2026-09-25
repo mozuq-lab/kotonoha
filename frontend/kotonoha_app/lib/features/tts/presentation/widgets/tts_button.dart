@@ -80,24 +80,14 @@ class TTSButton extends ConsumerWidget {
     final isSpeaking = ttsState.state == TTSState.speaking;
     final colorScheme = Theme.of(context).colorScheme;
 
-    // ボタンラベルと色を決定
-    // AA対応: 停止時のColors.red(#F44336)+白文字は約3.9:1
-    // 読み上げ時のライトテーマprimaryColor(#2196F3)+白文字は約3.1:1で
-    // いずれもWCAG AA（4.5:1）未達だった。ハードコード色をやめ
-    // テーマのcolorSchemeの色（primary/error）を背景に使用することで
-    // 高コントラストテーマの枠線スタイル（ElevatedButtonThemeDataのside）も
-    // 活かされるようにする。
-    // 文字色: colorScheme.onError はライト/高コントラストテーマで
-    // デフォルト値（白）のままとなっており、実際の背景色との組み合わせでは
-    // AA基準（4.5:1）を満たさないケースがある（例: ダークテーマの
-    // error(#D32F2F)+黒文字は約4.2:1で未達、高コントラストテーマの
-    // error(#FF0000)+白文字は約4.0:1で未達）。そのため、実際の背景色の
-    // 輝度から黒・白のうちコントラスト比が高い方を都度算出して使用し
-    // 3テーマ×2状態のすべてでWCAG AAを満たすことを保証する。
+    // テーマの面色と役割色を混ぜ、読み上げ・停止の区別を保ちながら
+    // 背景の彩度を抑える。文字色は実際の背景から選び、コントラストを確保する。
     final label = isSpeaking ? '停止' : '読み上げ';
     final backgroundColor = isSpeaking
-        ? (stopButtonColor ?? colorScheme.error)
-        : (speakButtonColor ?? colorScheme.primary);
+        ? (stopButtonColor ??
+            Color.lerp(colorScheme.surface, colorScheme.error, 0.16)!)
+        : (speakButtonColor ??
+            Color.lerp(colorScheme.surface, colorScheme.primary, 0.18)!);
     final foregroundColor = bestContrastingTextColor(backgroundColor);
     final icon = isSpeaking ? Icons.stop : Icons.volume_up;
 
@@ -118,8 +108,8 @@ class TTSButton extends ConsumerWidget {
               backgroundColor: backgroundColor,
               foregroundColor: foregroundColor,
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.paddingMedium,
-                vertical: AppSizes.paddingSmall,
+                horizontal: AppSizes.paddingSmall,
+                vertical: AppSizes.paddingXSmall,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius:

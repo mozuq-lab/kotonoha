@@ -239,25 +239,13 @@ Future<void> tapCharacterOnBoard(
   await tester.pump();
 }
 
-/// ホームの状態ボタンの列（横スクロールの 1 行）で、[label] のボタンを画面に出す
-/// 電話の画面では「眠い」以降が描画されていない。
+/// ホームの状態ボタン（8 個すべてがスワイプなしで並ぶ）から [label] のボタンを
+/// 画面に出す。操作域がスクロールする低い画面のために ensureVisible する。
 Future<void> revealStatusButton(WidgetTester tester, String label) async {
   final target = find.descendant(
     of: find.byType(StatusButton),
     matching: find.text(label),
   );
-  Finder strip() => find
-      .ancestor(
-        of: find.byType(StatusButton).first,
-        matching: find.byType(Scrollable),
-      )
-      .first;
-  for (final dx in [-150.0, 150.0]) {
-    for (var i = 0; i < 10 && target.evaluate().isEmpty; i++) {
-      await tester.dragFrom(tester.getRect(strip()).center, Offset(dx, 0));
-      await tester.pumpAndSettle();
-    }
-  }
   expect(target, findsOneWidget, reason: '状態ボタン「$label」に届かない');
   await tester.ensureVisible(target);
   await tester.pumpAndSettle();

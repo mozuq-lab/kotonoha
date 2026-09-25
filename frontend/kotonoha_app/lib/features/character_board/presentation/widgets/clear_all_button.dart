@@ -1,7 +1,7 @@
 /// ClearAllButton ウィジェット
 /// 入力バッファのすべての文字を削除するためのボタン。
 /// タップ時に確認ダイアログを表示し、誤操作を防止する。
-/// アクセシビリティ要件（: 44px以上、: 60px推奨）に準拠。
+/// 正方形のタップ領域（既定60px、44px以上）を確保する。
 /// 全消去ボタンで入力欄のすべての文字を削除する機能を提供
 /// 全消去ボタンタップ時に確認ダイアログを表示
 /// 重要な操作（全消去）に誤操作防止の仕組みを設ける
@@ -14,17 +14,15 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/clear
 
 /// 全消去ボタンのアクセシブルラベル。
 /// 定数にしている理由: 破壊的操作の全消去ボタンと、同じ画面に常時並ぶ
-/// 緊急ボタンは、どちらも赤系の塗りボタンになる。両者を輝度比で十分に離すことは
-/// WCAG AA の要件と数学的に両立しないため（test/accessibility
-/// theme_error_color_contrast_test.dart の考察を参照）、実際の識別は
-/// 色ではなくラベル・形状が担う。ラベルが識別手段であることを明示し
+/// 緊急ボタンも赤系なので、識別は色だけに頼らずラベル・形状でも行う。
+/// ラベルが識別手段であることを明示し
 /// テストから参照できるようにするために定数化している。
 const String clearAllButtonSemanticsLabel = '全消去';
 
 /// 全消去ボタンウィジェット
 /// 入力バッファのすべての文字を削除するためのボタン。
 /// タップ時に確認ダイアログを表示し、誤操作を防止する。
-/// アクセシビリティ要件（: 44px以上、: 60px推奨）に準拠。
+/// 正方形のタップ領域（既定60px、44px以上）を確保する。
 class ClearAllButton extends StatelessWidget {
   /// 確認後のコールバック
   final VoidCallback? onConfirmed;
@@ -32,16 +30,21 @@ class ClearAllButton extends StatelessWidget {
   /// ボタンの有効/無効状態
   final bool enabled;
 
+  /// ボタンの一辺の長さ（正方形。[AppSizes.minTapTarget] 未満にはしない）
+  final double size;
+
   /// ClearAllButtonを作成する
   const ClearAllButton({
     super.key,
     this.onConfirmed,
     this.enabled = true,
+    this.size = AppSizes.recommendedTapTarget,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final side = size < AppSizes.minTapTarget ? AppSizes.minTapTarget : size;
 
     return Semantics(
       label: clearAllButtonSemanticsLabel,
@@ -50,17 +53,20 @@ class ClearAllButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: enabled ? () => _showConfirmationDialog(context) : null,
         style: ElevatedButton.styleFrom(
-          minimumSize: const Size(
-            AppSizes.recommendedTapTarget,
-            AppSizes.recommendedTapTarget,
-          ),
-          // 警告色（赤系）で表示（AC-010）
+          minimumSize: Size.square(side),
+          fixedSize: Size.square(side),
+          padding: EdgeInsets.zero,
+          // 淡い警告色にし、緊急ボタンの強い赤を際立たせる。
           backgroundColor: WidgetStateColor.resolveWith(
             (states) {
               if (states.contains(WidgetState.disabled)) {
                 return theme.disabledColor.withValues(alpha: 0.12);
               }
-              return theme.colorScheme.error;
+              return Color.lerp(
+                theme.colorScheme.surface,
+                theme.colorScheme.error,
+                0.14,
+              )!;
             },
           ),
           foregroundColor: WidgetStateColor.resolveWith(
@@ -68,8 +74,11 @@ class ClearAllButton extends StatelessWidget {
               if (states.contains(WidgetState.disabled)) {
                 return theme.disabledColor.withValues(alpha: 0.38);
               }
-              return theme.colorScheme.onError;
+              return theme.colorScheme.onSurface;
             },
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           ),
         ),
         child: const Icon(
