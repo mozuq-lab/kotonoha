@@ -224,44 +224,6 @@ void main() {
       },
     );
 
-    // RT-008: 緊急ボタンテスト
-    testWidgets(
-      'RT-008: 緊急ボタンで緊急音が鳴り画面が赤表示される',
-      (tester) async {
-        // （緊急ボタン）
-        // 手順: 緊急ボタンを2回タップ（確認ダイアログ→「はい」）
-        // 期待結果: 緊急音が鳴り、画面が赤表示される
-
-        await pumpApp(tester);
-
-        // 実際の処理実行: 緊急ボタンをタップ
-        final emergencyFinder = find.text('緊急');
-        if (emergencyFinder.evaluate().isNotEmpty) {
-          await tester.tap(emergencyFinder);
-          await tester.pumpAndSettle();
-
-          // 実際の処理実行: 確認ダイアログで「はい」をタップ
-          final confirmYesFinder = find.text('はい');
-          if (confirmYesFinder.evaluate().isNotEmpty) {
-            await tester.tap(confirmYesFinder);
-            await tester.pumpAndSettle();
-          }
-        }
-
-        // 結果検証: 緊急画面が表示される
-        // Note: 実機では緊急音が実際に鳴ることを手動確認
-
-        await takeScreenshot(binding, 'RT-008_emergency_activated');
-
-        // クリーンアップ: 緊急画面を閉じる
-        final closeFinder = find.text('閉じる');
-        if (closeFinder.evaluate().isNotEmpty) {
-          await tester.tap(closeFinder);
-          await tester.pumpAndSettle();
-        }
-      },
-    );
-
     // RT-009: 履歴保存・再生テスト
     testWidgets(
       'RT-009: 読み上げ実行後に履歴が保存され再読み上げできる',

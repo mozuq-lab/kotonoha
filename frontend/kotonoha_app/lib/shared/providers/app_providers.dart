@@ -29,11 +29,6 @@ export 'package:kotonoha_app/features/settings/providers/settings_provider.dart'
 // テーマ管理Provider
 export 'package:kotonoha_app/core/themes/theme_provider.dart';
 
-// 緊急機能
-
-// 緊急状態管理Provider
-export 'package:kotonoha_app/features/emergency/presentation/providers/emergency_state_provider.dart';
-
 // 対面表示モード
 
 // 対面表示モード管理Provider

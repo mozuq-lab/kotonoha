@@ -20,8 +20,6 @@ import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 import 'package:kotonoha_app/features/settings/models/app_settings.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
-import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_button_with_confirmation.dart';
-import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/favorite/presentation/favorites_screen.dart';
@@ -202,19 +200,6 @@ void main() {
     cancelLabel: 'キャンセル',
     confirmLabel: '保存',
     scope: phraseScope,
-  );
-
-  // 緊急呼び出しだけは `ConfirmationDialog` を使わず自前で組む（色・連続タップ
-  // 防止・補足行・固定箱のため）。並びは同じ `ConfirmationDialogLayout` から
-  // 取っているが、「取っているつもり」で済ませず契約そのものを当てる
-  expectMeetsContract(
-    '緊急呼び出しの確認',
-    home: () => _screenWith(
-      EmergencyButtonWithConfirmation(onEmergencyConfirmed: () {}),
-    ),
-    open: (tester) => tester.tap(find.byType(EmergencyButtonWithConfirmation)),
-    cancelLabel: EmergencyConfirmationDialog.cancelLabel,
-    confirmLabel: EmergencyConfirmationDialog.confirmLabel,
   );
 
   // --- 画面の中で `ConfirmationDialog` を組んでいるもの（画面ごと pump する） ---

@@ -15,7 +15,6 @@ import '../widgets/help_section_widget.dart';
 /// 基本操作、機能説明、誤操作防止設定の説明を提供する。
 /// 実装機能
 /// 基本操作の説明（文字盤、定型文、TTS）
-/// 緊急ボタンの使い方
 /// iOS/Androidの誤操作防止設定方法
 /// チュートリアルの再表示導線（fix/improvement-p0-p2で配線）
 /// 実装要件
@@ -60,21 +59,6 @@ class HelpScreen extends ConsumerWidget {
                   title: '読み上げボタン',
                   description: '入力したテキストを音声で読み上げます。'
                       '話し相手にメッセージを伝えるのに便利です。',
-                ),
-              ],
-            ),
-
-            // 緊急ボタンセクション
-            const HelpSectionWidget(
-              title: '緊急ボタン',
-              icon: Icons.warning_amber,
-              children: [
-                _HelpItem(
-                  title: '緊急時の使い方',
-                  description: '画面右下の赤い緊急ボタンを押すと、'
-                      '確認ダイアログが表示されます。'
-                      '「はい」を押すと緊急アラート画面に移動し、'
-                      '音と画面で周囲に助けを求めることができます。',
                 ),
               ],
             ),

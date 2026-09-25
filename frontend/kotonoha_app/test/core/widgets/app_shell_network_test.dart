@@ -16,25 +16,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:kotonoha_app/core/widgets/app_shell.dart';
-import 'package:kotonoha_app/features/emergency/presentation/providers/emergency_state_provider.dart';
 import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
 import 'package:kotonoha_app/features/network/domain/services/connectivity_service.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
-
-import '../../mocks/mock_emergency_audio_service.dart';
 
 class MockConnectivityService extends Mock implements ConnectivityService {}
 
 void main() {
   group('AppShell ネットワーク監視起動テスト', () {
     late MockConnectivityService mockService;
-    late MockEmergencyAudioService mockAudioService;
     late StreamController<List<ConnectivityResult>> connectivityController;
     late ProviderContainer container;
 
     setUp(() {
       mockService = MockConnectivityService();
-      mockAudioService = MockEmergencyAudioService();
       connectivityController =
           StreamController<List<ConnectivityResult>>.broadcast();
 
@@ -42,15 +37,10 @@ void main() {
           .thenAnswer((_) => connectivityController.stream);
       when(() => mockService.checkConnectivity())
           .thenAnswer((_) async => [ConnectivityResult.wifi]);
-      when(() => mockAudioService.startEmergencySound())
-          .thenAnswer((_) async {});
-      when(() => mockAudioService.stopEmergencySound())
-          .thenAnswer((_) async {});
 
       container = ProviderContainer(
         overrides: [
           connectivityServiceProvider.overrideWithValue(mockService),
-          emergencyAudioServiceProvider.overrideWithValue(mockAudioService),
         ],
       );
     });

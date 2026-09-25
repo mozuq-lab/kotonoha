@@ -88,7 +88,6 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 - RT-005: TTS停止
 - RT-006: 定型文選択
 - RT-007: 大ボタンタップ
-- RT-008: 緊急ボタン
 - RT-009: 履歴保存・再生
 - RT-010: お気に入り登録
 - RT-011: AI変換（3秒以内）
@@ -126,7 +125,6 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 ### エッジケーステストケース（RT-301〜RT-307）
 
 - RT-301: OS音量0での読み上げ
-- RT-302: マナーモード時の緊急ボタン
 - RT-303: TTS音声エンジン未インストール
 - RT-304: バックグラウンド復帰
 - RT-305: 長文読み上げ（500文字以上）

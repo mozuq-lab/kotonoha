@@ -218,7 +218,7 @@ jobs:
           # 下記3本は「壊れたらアプリとして使えない」経路なので残す:
           # - character_input_tts: 文字盤入力→TTS（中核）
           # - preset_phrase:       定型文の登録→呼び出し（永続化を通る）
-          # - large_emergency_buttons: 緊急ボタン（安全に関わる）
+          # - large_buttons: 大ボタン・状態ボタン
           #
           # 【削除済み（2026-08-30）】settings_accessibility_e2e_test.dart と
           # history_favorite_test.dart は削除した。どちらもCI未実行で何も

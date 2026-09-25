@@ -144,12 +144,12 @@ void main() {
 
         // When: 状態を保存
         await notifier.saveDraftText('クラッシュ前のテキスト');
-        await notifier.saveLastRoute('/emergency');
+        await notifier.saveLastRoute('/settings');
 
         // Then: SharedPreferencesに保存されている
         final prefs = await SharedPreferences.getInstance();
         expect(prefs.getString('draft_text'), equals('クラッシュ前のテキスト'));
-        expect(prefs.getString('last_route'), equals('/emergency'));
+        expect(prefs.getString('last_route'), equals('/settings'));
       });
 
       test('TC-079-009: 状態をクリアできる', () async {

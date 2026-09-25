@@ -42,8 +42,6 @@ final ThemeData highContrastTheme = ThemeData(
     // 前景・背景のどちらの使い方でも基準を満たしていなかった。
     // （5.25:1 は「純赤の上に黒文字を載せた場合」の値で、白背景との比ではない）
     // 色相を保ったまま暗くした #CC0000 に変更し、白に対し 5.89:1 を確保する。
-    // 全面赤の緊急画面には引き続き純赤 emergencyHighContrast を使う
-    // （背景専用。前景は輝度から黒を選ぶため 5.25:1 で AA を満たす）。
     error: AppColors.errorHighContrast,
     onError: Colors.white,
     outline: Colors.black,

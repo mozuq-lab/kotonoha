@@ -1,7 +1,7 @@
 /// 利用シナリオの結合テスト（`docs/now.md` の「形」の定義）
 ///
 /// 初めて使う人が、要件の MVP（文字盤・読み上げ・定型文・履歴・お気に入り・
-/// 緊急ボタン・設定）を説明なしに一通り使えることを、本物のアプリで確かめる。
+/// 設定）を説明なしに一通り使えることを、本物のアプリで確かめる。
 /// iOS シミュレータ（iPad）と Android エミュレータで走らせる。
 ///
 /// 1 本の長いテストにしない理由: 最初の失敗で止まると、その先の
@@ -221,35 +221,7 @@ void main() {
     expect(find.text('痛い'), findsOneWidget, reason: '「痛い」が履歴に無い');
   });
 
-  testWidgets('5. 緊急ボタン: 「いいえ」なら鳴らず、「はい」なら緊急画面になり、リセットで戻る', (tester) async {
-    await pumpApp(tester);
-    final button = find.bySemanticsLabel('緊急呼び出しボタン');
-    expect(button, findsOneWidget, reason: 'ホームに緊急ボタンが無い');
-
-    await tester.tap(button);
-    await tester.pumpAndSettle();
-    expect(find.text('緊急呼び出しを実行しますか?'), findsOneWidget, reason: '緊急の確認が出ない');
-    await tapDialogButton(tester, 'いいえ');
-    expect(find.text('緊急呼び出し中'), findsNothing, reason: '「いいえ」でも緊急画面になった');
-
-    // 別の画面からも押せる
-    await _openFromHome(tester, '設定');
-    await tester.tap(find.bySemanticsLabel('緊急呼び出しボタン'));
-    await tester.pumpAndSettle();
-    // 緊急音が鳴っている間、Android では再描画が続き pumpAndSettle が
-    // 終わらない（画面そのものは出ている）。時間を区切って待つ。
-    await tester.tap(find.descendant(
-        of: find.byType(AlertDialog), matching: find.text('はい')));
-    await tester.pump(const Duration(seconds: 2));
-    expect(find.text('緊急呼び出し中'), findsOneWidget, reason: '「はい」で緊急画面にならない');
-
-    await tester.tap(find.text('リセット'));
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
-    expect(find.text('緊急呼び出し中'), findsNothing, reason: 'リセットで緊急画面から戻れない');
-  });
-
-  testWidgets('6. 設定（文字の大きさ・テーマ・読み上げ速度）を変えると、再起動後も残る', (tester) async {
+  testWidgets('5. 設定（文字の大きさ・テーマ・読み上げ速度）を変えると、再起動後も残る', (tester) async {
     await pumpApp(tester);
     await _openFromHome(tester, '設定');
 
@@ -270,7 +242,7 @@ void main() {
     expect(settings.ttsSpeed, TTSSpeed.slow, reason: '読み上げ速度が再起動で戻る');
   });
 
-  testWidgets('7. 履歴とお気に入りは再起動後も残り、入力中の文も戻る', (tester) async {
+  testWidgets('6. 履歴とお気に入りは再起動後も残り、入力中の文も戻る', (tester) async {
     await pumpApp(tester);
 
     // 「ず」は「す」に濁点を付けて打つ

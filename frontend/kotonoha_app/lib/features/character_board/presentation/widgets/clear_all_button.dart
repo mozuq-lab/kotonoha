@@ -14,7 +14,6 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/clear
 
 /// 全消去ボタンのアクセシブルラベル。
 /// 定数にしている理由: 破壊的操作の全消去ボタンと、同じ画面に常時並ぶ
-/// 緊急ボタンも赤系なので、識別は色だけに頼らずラベル・形状でも行う。
 /// ラベルが識別手段であることを明示し
 /// テストから参照できるようにするために定数化している。
 const String clearAllButtonSemanticsLabel = '全消去';
@@ -56,7 +55,6 @@ class ClearAllButton extends StatelessWidget {
           minimumSize: Size.square(side),
           fixedSize: Size.square(side),
           padding: EdgeInsets.zero,
-          // 淡い警告色にし、緊急ボタンの強い赤を際立たせる。
           backgroundColor: WidgetStateColor.resolveWith(
             (states) {
               if (states.contains(WidgetState.disabled)) {

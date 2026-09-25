@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 /// ヘルプセクションウィジェット
 /// セクションヘッダーとアイコン、子ウィジェットをまとめて表示する。
-/// [title] セクションのタイトル（例: 「基本操作」「緊急ボタン」）
+/// [title] セクションのタイトル（例: 「基本操作」「便利な機能」）
 /// [icon] セクションのアイコン（オプション）
 /// [children] セクション内のヘルプ項目ウィジェット
 class HelpSectionWidget extends StatelessWidget {
