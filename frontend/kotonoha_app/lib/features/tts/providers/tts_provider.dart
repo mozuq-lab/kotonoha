@@ -110,6 +110,9 @@ class TTSNotifier extends Notifier<TTSServiceState> {
     _initFuture = Future.microtask(() async {
       final success = await _service.initialize();
       await _applyPersistedSpeedIfAvailable();
+      if (!success && ref.mounted) {
+        _syncStateFromService();
+      }
       return success;
     });
     return TTSServiceState.initial();

@@ -22,8 +22,6 @@
 # Flutter TTS plugin
 -keep class com.tundralabs.fluttertts.** { *; }
 
-# Audio players plugin
-
 # Connectivity Plus plugin
 -keep class dev.fluttercommunity.plus.connectivity.** { *; }
 

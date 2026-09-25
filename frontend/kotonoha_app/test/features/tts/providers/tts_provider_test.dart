@@ -1,8 +1,10 @@
 /// TTSProvider テスト
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
@@ -51,6 +53,25 @@ void main() {
       // テスト後処理: ProviderContainerを破棄し、メモリリークを防ぐ
       // 状態復元: 次のテストに影響しないよう、コンテナを破棄
       container.dispose();
+    });
+
+    test('iOSの起動時音声カテゴリ設定失敗を画面の状態へ伝える', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      when(() => mockFlutterTts.setIosAudioCategory(
+            IosTextToSpeechAudioCategory.playback,
+            const [],
+            IosTextToSpeechAudioMode.defaultMode,
+          )).thenAnswer((_) async => 0);
+
+      container.read(ttsProvider);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(ttsProvider).state, TTSState.error);
+      expect(
+        container.read(ttsProvider).errorMessage,
+        'TTS初期化に失敗しました',
+      );
     });
 
     group('境界値テストケース', () {
