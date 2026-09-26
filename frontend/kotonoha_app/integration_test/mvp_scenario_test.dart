@@ -21,6 +21,8 @@ import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
 import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_item_card.dart';
 import 'package:kotonoha_app/features/settings/models/app_theme.dart';
@@ -157,7 +159,7 @@ void main() {
     await _expectSpoke(tester, spoken, '読み上げボタン');
 
     // 入力欄を空にする（確認つき）
-    await tester.tap(find.bySemanticsLabel('全消去'));
+    await tester.tap(find.byType(ClearAllButton));
     await tester.pumpAndSettle();
     expect(find.text('入力内容をすべて消去しますか？'), findsOneWidget, reason: '全消去の確認が出ない');
     await tapDialogButton(tester, 'はい');
@@ -279,7 +281,7 @@ void main() {
     await _back(tester);
 
     // 読み上げずに打ちかけた文
-    await tester.tap(find.bySemanticsLabel('全消去'));
+    await tester.tap(find.byType(ClearAllButton));
     await tester.pumpAndSettle();
     await tapDialogButton(tester, 'はい');
     await _type(tester, 'さむい');
@@ -302,7 +304,7 @@ void main() {
     await tester.enterText(
         find.byKey(const Key('home_input_field')), '直接入力した文👨‍👩‍👧');
     await tester.pump();
-    await tester.tap(find.bySemanticsLabel('削除'));
+    await tester.tap(find.byType(DeleteButton));
     await tester.pump();
     expect(find.text('直接入力した文'), findsOneWidget,
         reason: 'キーボードの絵文字を1文字として削除できない');
@@ -324,21 +326,28 @@ void main() {
     await tester.tap(find.text('緑'));
     await tester.pumpAndSettle();
     expect(
-      tester
-          .widget<Card>(find.descendant(of: card, matching: find.byType(Card)))
-          .color,
-      const Color(0xFF4CAF50),
+      tester.widget<FavoriteItemCard>(card).favorite.colorValue,
+      0xFF4CAF50,
     );
+    final displayedColor = tester
+        .widget<Card>(find.descendant(of: card, matching: find.byType(Card)))
+        .color;
+    expect(displayedColor, isNotNull);
 
     await restartApp(tester);
     await _openFromHome(tester, 'お気に入り');
     await scrollIntoView(tester, find.text('直接入力した文'));
     expect(
+      tester.widget<FavoriteItemCard>(card).favorite.colorValue,
+      0xFF4CAF50,
+      reason: '登録した文と色が再起動後に残らない',
+    );
+    expect(
       tester
           .widget<Card>(find.descendant(of: card, matching: find.byType(Card)))
           .color,
-      const Color(0xFF4CAF50),
-      reason: '登録した文と色が再起動後に残らない',
+      displayedColor,
+      reason: '選んだ色の表示が再起動後に変わる',
     );
   });
 }
