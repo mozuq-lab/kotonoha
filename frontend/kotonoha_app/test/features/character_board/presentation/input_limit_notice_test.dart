@@ -38,7 +38,7 @@ void main() {
     await container.read(networkProvider.notifier).setOnline();
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
-      child: const MaterialApp(home: HomeScreen()),
+      child: const MaterialApp(home: HomeScreen(enableAIConversion: true)),
     ));
     await tester.pumpAndSettle();
     await tester.tap(find.text('あ'));

@@ -403,7 +403,7 @@ void main() {
 
   expectMeetsContract(
     'AI変換の利用確認',
-    home: HomeScreen.new,
+    home: () => const HomeScreen(enableAIConversion: true),
     open: (tester) async {
       final ai = find.widgetWithText(ElevatedButton, 'AI変換');
       await tester.ensureVisible(ai);
@@ -443,7 +443,10 @@ void main() {
             settingsNotifierProvider.overrideWith(_NotYetAccepted.new),
             ttsProvider.overrideWith(_StubTts.new),
           ],
-          child: MaterialApp(theme: theme, home: const HomeScreen()),
+          child: MaterialApp(
+            theme: theme,
+            home: const HomeScreen(enableAIConversion: true),
+          ),
         ),
       );
       await pumpFrames(tester);

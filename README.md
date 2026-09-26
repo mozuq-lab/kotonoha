@@ -55,6 +55,10 @@ cd frontend/kotonoha_app
 fvm flutter run -d chrome
 ```
 
+AI変換ボタンは標準の起動・ビルドでは非表示です。開発時にAI変換を確認する場合は
+`--dart-define=ENABLE_AI_CONVERSION=true` を付けます。AI変換のE2Eテスト
+（`integration_test/ai_conversion_e2e_test.dart`）を実行する場合も同じ指定が必要です。
+
 ローカルの docker-compose 構成をそのまま使うなら、これだけで動きます（アプリ側のデフォルトが
 `API_BASE_URL=http://localhost:8000`、`AI_API_KEY` は空文字）。接続先を変える場合や
 `backend/.env` の `API_KEYS` でAPIキー認証を有効にした場合は、ルート `.env` の値を `--dart-define`
@@ -69,7 +73,7 @@ DEFINES=(--dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:8000}")
 if [ -n "${AI_API_KEY:-}" ]; then
   DEFINES+=(--dart-define=AI_API_KEY="$AI_API_KEY")
 fi
-fvm flutter run -d chrome "${DEFINES[@]}"
+fvm flutter run -d chrome --dart-define=ENABLE_AI_CONVERSION=true "${DEFINES[@]}"
 ```
 
 **空の `--dart-define` を渡さないこと。** `String.fromEnvironment` は「値が定義されたか」で判定するため、

@@ -32,7 +32,10 @@ Future<ProviderContainer> _pumpHome(WidgetTester tester, Size size) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: MaterialApp(theme: lightTheme, home: const HomeScreen()),
+      child: MaterialApp(
+        theme: lightTheme,
+        home: const HomeScreen(enableAIConversion: true),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -214,7 +217,10 @@ void main() {
     container.read(inputBufferProvider.notifier).setText('おみず');
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
-      child: MaterialApp(theme: lightTheme, home: const HomeScreen()),
+      child: MaterialApp(
+        theme: lightTheme,
+        home: const HomeScreen(enableAIConversion: true),
+      ),
     ));
     await tester.pumpAndSettle();
 
