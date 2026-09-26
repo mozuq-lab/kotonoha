@@ -103,6 +103,7 @@ def test_production_with_symbol_keys_loads(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
     monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
     monkeypatch.setenv("CF_ACCOUNT_ID", "0123456789abcdef0123456789abcdef")
+    monkeypatch.setenv("CF_AI_GATEWAY_ID", "kotonoha-prod")
     config = load_config(env_file=None)
     assert config.api_keys() == (SYMBOL_KEY.encode("ascii"),)
 
@@ -161,4 +162,5 @@ def test_production_workers_ai_needs_the_account_id(monkeypatch: pytest.MonkeyPa
     monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
     with pytest.raises(ConfigError) as info:
         load_config(env_file=None)
-    assert info.value.problems == (("CF_ACCOUNT_ID", "missing"),)
+    # ゲートウェイを通らないと支出上限が効かない（ADR-002 の必須条件）
+    assert info.value.problems == (("CF_ACCOUNT_ID", "missing"), ("CF_AI_GATEWAY_ID", "missing"))

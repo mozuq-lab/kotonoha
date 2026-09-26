@@ -165,8 +165,12 @@ class RuntimeConfig(BaseSettings):
             problems.append(("API_KEYS", "missing"))
         if self.provider_api_key(self.DEFAULT_AI_PROVIDER) is None:
             problems.append((_KEY_SETTING[self.DEFAULT_AI_PROVIDER], "missing"))
-        if self.DEFAULT_AI_PROVIDER == "workers_ai" and not self.CF_ACCOUNT_ID:
-            problems.append(("CF_ACCOUNT_ID", "missing"))
+        if self.DEFAULT_AI_PROVIDER == "workers_ai":
+            if not self.CF_ACCOUNT_ID:
+                problems.append(("CF_ACCOUNT_ID", "missing"))
+            # ゲートウェイを通らないと支出上限が効かない（ADR-002 の必須条件）
+            if not self.CF_AI_GATEWAY_ID:
+                problems.append(("CF_AI_GATEWAY_ID", "missing"))
         return tuple(problems)
 
 

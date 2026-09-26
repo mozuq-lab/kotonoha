@@ -152,6 +152,15 @@ async def test_openai_request_fits_reasoning_models(http: respx.MockRouter) -> N
             ErrorCode.INTERNAL_ERROR,
             False,
         ),
+        (  # 上限で切れた文は、言っていないことになり得る（守る約束 ③）
+            {
+                "return_value": httpx.Response(
+                    200, json={**anthropic_body("お水を"), "stop_reason": "max_tokens"}
+                )
+            },
+            ErrorCode.AI_API_ERROR,
+            False,
+        ),
     ],
 )
 async def test_anthropic_failures_become_safe_errors(
@@ -235,6 +244,8 @@ async def test_workers_ai_turns_off_thinking_and_routes_through_the_gateway(
     request = route.calls[0].request
     assert request.headers["authorization"] == f"Bearer {SYMBOL_KEY}"
     assert request.headers["cf-aig-gateway-id"] == "kotonoha-prod"
+    # ゲートウェイは既定で prompt と応答を記録する。公開文は「保存しない」と告げている（守る約束 ②）
+    assert request.headers["cf-aig-collect-log"] == "false"
     sent = json.loads(request.content)
     assert sent["model"] == GEMMA
     assert sent["max_tokens"] == PROMPT.max_tokens

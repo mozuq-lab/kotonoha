@@ -33,6 +33,10 @@ class _EmptyCompletionError(Exception):
     """
 
 
+class _TruncatedCompletionError(Exception):
+    """出力が上限で切れた内部シグナル。途中までの文は言っていないことになり得るので見せない。"""
+
+
 class Provider(Protocol):
     @property
     def name(self) -> ProviderName: ...
@@ -73,6 +77,8 @@ class AnthropicProvider:
                 messages=[{"role": "user", "content": prompt.user}],
             )
             text = _first_text(message)
+            if message.stop_reason == "max_tokens":
+                raise _TruncatedCompletionError
             if not text:
                 raise _EmptyCompletionError
         except anthropic.APITimeoutError as exc:  # APIConnectionError の子なので先に見る
@@ -83,7 +89,7 @@ class AnthropicProvider:
             code, cause, retryable = ErrorCode.AI_API_ERROR, type(exc), True
         except anthropic.APIStatusError as exc:
             code, cause = ErrorCode.AI_API_ERROR, type(exc)
-        except _EmptyCompletionError as exc:
+        except (_EmptyCompletionError, _TruncatedCompletionError) as exc:
             code, cause = ErrorCode.AI_API_ERROR, type(exc)
         except Exception as exc:  # SDK 内部の想定外。メッセージは持ち出さない
             code, cause = ErrorCode.INTERNAL_ERROR, type(exc)
@@ -100,10 +106,6 @@ def _first_text(message: anthropic.types.Message) -> str:
         if isinstance(block, TextBlock) and block.text.strip():
             return block.text.strip()
     return ""
-
-
-class _TruncatedCompletionError(Exception):
-    """出力が上限で切れた内部シグナル。途中までの文は言っていないことになり得るので見せない。"""
 
 
 async def _complete_openai_compatible(call: Callable[[], Awaitable[ChatCompletion]]) -> str:
@@ -189,7 +191,12 @@ class WorkersAIProvider:
         self._client = openai.AsyncOpenAI(
             api_key=api_token.get_secret_value(),
             base_url=f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1",
-            default_headers={"cf-aig-gateway-id": gateway_id} if gateway_id else None,
+            # ゲートウェイは既定で prompt と応答を記録する。公開文は「保存しない」と告げている
+            default_headers=(
+                {"cf-aig-gateway-id": gateway_id, "cf-aig-collect-log": "false"}
+                if gateway_id
+                else None
+            ),
             max_retries=0,
             timeout=timeout_seconds,
         )
