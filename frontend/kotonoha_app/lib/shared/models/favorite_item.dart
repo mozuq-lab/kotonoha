@@ -29,6 +29,10 @@ class FavoriteItem extends HiveObject {
   @HiveField(5)
   final String? sourceId;
 
+  /// ボタンの背景色。未設定なら画面側の既定色を使う。
+  @HiveField(6)
+  final int? colorValue;
+
   FavoriteItem({
     required this.id,
     required this.content,
@@ -36,6 +40,7 @@ class FavoriteItem extends HiveObject {
     required this.displayOrder,
     this.sourceType,
     this.sourceId,
+    this.colorValue,
   });
 
   /// 一部のフィールドを更新した新しいお気に入りを生成する。
@@ -46,6 +51,7 @@ class FavoriteItem extends HiveObject {
     int? displayOrder,
     String? sourceType,
     String? sourceId,
+    int? colorValue,
   }) {
     return FavoriteItem(
       id: id ?? this.id,
@@ -54,6 +60,7 @@ class FavoriteItem extends HiveObject {
       displayOrder: displayOrder ?? this.displayOrder,
       sourceType: sourceType ?? this.sourceType,
       sourceId: sourceId ?? this.sourceId,
+      colorValue: colorValue ?? this.colorValue,
     );
   }
 

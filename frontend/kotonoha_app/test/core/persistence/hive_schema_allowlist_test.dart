@@ -84,13 +84,14 @@ const _allowedWriteCalls = <String, List<String>>{
     'byte(6)', 'write(DateTime)', // updatedAt
   ],
   'FavoriteItemAdapter': <String>[
-    'byte(6)',
+    'byte(7)',
     'byte(0)', 'write(String)', // id
     'byte(1)', 'write(String)', // content
     'byte(2)', 'write(DateTime)', // createdAt
     'byte(3)', 'write(int)', // displayOrder
     'byte(4)', 'write(String)', // sourceType（String?。fixture は非 null）
     'byte(5)', 'write(String)', // sourceId（String?。fixture は非 null）
+    'byte(6)', 'write(int)', // colorValue（int?。fixture は非 null）
   ],
 };
 
@@ -120,6 +121,7 @@ Map<String, Object> buildFixtures() => <String, Object>{
         displayOrder: 5,
         sourceType: 'preset_phrase',
         sourceId: 'fixture-preset',
+        colorValue: 0xFF2196F3,
       ),
     };
 

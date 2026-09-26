@@ -11,6 +11,7 @@ import 'package:kotonoha_app/shared/models/favorite_item.dart';
 /// 3: displayOrder (int)
 /// 4: sourceType (String?)
 /// 5: sourceId (String?)
+/// 6: colorValue (int?)
 class FavoriteItemAdapter extends TypeAdapter<FavoriteItem> {
   @override
   final int typeId = 2;
@@ -29,13 +30,14 @@ class FavoriteItemAdapter extends TypeAdapter<FavoriteItem> {
       // 後方互換: 既存データにフィールドが無い場合はnullになる（fieldsマップ方式）
       sourceType: fields[4] as String?,
       sourceId: fields[5] as String?,
+      colorValue: fields[6] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, FavoriteItem obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +49,9 @@ class FavoriteItemAdapter extends TypeAdapter<FavoriteItem> {
       ..writeByte(4)
       ..write(obj.sourceType)
       ..writeByte(5)
-      ..write(obj.sourceId);
+      ..write(obj.sourceId)
+      ..writeByte(6)
+      ..write(obj.colorValue);
   }
 
   @override

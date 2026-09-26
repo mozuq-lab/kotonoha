@@ -46,6 +46,52 @@ class FavoriteState {
 /// Notifier定義: お気に入り状態管理Notifier
 /// 実装内容: お気に入りのCRUD操作、並び替えを提供
 class FavoriteNotifier extends Notifier<FavoriteState> {
+  Future<void>? _tail;
+
+  /// IDと変更値を受け取り、最新の一覧から保存と表示までを1操作ずつ行う。
+  Future<T> _inOrder<T>(Future<T> Function() operation) {
+    final previous = _tail;
+    final result =
+        previous == null ? operation() : previous.then((_) => operation());
+    late final Future<void> settled;
+    settled = result
+        .then<void>((_) {}, onError: (Object _, StackTrace __) {})
+        .whenComplete(() {
+      if (identical(_tail, settled)) _tail = null;
+    });
+    _tail = settled;
+    return result;
+  }
+
+  Future<bool> updateFavoriteColor(String id, int colorValue) =>
+      _inOrder(() => _updateFavoriteColor(id, colorValue));
+
+  Future<bool> addFavorite(String content) =>
+      _inOrder(() => _addFavorite(content));
+
+  Future<bool> deleteFavorite(String id) => _inOrder(() => _deleteFavorite(id));
+
+  Future<void> restoreLastDeletedFavorite() =>
+      _inOrder(_restoreLastDeletedFavorite);
+
+  Future<void> reorderFavorite(String id, int newOrder) =>
+      _inOrder(() => _reorderFavorite(id, newOrder));
+
+  Future<void> loadFavorites() => _inOrder(_loadFavorites);
+
+  Future<bool> clearAllFavorites() => _inOrder(_clearAllFavorites);
+
+  Future<void> restoreClearedFavorites() => _inOrder(_restoreClearedFavorites);
+
+  Future<void> addFavoriteFromPresetPhrase(String content, String sourceId) =>
+      _inOrder(() => _addFavoriteFromPresetPhrase(content, sourceId));
+
+  Future<void> addFavoriteFromHistory(String content, String historyId) =>
+      _inOrder(() => _addFavoriteFromHistory(content, historyId));
+
+  Future<void> deleteFavoriteBySourceId(String sourceId) =>
+      _inOrder(() => _deleteFavoriteBySourceId(sourceId));
+
   @override
   FavoriteState build() {
     // 永続化配線: Repositoryが利用可能（Boxオープン済み）の場合はHiveから初期化
@@ -76,6 +122,7 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
         displayOrder: item.displayOrder,
         sourceType: item.sourceType,
         sourceId: item.sourceId,
+        colorValue: item.colorValue,
       );
 
   /// 変換ヘルパー: ドメイン Favorite → Hiveモデル FavoriteItem
@@ -86,17 +133,32 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
         displayOrder: f.displayOrder,
         sourceType: f.sourceType,
         sourceId: f.sourceId,
+        colorValue: f.colorValue,
       );
+
+  /// お気に入りのボタン色を保存し、成功したときだけ表示へ反映する。
+  Future<bool> _updateFavoriteColor(String id, int colorValue) async {
+    final index = state.favorites.indexWhere((favorite) => favorite.id == id);
+    if (index == -1) return false;
+    final updated = state.favorites[index].copyWith(colorValue: colorValue);
+    final repository = ref.read(favoriteRepositoryProvider);
+    if (repository == null || !await repository.save(_toItem(updated))) {
+      return false;
+    }
+    final favorites = List<Favorite>.from(state.favorites)..[index] = updated;
+    state = state.copyWith(favorites: favorites);
+    return true;
+  }
 
   /// メソッド定義: お気に入りを追加する
   /// 実装内容: テキストを受け取り、新しいお気に入りを追加
-  Future<void> addFavorite(String content) async {
+  Future<bool> _addFavorite(String content) async {
     // 空文字は追加しない
-    if (content.isEmpty) return;
+    if (content.trim().isEmpty) return false;
 
     // 重複チェック
     final exists = state.favorites.any((f) => f.content == content);
-    if (exists) return;
+    if (exists) return false;
 
     final now = DateTime.now();
     final newFavorite = Favorite(
@@ -106,55 +168,49 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
       displayOrder: state.favorites.length,
     );
 
-    final updatedFavorites = [...state.favorites, newFavorite];
-    state = state.copyWith(favorites: updatedFavorites);
-
     // 永続化: repoがあればHiveに保存
     final repo = ref.read(favoriteRepositoryProvider);
-    if (repo != null) {
-      await repo.save(_toItem(newFavorite));
+    if (repo == null) {
+      state = state.copyWith(favorites: [...state.favorites, newFavorite]);
+      return false;
     }
+    if (!await repo.save(_toItem(newFavorite))) return false;
+    state = state.copyWith(favorites: [...state.favorites, newFavorite]);
+    return true;
   }
 
   /// メソッド定義: お気に入りを削除する
   /// 実装内容: 指定IDのお気に入りを削除
-  Future<void> deleteFavorite(String id) async {
+  Future<bool> _deleteFavorite(String id) async {
     final index = state.favorites.indexWhere((f) => f.id == id);
-    if (index == -1) return;
+    if (index == -1) return false;
 
-    // Undo用: 復元できるよう削除対象を退避しておく
-    _lastDeletedFavorite = state.favorites[index];
-
+    final removed = state.favorites[index];
     final updatedFavorites = List<Favorite>.from(state.favorites);
     updatedFavorites.removeAt(index);
-    state = state.copyWith(favorites: updatedFavorites);
-
-    // 永続化: repoがあればHiveから削除
     final repo = ref.read(favoriteRepositoryProvider);
-    if (repo != null) {
-      await repo.delete(id);
-    }
+    if (repo != null && !await repo.delete(id)) return false;
+    _lastDeletedFavorite = removed;
+    state = state.copyWith(favorites: updatedFavorites);
+    return true;
   }
 
   /// メソッド定義: 直近に削除したお気に入りを復元する（Undo）
-  Future<void> restoreLastDeletedFavorite() async {
+  Future<void> _restoreLastDeletedFavorite() async {
     final target = _lastDeletedFavorite;
     if (target == null) return;
-    _lastDeletedFavorite = null;
-
+    if (state.favorites.any((favorite) => favorite.id == target.id)) return;
     final updatedFavorites = [...state.favorites, target]
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
-    state = state.copyWith(favorites: updatedFavorites);
-
     final repo = ref.read(favoriteRepositoryProvider);
-    if (repo != null) {
-      await repo.save(_toItem(target));
-    }
+    if (repo != null && !await repo.save(_toItem(target))) return;
+    _lastDeletedFavorite = null;
+    state = state.copyWith(favorites: updatedFavorites);
   }
 
   /// メソッド定義: お気に入りの並び順を変更する
   /// 実装内容: 指定IDのお気に入りを新しい位置に移動
-  Future<void> reorderFavorite(String id, int newOrder) async {
+  Future<void> _reorderFavorite(String id, int newOrder) async {
     final index = state.favorites.indexWhere((f) => f.id == id);
     if (index == -1) return;
 
@@ -172,20 +228,16 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
       return entry.value.copyWith(displayOrder: entry.key);
     }).toList();
 
-    state = state.copyWith(favorites: reorderedFavorites);
-
-    // 永続化: repoがあれば並び順を一括保存
     final repo = ref.read(favoriteRepositoryProvider);
-    if (repo != null) {
-      for (final fav in reorderedFavorites) {
-        await repo.save(_toItem(fav));
-      }
+    if (repo != null && !await repo.saveAll(reorderedFavorites.map(_toItem))) {
+      return;
     }
+    state = state.copyWith(favorites: reorderedFavorites);
   }
 
   /// メソッド定義: お気に入りを読み込む
   /// 実装内容: ローカルストレージからお気に入りを読み込み
-  Future<void> loadFavorites() async {
+  Future<void> _loadFavorites() async {
     final repo = ref.read(favoriteRepositoryProvider);
     if (repo != null) {
       // 永続化: Hiveからお気に入りを読み込み
@@ -201,38 +253,36 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
 
   /// メソッド定義: 全お気に入りをクリアする
   /// 実装内容: 全てのお気に入りを削除
-  Future<void> clearAllFavorites() async {
-    // Undo用: 復元できるよう削除前の一覧を退避しておく
-    _lastClearedFavorites = List<Favorite>.from(state.favorites);
-
+  Future<bool> _clearAllFavorites() async {
+    final cleared = List<Favorite>.from(state.favorites);
     final repo = ref.read(favoriteRepositoryProvider);
-    if (repo != null) {
-      // 永続化: Hiveの全お気に入りを削除
-      await repo.deleteAll();
-    }
+    if (repo != null && !await repo.deleteAll()) return false;
+    _lastClearedFavorites = cleared;
     state = state.copyWith(favorites: []);
+    return true;
   }
 
   /// メソッド定義: 直近の全削除を取り消し、お気に入りを復元する（Undo）
-  Future<void> restoreClearedFavorites() async {
+  Future<void> _restoreClearedFavorites() async {
     final cleared = _lastClearedFavorites;
     if (cleared == null || cleared.isEmpty) return;
-    _lastClearedFavorites = null;
-
-    state = state.copyWith(favorites: cleared);
-
+    final currentIds = state.favorites.map((favorite) => favorite.id).toSet();
+    final restored = [
+      ...cleared.where((favorite) => !currentIds.contains(favorite.id)),
+      ...state.favorites,
+    ].asMap().entries.map((entry) {
+      return entry.value.copyWith(displayOrder: entry.key);
+    }).toList();
     final repo = ref.read(favoriteRepositoryProvider);
-    if (repo != null) {
-      for (final favorite in cleared) {
-        await repo.save(_toItem(favorite));
-      }
-    }
+    if (repo != null && !await repo.saveAll(restored.map(_toItem))) return;
+    _lastClearedFavorites = null;
+    state = state.copyWith(favorites: restored);
   }
 
   /// メソッド定義: 定型文由来のお気に入りを追加する
   /// 機能概要: 定型文からお気に入りを追加する際、元データ情報を保持
   /// 実装方針: sourceType='preset_phrase', sourceId=定型文IDを設定
-  Future<void> addFavoriteFromPresetPhrase(
+  Future<void> _addFavoriteFromPresetPhrase(
       String content, String sourceId) async {
     // 入力値検証: 空文字は追加しない
     if (content.isEmpty) return;
@@ -253,15 +303,9 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
       sourceId: sourceId, // 元データID: 定型文のIDを保持
     );
 
-    // 状態更新: Favoriteリストに追加
-    final updatedFavorites = [...state.favorites, newFavorite];
-    state = state.copyWith(favorites: updatedFavorites);
-
-    // 永続化: repoがあればHiveに保存（sourceType/sourceId含む）
     final repo = ref.read(favoriteRepositoryProvider);
-    if (repo != null) {
-      await repo.save(_toItem(newFavorite));
-    }
+    if (repo != null && !await repo.save(_toItem(newFavorite))) return;
+    state = state.copyWith(favorites: [...state.favorites, newFavorite]);
   }
 
   /// メソッド定義: 履歴由来のお気に入りを追加する
@@ -271,7 +315,7 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
   /// sourceIdで判定すると同じ文言を発話するたびにお気に入りが増え、一覧に同一文言が
   /// 並んでしまう。既存の addFavorite(String content) と同じcontent重複判定を使い
   /// sourceIdは出所の記録のためだけに持たせる（ADR-005 / Phase 3 WP-2 Stage 1）。
-  Future<void> addFavoriteFromHistory(String content, String historyId) async {
+  Future<void> _addFavoriteFromHistory(String content, String historyId) async {
     // 入力値検証: 空文字は追加しない
     if (content.isEmpty) return;
 
@@ -290,21 +334,15 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
       sourceId: historyId, // 元データID: 履歴のIDを保持（重複判定には使わない）
     );
 
-    // 状態更新: Favoriteリストに追加
-    final updatedFavorites = [...state.favorites, newFavorite];
-    state = state.copyWith(favorites: updatedFavorites);
-
-    // 永続化: repoがあればHiveに保存（sourceType/sourceId含む）
     final repo = ref.read(favoriteRepositoryProvider);
-    if (repo != null) {
-      await repo.save(_toItem(newFavorite));
-    }
+    if (repo != null && !await repo.save(_toItem(newFavorite))) return;
+    state = state.copyWith(favorites: [...state.favorites, newFavorite]);
   }
 
   /// メソッド定義: sourceIdに一致するお気に入りを削除する
   /// 機能概要: 定型文のお気に入り解除時に対応するFavoriteを削除
   /// 実装方針: sourceIdで検索して削除
-  Future<void> deleteFavoriteBySourceId(String sourceId) async {
+  Future<void> _deleteFavoriteBySourceId(String sourceId) async {
     // 検索: sourceIdに一致するFavoriteを検索
     final index = state.favorites.indexWhere((f) => f.sourceId == sourceId);
 
@@ -315,13 +353,9 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
     final removed = state.favorites[index];
     final updatedFavorites = List<Favorite>.from(state.favorites);
     updatedFavorites.removeAt(index);
-    state = state.copyWith(favorites: updatedFavorites);
-
-    // 永続化: repoがあればHiveから削除
     final repo = ref.read(favoriteRepositoryProvider);
-    if (repo != null) {
-      await repo.delete(removed.id);
-    }
+    if (repo != null && !await repo.delete(removed.id)) return;
+    state = state.copyWith(favorites: updatedFavorites);
   }
 }
 

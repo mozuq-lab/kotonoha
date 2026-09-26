@@ -92,13 +92,22 @@ void main() {
         // Arrange
         final repository = FavoriteRepository(box: mockFavoriteBox);
 
-        when(() => mockFavoriteBox.clear()).thenAnswer((_) async => 0);
+        when(() => mockFavoriteBox.values).thenReturn([
+          FavoriteItem(
+            id: 'fav-1',
+            content: '水',
+            createdAt: DateTime(2026),
+            displayOrder: 0,
+          ),
+        ]);
+        when(() => mockFavoriteBox.deleteAll(['fav-1']))
+            .thenAnswer((_) async {});
 
         // Act
         await repository.deleteAll();
 
         // Assert
-        verify(() => mockFavoriteBox.clear()).called(1);
+        verify(() => mockFavoriteBox.deleteAll(['fav-1'])).called(1);
       });
     });
 
