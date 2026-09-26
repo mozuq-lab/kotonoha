@@ -1,7 +1,9 @@
 /// TTSService テスト
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
@@ -47,6 +49,42 @@ void main() {
         expect(result, isTrue);
         verify(() => mockFlutterTts.setLanguage('ja-JP')).called(1);
         verify(() => mockFlutterTts.setSpeechRate(1.0)).called(1);
+      });
+
+      test('iOSでは読み上げ前に消音モードでも鳴る音声カテゴリを設定する', () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+        when(() => mockFlutterTts.setIosAudioCategory(
+              IosTextToSpeechAudioCategory.playback,
+              const [],
+              IosTextToSpeechAudioMode.defaultMode,
+            )).thenAnswer((_) async => 1);
+
+        expect(await service.initialize(), isTrue);
+        verifyInOrder([
+          () => mockFlutterTts.setIosAudioCategory(
+                IosTextToSpeechAudioCategory.playback,
+                const [],
+                IosTextToSpeechAudioMode.defaultMode,
+              ),
+          () => mockFlutterTts.setLanguage('ja-JP'),
+          () => mockFlutterTts.setSpeechRate(1.0),
+        ]);
+      });
+
+      test('iOSの音声カテゴリを設定できなければ初期化失敗を知らせる', () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+        when(() => mockFlutterTts.setIosAudioCategory(
+              IosTextToSpeechAudioCategory.playback,
+              const [],
+              IosTextToSpeechAudioMode.defaultMode,
+            )).thenAnswer((_) async => 0);
+
+        expect(await service.initialize(), isFalse);
+        expect(service.state, TTSState.error);
+        expect(service.errorMessage, 'TTS初期化に失敗しました');
+        verifyNever(() => mockFlutterTts.setLanguage(any()));
       });
 
       /// 初期化時にCompletionHandlerが登録される

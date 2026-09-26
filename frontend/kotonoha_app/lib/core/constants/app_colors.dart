@@ -75,55 +75,17 @@ class AppColors {
 
   // 機能カラー
 
-  // 緊急表示
-  // エラー色との使い分け: 緊急色は「周囲に気付いてもらう」ための色で
-  // エラー色（破壊的操作・エラー表示）とは意味が違う。home_screen の
-  // ClearAllButton と app_shell の緊急ボタンは同時に描画されるため
-  // 同じ色にすると区別が付かない。エラー色には error{Light,Dark,HighContrast}
-  // を使い、こちらは緊急表示専用とする。
-
-  /// 緊急ボタン・緊急画面用（赤・ライトモード）
-  /// 白文字・白アイコンに対し 4.98:1。
-  static const Color emergency = Color(0xFFD32F2F);
-
-  /// 緊急ボタン・緊急画面用（ダークモード - 明るい赤）
-  /// 黒文字を載せた場合 6.02:1。暗いUI上でボタン自体を見つけやすくするため
-  /// 明るい赤にしている（surface #1E1E1E に対し 4.78:1
-  /// scaffold #121212 に対し 5.37:1）。
-  static const Color emergencyDark = Color(0xFFEF5350);
-
-  /// 緊急ボタン用（高コントラストモード - 純粋な赤）
-  /// **背景として使う専用の色**（緊急画面の全面赤）。
-  /// 高コントラストモードで最大限に目立たせるため純赤を維持しており
-  /// 前景は [bestContrastingTextColor] で黒を選ぶことで 5.25:1 を確保する。
-  /// 白背景に対しては 4.00:1 しかないため、**文字色・アイコン色として
-  /// 使ってはならない**。その用途には [errorHighContrast] を使うこと。
-  static const Color emergencyHighContrast = Color(0xFFFF0000);
-
   // エラー・破壊的操作
   // 各テーマの `colorScheme.error` に使う。エラー色は
   // 「surface 上の文字色（errorText・エラーアイコン）」と
   // 「ボタン背景（+ onError）」の双方で使われるため、どちらでも
   // 4.5:1 を満たす必要がある。
-  // 緊急色との「分離」について: 同一画面に並ぶ緊急色（[emergency] 系）と
-  // 別の色であることは必要だが、**輝度比で十分に離すことはAA要件と両立しない**。
-  // 全色空間を探索した結果、「面の文字として4.5:1」「onErrorを載せて4.5:1」
-  // 「緊急色と輝度比3:1」を同時に満たす色は、黒や白と見分けが付かない色しか
-  // 存在しない（ダークに至っては下側の枝が最初から成立しない）。
-  // 各定数に記した分離比は現状の実測値であって、守るべき閾値ではない。
-  // 実際の識別は色以外の手段（ラベル・形状・枠線）が担う。
-  // 詳細は test/accessibility/theme_error_color_contrast_test.dart を参照。
-
   /// ライトモードのエラー色（前景・背景の両用）
   /// surfaceLight (#F5F5F5) 上の文字として 8.36:1、白文字を載せて 9.11:1。
-  /// 緊急色 [emergency] (#D32F2F) との分離は 1.83:1。
-  /// 以前は [emergency] をそのまま流用しており、緊急ボタンと
-  /// 全消去ボタンが同一色（#D32F2F）で区別できなかった。
   static const Color errorLight = Color(0xFF8C1D18);
 
   /// ダークモードのエラー色（前景・背景の両用）
   /// surfaceDark (#1E1E1E) 上の文字として 9.76:1、黒文字を載せて 12.30:1。
-  /// 緊急色 [emergencyDark] (#EF5350) との分離は 2.04:1。
   /// 暗い背景では文字としても読める明るい赤が必要なため
   /// Material 3 のダーク既定エラー色と同系の淡い赤を採る。
   static const Color errorDark = Color(0xFFF2B8B5);
@@ -131,7 +93,6 @@ class AppColors {
   /// 高コントラストモードのエラー色（前景・背景の両用）
   /// 純赤 (#FF0000) は白に対しても白文字に対しても 4.00:1 で AA 未達のため
   /// 色相を保ったまま暗くした #CC0000 を使う（白との比 5.89:1）。
-  /// 緊急色 [emergencyHighContrast] (#FF0000) との分離は 1.47:1。
   static const Color errorHighContrast = Color(0xFFCC0000);
 
   // 面に載る文字としてのプライマリ色（primaryText 系）

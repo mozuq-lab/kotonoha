@@ -160,10 +160,10 @@ void main() {
 
     // RT-107: 大ボタンサイズテスト（推奨60px × 60px）
     testWidgets(
-      'RT-107: 大ボタン・緊急ボタンのサイズが60px × 60px以上である',
+      'RT-107: 大ボタンのサイズが60px × 60px以上である',
       (tester) async {
         // （推奨60px × 60px以上）
-        // 手順: 大ボタン・緊急ボタンのサイズ確認
+        // 手順: 大ボタンのサイズ確認
         // 期待結果: 60px × 60px以上
 
         await pumpApp(tester);
@@ -199,31 +199,6 @@ void main() {
         }
 
         await takeScreenshot(binding, 'RT-107_large_button_size');
-
-        // 結果検証: 緊急ボタンのサイズを確認
-        final emergencyButtonFinder = find.text('緊急');
-        if (emergencyButtonFinder.evaluate().isNotEmpty) {
-          final emergencyButtonSize =
-              tester.getSize(emergencyButtonFinder.first);
-          debugPrint(
-              '緊急ボタンサイズ: ${emergencyButtonSize.width} × ${emergencyButtonSize.height}');
-
-          expect(
-            emergencyButtonSize.width,
-            greaterThanOrEqualTo(44.0),
-            reason: '緊急ボタンの幅が44px未満です（${emergencyButtonSize.width}px）',
-          );
-          expect(
-            emergencyButtonSize.height,
-            greaterThanOrEqualTo(44.0),
-            reason: '緊急ボタンの高さが44px未満です（${emergencyButtonSize.height}px）',
-          );
-
-          if (emergencyButtonSize.width < 60.0 ||
-              emergencyButtonSize.height < 60.0) {
-            debugPrint('⚠️ 警告: 緊急ボタンのサイズが推奨値（60px × 60px）未満です');
-          }
-        }
       },
     );
 
@@ -297,12 +272,12 @@ void main() {
       },
     );
 
-    // タブレット大ボタン・緊急ボタン配置テスト
+    // タブレット大ボタン配置テスト
     testWidgets(
-      'タブレットで大ボタン・緊急ボタンが誤タップしにくい配置になる',
+      'タブレットで大ボタンが誤タップしにくい配置になる',
       (tester) async {
         // （誤タップしにくい配置・サイズ）
-        // 手順: タブレットサイズで大ボタン・緊急ボタンを表示
+        // 手順: タブレットサイズで大ボタンを表示
         // 期待結果: 適切な余白・サイズで配置される
 
         await pumpApp(tester);
@@ -324,12 +299,6 @@ void main() {
         }
         if (unknownButtonFinder.evaluate().isNotEmpty) {
           expect(unknownButtonFinder, findsWidgets);
-        }
-
-        // 結果検証: 緊急ボタンが表示される
-        final emergencyButtonFinder = find.text('緊急');
-        if (emergencyButtonFinder.evaluate().isNotEmpty) {
-          expect(emergencyButtonFinder, findsWidgets);
         }
 
         await takeScreenshot(binding, 'tablet_button_layout');

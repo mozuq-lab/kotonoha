@@ -15,9 +15,7 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
-import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_button_with_confirmation.dart';
 import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
-import 'package:kotonoha_app/features/network/presentation/widgets/offline_banner.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 
 import 'home_layout_test_support.dart';
@@ -58,45 +56,17 @@ void main() {
     expect(harness.container.read(inputBufferProvider).endsWith('こ'), isTrue);
   });
 
-  // リスク「緊急ボタンの誤発報」: 緊急ボタンは専用の帯で領域を確保して
-  // いるので、画面本体・文字盤・オフライン告知のどれとも重ならない。
-  for (final height in [690.0, 844.0]) {
-    testWidgets('320x${height.toInt()} オフラインで緊急ボタンが誤発報しない（L-155）',
-        (tester) async {
-      await harness.pumpOffline(tester, Size(320, height));
-      expectOnlyKnownOverflow(harness);
-      final emergency =
-          tester.getRect(find.byType(EmergencyButtonWithConfirmation));
-      expect(
-          emergency.width, greaterThanOrEqualTo(AppSizes.recommendedTapTarget));
-      expect(emergency.height,
-          greaterThanOrEqualTo(AppSizes.recommendedTapTarget));
-      for (final other in [
-        find.byType(HomeScreen),
-        find.byType(CharacterBoardWidget),
-        find.byType(OfflineBanner),
-      ]) {
-        final rect = tester.getRect(other);
-        expect(emergency.overlaps(rect), isFalse,
-            reason: '緊急ボタン$emergencyが$other（$rect）と重なっている');
-      }
-      expect(find.byType(EmergencyButtonWithConfirmation).hitTestable(),
-          findsOneWidget);
-    });
-  }
-
   // 2ペインをやめる条件は幅だけで決まる（可視高さは見ない。低いことを
   // 理由に2ペインへ戻すと幅320でセル25.12pxを選んでしまう）。内部幅の境界は
   // (W - paddingXSmall) * 3/5 >= minLayoutWidth + 2*8 - 1（1pxの丸め許容）
   // → W >= 475.67 なので、476 で2ペイン・475 で縦積みに分かれる。
-  // 縦向きなので緊急帯は画面下（サイドレールではない）＝外側幅＝内部幅。
   for (final scale in [1.0, 2.0]) {
     for (final bodyWidth in [476.0, 475.0]) {
       final twoPane = bodyWidth >= 476;
       testWidgets(
           '縦向き 内部幅${bodyWidth.toInt()}・OS$scale倍は'
           '${twoPane ? '2ペインを保つ' : '縦積みへ落ちる'}（L-155）', (tester) async {
-        await harness.pumpOffline(tester, Size(bodyWidth, 660), scale: scale);
+        await harness.pumpOffline(tester, Size(bodyWidth, 580), scale: scale);
         expectOnlyKnownOverflow(harness);
 
         final home = tester.getRect(find.byType(HomeScreen));

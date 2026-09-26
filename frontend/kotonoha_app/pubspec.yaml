@@ -32,9 +32,6 @@ dependencies:
   # TTS（音声読み上げ）
   flutter_tts: ^4.2.5
 
-  # 緊急音再生
-  audioplayers: ^6.1.0
-
   # 音量制御
   volume_controller: ^3.4.1
 
@@ -77,6 +74,3 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
-
-  assets:
-    - assets/audio/

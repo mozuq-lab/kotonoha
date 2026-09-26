@@ -17,7 +17,6 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/clear
 import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/input_limit_notice.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
-import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_button_with_confirmation.dart';
 import 'package:kotonoha_app/features/help/providers/tutorial_provider.dart';
 import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
@@ -187,9 +186,6 @@ void main() {
     input.setText('あ' * 1000);
     await settle(tester);
     final board = tester.getRect(find.byType(CharacterBoardWidget));
-    final emergency =
-        tester.getRect(find.byType(EmergencyButtonWithConfirmation));
-    expect(board.bottom, lessThanOrEqualTo(emergency.top));
     final targets = [
       find.byType(InputLimitNotice),
       action(DeleteButton),
@@ -201,10 +197,7 @@ void main() {
       await reach(tester, target);
       visible(tester, target, tester.getRect(controls),
           tappable: target != targets.first);
-      expect(tester.getRect(target).bottom, lessThan(emergency.top));
       expect(tester.getRect(find.byType(CharacterBoardWidget)), board);
-      expect(tester.getRect(find.byType(EmergencyButtonWithConfirmation)),
-          emergency);
       boardVisible(tester);
     }
     expect(tester.widget<ElevatedButton>(button('AI変換')).onPressed, isNotNull);

@@ -5,15 +5,15 @@
 
 ## 目的と、守る約束
 
-**kotonoha（ことのは）** — 発話が困難な人（脳梗塞・ALS・筋疾患など）が、少ない操作で、適切な丁寧さで、安全に伝える文字盤アプリ（Flutter、タブレット向け）。**利用者は発話で訂正できず、データは端末内（Hive）にしか無い。** 文字盤・定型文・履歴・お気に入り・読み上げ・緊急ボタンはオフラインで動き、AI 変換だけがオンライン（backend は FastAPI のステートレスなプロキシ。DB 無し）。仕様の正本は `docs/spec/kotonoha-requirements.md`。
+**kotonoha（ことのは）** — 発話が困難な人（脳梗塞・ALS・筋疾患など）が、少ない操作で、適切な丁寧さで、安全に伝える文字盤アプリ（Flutter、タブレット向け）。**利用者は発話で訂正できず、データは端末内（Hive）にしか無い。** 文字盤・定型文・履歴・お気に入り・読み上げはオフラインで動き、AI 変換だけがオンライン（backend は FastAPI のステートレスなプロキシ。DB 無し）。仕様の正本は `docs/spec/kotonoha-requirements.md`。
 目的はこのアプリを形にして届けること。「形」の定義と最短経路は `docs/now.md` にある。
-**守る約束**（製品の約束。変えるのは人）: ① 緊急が確実に届く（鳴る・画面に閉じ込めない） ② データを黙って失わない（消えるのに残ると告げない） ③ 端末の外へ出さない ④ 本人の意図どおりに伝える（言っていないことを言わない・読み上げが黙らない・誤発報しない）。
+**守る約束**（製品の約束。変えるのは人）: ① データを黙って失わない（消えるのに残ると告げない） ② 端末の外へ出さない ③ 本人の意図どおりに伝える（言っていないことを言わない・読み上げが黙らない）。
 
 ## 判断の手順（エージェントが決める）
 
 1. **何をするか**: `docs/now.md` の最短経路にある仕事と、人の依頼だけをする。レビュー指摘や思いついた改善は仕事の入口にしない。最短経路に動かせるものが無ければ、止まって待ってよい（仕事を作らない）。
 2. **等級**: 差分（修正の差分も）が触るパスで最低等級が決まり、エージェントは上げるだけ。挙動を変えない差分（文書・コメント・テストだけ）は C。`lib/…` は `frontend/kotonoha_app/lib/`。
-   - **A**（守る約束を破り得る）: 保存と消去（`lib/core/persistence/`・`lib/core/utils/hive_*`・`lib/shared/models/*_adapter.dart`・`lib/features/*/data/` とそれを呼んで保存・削除する provider（例: `preset_phrase_notifier.dart`）・SharedPreferences を読み書きするコード）、緊急と読み上げ（`lib/features/emergency/domain/`・`lib/features/emergency/presentation/providers/`・`lib/shared/widgets/emergency_button.dart`・`lib/features/tts/domain/`・`lib/features/tts/providers/`）、端末の外（`lib/features/ai_conversion/data/`・`backend/app/`・権限・依存・`.github/workflows/`）
+   - **A**（守る約束を破り得る）: 保存と消去（`lib/core/persistence/`・`lib/core/utils/hive_*`・`lib/shared/models/*_adapter.dart`・`lib/features/*/data/` とそれを呼んで保存・削除する provider（例: `preset_phrase_notifier.dart`）・SharedPreferences を読み書きするコード）、読み上げ（`lib/features/tts/domain/`・`lib/features/tts/providers/`）、端末の外（`lib/features/ai_conversion/data/`・`backend/app/`・権限・依存・`.github/workflows/`）
    - **B**: それ以外のコード（画面・文言・配色・確認ダイアログを含む）
    - **C**: 文書・コメント・テストだけ・挙動を変えない整理
 3. **検証の重さ**: A はテストを先に書いて赤を見る、レビュー 1 系統、実物での確認（結合テストを iOS シミュレータ・Android エミュレータ・実 Chromium で走らせる。画像を読むのは失敗時と見た目を確かめる画面だけ。物理実機はストア提出の前）。保存・送信の経路を変えるときは、文脈を持たない担当がコードから公開文（`docs/privacy-policy.md`・`docs/support.md`）へ読む独立監査も通す。B はテストとレビュー 1 系統（画面を変えたら実物で見る）。C はビルドと既存テストだけ。

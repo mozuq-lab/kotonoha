@@ -19,10 +19,6 @@ Our goal is to enable users to express what they want to say with minimal effort
   - "Yes", "No", "I don't know" for rapid communication
   - Status buttons: "Pain", "Restroom", etc.
 
-- Emergency Button
-  - Loud emergency alarm with a single tap
-  - Two-step confirmation to prevent accidental activation
-
 - AI Conversion (Optional)
   - Automatically convert text to polite/formal speech
   - Three levels: Casual, Normal, Polite
@@ -40,7 +36,7 @@ Our goal is to enable users to express what they want to say with minimal effort
 
 【Offline Support】
 
-Core features (keyboard, phrases, speech, emergency) work without internet connection. Use confidently anywhere, anytime.
+Core features (keyboard, phrases, speech) work without internet connection. Use confidently anywhere, anytime.
 
 【Privacy】
 

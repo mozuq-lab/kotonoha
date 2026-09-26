@@ -49,10 +49,8 @@ abstract final class AppRoutes {
 /// MaterialApp.routerとの統合
 /// ## ShellRoute採用
 /// 全6ルートを単一の [ShellRoute] で内包する。ShellRouteのbuilderは
-/// [AppShell] を返し、全画面共通の横断的関心事（ネットワーク監視の起動
-/// 緊急機能の全画面配線）を一箇所で配線する。
-/// ShellRouteのchildはShell配下のNavigatorに属するため、緊急ボタンの
-/// 確認ダイアログ（Navigator.of(context)を使用）が正しく動作する。
+/// [AppShell] を返し、ネットワーク監視や全画面共通の通知を一箇所で配線する。
+/// 確認ダイアログ（Navigator.of(context)を使用）も動作する。
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,

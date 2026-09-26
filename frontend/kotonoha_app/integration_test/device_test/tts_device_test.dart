@@ -217,49 +217,6 @@ void main() {
       // Note: 実機で音量0に設定して手動実行してください
     );
 
-    // RT-302: マナーモード時の緊急ボタンテスト
-    testWidgets(
-      'RT-302: マナーモード時の緊急ボタン押下で明確な警告が表示される',
-      (tester) async {
-        // （マナーモード時の緊急ボタン）
-        // 手順: マナーモード→緊急ボタン
-        // 期待結果: 明確な警告表示（音が鳴らない旨）
-
-        await pumpApp(tester);
-
-        // 実際の処理実行: 緊急ボタンをタップ
-        final emergencyFinder = find.text('緊急');
-        if (emergencyFinder.evaluate().isNotEmpty) {
-          await tester.tap(emergencyFinder);
-          await tester.pumpAndSettle();
-
-          // 実際の処理実行: 確認ダイアログで「はい」をタップ
-          final confirmYesFinder = find.text('はい');
-          if (confirmYesFinder.evaluate().isNotEmpty) {
-            await tester.tap(confirmYesFinder);
-            await tester.pumpAndSettle();
-          }
-        }
-
-        // 結果検証: マナーモード警告が表示される可能性がある
-        // Note: 実機で以下を手動確認
-        // 1. デバイスをマナーモードに設定
-        // 2. 緊急ボタンを押下
-        // 3. 「マナーモードのため音が鳴りません」などの警告が表示される
-        // 4. 視覚的な警告（画面赤表示、テキスト表示）は正常動作する
-
-        await takeScreenshot(binding, 'RT-302_silent_mode_warning');
-
-        // クリーンアップ: 緊急画面を閉じる
-        final closeFinder = find.text('閉じる');
-        if (closeFinder.evaluate().isNotEmpty) {
-          await tester.tap(closeFinder);
-          await tester.pumpAndSettle();
-        }
-      },
-      // Note: 実機でマナーモード設定して手動実行してください
-    );
-
     // RT-303: TTS音声エンジン未インストールテスト
     testWidgets(
       'RT-303: TTS音声エンジン未インストール時にエラーメッセージが表示される',

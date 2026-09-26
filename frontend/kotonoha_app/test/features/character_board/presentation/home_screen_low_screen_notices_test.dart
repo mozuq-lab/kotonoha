@@ -108,10 +108,8 @@ void main() {
 
   // 2ペインの左ペインは幅が乏しく、境界付近（内部幅478）でOSの文字拡大を
   // 併用すると OfflineIndicator のRowが右へ71pxはみ出していた。
-  // AppShellは横持ちで右に92pxの緊急サイドレールを取るため外側幅は +92。
   testWidgets('横持ち 内部幅478・OS2.0倍の左ペインでも告知が切れない（L-156）', (tester) async {
-    final exception = await harness.pumpOffline(
-        tester, const Size(478 + AppSizes.emergencyButtonBarThickness, 375));
+    final exception = await harness.pumpOffline(tester, const Size(478, 375));
     expect(exception, isNull, reason: 'レイアウト例外が出ている: $exception');
     expectIndicatorReadable(tester, screenOf(tester));
   });

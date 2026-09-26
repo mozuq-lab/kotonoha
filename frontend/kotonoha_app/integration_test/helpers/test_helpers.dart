@@ -39,8 +39,7 @@ IntegrationTestWidgetsFlutterBinding initializeE2ETestBinding() {
 /// E2E はストレージが空の状態から始まるため初回起動扱いになり
 /// `TutorialOverlay` が表示される。このオーバーレイは
 /// `Container(color: Colors.black54)` で画面全体を覆っており
-/// **配下へのタップをヒットテストで吸収する**（緊急ボタンだけは意図的に手前に置かれ
-/// 常に操作できる。`app_shell.dart` の「安全性（重要）」コメントを参照）。
+/// **配下へのタップをヒットテストで吸収する**。
 /// その結果「ウィジェットは見つかる・タップは実行される・状態は変わらない」が起き
 /// 操作を伴うテストが軒並み落ちていた（`Found 0 widgets with text` が62件）。
 /// 操作を一切しない `app_startup_test.dart` だけが通っていたのはこのためである。
@@ -474,27 +473,6 @@ Future<void> tapAndExpectSpeech(WidgetTester tester, Finder target) async {
   }
   expect(seen, contains(TTSState.speaking),
       reason: '読み上げが始まらない（状態の移り変わり: $seen）');
-}
-
-/// 緊急の確認ダイアログで「はい」を押し、緊急画面が出るまで待つ
-/// なぜ `pumpAndSettle` で待たないか: 緊急音が鳴っている間、Android では
-/// 描画の予約が止まらず（3 秒間で 30/30 回。無音にすると 0 回）、`pumpAndSettle`
-/// が終わらない。緊急画面そのものは出ている。時間を区切って待つ。
-Future<void> confirmEmergency(WidgetTester tester) async {
-  final yes = find.descendant(
-    of: find.byType(AlertDialog),
-    matching: find.text('はい'),
-  );
-  expect(yes, findsOneWidget, reason: '緊急の確認ダイアログが出ていない');
-  await tester.tap(yes);
-  await tester.pump(const Duration(seconds: 2));
-}
-
-/// 緊急画面の「リセット」を押し、通常の画面に戻るまで待つ
-Future<void> resetEmergency(WidgetTester tester) async {
-  await tester.tap(find.text('リセット'));
-  await tester.pump(const Duration(seconds: 2));
-  await tester.pumpAndSettle();
 }
 
 /// まだ読み上げ中なら「停止」で止める（短い文は既に終わっていることがある）

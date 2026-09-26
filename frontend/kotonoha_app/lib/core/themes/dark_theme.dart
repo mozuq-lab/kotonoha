@@ -35,10 +35,8 @@ final ThemeData darkTheme = ThemeData(
     onSurface: AppColors.onSurfaceDark,
     // ライト用の濃い赤(#D32F2F)を流用しており surface(#1E1E1E) 上で 3.35:1
     // 既定の onError(黒)との組み合わせでも 4.22:1 でAA未達だった。
-    // 一度は緊急色 emergencyDark(#EF5350) を充てたが、それでは緊急ボタンと
-    // 全消去ボタン（error 背景）が同一色になってしまうため専用色に分ける。
     // errorDark(#F2B8B5) は surface 上の文字として 9.76:1
-    // 黒文字を載せて 12.30:1、緊急色との分離 2.04:1。
+    // 黒文字を載せて 12.30:1。
     error: AppColors.errorDark,
     onError: Colors.black,
   ),

@@ -89,18 +89,6 @@ void main() {
       expect(find.textContaining('読み上げ'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('緊急ボタンの説明が表示される', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: HelpScreen(),
-          ),
-        ),
-      );
-
-      expect(find.textContaining('緊急'), findsAtLeastNWidgets(1));
-    });
-
     testWidgets('対面表示モードの説明が実挙動（画面右上のアイコン・180度回転）と一致する', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(

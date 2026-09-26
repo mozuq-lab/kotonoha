@@ -1,14 +1,10 @@
-/// 大ボタン・緊急ボタンE2Eテスト
-/// 大ボタン（クイック応答）、状態ボタン、緊急ボタン機能のE2Eテストを実施。
+/// 大ボタン・状態ボタンE2Eテスト
+/// 大ボタン（クイック応答）と状態ボタンのE2Eテストを実施。
 @Tags(['e2e'])
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kotonoha_app/features/emergency/presentation/screens/emergency_alert_screen.dart';
-
-import 'package:kotonoha_app/features/emergency/presentation/widgets/emergency_confirmation_dialog.dart';
 
 import 'helpers/test_helpers.dart';
 
@@ -175,119 +171,6 @@ void main() {
     );
   });
 
-  // 3. 正常系テストケース（緊急ボタン）
-  group('正常系テスト（緊急ボタン）', () {
-    testWidgets(
-      'TC-E2E-084-010: 緊急ボタンが常時表示される',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester);
-
-        // 結果検証: 緊急ボタンが表示される（通知アイコン）
-        expect(find.byIcon(Icons.notifications_active), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-084-011: 緊急ボタンタップで確認ダイアログが表示される',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester);
-
-        // 実際の処理実行: 緊急ボタン（通知アイコン）をタップ
-        await tapIconButton(tester, Icons.notifications_active);
-
-        // 結果検証: 確認ダイアログが表示される
-        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
-            findsOneWidget);
-
-        // 結果検証: 「はい」「いいえ」ボタンが表示される
-        expect(find.text('はい'), findsWidgets); // 大ボタンにも「はい」があるのでfindsWidgets
-        // ダイアログ内に「いいえ」が表示される
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-084-012: 確認ダイアログで「いいえ」選択でキャンセル',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester);
-
-        // 実際の処理実行: 緊急ボタンをタップ
-        await tapIconButton(tester, Icons.notifications_active);
-
-        // 前提条件確認: 確認ダイアログが表示されている
-        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
-            findsOneWidget);
-
-        // 実際の処理実行: 「いいえ」ボタンをタップ
-        // ダイアログ内の「いいえ」ボタンを見つける
-        // ボタン型に依存しない: 実装は ElevatedButton だが、テストは
-        // TextButton を前提にしていて 0 件になっていた（Issue #84）。
-        // AlertDialog の子孫に限定して引く。
-        await tapDialogButton(tester, 'いいえ');
-
-        // 結果検証: ダイアログが閉じ、通常画面が維持される
-        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
-            findsNothing);
-        // 緊急画面は表示されない
-        expect(find.byType(EmergencyAlertScreen), findsNothing);
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-084-013: 確認ダイアログで「はい」選択で緊急処理実行',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester);
-
-        // 実際の処理実行: 緊急ボタンをタップ
-        await tapIconButton(tester, Icons.notifications_active);
-
-        // 前提条件確認: 確認ダイアログが表示されている
-        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
-            findsOneWidget);
-
-        // 実際の処理実行: ダイアログ内の「はい」ボタンをタップ
-        // ボタン型に依存しない: 実装は ElevatedButton だが、テストは
-        // TextButton を前提にしていて 0 件になっていた（Issue #84）。
-        // AlertDialog の子孫に限定して引く。
-        await confirmEmergency(tester);
-
-        // 結果検証: 緊急画面が表示される
-        expect(find.text('緊急呼び出し中'), findsOneWidget);
-        // 結果検証: リセットボタンが表示される
-        expect(find.text('リセット'), findsOneWidget);
-
-        // 後片付け: 緊急音を止める（鳴らしたままだと次のテストに残る）
-        await resetEmergency(tester);
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-084-014: 緊急画面でリセットボタンタップで通常画面に戻る',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester);
-
-        // 前提条件設定: 緊急状態にする
-        await tapIconButton(tester, Icons.notifications_active);
-        await confirmEmergency(tester);
-
-        // 前提条件確認: 緊急画面が表示されている
-        expect(find.text('緊急呼び出し中'), findsOneWidget);
-
-        // 実際の処理実行: リセットボタンをタップ
-        await resetEmergency(tester);
-
-        // 結果検証: 緊急画面が消える
-        expect(find.text('緊急呼び出し中'), findsNothing);
-        // 結果検証: 通常画面に戻る（kotonohaロゴが表示される）
-        expect(find.text('kotonoha'), findsOneWidget);
-      },
-    );
-  });
-
   // 4. 異常系テストケース
   group('異常系テスト', () {
     testWidgets(
@@ -302,55 +185,6 @@ void main() {
         // 結果検証: ホーム画面が引き続き表示されること
         await stopSpeechIfSpeaking(tester);
         expect(find.text('kotonoha'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-084-016: 緊急ボタン誤操作防止（2段階確認）が正しく機能する',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester);
-
-        // 実際の処理実行: 緊急ボタンをタップ
-        await tapIconButton(tester, Icons.notifications_active);
-
-        // 前提条件確認: 確認ダイアログが表示される
-        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
-            findsOneWidget);
-
-        // 実際の処理実行: 「いいえ」を選択
-        await tapDialogButton(tester, 'いいえ');
-
-        // 結果検証: 緊急処理が実行されず、通常画面が維持される
-        expect(find.byType(EmergencyAlertScreen), findsNothing);
-        expect(find.text('kotonoha'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-084-017: 確認ダイアログ外タップで閉じない',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester);
-
-        // 実際の処理実行: 緊急ボタンをタップ
-        await tapIconButton(tester, Icons.notifications_active);
-
-        // 前提条件確認: 確認ダイアログが表示される
-        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
-            findsOneWidget);
-
-        // 実際の処理実行: ダイアログ外（バリア）をタップ
-        // ダイアログの外側をタップするためにスクリーンの端をタップ
-        await tester.tapAt(const Offset(10, 10));
-        await tester.pumpAndSettle();
-
-        // 結果検証: ダイアログが閉じない
-        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
-            findsOneWidget);
-
-        // クリーンアップ: 「いいえ」でダイアログを閉じる
-        await tapDialogButton(tester, 'いいえ');
       },
     );
   });
@@ -409,35 +243,6 @@ void main() {
 
         // 結果検証: 履歴に「はい」が保存されている
         expect(find.text('はい'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-084-021: 緊急ボタン→確認→緊急画面→リセットの一連フロー',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester);
-
-        // ステップ1: 緊急ボタンをタップ
-        await tapIconButton(tester, Icons.notifications_active);
-
-        // 結果検証: 確認ダイアログが表示される
-        expect(find.text(EmergencyConfirmationDialog.confirmationMessage),
-            findsOneWidget);
-
-        // ステップ2: 「はい」をタップ
-        await confirmEmergency(tester);
-
-        // 結果検証: 緊急画面が表示される
-        expect(find.text('緊急呼び出し中'), findsOneWidget);
-        expect(find.text('リセット'), findsOneWidget);
-
-        // ステップ3: リセットボタンをタップ
-        await resetEmergency(tester);
-
-        // 結果検証: 通常画面に戻る
-        expect(find.text('緊急呼び出し中'), findsNothing);
-        expect(find.text('kotonoha'), findsOneWidget);
       },
     );
   });

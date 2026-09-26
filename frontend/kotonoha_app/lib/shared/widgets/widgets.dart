@@ -6,6 +6,5 @@
 library;
 
 export 'large_button.dart';
-export 'emergency_button.dart';
 export 'send_to_input_button.dart';
 export 'undo_snack_bar.dart';

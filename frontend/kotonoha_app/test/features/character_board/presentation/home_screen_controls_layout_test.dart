@@ -114,8 +114,7 @@ void main() {
   });
 
   testWidgets('横持ちスマホの狭い左ペインでも、状態ボタンは1個44px以上', (tester) async {
-    // 2ペインになる最小に近い幅（左ペインは約190px）。実機では緊急ボタンの
-    // レール（右92px）が加わるため、568×320 の端末がこの幅になる。
+    // 2ペインになる最小に近い幅（左ペインは約190px）。
     await _pumpHome(tester, const Size(480, 320));
     expect(
       tester.getRect(find.byType(CharacterBoardWidget)).left,

@@ -32,10 +32,8 @@ final ThemeData lightTheme = ThemeData(
     onPrimary: AppColors.onPrimaryLight,
     surface: AppColors.surfaceLight,
     onSurface: AppColors.onSurfaceLight,
-    // 緊急色 emergency(#D32F2F) をそのまま流用しており、緊急ボタンと
-    // 全消去ボタン（error 背景）が同一色で区別できなかった。
     // errorLight(#8C1D18) は surface 上の文字として 8.36:1
-    // 白文字を載せて 9.11:1、緊急色との分離 1.83:1。
+    // 白文字を載せて 9.11:1。
     error: AppColors.errorLight,
     onError: Colors.white,
   ),

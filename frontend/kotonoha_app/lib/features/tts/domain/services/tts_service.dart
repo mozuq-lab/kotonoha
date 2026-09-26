@@ -10,6 +10,7 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../models/tts_speed.dart';
 import '../models/tts_state.dart';
@@ -103,7 +104,7 @@ class TTSService {
   bool _disposed = false;
 
   /// エラーにして画面へ知らせる。エンジンが応答しないとき、黙ったまま
-  /// 「読み上げ中」に残さない（守る約束 ④。Android エミュレータで実測、2026-09-24）
+  /// 「読み上げ中」に残さない（守る約束 ③。Android エミュレータで実測、2026-09-24）
   void _fail(String message) {
     _startWatch?.cancel();
     if (_disposed) return;
@@ -134,6 +135,18 @@ class TTSService {
   /// false: 初期化失敗（エラーメッセージがerrorMessageに設定される）
   Future<bool> initialize() async {
     try {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+        // 警報音プラグインの削除後も、消音モードでの読み上げを維持する。
+        final configured = await tts.setIosAudioCategory(
+          IosTextToSpeechAudioCategory.playback,
+          const [],
+          IosTextToSpeechAudioMode.defaultMode,
+        );
+        if (configured != 1) {
+          throw StateError('iOSの音声カテゴリを設定できませんでした');
+        }
+      }
+
       // 言語設定: 日本語（ja-JP）を設定
       await tts.setLanguage('ja-JP');
 
