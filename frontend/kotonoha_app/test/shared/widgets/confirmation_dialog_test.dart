@@ -425,7 +425,7 @@ void main() {
   );
 
   // App Store 審査ガイドライン 5.1.2(i): 外部の AI へ送る前に、何を・誰に送るかを示して許可を得る
-  testWidgets('AI変換の同意は、送る中身と送り先（OpenAI・米国）を示す', (tester) async {
+  testWidgets('AI変換の同意は、送る中身と送り先（Cloudflare・米国）を示す', (tester) async {
     tester.view.physicalSize = const Size(375, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -446,7 +446,13 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'AI変換'));
     await pumpFrames(tester);
 
-    for (final phrase in ['入力した文章', '丁寧さ', '前回の変換結果', 'OpenAI（米国）']) {
+    for (final phrase in [
+      '入力した文章',
+      '丁寧さ',
+      '前回の変換結果',
+      'Cloudflare（米国）',
+      '日本国外'
+    ]) {
       expect(
         find.descendant(
           of: find.byType(AlertDialog),
