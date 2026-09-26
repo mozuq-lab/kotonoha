@@ -11,7 +11,6 @@
 ## 最短経路（上から順に。終わった行は消す）
 初期お気に入りの「痛い」を末尾へ移した。変更後の `integration_test/mvp_scenario_test.dart`（7 本）は、Android エミュレータ（電話サイズの `Medium_Phone_API_36.1`）と実 Chromium で通過済み（2026-09-26）。iPad シミュレータ（iPad (A16)、iOS 26.5）は順序変更前に7本通過済みだが、変更後の再実行結果待ち。Codex の CLI が CoreSimulatorService に接続できないため、通常 Terminal からの実行を依頼済み。Chromium の実音は未確認。Android の Google TTS エンジンのクラッシュは `adb shell pm clear com.google.android.tts` 後に再現せず、読み上げ開始・完了を確認した。
 まずiPadの再実行結果を確認する。その後はリリースの条件（ADR-007 条件 4）。エージェントが進められるものの候補（人と決める）:
-1. ストア掲載文を「医療・治療効果を謳わない」観点で点検する（L-85）
 2. ストア用のスクリーンショットをシミュレータとエミュレータで撮る（L-107。アイコンとフィーチャーグラフィックは別）
 3. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする
 4. AI 変換を含める準備（L-58 の人の作業と並行）: `release.yml` の `API_BASE_URL` を公開先にする／支出上限・残高切れを混雑（429）と分けて伝える／変換の質を 20〜30 件の入力例で確かめる／AI 変換の結合テストを iOS シミュレータ・Android エミュレータ・実 Chromium で通す
