@@ -9,15 +9,15 @@
 要件の MVP（文字盤・読み上げ・定型文・履歴・お気に入り・設定）を、初めて使う人が説明なしに一通り使え、その利用シナリオが iOS シミュレータ（iPad）と Android エミュレータで結合テスト（`integration_test/`）として通る状態。録画は人が見たいときに添える。AI 変換も初回に含める（2026-09-26 の人の決定。backend の公開がストア提出の前提になる。L-58）。
 
 ## 最短経路（上から順に。終わった行は消す）
-初期お気に入りの「痛い」を末尾へ移した。変更後の `integration_test/mvp_scenario_test.dart`（7 本）は、Android エミュレータ（電話サイズの `Medium_Phone_API_36.1`）と実 Chromium で通過済み（2026-09-26）。iPad シミュレータ（iPad (A16)、iOS 26.5）は順序変更前に7本通過済みだが、変更後の再実行結果待ち。Codex の CLI が CoreSimulatorService に接続できないため、通常 Terminal からの実行を依頼済み。Chromium の実音は未確認。Android の Google TTS エンジンのクラッシュは `adb shell pm clear com.google.android.tts` 後に再現せず、読み上げ開始・完了を確認した。
-まずiPadの再実行結果を確認する。その後はリリースの条件（ADR-007 条件 4）。エージェントが進められるものの候補（人と決める）:
-2. ストア用のスクリーンショットをシミュレータとエミュレータで撮る（L-107。アイコンとフィーチャーグラフィックは別）
-3. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする
-4. AI 変換を含める準備（L-58 の人の作業と並行）: `release.yml` の `API_BASE_URL` を公開先にする／変換の質を 20〜30 件の入力例で確かめる／AI 変換の結合テストを iOS シミュレータ・Android エミュレータ・実 Chromium で通す
+`integration_test/mvp_scenario_test.dart`（7 本）は、iPad シミュレータ（iPad (A16)、iOS 26.5）・Android エミュレータ（`Medium_Phone_API_36.1`）・実 Chromium で通過済み（2026-09-26）。Chromium の実音は未確認。ストア用のスクリーンショット（iPhone 6.9・iPad 13・Android 電話）は `fastlane/screenshots/ja-JP/` に撮影済み。
+次はリリースの条件（ADR-007 条件 4）。エージェントが進められるもの:
+1. AI 変換を含める準備（L-58 の人の作業と並行）: 変換の質を 20〜30 件の入力例で確かめる／AI 変換の結合テストを iOS シミュレータ・Android エミュレータ・実 Chromium で通す／`release.yml` の `API_BASE_URL`（リポジトリ変数）を公開先にする
+2. Play 用のアイコン 512 とフィーチャーグラフィック 1024×500（L-107。Android 公開の前まで）
+3. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする。最後に行う
 
 ## 人待ち
 - 開発者登録（L-84）: 「形」になったので着手できる（2026-09-24 の決定。ADR-007）
-- backend の公開（L-58。公開先は Cloudflare Containers、LLM は Workers AI の Gemma 4 に決定）: Workers Paid の契約、AI Gateway の作成と支出上限・回数制限（選べる最長の期間）の設定、本番用 API トークンの発行、端末キー（`AI_API_KEY`）と `API_BASE_URL` の登録。Containers のデプロイ設定はエージェントが用意する
+- backend の公開（L-58。公開先は Cloudflare Containers、LLM は Workers AI の Gemma 4 に決定）: Workers Paid の契約、AI Gateway の作成と支出上限・回数制限（選べる最長の期間）の設定、本番用 API トークンの発行、端末キー（`AI_API_KEY`）と `API_BASE_URL` の登録。デプロイは README の「デプロイ（Cloudflare Containers）」の手順どおり
 - AI 変換の公開文: 送り先を Cloudflare（米国。日本国外で処理されることがある）と明記した同意ダイアログ・プライバシーポリシー・FAQ の承認と、個人情報保護法 28 条（外国にある第三者への提供）の確認。ストアのプライバシー表示とデータセーフティは開発者登録（L-84）の後
 - サポート連絡先（L-51）: 公開文のアドレスが仮の `support@kotonoha-app.example.com` のまま
 - 要件にあるのに入口が無いものを、作るか要件から外すか: REQ-4003（アプリの中から音量・音量設定に届く）、REQ-601 のうち「表示した文章」（対面表示は履歴に残らない）

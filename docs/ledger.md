@@ -18,7 +18,7 @@
 - [ ] L-91 コードや CI が守っているのに ADR に無い決定（`/health` の無認証・無レート制限、環境名による認証省略と `/docs` 公開、CORS の形、`patch('app.` 禁止、lint の設定値） — backend/app/{routes,config,main}.py、backend/scripts/gates.sh、backend/pyproject.toml。決定（2026-09-20）: 次の監査で ADR にするか決める（未卒業 ADR は上限の 5 本）
 - [ ] L-98 ストア提出の前に独立監査（ADR-010 の監査、監査スキルの付録）を 1 回行う（結果は PR の `<details>`。直すものは仕分けに通す）。条件 4 の充足判定の前 — ADR-010、ADR-007 条件 4
 - [ ] L-106 ADR-005 が #125〜#127 で 55 行に肥大化し、#128 で構造を変えた（ADR-010「レビュー指摘に応えて ADR に文を足さない」）。次の監査で、以後の ADR 差分に細部が入っていないかを見て、効いていなければ上限を見直す — docs/adr/ADR-010-document-framework.md
-- [ ] L-107 ストア提出用の画像が無い（アイコン 1024/512、iPhone・iPad・スマートフォンのスクリーンショット、Play のフィーチャーグラフィック 1024×500） — frontend/kotonoha_app/fastlane/、docs/store-assets-guide.md。ADR-007 条件 4
+- [ ] L-107 ストア提出用の画像のうち、Play 用のアイコン 512 とフィーチャーグラフィック 1024×500 が無い（1024 のアイコンは ios/ にある。スクリーンショットは iPhone 6.9・iPad 13・Android 電話を 2026-09-26 に撮影済み） — frontend/kotonoha_app/fastlane/、docs/store-assets-guide.md。ADR-007 条件 4
 - [ ] L-145 Android のクローズドテスト（12 人以上 × 14 日連続。代行サービスで集める）と、その後の production access の申請が未実施。申請の回答は実際に起きたことで書く — ADR-007 条件 4。人が動かす。L-84 の後、Android 公開の直前
 - [ ] L-146 Play Console のプライバシーポリシー URL は fastlane の metadata に無く、コンソールで設定する（iOS は `privacy_url.txt`）。同じ URL にする — ADR-007 条件 4。人が動かす。L-84 の後
 - [ ] L-147 台帳の 1 行の字数に上限が無い（2026-09-24 の整理で長い行は縮めた） — ADR-010。決定（2026-09-20）: 次の監査で 200 字の上限を ADR-010 の改訂として置く

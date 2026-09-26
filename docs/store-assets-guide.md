@@ -42,15 +42,14 @@
 
 ### App Store（iOS）要件
 
-#### 必須サイズ（いずれか1つ以上）
+#### 必須サイズ
 
-| デバイス | サイズ（ポートレート） | サイズ（ランドスケープ） |
-|----------|------------------------|--------------------------|
-| iPhone 6.7インチ | 1290 x 2796 | 2796 x 1290 |
-| iPhone 6.5インチ | 1284 x 2778 | 2778 x 1284 |
-| iPhone 5.5インチ | 1242 x 2208 | 2208 x 1242 |
-| iPad Pro 12.9インチ | 2048 x 2732 | 2732 x 2048 |
-| iPad Pro 11インチ | 1668 x 2388 | 2388 x 1668 |
+| デバイス | サイズ（ポートレート） | 撮るシミュレータ |
+|----------|------------------------|------------------|
+| iPhone 6.9インチ | 1320 x 2868 | iPhone 17 Pro Max |
+| iPad 13インチ | 2064 x 2752 | iPad Pro 13-inch (M5) |
+
+iPhone と iPad の両方に対応している（`TARGETED_DEVICE_FAMILY = "1,2"`）ので、両方が要る。
 
 #### 枚数
 - 最小: 1枚
@@ -61,7 +60,7 @@
 
 | サイズ | 用途 |
 |--------|------|
-| 1080 x 1920 〜 1080 x 3840 | スマートフォン |
+| 1080 x 1920 | スマートフォン（長辺は短辺の 2 倍まで。1080 x 2400 は受け付けられない） |
 | 最小 320px | タブレット（7インチ） |
 | 1200 x 1920 推奨 | タブレット（10インチ） |
 
@@ -161,19 +160,22 @@ flutter_icons:
 
 ### スクリーンショット取得
 
-```bash
-# Flutter で高解像度スクリーンショットを取得
-flutter screenshot --device-id <device_id> --out screenshots/screen1.png
-```
-
-### 自動スクリーンショット（Fastlane）
+撮影用の結合テスト（`integration_test/store/store_screenshots_test.dart`）が、本物のアプリを操作して
+6 枚（ホーム・対面表示・定型文・履歴・お気に入り・設定）を `build/screenshots/` に書く。
+撮った画像は `fastlane/screenshots/ja-JP/<端末>/` に置く。
 
 ```bash
-# iOS
-fastlane ios screenshots
-
-# Android（要 screengrab 設定）
-fastlane android screenshots
+cd frontend/kotonoha_app
+# iOS（シミュレータを起動しておく）
+fvm flutter drive -d <シミュレータの id> \
+  --driver=test_driver/screenshot_driver.dart \
+  --target=integration_test/store/store_screenshots_test.dart
+# Android（エミュレータの画面を 1080x1920 にしてから撮り、戻す）
+adb shell wm size 1080x1920
+fvm flutter drive -d emulator-5554 --flavor production \
+  --driver=test_driver/screenshot_driver.dart \
+  --target=integration_test/store/store_screenshots_test.dart
+adb shell wm size reset
 ```
 
 ---
