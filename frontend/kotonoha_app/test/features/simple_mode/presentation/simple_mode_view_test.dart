@@ -114,7 +114,7 @@ void main() {
       expect(find.text('お気に入り2'), findsOneWidget);
     });
 
-    testWidgets('お気に入りは最大6件までしか表示されない', (tester) async {
+    testWidgets('お気に入りは通常ホームと同じ上位8件に届く', (tester) async {
       await tester.pumpWidget(
         wrap(
           SimpleModeView(
@@ -130,8 +130,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('お気に入り0'), findsOneWidget);
-      expect(find.text('お気に入り5'), findsOneWidget);
-      expect(find.text('お気に入り6'), findsNothing);
+      expect(find.text('お気に入り7'), findsOneWidget);
+      expect(find.text('お気に入り8'), findsNothing);
     });
 
     testWidgets('「通常モードに戻る」ボタンが常に表示される', (tester) async {

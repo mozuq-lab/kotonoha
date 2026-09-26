@@ -42,6 +42,9 @@ class FavoriteUIConstants {
   static const String emptyStateTitle = 'お気に入りがありません';
   static const String emptyStateHint = '履歴や定型文からお気に入りを登録できます';
   static const String dateTimeFormat = 'MM/dd HH:mm';
+  static const String temporaryRegistrationMessage =
+      '一時的に登録しました。保存できないため、再起動すると消えます';
+  static const String saveFailureMessage = 'お気に入りを保存できませんでした';
 
   // 編集モード関連
   static const String editTooltip = '並び替え';

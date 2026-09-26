@@ -77,6 +77,14 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
   Future<void> reorderFavorite(String id, int newOrder) =>
       _inOrder(() => _reorderFavorite(id, newOrder));
 
+  /// 保存待ちの移動も、実行するときの最新の位置から数える。
+  Future<void> moveFavorite(String id, int offset) => _inOrder(() {
+        final index =
+            state.favorites.indexWhere((favorite) => favorite.id == id);
+        if (index == -1) return Future<void>.value();
+        return _reorderFavorite(id, index + offset);
+      });
+
   Future<void> loadFavorites() => _inOrder(_loadFavorites);
 
   Future<bool> clearAllFavorites() => _inOrder(_clearAllFavorites);
@@ -105,6 +113,15 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
 
   /// UUID生成用インスタンス
   static const _uuid = Uuid();
+
+  /// 削除で欠番ができても、新しい項目を既存の末尾より後へ保存する。
+  int get _nextDisplayOrder =>
+      state.favorites.fold<int>(
+          -1,
+          (highest, favorite) => favorite.displayOrder > highest
+              ? favorite.displayOrder
+              : highest) +
+      1;
 
   /// Undo用: 直近に個別削除したお気に入りを一時保持する
   /// 改善: 個別削除は確認ダイアログを廃止し即削除としたため
@@ -165,7 +182,7 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
       id: _uuid.v4(),
       content: content,
       createdAt: now,
-      displayOrder: state.favorites.length,
+      displayOrder: _nextDisplayOrder,
     );
 
     // 永続化: repoがあればHiveに保存
@@ -298,7 +315,7 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
       id: _uuid.v4(),
       content: content,
       createdAt: now,
-      displayOrder: state.favorites.length,
+      displayOrder: _nextDisplayOrder,
       sourceType: 'preset_phrase', // 元データ種類: 定型文由来を示す
       sourceId: sourceId, // 元データID: 定型文のIDを保持
     );
@@ -329,7 +346,7 @@ class FavoriteNotifier extends Notifier<FavoriteState> {
       id: _uuid.v4(),
       content: content,
       createdAt: now,
-      displayOrder: state.favorites.length,
+      displayOrder: _nextDisplayOrder,
       sourceType: 'history', // 元データ種類: 履歴由来を示す
       sourceId: historyId, // 元データID: 履歴のIDを保持（重複判定には使わない）
     );

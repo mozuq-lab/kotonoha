@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +25,7 @@ Box<FavoriteItem> _boundary(
   bool failInitialWrite = false,
   String? failDeleteId,
   bool failDeleteAll = false,
+  Completer<void>? beforeSaveAll,
 }) {
   final boundary = _FavoriteBoxBoundary();
   when(() => boundary.get(any()))
@@ -39,6 +41,7 @@ Box<FavoriteItem> _boundary(
     await box.put(call.positionalArguments.first, item);
   });
   when(() => boundary.putAll(any())).thenAnswer((call) async {
+    if (beforeSaveAll != null) await beforeSaveAll.future;
     final entries =
         call.positionalArguments.first as Map<dynamic, FavoriteItem>;
     if (failInitialWrite &&
@@ -134,6 +137,70 @@ void main() {
     final reloaded = await repository.getById(favorite.id);
     expect(reloaded?.colorValue, 0xFF123456);
     expect(reloaded?.displayOrder, 9);
+  });
+
+  for (final source in ['input', 'history', 'preset_phrase']) {
+    test('$source から削除後に追加しても再起動で並び順が変わらない', () async {
+      await FavoriteRepository(box: box).ensureInitialFavorites();
+      var container = ProviderContainer();
+      final notifier = container.read(favoriteProvider.notifier);
+      await notifier.deleteFavorite('initial-favorite-0');
+      switch (source) {
+        case 'input':
+          await notifier.addFavorite('最後に追加');
+        case 'history':
+          await notifier.addFavoriteFromHistory('最後に追加', 'history-id');
+        case 'preset_phrase':
+          await notifier.addFavoriteFromPresetPhrase('最後に追加', 'preset-id');
+      }
+      const expected = ['トイレ', '暑い', '寒い', '水', '眠い', '助けて', '待って', '最後に追加'];
+      expect(container.read(favoriteProvider).favorites.map((f) => f.content),
+          expected);
+      container.dispose();
+      await box.close();
+      box = await Hive.openBox<FavoriteItem>('favorites');
+      container = ProviderContainer();
+      expect(container.read(favoriteProvider).favorites.map((f) => f.content),
+          expected);
+      container.dispose();
+    });
+  }
+
+  testWidgets('保存中に上へを2回押した操作がどちらも再起動後に残る', (tester) async {
+    await tester
+        .runAsync(() => FavoriteRepository(box: box).ensureInitialFavorites());
+    final gate = (await tester.runAsync(() async => Completer<void>()))!;
+    final repository =
+        FavoriteRepository(box: _boundary(box, beforeSaveAll: gate));
+    final container = ProviderContainer(overrides: [
+      favoriteRepositoryProvider.overrideWithValue(repository),
+    ]);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: FavoritesScreen()),
+    ));
+    await tester.pumpAndSettle();
+    final up = find.byKey(const Key('move_up_initial-favorite-3'));
+    await tester.tap(find.byTooltip('並び替え'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(up);
+    await tester.pumpAndSettle();
+    expect(up.hitTestable(), findsOneWidget);
+    await tester.runAsync(() async {
+      await tester.tap(up);
+      await tester.tap(up);
+      gate.complete();
+      await container.read(favoriteProvider.notifier).loadFavorites();
+    });
+    await tester.pump();
+    expect(container.read(favoriteProvider).favorites[1].content, '寒い');
+    await tester.runAsync(() async {
+      await box.close();
+      box = await Hive.openBox<FavoriteItem>('favorites');
+    });
+    expect(FavoriteRepository(box: box).loadAllSortedSync()[1].content, '寒い');
+    expect(tester.takeException(), isNull);
   });
 
   test('provider で変えた色が実 box と再起動後の provider に残る', () async {
@@ -285,6 +352,26 @@ void main() {
           .where((favorite) => favorite.content == '保存失敗'),
       isEmpty,
     );
+  });
+
+  testWidgets('保存先がない入力欄の登録は重複ではなく一時保存と伝える', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.runAsync(box.close);
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: HomeScreen()),
+    ));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('home_input_field')), '一時的な文');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('favorite_current_input')));
+    await tester.pumpAndSettle();
+    expect(find.text('すでにお気に入りに登録されています'), findsNothing);
+    expect(find.text('一時的に登録しました。保存できないため、再起動すると消えます'), findsOneWidget);
+    expect(container.read(favoriteProvider).favorites.single.content, '一時的な文');
+    expect(tester.takeException(), isNull);
   });
 
   for (final deleteAll in [false, true]) {

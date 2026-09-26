@@ -13,27 +13,29 @@ import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conv
 import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_provider.dart';
 import 'package:kotonoha_app/features/character_board/domain/character_data.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
-import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
-import 'package:kotonoha_app/features/character_board/presentation/widgets/input_limit_notice.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/home_input_field.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/input_limit_notice.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
-import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_buttons.dart';
-import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
 import 'package:kotonoha_app/features/face_to_face/providers/face_to_face_provider.dart';
-import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
+import 'package:kotonoha_app/features/favorite/presentation/constants/favorite_ui_constants.dart';
 import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
+import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
+import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
+import 'package:kotonoha_app/features/history/providers/history_provider.dart';
+import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
+import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_buttons.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/features/simple_mode/presentation/simple_mode_view.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_widget.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
-import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
-import 'package:kotonoha_app/features/settings/models/font_size.dart';
-import 'package:kotonoha_app/features/history/providers/history_provider.dart';
-import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 
 /// コンパクト2ペインの幅の配分（左: 操作UI 2 / 右: 文字盤 3）
@@ -616,13 +618,20 @@ class HomeScreen extends ConsumerWidget {
         .read(favoriteProvider)
         .favorites
         .any((favorite) => favorite.content == content);
+    final temporary =
+        registered && ref.read(favoriteRepositoryProvider) == null;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(saved
             ? 'お気に入りに登録しました'
-            : registered
-                ? 'すでにお気に入りに登録されています'
-                : 'お気に入りを保存できませんでした'),
+            : temporary
+                ? FavoriteUIConstants.temporaryRegistrationMessage
+                : registered
+                    ? 'すでにお気に入りに登録されています'
+                    : FavoriteUIConstants.saveFailureMessage),
+        backgroundColor: !registered || temporary
+            ? Theme.of(context).colorScheme.error
+            : null,
       ),
     );
   }

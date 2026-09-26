@@ -237,12 +237,12 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   /// 1つ上へ移動（タップ操作による並べ替え）
   void _moveUp(Favorite favorite, int index) {
     if (index <= 0) return;
-    ref.read(favoriteProvider.notifier).reorderFavorite(favorite.id, index - 1);
+    ref.read(favoriteProvider.notifier).moveFavorite(favorite.id, -1);
   }
 
   /// 1つ下へ移動（タップ操作による並べ替え）
   void _moveDown(Favorite favorite, int index) {
-    ref.read(favoriteProvider.notifier).reorderFavorite(favorite.id, index + 1);
+    ref.read(favoriteProvider.notifier).moveFavorite(favorite.id, 1);
   }
 
   /// 並び替え処理

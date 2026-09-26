@@ -9,7 +9,7 @@
 要件の MVP（文字盤・読み上げ・定型文・履歴・お気に入り・設定）を、初めて使う人が説明なしに一通り使え、その利用シナリオが iOS シミュレータ（iPad）と Android エミュレータで結合テスト（`integration_test/`）として通る状態。録画は人が見たいときに添える。AI 変換は初回に含めなくてよい（ADR-007）。
 
 ## 最短経路（上から順に。終わった行は消す）
-「形」の再確認済み: OS キーボード入力・お気に入り登録・色の再起動後の保持を含む `integration_test/mvp_scenario_test.dart`（7 本）は、iPad シミュレータ（iPad (A16)、iOS 26.5）、Android エミュレータ（電話サイズの `Medium_Phone_API_36.1`）、実 Chromium で通過済み。iPad は通常 Terminal からの利用者の実行ログで 7 本すべての通過を確認した（2026-09-26）。Chromium の実音は未確認。Android の Google TTS エンジンのクラッシュは `adb shell pm clear com.google.android.tts` 後に再現せず、読み上げ開始・完了を確認した。
+「形」の再確認済み: お気に入りの修正後の `integration_test/mvp_scenario_test.dart`（7 本）は、iPad シミュレータ（iPad (A16)、iOS 26.5）、Android エミュレータ（電話サイズの `Medium_Phone_API_36.1`）、実 Chromium で通過済み（2026-09-26）。iPad は通常 Terminal からの利用者の実行ログで7本すべての通過を確認し、検証用コピーの `lib/` と `integration_test/` が作業ツリーと一致することも確認した。Chromium の実音は未確認。Android の Google TTS エンジンのクラッシュは `adb shell pm clear com.google.android.tts` 後に再現せず、読み上げ開始・完了を確認した。
 次はリリースの条件（ADR-007 条件 4）。エージェントが進められるものの候補（人と決める）:
 1. ストア掲載文を「医療・治療効果を謳わない」観点で点検する（L-85）
 2. ストア用のスクリーンショットをシミュレータとエミュレータで撮る（L-107。アイコンとフィーチャーグラフィックは別）

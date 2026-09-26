@@ -43,14 +43,11 @@ class FavoriteShortcutButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
             ),
           ),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              favorite.content,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: textSize, fontWeight: FontWeight.bold),
-            ),
+          child: Text(
+            favorite.content,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: textSize, fontWeight: FontWeight.bold),
           ),
         ),
       ),
