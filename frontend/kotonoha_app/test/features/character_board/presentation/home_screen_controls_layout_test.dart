@@ -18,7 +18,8 @@ import 'package:kotonoha_app/features/character_board/providers/input_buffer_pro
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_button.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
-import 'package:kotonoha_app/features/status_buttons/presentation/widgets/status_button.dart';
+import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
+import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,6 +29,18 @@ Future<ProviderContainer> _pumpHome(WidgetTester tester, Size size) async {
   addTearDown(tester.view.reset);
   final container = ProviderContainer();
   addTearDown(container.dispose);
+  for (final content in [
+    '痛い',
+    'トイレ',
+    '暑い',
+    '寒い',
+    '水',
+    '眠い',
+    '助けて',
+    '待って',
+  ]) {
+    await container.read(favoriteProvider.notifier).addFavorite(content);
+  }
   container.read(inputBufferProvider.notifier).setText('おみず');
   await tester.pumpWidget(
     UncontrolledProviderScope(
@@ -41,8 +54,8 @@ Future<ProviderContainer> _pumpHome(WidgetTester tester, Size size) async {
 
 Rect _inputRect(WidgetTester tester) => tester.getRect(
       find
-          .ancestor(
-            of: find.text('おみず').first,
+          .descendant(
+            of: find.byKey(const Key('home_input_area')),
             matching: find.byType(DecoratedBox),
           )
           .first,
@@ -58,7 +71,7 @@ void main() {
     final quick = find.byType(QuickResponseButton);
     final quickLeft = tester.getRect(quick.first).left;
     final quickRight = tester.getRect(quick.last).right;
-    final status = find.byType(StatusButton);
+    final status = find.byType(FavoriteShortcutButton);
     expect(status, findsNWidgets(8));
     final rects = [for (var i = 0; i < 8; i++) tester.getRect(status.at(i))];
     for (var i = 0; i < 8; i++) {
@@ -122,7 +135,7 @@ void main() {
       reason: '2ペイン（右に文字盤）になっていない',
     );
 
-    final status = find.byType(StatusButton);
+    final status = find.byType(FavoriteShortcutButton);
     expect(status, findsNWidgets(8));
     for (var i = 0; i < 8; i++) {
       final rect = tester.getRect(status.at(i));
@@ -153,7 +166,7 @@ void main() {
     final quick = find.byType(QuickResponseButton);
     final quickLeft = tester.getRect(quick.first).left;
     final quickRight = tester.getRect(quick.last).right;
-    final status = find.byType(StatusButton);
+    final status = find.byType(FavoriteShortcutButton);
     final first = tester.getRect(status.first);
     final last = tester.getRect(status.last);
     expect(last.top, first.top);

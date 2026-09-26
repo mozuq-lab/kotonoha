@@ -6,9 +6,8 @@
 /// 「通常モードに戻る」明示ボタン（常にスクロールなしで到達できる位置に固定配置。
 /// 誤タップで抜けられなくなることを防ぐため）
 /// クイック応答（はい/いいえ/わからない）
-/// 状態ボタン12個（全ボタン: [allStatusTypes]）
 /// お気に入り上位数件
-/// 既存の [QuickResponseButtons] / [StatusButtons] / [Favorite] を再利用し
+/// 既存の [QuickResponseButtons] / [Favorite] を再利用し
 /// 新規の重複実装を避ける。TTS読み上げ・履歴保存は呼び出し元
 /// （HomeScreen）のコールバック経由で行うため、このウィジェット自体は
 /// Riverpodに依存しないStatelessWidgetとして実装する（テスト容易性向上）。
@@ -22,7 +21,7 @@ import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.
 import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_buttons.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/simple_mode/domain/simple_mode_constants.dart';
-import 'package:kotonoha_app/features/status_buttons/status_buttons.dart';
+import 'package:kotonoha_app/features/favorite/presentation/constants/favorite_colors.dart';
 
 /// シンプルモード画面
 class SimpleModeView extends StatelessWidget {
@@ -35,13 +34,10 @@ class SimpleModeView extends StatelessWidget {
   /// クイック応答タップ時のコールバック（履歴保存等に使用、TTSは含まない）
   final void Function(QuickResponseType type) onQuickResponse;
 
-  /// 状態ボタンタップ時のコールバック（履歴保存等に使用、TTSは含まない）
-  final void Function(StatusButtonType type) onStatusButton;
-
   /// お気に入りタップ時のコールバック（読み上げは呼び出し側の責務）
   final void Function(Favorite favorite) onFavoriteTap;
 
-  /// TTS読み上げコールバック（クイック応答・状態ボタンから呼ばれる）
+  /// TTS読み上げコールバック（クイック応答から呼ばれる）
   final void Function(String text) onTTSSpeak;
 
   /// 「通常モードに戻る」タップ時のコールバック
@@ -53,7 +49,6 @@ class SimpleModeView extends StatelessWidget {
     required this.fontSize,
     required this.favorites,
     required this.onQuickResponse,
-    required this.onStatusButton,
     required this.onFavoriteTap,
     required this.onTTSSpeak,
     required this.onExitSimpleMode,
@@ -84,15 +79,6 @@ class SimpleModeView extends StatelessWidget {
                   const SizedBox(height: AppSizes.paddingSmall),
                   QuickResponseButtons(
                     onResponse: onQuickResponse,
-                    onTTSSpeak: onTTSSpeak,
-                    fontSize: fontSize,
-                  ),
-                  const SizedBox(height: AppSizes.paddingLarge),
-                  _buildSectionTitle(context, '状態'),
-                  const SizedBox(height: AppSizes.paddingSmall),
-                  StatusButtons(
-                    statusTypes: allStatusTypes,
-                    onStatus: onStatusButton,
                     onTTSSpeak: onTTSSpeak,
                     fontSize: fontSize,
                   ),
@@ -197,8 +183,10 @@ class _FavoriteGridButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          backgroundColor:
+              favoriteBackground(favorite, Theme.of(context).colorScheme),
+          foregroundColor:
+              favoriteForeground(favorite, Theme.of(context).colorScheme),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           ),

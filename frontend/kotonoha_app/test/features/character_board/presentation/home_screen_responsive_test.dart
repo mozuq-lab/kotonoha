@@ -154,18 +154,10 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.text(InputLimitNotice.message), findsOneWidget);
 
-        // 入力テキストのTextウィジェット自体は、SingleChildScrollView配下では
-        // ビューポートに関わらず内容に応じた自然な高さでレンダリングされる
-        // （クリップされて見えなくなるだけ）ため、find.text()のRenderBoxの
-        // 高さでは「ビューポートが実質0に潰れている」ことを検出できない。
-        // 実際に潰れるのは入力テキストを囲むSingleChildScrollView自身
-        // （reverse: trueで一意に識別できる）のRenderBoxの高さなので、
-        // そちらを見る。
-        final scrollViewFinder = find.byWidgetPredicate(
-          (widget) => widget is SingleChildScrollView && widget.reverse,
-        );
-        expect(scrollViewFinder, findsOneWidget);
-        final viewportSize = tester.getSize(scrollViewFinder);
+        // 編集可能な入力欄の表示域そのものが1行分残ることを確認する。
+        final inputFinder = find.byKey(const Key('home_input_field'));
+        expect(inputFinder, findsOneWidget);
+        final viewportSize = tester.getSize(inputFinder);
         expect(
           viewportSize.height,
           greaterThanOrEqualTo(AppSizes.fontSizeMedium),
