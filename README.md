@@ -19,8 +19,7 @@ TTS読み上げ）はすべてオフラインで動作し、AI変換のみオン
 ```bash
 git clone https://github.com/mozuq-lab/kotonoha.git
 cd kotonoha
-cp .env.example .env                   # Flutter ビルド用。キーの説明は .env.example に書いてある
-cp backend/.env.example backend/.env   # backend のアプリ設定。同上
+cp backend/.env.example backend/.env   # backend のアプリ設定。キーの説明は .env.example に書いてある
 ```
 
 backend:
@@ -61,19 +60,14 @@ AI変換ボタンは標準の起動・ビルドでは非表示です。開発時
 
 ローカルの docker-compose 構成をそのまま使うなら、これだけで動きます（アプリ側のデフォルトが
 `API_BASE_URL=http://localhost:8000`、`AI_API_KEY` は空文字）。接続先を変える場合や
-`backend/.env` の `API_KEYS` でAPIキー認証を有効にした場合は、ルート `.env` の値を `--dart-define`
-で埋め込みます（Flutterは `.env` を直接読まないため）:
+`backend/.env` の `API_KEYS` でAPIキー認証を有効にした場合は、値を `--dart-define` で渡します
+（Flutter は `.env` を読みません）:
 
 ```bash
-# ルート .env が未作成だと source が失敗する（set -e 環境では中断する）
-set -a; source ../../.env; set +a
-
-# 未設定のキーはフォールバックで補う
-DEFINES=(--dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:8000}")
-if [ -n "${AI_API_KEY:-}" ]; then
-  DEFINES+=(--dart-define=AI_API_KEY="$AI_API_KEY")
-fi
-fvm flutter run -d chrome --dart-define=ENABLE_AI_CONVERSION=true "${DEFINES[@]}"
+fvm flutter run -d chrome \
+  --dart-define=ENABLE_AI_CONVERSION=true \
+  --dart-define=API_BASE_URL=http://localhost:8000 \
+  --dart-define=AI_API_KEY=<backend/.env の API_KEYS に含まれる値のいずれか>
 ```
 
 **空の `--dart-define` を渡さないこと。** `String.fromEnvironment` は「値が定義されたか」で判定するため、
