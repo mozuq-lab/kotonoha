@@ -37,6 +37,16 @@ def test_api_keys_are_split_and_stripped() -> None:
     assert make_config(API_KEYS=" a , ,b,").api_keys() == (b"a", b"b")
 
 
+def test_default_rate_limit_allows_twelve_requests_per_minute() -> None:
+    config = RuntimeConfig(_env_file=None)
+    assert (config.RATE_LIMIT_TIMES, config.RATE_LIMIT_SECONDS) == (12, 60)  # ADR-002
+
+
+def test_default_provider_matches_the_disclosed_destination() -> None:
+    # 同意ダイアログ・プライバシーポリシーは送り先を Cloudflare（Workers AI）と告げている
+    assert RuntimeConfig(_env_file=None).DEFAULT_AI_PROVIDER == "workers_ai"
+
+
 def test_empty_provider_key_means_none() -> None:
     config = make_config(ANTHROPIC_API_KEY="", OPENAI_API_KEY="")
     assert (
@@ -91,7 +101,9 @@ def test_non_local_load_fails_with_every_problem(monkeypatch: pytest.MonkeyPatch
 def test_production_with_symbol_keys_loads(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-" + SYMBOL_KEY)
+    monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
+    monkeypatch.setenv("CF_ACCOUNT_ID", "0123456789abcdef0123456789abcdef")
+    monkeypatch.setenv("CF_AI_GATEWAY_ID", "kotonoha-prod")
     config = load_config(env_file=None)
     assert config.api_keys() == (SYMBOL_KEY.encode("ascii"),)
 
@@ -142,3 +154,13 @@ def test_cors_origins_are_split() -> None:
         "http://a",
         "http://b",
     )
+
+
+def test_production_workers_ai_needs_the_account_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
+    monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
+    with pytest.raises(ConfigError) as info:
+        load_config(env_file=None)
+    # ゲートウェイを通らないと支出上限が効かない（ADR-002 の必須条件）
+    assert info.value.problems == (("CF_ACCOUNT_ID", "missing"), ("CF_AI_GATEWAY_ID", "missing"))

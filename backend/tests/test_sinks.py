@@ -157,7 +157,15 @@ def test_config_boundary_in_a_real_process(tmp_path: Path) -> None:
     )
 
 
-def test_provider_init_boundary_in_a_real_process() -> None:
+@pytest.mark.parametrize(
+    "provider_env",
+    [
+        {"DEFAULT_AI_PROVIDER": "workers_ai", "CF_API_TOKEN": "cf-x", "CF_ACCOUNT_ID": "0" * 32},
+        {"DEFAULT_AI_PROVIDER": "anthropic", "ANTHROPIC_API_KEY": "sk-x"},
+    ],
+    ids=["workers_ai", "anthropic"],
+)
+def test_provider_init_boundary_in_a_real_process(provider_env: dict[str, str]) -> None:
     """provider 生成（SDK の httpx.AsyncClient 構築）失敗が lifespan の境界で SafeError に
     変換され、第三者ライブラリの自由文・設定値が stdout/stderr に出ないことをプロセス全体で見る。
     """
@@ -165,8 +173,8 @@ def test_provider_init_boundary_in_a_real_process() -> None:
     env = _base_env(
         ENVIRONMENT="development",
         API_KEYS="k",
-        ANTHROPIC_API_KEY="sk-x",
         HTTPS_PROXY=f"foo://{CANARY}-PROXY-USER:{CANARY}-PROXY-PASS@proxy.invalid",
+        **provider_env,
     )
     proc = _spawn(port, env)
     try:

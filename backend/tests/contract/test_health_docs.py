@@ -14,7 +14,7 @@ def test_health_is_ok_without_auth(client: TestClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["ai_provider"] in {"anthropic", "openai", "none"}
+    assert body["ai_provider"] in {"anthropic", "openai", "workers_ai", "none"}
     assert body["version"] == "1.0.0"
     assert body["timestamp"].endswith("Z")
     datetime.strptime(body["timestamp"], "%Y-%m-%dT%H:%M:%SZ")

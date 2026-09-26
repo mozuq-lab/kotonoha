@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Final, Literal
@@ -20,7 +21,13 @@ from app.errors import ConfigError, ConfigProblem
 from app.logging import LogLevel, RemovedSettingIgnored, log_event
 
 Environment = Literal["development", "test", "staging", "production"]
-ProviderName = Literal["anthropic", "openai"]
+ProviderName = Literal["anthropic", "openai", "workers_ai"]
+# provider ごとの鍵の設定名（本番ゲートの報告にもこの名前を使う）
+_KEY_SETTING: Final[dict[ProviderName, str]] = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "workers_ai": "CF_API_TOKEN",
+}
 
 API_PREFIX: Final = "/api/v1"
 
@@ -73,27 +80,48 @@ class RuntimeConfig(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
 
     # レート制限（ADR-002: 単一送信元の burst 抑制。カウンタはプロセス内メモリ）
-    RATE_LIMIT_TIMES: int = Field(default=1, ge=1)
-    RATE_LIMIT_SECONDS: int = Field(default=10, ge=1)
+    RATE_LIMIT_TIMES: int = Field(default=12, ge=1)
+    RATE_LIMIT_SECONDS: int = Field(default=60, ge=1)
     TRUSTED_PROXY_COUNT: int = Field(default=0, ge=0)
 
     # AI プロバイダ
-    DEFAULT_AI_PROVIDER: ProviderName = "anthropic"
+    # 送り先は同意ダイアログと公開文（privacy-policy）が告げる先と一致させる。変えるなら文面も直す
+    DEFAULT_AI_PROVIDER: ProviderName = "workers_ai"
     ANTHROPIC_API_KEY: SecretStr | None = None
     ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
     OPENAI_API_KEY: SecretStr | None = None
-    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_MODEL: str = "gpt-6-luna"
+    # Cloudflare Workers AI。CF_AI_GATEWAY_ID を入れると AI Gateway 経由（支出上限・回数制限）になる
+    CF_API_TOKEN: SecretStr | None = None
+    CF_ACCOUNT_ID: str = ""
+    CF_AI_GATEWAY_ID: str = ""
+    WORKERS_AI_MODEL: str = "@cf/google/gemma-4-26b-a4b-it"
     AI_API_TIMEOUT: float = Field(default=8.0, gt=0)
     AI_MAX_RETRIES: int = Field(default=1, ge=0)
     AI_CALL_DEADLINE_SECONDS: float = Field(default=10.0, gt=0)
 
-    @field_validator("ANTHROPIC_API_KEY", "OPENAI_API_KEY", mode="after")
+    @field_validator("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "CF_API_TOKEN", mode="after")
     @classmethod
     def _provider_key(cls, value: SecretStr | None) -> SecretStr | None:
         if value is None or value.get_secret_value() == "":
             return None
         if not _is_header_safe(value.get_secret_value()):
             raise ValueError("must be printable ASCII")  # 値は書かない
+        return value
+
+    @field_validator("CF_ACCOUNT_ID", mode="after")
+    @classmethod
+    def _account_id(cls, value: str) -> str:
+        # URL のパスに入る。32 桁の 16 進数以外は受け付けない
+        if value and not re.fullmatch(r"[0-9a-f]{32}", value):
+            raise ValueError("must be 32 lowercase hex characters")
+        return value
+
+    @field_validator("CF_AI_GATEWAY_ID", mode="after")
+    @classmethod
+    def _gateway_id(cls, value: str) -> str:
+        if not _is_header_safe(value):  # ヘッダに入る
+            raise ValueError("must be printable ASCII")
         return value
 
     @field_validator("API_KEYS", mode="after")
@@ -125,7 +153,8 @@ class RuntimeConfig(BaseSettings):
         return tuple(origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip())
 
     def provider_api_key(self, name: ProviderName) -> SecretStr | None:
-        return self.ANTHROPIC_API_KEY if name == "anthropic" else self.OPENAI_API_KEY
+        key: SecretStr | None = getattr(self, _KEY_SETTING[name])
+        return key
 
     def startup_problems(self) -> tuple[ConfigProblem, ...]:
         """本番ゲート。全違反を一度に返す（1件目で止まらない）。"""
@@ -135,7 +164,13 @@ class RuntimeConfig(BaseSettings):
         if not self.api_keys():
             problems.append(("API_KEYS", "missing"))
         if self.provider_api_key(self.DEFAULT_AI_PROVIDER) is None:
-            problems.append((f"{self.DEFAULT_AI_PROVIDER.upper()}_API_KEY", "missing"))
+            problems.append((_KEY_SETTING[self.DEFAULT_AI_PROVIDER], "missing"))
+        if self.DEFAULT_AI_PROVIDER == "workers_ai":
+            if not self.CF_ACCOUNT_ID:
+                problems.append(("CF_ACCOUNT_ID", "missing"))
+            # ゲートウェイを通らないと支出上限が効かない（ADR-002 の必須条件）
+            if not self.CF_AI_GATEWAY_ID:
+                problems.append(("CF_AI_GATEWAY_ID", "missing"))
         return tuple(problems)
 
 
