@@ -10,7 +10,7 @@
 - [ ] L-52 Android のアップロード鍵が無い。無いと release ビルドは debug 鍵で署名される（`frontend/kotonoha_app/android/app/build.gradle.kts:67-73`） — .github/workflows/release.yml。ADR-007 条件 4。開発者登録（L-84）の後
 - [ ] L-55 AI 変換の平均応答時間（3秒以内）が未測定 — ADR-002 のプロバイダ支出上限設定と同日に実測（backend 公開の前提）
 - [ ] L-57 Android 12 以上と iOS の実機で、OS のバックアップから履歴・定型文・お気に入り・設定が復元されることを確認 — NFR-106（2026-09-12 に #99 の除外を撤回）
-- [ ] L-58 backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復）が未達 — ADR-002。決定（2026-09-20）: ストア提出後に回す（初回は AI 変換抜き可。ADR-007）。L-55 も同日に
+- [ ] L-58 backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復）が未達 — ADR-002。決定（2026-09-26）: 初回リリースに AI 変換を含めるので、ストア提出の前に満たす。L-55 も同日に
 - [ ] L-68 要件 ID 107 件のうち 14 件が、テストにも openspec にも 1 度も現れない（追跡性の穴。挙動は別 ID で試験済みのものを含む） — docs/spec/kotonoha-requirements.md（一覧は棚卸し 2026-09 の PR 本文）
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
 - [ ] L-84 開発者登録（Apple Developer Program / Google Play）。アプリが形になってから行う（2026-09-24 決定。`docs/now.md`） — ADR-007 条件 4（人が動かす。旧 remaining-work.md から移記）
