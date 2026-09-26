@@ -1,6 +1,8 @@
 /// Home screen widget (Character Board)
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -114,6 +116,14 @@ class HomeScreen extends ConsumerWidget {
     final showVolumeWarning = ref.watch(volumeWarningProvider).showWarning;
     final showAppName =
         MediaQuery.sizeOf(context).width >= AppSizes.phoneMaxWidth;
+    // キーボードが出て本文から減った高さ。Scaffold の本文の中ではキーボードが
+    // 取り除かれて 0 に見えるので、Scaffold の外側で読む。キーボードが出ると
+    // 下の安全領域（ホームインジケータ等）の余白は 0 になり、その分は本文に
+    // 戻るので差し引く（dart:ui は padding = max(0, viewPadding - viewInsets)）。
+    final keyboardHeight = math.max(
+        0.0,
+        MediaQuery.viewInsetsOf(context).bottom -
+            MediaQuery.viewPaddingOf(context).bottom);
 
     return Theme(
       data: homeTheme(Theme.of(context),
@@ -204,8 +214,12 @@ class HomeScreen extends ConsumerWidget {
                                   // RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
                                   // isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
                                   // しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
+                                  // キーボードの出し入れでは配置を切り替えない。切り替えると
+                                  // 入力欄が作り直されて入力の対象から外れ、出たばかりの
+                                  // キーボードが閉じる（iPad の横向き）。キーボードが無い
+                                  // ときの高さで判定する。
                                   final isCompactHeight =
-                                      constraints.maxHeight <
+                                      constraints.maxHeight + keyboardHeight <
                                           AppSizes.compactHeightThreshold;
                                   final isPhoneWidth = constraints.maxWidth <
                                       AppSizes.phoneMaxWidth;
