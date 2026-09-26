@@ -17,7 +17,6 @@
 - [ ] L-87 dependabot の PR 15 本が滞留 — .github/dependabot.yml。決定（2026-09-20）: actions 5 本（#66〜#70）はまとめてマージ、backend 5 本（#55〜#59）は close して作り直させる（requirements.txt とずれ、`sqlalchemy` は依存に無い）。frontend 5 本（#60・#62〜#65）は未決（前提の L-80 は #162 で済んだ）
 - [ ] L-88 `fix/backend-production-hardening` がローカルにしか無い（#86 で証拠として残すと決定） — Issue #86。決定（2026-09-20）: push して保全する
 - [ ] L-91 コードや CI が守っているのに ADR に無い決定（`/health` の無認証・無レート制限、環境名による認証省略と `/docs` 公開、CORS の形、`patch('app.` 禁止、lint の設定値） — backend/app/{routes,config,main}.py、backend/scripts/gates.sh、backend/pyproject.toml。決定（2026-09-20）: 次の監査で ADR にするか決める（未卒業 ADR は上限の 5 本）
-- [ ] L-94 `release.yml` が署名鍵・key.properties・p12 を workspace のファイルに書き出し、後始末が無い（`:100-120`・`:196`。tag でしか走らない） — .github/workflows/release.yml。決定（2026-09-20）: ランナーの一時ディレクトリに置き `if: always()` で消す。L-52 と同じ束で
 - [ ] L-98 ストア提出の前に独立監査（ADR-010 の監査、監査スキルの付録）を 1 回行う（結果は PR の `<details>`。直すものは仕分けに通す）。条件 4 の充足判定の前 — ADR-010、ADR-007 条件 4
 - [ ] L-106 ADR-005 が #125〜#127 で 55 行に肥大化し、#128 で構造を変えた（ADR-010「レビュー指摘に応えて ADR に文を足さない」）。次の監査で、以後の ADR 差分に細部が入っていないかを見て、効いていなければ上限を見直す — docs/adr/ADR-010-document-framework.md
 - [ ] L-107 ストア提出用の画像が無い（アイコン 1024/512、iPhone・iPad・スマートフォンのスクリーンショット、Play のフィーチャーグラフィック 1024×500） — frontend/kotonoha_app/fastlane/、docs/store-assets-guide.md。ADR-007 条件 4
