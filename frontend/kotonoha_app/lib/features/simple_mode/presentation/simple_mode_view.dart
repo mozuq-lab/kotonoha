@@ -14,6 +14,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
@@ -115,7 +116,7 @@ class SimpleModeView extends StatelessWidget {
         child: ElevatedButton.icon(
           key: const Key('exit_simple_mode_button'),
           onPressed: onExitSimpleMode,
-          icon: const Icon(Icons.keyboard_alt_outlined),
+          icon: const Icon(CupertinoIcons.keyboard),
           label: const Text(
             '通常モードに戻る',
             style: TextStyle(fontWeight: FontWeight.bold),

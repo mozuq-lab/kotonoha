@@ -98,7 +98,7 @@ void main() {
         );
 
         // Then: 削除ボタン（ゴミ箱アイコン）が表示される
-        expect(find.byIcon(Icons.delete), findsOneWidget);
+        expect(find.byTooltip('削除'), findsOneWidget);
       });
 
       /// 削除ボタンタップでコールバックが発火する
@@ -127,7 +127,7 @@ void main() {
         );
 
         // When: 削除ボタンをタップする
-        await tester.tap(find.byIcon(Icons.delete));
+        await tester.tap(find.byTooltip('削除'));
         await tester.pumpAndSettle();
 
         // Then: 削除コールバックが1回呼び出される

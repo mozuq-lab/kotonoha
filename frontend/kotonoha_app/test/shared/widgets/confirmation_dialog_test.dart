@@ -10,6 +10,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -172,7 +173,7 @@ void main() {
   expectMeetsContract(
     '定型文の削除',
     home: PresetPhraseScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.delete_outline),
+    open: (tester) => tester.tap(find.byTooltip('削除')),
     cancelLabel: 'キャンセル',
     confirmLabel: '削除',
     scope: phraseScope,
@@ -185,7 +186,7 @@ void main() {
     // 本文がフォーム。キーボードが出た状態でも当てる（`scrollable` が効く場面）
     withKeyboard: true,
     home: PresetPhraseScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.add),
+    open: (tester) => _tapIcon(tester, CupertinoIcons.plus),
     cancelLabel: 'キャンセル',
     confirmLabel: '保存',
     scope: phraseScope,
@@ -196,7 +197,7 @@ void main() {
     // 本文がフォーム。キーボードが出た状態でも当てる（`scrollable` が効く場面）
     withKeyboard: true,
     home: PresetPhraseScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.edit),
+    open: (tester) => _tapIcon(tester, CupertinoIcons.pencil),
     cancelLabel: 'キャンセル',
     confirmLabel: '保存',
     scope: phraseScope,
@@ -222,7 +223,7 @@ void main() {
   expectMeetsContract(
     'お気に入りの削除（個別）',
     home: FavoritesScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.delete),
+    open: (tester) => tester.tap(find.byTooltip('削除')),
     cancelLabel: 'キャンセル',
     confirmLabel: '削除',
     scope: favoriteScope,
@@ -231,7 +232,7 @@ void main() {
   expectMeetsContract(
     'お気に入りの削除（全件）',
     home: FavoritesScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.delete_sweep),
+    open: (tester) => tester.tap(find.byTooltip('全削除')),
     cancelLabel: 'キャンセル',
     confirmLabel: '削除',
     scope: favoriteScope,
@@ -240,7 +241,7 @@ void main() {
   expectMeetsContract(
     '履歴の削除（全件）',
     home: HistoryScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.delete_sweep),
+    open: (tester) => tester.tap(find.byTooltip('全削除')),
     cancelLabel: 'キャンセル',
     confirmLabel: '削除',
     scope: (app) => ProviderScope(
@@ -282,7 +283,7 @@ void main() {
     '入力の破棄の確認',
     home: PresetPhraseScreen.new,
     open: (tester) async {
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '打った文');
       await tester.pumpAndSettle();

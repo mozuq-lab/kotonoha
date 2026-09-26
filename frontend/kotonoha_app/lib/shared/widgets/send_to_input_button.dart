@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
@@ -61,7 +62,8 @@ class SendToInputButton extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.input, size: AppSizes.iconSizeSmall, color: color),
+                  Icon(CupertinoIcons.arrow_right_square,
+                      size: AppSizes.iconSizeSmall, color: color),
                   Text(
                     '入力欄へ',
                     style: theme.textTheme.labelSmall?.copyWith(

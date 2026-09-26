@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/face_to_face/presentation/widgets/rotation_toggle_button.dart';
@@ -150,7 +151,7 @@ void main() {
       );
 
       expect(
-        find.byIcon(Icons.screen_rotation),
+        find.byIcon(CupertinoIcons.rotate_right),
         findsOneWidget,
         reason: 'Screen rotation icon is displayed',
       );

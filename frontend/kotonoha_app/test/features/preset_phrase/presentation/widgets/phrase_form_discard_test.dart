@@ -11,6 +11,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,8 +75,8 @@ Future<bool> _systemBack(WidgetTester tester) =>
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
   for (final (name, icon, label) in [
-    ('定型文の追加', Icons.add, '打った文'),
-    ('定型文の編集', Icons.edit, '打ち直した文'),
+    ('定型文の追加', CupertinoIcons.plus, '打った文'),
+    ('定型文の編集', CupertinoIcons.pencil, '打ち直した文'),
   ]) {
     testWidgets('$name: 入力があると、戻る操作では黙って閉じない', (tester) async {
       await _openScreen(tester);
@@ -115,7 +116,7 @@ void main() {
     // 空にするのも「元の文言を消した」という取り消せない変更。
     // 保存せずに閉じれば元へ戻るが、**打ち直した内容は戻らない**
     await _openScreen(tester);
-    await tester.tap(find.byIcon(Icons.edit));
+    await tester.tap(find.byIcon(CupertinoIcons.pencil));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '');
     await tester.pumpAndSettle();
@@ -129,7 +130,7 @@ void main() {
 
   testWidgets('破棄を選べば閉じる／やめるを選べば入力は残る', (tester) async {
     await _openScreen(tester);
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(CupertinoIcons.plus));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '打った文');
     await tester.pumpAndSettle();
@@ -154,7 +155,7 @@ void main() {
     // 本文を見るだけでは、カテゴリの変更が捨てられたことに気づけない
     // （#154 の 2 系統レビューが実測。到達経路は ✏️ → チップ → 戻る）
     await _openScreen(tester);
-    await tester.tap(find.byIcon(Icons.edit));
+    await tester.tap(find.byIcon(CupertinoIcons.pencil));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ChoiceChip, 'その他'));
     await tester.pumpAndSettle();
@@ -170,7 +171,7 @@ void main() {
     // 空白だけでは保存できない（`PresetPhraseValidator` が弾く）ので、
     // 捨てるものが無い。操作の負担が大きい利用者を余計に止めない
     await _openScreen(tester);
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(CupertinoIcons.plus));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '   ');
     await tester.pumpAndSettle();
@@ -186,7 +187,7 @@ void main() {
     // null を返すので、**null を破棄扱いにすると打った文が消える**
     // （#154 の 2 系統レビューで、`?? true` に倒しても誰も気づかなかった）
     await _openScreen(tester);
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(CupertinoIcons.plus));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '打った文');
     await tester.pumpAndSettle();

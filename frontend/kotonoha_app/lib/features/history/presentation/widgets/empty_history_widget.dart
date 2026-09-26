@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import '../constants/history_ui_constants.dart';
 
 /// 空状態表示ウィジェット
@@ -27,7 +28,7 @@ class EmptyHistoryWidget extends StatelessWidget {
           children: [
             // 空状態アイコン
             Icon(
-              Icons.history,
+              CupertinoIcons.clock,
               size: HistoryUIConstants.emptyStateIconSize,
               color: Theme.of(context)
                   .colorScheme

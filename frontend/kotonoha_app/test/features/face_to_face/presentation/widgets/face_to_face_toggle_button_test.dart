@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/face_to_face/presentation/widgets/face_to_face_toggle_button.dart';
 
@@ -41,7 +42,7 @@ void main() {
 
         // 対面表示アイコン（fullscreenまたはzoom_out_map）が表示されていることを確認
         expect(
-          find.byIcon(Icons.zoom_out_map),
+          find.byIcon(CupertinoIcons.arrow_up_left_arrow_down_right),
           findsOneWidget,
         );
       });
@@ -104,7 +105,7 @@ void main() {
         // モード状態がアイコンで視覚的にわかること
         // 品質保証: ユーザーが現在の状態を認識できること
         expect(
-          find.byIcon(Icons.fullscreen_exit),
+          find.byIcon(CupertinoIcons.arrow_down_right_arrow_up_left),
           findsOneWidget,
         );
       });

@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:go_router/go_router.dart';
 
 import 'package:kotonoha_app/core/router/app_router.dart';
@@ -65,7 +66,7 @@ class ErrorScreen extends StatelessWidget {
                 height: 48,
                 child: FilledButton.icon(
                   onPressed: () => context.go(AppRoutes.home),
-                  icon: const Icon(Icons.home),
+                  icon: const Icon(CupertinoIcons.house),
                   label: const Text('ホームに戻る'),
                 ),
               ),

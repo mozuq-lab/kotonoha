@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -106,7 +107,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 設定画面に遷移
-        await tapIconButton(tester, Icons.settings);
+        await tapIconButton(tester, CupertinoIcons.gear_alt);
         expect(find.text('設定'), findsOneWidget);
 
         // 実際の処理実行: TTS速度を「遅い」に変更
@@ -286,7 +287,7 @@ void main() {
         }
 
         // 実際の処理実行: お気に入りボタンをタップ
-        final favoriteFinder = find.byIcon(Icons.star_border);
+        final favoriteFinder = find.byIcon(CupertinoIcons.heart);
         if (favoriteFinder.evaluate().isNotEmpty) {
           await tester.tap(favoriteFinder.first);
           await tester.pumpAndSettle();
@@ -345,7 +346,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 設定画面に遷移
-        await tapIconButton(tester, Icons.settings);
+        await tapIconButton(tester, CupertinoIcons.gear_alt);
         expect(find.text('設定'), findsOneWidget);
 
         // 実際の処理実行: フォントサイズ「大」を選択
@@ -379,7 +380,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 設定画面に遷移
-        await tapIconButton(tester, Icons.settings);
+        await tapIconButton(tester, CupertinoIcons.gear_alt);
         expect(find.text('設定'), findsOneWidget);
 
         // 実際の処理実行: テーマ「ダーク」を選択
@@ -413,7 +414,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 設定画面に遷移
-        await tapIconButton(tester, Icons.settings);
+        await tapIconButton(tester, CupertinoIcons.gear_alt);
         expect(find.text('設定'), findsOneWidget);
 
         // 実際の処理実行: テーマ「高コントラスト」を選択

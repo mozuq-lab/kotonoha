@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/shared/models/preset_phrase.dart';
 import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
@@ -60,8 +61,8 @@ class PhraseListItem extends StatelessWidget {
     return Semantics(
       label: phrase.content,
       button: true,
-      child: Material(
-        color: Colors.transparent,
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: InkWell(
           onTap: onTap,
           child: Container(
@@ -90,7 +91,9 @@ class PhraseListItem extends StatelessWidget {
                 // isFavorite（favoriteProviderが正）で判定する
                 IconButton(
                   icon: Icon(
-                    isFavorite ? Icons.star : Icons.star_border,
+                    isFavorite
+                        ? CupertinoIcons.heart_fill
+                        : CupertinoIcons.heart,
                     color: isFavorite
                         ? theme.colorScheme.primary
                         : theme.colorScheme.onSurfaceVariant,
@@ -105,7 +108,7 @@ class PhraseListItem extends StatelessWidget {
                 if (onEdit != null)
                   IconButton(
                     icon: Icon(
-                      Icons.edit,
+                      CupertinoIcons.pencil,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                     onPressed: onEdit,
@@ -115,7 +118,7 @@ class PhraseListItem extends StatelessWidget {
                 if (onDelete != null)
                   IconButton(
                     icon: Icon(
-                      Icons.delete_outline,
+                      CupertinoIcons.trash,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                     onPressed: onDelete,

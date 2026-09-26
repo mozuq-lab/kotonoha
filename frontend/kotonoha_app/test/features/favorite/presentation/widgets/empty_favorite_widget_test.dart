@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/favorite/presentation/widgets/empty_favorite_widget.dart';
 
@@ -43,7 +44,7 @@ void main() {
 
         // Then: 空状態を示すアイコンが表示される
         expect(
-          find.byIcon(Icons.favorite_border),
+          find.byIcon(CupertinoIcons.heart),
           findsOneWidget,
           reason: '空状態アイコンが表示される必要がある',
         );

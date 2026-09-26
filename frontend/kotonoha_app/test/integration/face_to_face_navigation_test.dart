@@ -93,7 +93,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(FaceToFaceScreen), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.close));
+      await tester.tap(find.byWidgetPredicate(
+          (widget) => widget is Icon && widget.semanticLabel == '閉じる'));
       await tester.pumpAndSettle();
 
       expect(find.byType(FaceToFaceScreen), findsNothing);
