@@ -3,7 +3,7 @@
 import AppKit
 import Foundation
 
-func writeIcon(_ size: Int, to path: String) throws {
+func writeIcon(_ size: Int, to path: String, markScale: CGFloat = 1) throws {
     guard let bitmap = NSBitmapImageRep(
         bitmapDataPlanes: nil,
         pixelsWide: size,
@@ -24,23 +24,53 @@ func writeIcon(_ size: Int, to path: String) throws {
     context.imageInterpolation = .high
     context.cgContext.scaleBy(x: CGFloat(size) / 1024, y: CGFloat(size) / 1024)
 
-    NSColor(calibratedRed: 33 / 255, green: 150 / 255, blue: 243 / 255, alpha: 1).setFill()
-    NSBezierPath(rect: NSRect(x: 0, y: 0, width: 1024, height: 1024)).fill()
+    let jade = NSColor(calibratedRed: 57 / 255, green: 176 / 255, blue: 155 / 255, alpha: 1)
+    let petrol = NSColor(calibratedRed: 0, green: 70 / 255, blue: 76 / 255, alpha: 1)
+    NSGradient(starting: jade, ending: petrol)!.draw(
+        in: NSRect(x: 0, y: 0, width: 1024, height: 1024), angle: -45
+    )
 
-    NSColor.white.setFill()
-    let tail = NSBezierPath()
-    tail.move(to: NSPoint(x: 330, y: 310))
-    tail.line(to: NSPoint(x: 260, y: 150))
-    tail.line(to: NSPoint(x: 480, y: 310))
-    tail.close()
-    tail.fill()
-    NSBezierPath(roundedRect: NSRect(x: 150, y: 280, width: 724, height: 560),
-                 xRadius: 150, yRadius: 150).fill()
+    context.cgContext.translateBy(x: 512, y: 512)
+    context.cgContext.scaleBy(x: markScale, y: markScale)
+    context.cgContext.translateBy(x: -512, y: -512)
 
-    NSColor(calibratedRed: 20 / 255, green: 80 / 255, blue: 138 / 255, alpha: 1).setFill()
-    for x in [352, 512, 672] {
-        NSBezierPath(ovalIn: NSRect(x: x - 47, y: 513 - 47, width: 94, height: 94)).fill()
-    }
+    // A single silhouette combines a leaf with a soft speech-bubble tail.
+    let leaf = NSBezierPath()
+    leaf.move(to: NSPoint(x: 819, y: 813))
+    leaf.curve(to: NSPoint(x: 842, y: 797),
+               controlPoint1: NSPoint(x: 830, y: 815),
+               controlPoint2: NSPoint(x: 840, y: 809))
+    leaf.curve(to: NSPoint(x: 409, y: 219),
+               controlPoint1: NSPoint(x: 863, y: 462),
+               controlPoint2: NSPoint(x: 676, y: 199))
+    leaf.curve(to: NSPoint(x: 232, y: 162),
+               controlPoint1: NSPoint(x: 359, y: 221),
+               controlPoint2: NSPoint(x: 286, y: 183))
+    leaf.curve(to: NSPoint(x: 207, y: 187),
+               controlPoint1: NSPoint(x: 208, y: 152),
+               controlPoint2: NSPoint(x: 195, y: 166))
+    leaf.line(to: NSPoint(x: 232, y: 255))
+    leaf.curve(to: NSPoint(x: 237, y: 361),
+               controlPoint1: NSPoint(x: 249, y: 288),
+               controlPoint2: NSPoint(x: 249, y: 317))
+    leaf.curve(to: NSPoint(x: 819, y: 813),
+               controlPoint1: NSPoint(x: 185, y: 588),
+               controlPoint2: NSPoint(x: 415, y: 765))
+    leaf.close()
+
+    let vein = NSBezierPath()
+    vein.move(to: NSPoint(x: 353, y: 312))
+    vein.curve(to: NSPoint(x: 650, y: 645),
+               controlPoint1: NSPoint(x: 372, y: 504),
+               controlPoint2: NSPoint(x: 515, y: 574))
+    vein.curve(to: NSPoint(x: 353, y: 312),
+               controlPoint1: NSPoint(x: 545, y: 560),
+               controlPoint2: NSPoint(x: 436, y: 441))
+    vein.close()
+    leaf.append(vein)
+    leaf.windingRule = .evenOdd
+    NSColor(calibratedRed: 1, green: 253 / 255, blue: 247 / 255, alpha: 1).setFill()
+    leaf.fill()
     NSGraphicsContext.restoreGraphicsState()
 
     // iOS app icons must be RGB PNGs without an alpha channel.
@@ -93,4 +123,11 @@ for (density, size) in [
     ("xxhdpi", 144), ("xxxhdpi", 192)
 ] {
     try writeIcon(size, to: android + "mipmap-\(density)/ic_launcher.png")
+}
+
+try writeIcon(32, to: "web/favicon.png")
+for size in [192, 512] {
+    try writeIcon(size, to: "web/icons/Icon-\(size).png")
+    // Keep the entire mark inside the maskable icon's central safe circle.
+    try writeIcon(size, to: "web/icons/Icon-maskable-\(size).png", markScale: 0.88)
 }

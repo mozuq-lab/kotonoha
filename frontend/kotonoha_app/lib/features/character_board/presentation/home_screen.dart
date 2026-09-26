@@ -103,18 +103,34 @@ class HomeScreen extends ConsumerWidget {
       }
     });
     final showVolumeWarning = ref.watch(volumeWarningProvider).showWarning;
+    final showAppName =
+        MediaQuery.sizeOf(context).width >= AppSizes.phoneMaxWidth;
 
     return Scaffold(
       appBar: AppBar(
-        title: MediaQuery.sizeOf(context).width < AppSizes.phoneMaxWidth
-            ? Image.asset(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+              child: Image.asset(
                 'assets/images/kotonoha_icon.png',
                 key: const Key('home_app_icon'),
-                width: 32,
-                height: 32,
+                width: AppSizes.iconSizeLarge,
+                height: AppSizes.iconSizeLarge,
                 semanticLabel: 'kotonoha',
-              )
-            : const Text('kotonoha'),
+                excludeFromSemantics: showAppName,
+              ),
+            ),
+            if (showAppName) ...[
+              const SizedBox(width: AppSizes.paddingSmall),
+              const Flexible(
+                child: Text('kotonoha',
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ],
+        ),
         // シンプルモード: 文字盤を使わない大ボタン画面に切り替えている間は
         // 認知負荷を下げるため他のナビゲーションアイコンは表示せず
         // 通常モードへ戻すトグルアイコンのみを表示する。
