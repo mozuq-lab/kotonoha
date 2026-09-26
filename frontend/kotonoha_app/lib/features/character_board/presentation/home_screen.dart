@@ -1,6 +1,8 @@
 /// Home screen widget (Character Board)
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -114,9 +116,14 @@ class HomeScreen extends ConsumerWidget {
     final showVolumeWarning = ref.watch(volumeWarningProvider).showWarning;
     final showAppName =
         MediaQuery.sizeOf(context).width >= AppSizes.phoneMaxWidth;
-    // キーボードが塞いでいる高さ。Scaffold の本文の中では取り除かれて 0 に
-    // 見えるので、Scaffold の外側で読む。
-    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
+    // キーボードが出て本文から減った高さ。Scaffold の本文の中ではキーボードが
+    // 取り除かれて 0 に見えるので、Scaffold の外側で読む。キーボードが出ると
+    // 下の安全領域（ホームインジケータ等）の余白は 0 になり、その分は本文に
+    // 戻るので差し引く（dart:ui は padding = max(0, viewPadding - viewInsets)）。
+    final keyboardHeight = math.max(
+        0.0,
+        MediaQuery.viewInsetsOf(context).bottom -
+            MediaQuery.viewPaddingOf(context).bottom);
 
     return Theme(
       data: homeTheme(Theme.of(context),
