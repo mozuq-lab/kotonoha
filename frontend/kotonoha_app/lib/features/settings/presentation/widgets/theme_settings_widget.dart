@@ -36,31 +36,42 @@ class ThemeSettingsWidget extends ConsumerWidget {
       error: (error, stack) => Text('エラー: $error'),
       data: (settings) {
         final currentTheme = settings.theme;
+        final scheme = Theme.of(context).colorScheme;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('テーマ'),
             const SizedBox(height: 8),
-            SegmentedButton<AppTheme>(
-              // AA対応: デフォルト高さ約40pxを44px以上に拡張（タップターゲット要件）。
-              style: SegmentedButton.styleFrom(
-                minimumSize: const Size(0, 44),
-              ),
-              segments: AppTheme.values.map((theme) {
-                return ButtonSegment<AppTheme>(
-                  value: theme,
+            // SegmentedButton は幅を等分するので、電話の幅では「高コントラスト」が
+            // 語の途中で折り返す。チップは名前の幅で並び、収まらなければ次の行へ送る。
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: AppTheme.values.map((theme) {
+                final selected = theme == currentTheme;
+                // 上の「フォントサイズ」（SegmentedButton）と同じ配色にする。
+                // アプリのチップのテーマは枠も選択色も無く、選択中が ✓ だけになるため
+                return ChoiceChip(
                   label: Text(_getShortDisplayName(theme)),
+                  selected: selected,
+                  shape: const StadiumBorder(),
+                  side: BorderSide(color: scheme.outline),
+                  backgroundColor: scheme.surface,
+                  selectedColor: scheme.secondaryContainer,
+                  checkmarkColor: scheme.onSecondaryContainer,
+                  labelStyle: TextStyle(
+                    color: selected
+                        ? scheme.onSecondaryContainer
+                        : scheme.onSurface,
+                  ),
+                  // タップ領域は 48px 四方（padded）。見た目の高さより広く取る
+                  materialTapTargetSize: MaterialTapTargetSize.padded,
+                  onSelected: (_) {
+                    ref.read(settingsNotifierProvider.notifier).setTheme(theme);
+                  },
                 );
               }).toList(),
-              selected: {currentTheme},
-              onSelectionChanged: (Set<AppTheme> newSelection) {
-                if (newSelection.isNotEmpty) {
-                  ref.read(settingsNotifierProvider.notifier).setTheme(
-                        newSelection.first,
-                      );
-                }
-              },
             ),
           ],
         );
