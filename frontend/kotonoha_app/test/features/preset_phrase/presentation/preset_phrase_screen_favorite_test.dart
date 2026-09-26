@@ -278,7 +278,7 @@ void main() {
         expect(
           tester.getTopLeft(find.text('お気に入り')).dy,
           lessThan(tester.getTopLeft(find.text('日常')).dy),
-          reason: 'REQ-105: お気に入りセクションはカテゴリセクションより上に出る',
+          reason: 'お気に入りセクションはカテゴリセクションより上に出る',
         );
 
         // Then: 中身の定型文についても前後関係が保たれていること

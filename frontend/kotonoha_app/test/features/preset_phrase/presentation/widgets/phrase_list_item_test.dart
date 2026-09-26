@@ -287,7 +287,7 @@ void main() {
   });
 
   group('PhraseListItem - フォントサイズ追従テスト', () {
-    testWidgets('本文の文字サイズがフォント設定「大」に追従する（REQ-802、L-74）', (tester) async {
+    testWidgets('本文の文字サイズがフォント設定「大」に追従する（L-74）', (tester) async {
       final phrase = createTestPhrase(id: '1', content: 'こんにちは');
 
       await tester.pumpWidget(

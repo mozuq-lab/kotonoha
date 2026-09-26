@@ -386,7 +386,7 @@ void main() {
     // エッジケーステスト
     group('エッジケーステスト', () {
       /// TC-: 狭い画面幅（320px）でもボタンが44px以上を維持
-      testWidgets('TC-EDGE-004: 狭い画面幅でもボタンが44px以上を維持', (tester) async {
+      testWidgets('狭い画面幅でもボタンが44px以上を維持', (tester) async {
         // Arrange - 狭い画面サイズを設定
         tester.view.physicalSize = const Size(320, 568);
         tester.view.devicePixelRatio = 1.0;
@@ -426,7 +426,7 @@ void main() {
       });
 
       /// TC-: タブレット画面幅（768px以上）で適切なサイズで表示
-      testWidgets('TC-EDGE-005: タブレット画面幅で適切なサイズで表示', (tester) async {
+      testWidgets('タブレット画面幅で適切なサイズで表示', (tester) async {
         // Arrange - タブレットサイズを設定
         tester.view.physicalSize = const Size(768, 1024);
         tester.view.devicePixelRatio = 1.0;
@@ -461,7 +461,7 @@ void main() {
       });
 
       /// TC-: 画面回転（縦向き→横向き）でレイアウトが崩れない
-      testWidgets('TC-EDGE-006: 画面回転でレイアウトが崩れない', (tester) async {
+      testWidgets('画面回転でレイアウトが崩れない', (tester) async {
         // Arrange - 縦向き
         tester.view.physicalSize = const Size(375, 812);
         tester.view.devicePixelRatio = 1.0;
@@ -497,7 +497,7 @@ void main() {
       });
 
       /// TC-: 画面回転後もタップターゲットが44px以上を維持
-      testWidgets('TC-EDGE-007: 画面回転後もタップターゲットが44px以上', (tester) async {
+      testWidgets('画面回転後もタップターゲットが44px以上', (tester) async {
         // Arrange - 横向き（短い高さ）
         tester.view.physicalSize = const Size(812, 375);
         tester.view.devicePixelRatio = 1.0;
@@ -537,7 +537,7 @@ void main() {
       });
 
       /// TC-: 連続タップ時にonResponseが1回だけ呼ばれる（デバウンス期間内）
-      testWidgets('TC-EDGE-003: 連続タップ時にonResponseが1回だけ呼ばれる', (tester) async {
+      testWidgets('連続タップ時にonResponseが1回だけ呼ばれる', (tester) async {
         // Arrange
         int callCount = 0;
 

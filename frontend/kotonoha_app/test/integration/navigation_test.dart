@@ -178,7 +178,7 @@ void main() {
       expect(
         find.text('ホームに戻る'),
         findsOneWidget,
-        reason: 'ErrorScreenにはホームへの復帰ボタンが必要（NFR-204準拠）',
+        reason: 'ErrorScreenにはホームへの復帰ボタンが必要',
       );
     });
   });

@@ -109,7 +109,7 @@ void main() {
       expect(find.textContaining('保存できません'), findsOneWidget);
     });
 
-    testWidgets('失敗しても操作は止まらず、画面本体は使える（NFR-301）', (tester) async {
+    testWidgets('失敗しても操作は止まらず、画面本体は使える', (tester) async {
       final container = buildContainer(failingFavoriteBox());
       addTearDown(container.dispose);
 

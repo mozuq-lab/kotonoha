@@ -547,7 +547,7 @@ void main() {
     });
   });
 
-  group('上限到達の派生状態（L-73、EDGE-101）', () {
+  group('上限到達の派生状態（L-73）', () {
     test('999 文字では上限に達していない', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);

@@ -84,7 +84,7 @@ void main() {
       });
     }
 
-    test('失敗しても UI 状態は新しい値のまま（NFR-301: 使い続けられる）', () async {
+    test('失敗しても UI 状態は新しい値のまま（使い続けられる）', () async {
       final container = await _containerWith(_ThrowingStore());
       await container
           .read(settingsNotifierProvider.notifier)
@@ -108,7 +108,7 @@ void main() {
 
     test('SharedPreferences 自体が使えず _prefs が無いときも、保存は失敗として報告される', () async {
       final container = await _containerWith(_UnreadableStore());
-      // build は既定値で立ち上がる（NFR-301）
+      // build は既定値で立ち上がる
       expect(container.read(settingsNotifierProvider).hasValue, isTrue);
       await container
           .read(settingsNotifierProvider.notifier)

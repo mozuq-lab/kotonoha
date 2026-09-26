@@ -125,7 +125,7 @@ void main() {
         expect(
           inputText.style?.fontSize,
           AppSizes.fontSizeLarge,
-          reason: '入力欄のフォントサイズが設定に追従していない（REQ-802）',
+          reason: '入力欄のフォントサイズが設定に追従していない',
         );
 
         container.dispose();

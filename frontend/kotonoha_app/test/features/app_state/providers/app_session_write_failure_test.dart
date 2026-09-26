@@ -1,4 +1,4 @@
-/// 下書き（入力中の文）の保存失敗を利用者へ伝える（NFR-302、ADR-005、台帳 L-104）
+/// 下書き（入力中の文）の保存失敗を利用者へ伝える（ADR-005、台帳 L-104）
 ///
 /// 失敗の注入は shared_preferences の外部 SDK 境界（SharedPreferencesStorePlatform）で行う。
 library;

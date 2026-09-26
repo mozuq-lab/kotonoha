@@ -417,7 +417,7 @@ void main() {
         expect(
           find.byType(AlertDialog),
           findsOneWidget,
-          reason: '個別削除時に確認ダイアログが表示される必要がある（REQ-704/REQ-2002）',
+          reason: '個別削除時に確認ダイアログが表示される必要がある',
         );
         expect(
           find.text('このお気に入りを削除しますか?'),

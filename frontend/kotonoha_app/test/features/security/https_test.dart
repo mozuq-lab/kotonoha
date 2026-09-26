@@ -3,7 +3,7 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('NFR-104: HTTPS通信', () {
+  group('HTTPS通信', () {
     group('TC-104-001: 本番環境のAPIベースURLがhttps://で始まる', () {
       test('本番環境用のベースURLはhttps://で始まる', () {
         // 本番環境のベースURL定義

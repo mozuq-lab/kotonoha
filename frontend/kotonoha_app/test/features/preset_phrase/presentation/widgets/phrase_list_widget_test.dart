@@ -114,12 +114,12 @@ void main() {
       expect(
         tester.getTopLeft(find.text('お気に入り')).dy,
         lessThan(tester.getTopLeft(find.text('日常')).dy),
-        reason: 'REQ-105: お気に入りセクションはカテゴリセクションより上に出る',
+        reason: 'お気に入りセクションはカテゴリセクションより上に出る',
       );
       expect(
         tester.getTopLeft(find.text('お気に入り定型文1')).dy,
         lessThan(tester.getTopLeft(find.text('通常定型文')).dy),
-        reason: 'REQ-105: お気に入り定型文は通常の定型文より上に出る',
+        reason: 'お気に入り定型文は通常の定型文より上に出る',
       );
     });
 
