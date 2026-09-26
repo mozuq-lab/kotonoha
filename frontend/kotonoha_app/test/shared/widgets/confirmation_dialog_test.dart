@@ -151,7 +151,7 @@ void main() {
   expectMeetsContract(
     '全消去の確認',
     home: () => _screenWith(const ClearAllButton(enabled: true)),
-    open: (tester) => _tapIcon(tester, Icons.delete_outline),
+    open: (tester) => tester.tap(find.byType(ClearAllButton)),
     cancelLabel: 'いいえ',
     confirmLabel: 'はい',
   );
@@ -317,7 +317,7 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byType(ClearAllButton));
       await tester.pumpAndSettle();
 
       final confirm = renderedButtonColor(tester, 'はい');

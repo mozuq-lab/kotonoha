@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_confirmation_dialog.dart';
 
@@ -81,11 +82,11 @@ class ClearAllButton extends StatelessWidget {
         ),
         child: showLabel
             ? const Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.delete_outline, size: AppSizes.iconSizeMedium),
+                Icon(CupertinoIcons.trash, size: AppSizes.iconSizeMedium),
                 SizedBox(width: 6),
                 Flexible(child: Text('全消去', maxLines: 2)),
               ])
-            : const Icon(Icons.delete_outline, size: AppSizes.iconSizeMedium),
+            : const Icon(CupertinoIcons.trash, size: AppSizes.iconSizeMedium),
       ),
     );
   }

@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_constants.dart';
@@ -208,9 +209,11 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
                 if (widget.showIcon) ...[
                   Icon(
                       switch (widget.responseType) {
-                        QuickResponseType.yes => Icons.check_circle,
-                        QuickResponseType.no => Icons.close_rounded,
-                        QuickResponseType.unknown => Icons.help,
+                        QuickResponseType.yes =>
+                          CupertinoIcons.checkmark_circle,
+                        QuickResponseType.no => CupertinoIcons.xmark,
+                        QuickResponseType.unknown =>
+                          CupertinoIcons.question_circle,
                       },
                       size: _fontSize),
                   const SizedBox(width: 8),

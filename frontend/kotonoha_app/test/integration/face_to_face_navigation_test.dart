@@ -56,7 +56,7 @@ void main() {
       container.read(inputBufferProvider.notifier).setText('おみずください');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.open_in_full));
+      await tester.tap(find.byTooltip('対面表示'));
       await tester.pumpAndSettle();
 
       expect(find.byType(FaceToFaceScreen), findsOneWidget);
@@ -70,7 +70,7 @@ void main() {
       container.read(inputBufferProvider.notifier).setText('テスト');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.open_in_full));
+      await tester.tap(find.byTooltip('対面表示'));
       await tester.pumpAndSettle();
 
       expect(find.byType(RotationToggleButton), findsOneWidget);
@@ -89,7 +89,7 @@ void main() {
       container.read(inputBufferProvider.notifier).setText('テスト');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.open_in_full));
+      await tester.tap(find.byTooltip('対面表示'));
       await tester.pumpAndSettle();
       expect(find.byType(FaceToFaceScreen), findsOneWidget);
 
@@ -107,7 +107,7 @@ void main() {
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.open_in_full));
+      await tester.tap(find.byTooltip('対面表示'));
       await tester.pumpAndSettle();
 
       // 表示テキストが空でもFaceToFaceScreen自体は表示される

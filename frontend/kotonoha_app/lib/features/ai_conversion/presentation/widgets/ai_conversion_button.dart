@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -197,7 +198,7 @@ class _AIConversionButtonState extends ConsumerState<AIConversionButton> {
                 )
               // 通常表示: 「AI変換」ラベル
               : const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.auto_awesome, size: 20),
+                  Icon(CupertinoIcons.sparkles, size: 20),
                   SizedBox(width: 6),
                   Flexible(child: Text('AI変換', maxLines: 2)),
                 ]),

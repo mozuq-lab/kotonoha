@@ -65,7 +65,7 @@ void main() {
         await typeOnCharacterBoard(tester, 'あいう');
 
         // 実際の処理実行: 削除ボタン（アイコン）をタップ
-        await tapIconButton(tester, Icons.backspace_outlined);
+        await tapButton(tester, '削除');
 
         // 結果検証: 最後の1文字が削除されて「あい」になること
         expect(find.text('あい'), findsOneWidget);
@@ -83,7 +83,7 @@ void main() {
         await typeOnCharacterBoard(tester, 'あいうえお');
 
         // 実際の処理実行: 全消去ボタン（アイコン）をタップ
-        await tapIconButton(tester, Icons.delete_outline);
+        await tapButton(tester, '全消去');
 
         // 結果検証: 確認ダイアログが表示されること
         expect(find.text('入力内容をすべて消去しますか？'), findsOneWidget);
@@ -157,7 +157,7 @@ void main() {
         await typeOnCharacterBoard(tester, 'あいうえお');
 
         // 実際の処理実行: 全消去ボタン（アイコン）をタップ
-        await tapIconButton(tester, Icons.delete_outline);
+        await tapButton(tester, '全消去');
 
         // 結果検証: 確認ダイアログが表示されること
         expect(find.text('入力内容をすべて消去しますか？'), findsOneWidget);
@@ -235,7 +235,7 @@ void main() {
         await tapCharacterOnBoard(tester, 'あ');
 
         // 実際の処理実行: 削除ボタン（アイコン）を1回タップ（空になる）
-        await tapIconButton(tester, Icons.backspace_outlined);
+        await tapButton(tester, '削除');
 
         // 入力が空になったことを確認
         expect(find.text('入力してください...'), findsOneWidget);
@@ -367,7 +367,7 @@ void main() {
           await stopSpeechIfSpeaking(tester);
 
           // サイクル: 全消去
-          await tapIconButton(tester, Icons.delete_outline);
+          await tapButton(tester, '全消去');
           // 画面本体にもクイック応答の「はい」があるため、ダイアログ内に限定する
           await tapDialogButton(tester, 'はい');
         }

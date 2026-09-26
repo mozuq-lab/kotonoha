@@ -12,7 +12,7 @@ import 'helpers/test_helpers.dart';
 /// 定型文画面にナビゲートするヘルパー
 Future<void> navigateToPresetPhrases(WidgetTester tester) async {
   // AppBarのアイコンボタン（定型文）をタップ
-  final presetPhraseButton = find.byIcon(Icons.format_list_bulleted);
+  final presetPhraseButton = find.byTooltip('定型文');
   expect(presetPhraseButton, findsOneWidget);
   await tester.tap(presetPhraseButton);
   await tester.pumpAndSettle();

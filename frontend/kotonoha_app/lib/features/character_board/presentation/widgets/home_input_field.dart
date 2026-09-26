@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
@@ -78,7 +79,7 @@ class _HomeInputFieldState extends ConsumerState<HomeInputField> {
             key: const Key('favorite_current_input'),
             tooltip: '入力中の文をお気に入りに登録',
             onPressed: buffer.trim().isEmpty ? null : widget.onFavoritePressed,
-            icon: const Icon(Icons.favorite_border),
+            icon: const Icon(CupertinoIcons.heart),
           ),
         ),
       ),

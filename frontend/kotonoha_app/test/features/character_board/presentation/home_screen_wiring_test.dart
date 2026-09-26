@@ -357,7 +357,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.open_in_full), findsOneWidget);
       expect(find.byTooltip('対面表示'), findsOneWidget);
     });
   });

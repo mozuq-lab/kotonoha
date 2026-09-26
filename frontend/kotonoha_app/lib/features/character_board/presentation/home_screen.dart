@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
@@ -150,29 +151,30 @@ class HomeScreen extends ConsumerWidget {
                       ? [_buildSimpleModeToggleButton(ref, simpleMode: true)]
                       : [
                           IconButton(
-                            icon: const Icon(Icons.open_in_full),
+                            icon: const Icon(
+                                CupertinoIcons.arrow_up_left_arrow_down_right),
                             tooltip: '対面表示',
                             onPressed: () =>
                                 _openFaceToFace(context, ref, inputBuffer),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.format_list_bulleted),
+                            icon: const Icon(CupertinoIcons.list_bullet),
                             tooltip: '定型文',
                             onPressed: () =>
                                 context.push(AppRoutes.presetPhrases),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.access_time),
+                            icon: const Icon(CupertinoIcons.clock),
                             tooltip: '履歴',
                             onPressed: () => context.push(AppRoutes.history),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.favorite_border),
+                            icon: const Icon(CupertinoIcons.heart),
                             tooltip: 'お気に入り',
                             onPressed: () => context.push(AppRoutes.favorites),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.settings_outlined),
+                            icon: const Icon(CupertinoIcons.gear_alt),
                             tooltip: '設定',
                             onPressed: () => context.push(AppRoutes.settings),
                           ),
@@ -265,7 +267,7 @@ class HomeScreen extends ConsumerWidget {
   }) {
     return IconButton(
       icon: Icon(
-        simpleMode ? Icons.keyboard_alt_outlined : Icons.grid_view_rounded,
+        simpleMode ? CupertinoIcons.keyboard : CupertinoIcons.square_grid_2x2,
       ),
       tooltip: simpleMode ? 'シンプルモードを解除' : 'シンプルモードに切替',
       onPressed: () {

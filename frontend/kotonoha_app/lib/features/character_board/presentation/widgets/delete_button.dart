@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
 /// 削除ボタンウィジェット
@@ -58,11 +59,11 @@ class DeleteButton extends StatelessWidget {
         ),
         child: showLabel
             ? const Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.backspace_outlined, size: AppSizes.iconSizeMedium),
+                Icon(CupertinoIcons.delete_left, size: AppSizes.iconSizeMedium),
                 SizedBox(width: 6),
                 Flexible(child: Text('削除', maxLines: 2)),
               ])
-            : const Icon(Icons.backspace_outlined,
+            : const Icon(CupertinoIcons.delete_left,
                 size: AppSizes.iconSizeMedium),
       ),
     );

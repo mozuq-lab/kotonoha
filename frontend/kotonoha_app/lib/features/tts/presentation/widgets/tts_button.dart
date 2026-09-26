@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
@@ -91,7 +92,8 @@ class TTSButton extends ConsumerWidget {
         : (speakButtonColor ??
             Color.lerp(colorScheme.surface, colorScheme.primary, 0.18)!);
     final foregroundColor = bestContrastingTextColor(backgroundColor);
-    final icon = isSpeaking ? Icons.stop : Icons.volume_up;
+    final icon =
+        isSpeaking ? CupertinoIcons.stop_fill : CupertinoIcons.speaker_2;
 
     return Semantics(
       label: label,
