@@ -28,8 +28,7 @@ class FavoriteShortcutButton extends StatelessWidget {
       FontSize.medium => AppSizes.fontSizeMedium,
       FontSize.large => AppSizes.fontSizeLarge,
     };
-    final background =
-        Color.lerp(scheme.surface, favoriteBackground(favorite, scheme), 0.22)!;
+    final background = favoriteBackground(favorite, scheme);
     return Tooltip(
       message: favorite.content,
       child: Semantics(

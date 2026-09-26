@@ -25,24 +25,24 @@ void main() {
     /// 前提条件
     /// lightThemeがインポートされている
     /// 期待結果
-    /// lightTheme.scaffoldBackgroundColorがAppColors.backgroundLight（#FFFFFF）である
+    /// lightTheme.scaffoldBackgroundColorがAppColors.backgroundLight（#FAFAF8）である
     test('TC-102: ライトテーマの背景色が白系である', () {
       // Assert
       expect(lightTheme.scaffoldBackgroundColor,
           equals(AppColors.backgroundLight));
       expect(
-          lightTheme.scaffoldBackgroundColor, equals(const Color(0xFFFFFFFF)));
+          lightTheme.scaffoldBackgroundColor, equals(const Color(0xFFFAFAF8)));
     });
 
-    /// ライトテーマのプライマリ色が青系である
+    /// ライトテーマのプライマリ色が青緑系である
     /// 前提条件
     /// lightThemeがインポートされている
     /// 期待結果
-    /// lightTheme.colorScheme.primaryがAppColors.primaryLight（#2196F3）である
-    test('TC-103: ライトテーマのプライマリ色が青系である', () {
+    /// lightTheme.colorScheme.primaryがAppColors.primaryLight（#006D77）である
+    test('TC-103: ライトテーマのプライマリ色が青緑系である', () {
       // Assert
       expect(lightTheme.colorScheme.primary, equals(AppColors.primaryLight));
-      expect(lightTheme.colorScheme.primary, equals(const Color(0xFF2196F3)));
+      expect(lightTheme.colorScheme.primary, equals(const Color(0xFF006D77)));
     });
 
     /// ライトテーマのElevatedButton最小サイズが60pxである
@@ -89,18 +89,15 @@ void main() {
       expect(minimumSize?.height, greaterThanOrEqualTo(44.0));
     });
 
-    /// ライトテーマのonPrimaryが黒である（WCAG AA対応）
-    /// primary(#2196F3)上の白文字は約3.1:1でAA不足のため
-    /// onPrimaryを黒(#000000, 約6.7:1)に設定してAAを満たす。
-    test('ライトテーマのonPrimaryが黒（AA適合）である', () {
+    test('ライトテーマのonPrimaryが白である', () {
       expect(
           lightTheme.colorScheme.onPrimary, equals(AppColors.onPrimaryLight));
-      expect(lightTheme.colorScheme.onPrimary, equals(const Color(0xFF000000)));
+      expect(lightTheme.colorScheme.onPrimary, equals(Colors.white));
     });
 
     /// ライトテーマのテキスト色が黒系である
     /// 期待結果
-    /// bodyLargeの色がAppColors.onBackgroundLight（#000000）である
+    /// bodyLargeの色がAppColors.onBackgroundLight（#17242B）である
     test('ライトテーマのテキスト色が黒系である', () {
       // Assert
       expect(
@@ -109,7 +106,7 @@ void main() {
       );
       expect(
         lightTheme.textTheme.bodyLarge?.color,
-        equals(const Color(0xFF000000)),
+        equals(const Color(0xFF17242B)),
       );
     });
 

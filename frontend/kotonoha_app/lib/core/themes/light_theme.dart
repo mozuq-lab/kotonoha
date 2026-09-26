@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'app_visual_theme.dart';
 
 final _lightButtonSide = WidgetStateProperty.resolveWith<BorderSide?>((states) {
   const enabled = BorderSide(color: Colors.black);
@@ -21,19 +22,18 @@ final _lightButtonSide = WidgetStateProperty.resolveWith<BorderSide?>((states) {
 /// アクセシビリティ要件
 /// タップターゲットサイズ: 最小44px x 44px、推奨60px x 60px
 /// フォントサイズ: AppSizesの定義に従う
-final ThemeData lightTheme = ThemeData(
+final ThemeData lightTheme =
+    appVisualTheme(_baseLightTheme, highContrast: false);
+
+final ThemeData _baseLightTheme = ThemeData(
   brightness: Brightness.light,
   visualDensity: VisualDensity.standard,
   materialTapTargetSize: MaterialTapTargetSize.padded,
   colorScheme: const ColorScheme.light(
     primary: AppColors.primaryLight,
-    // primary(#2196F3)上の白文字は約3.1:1でAA不足のため
-    // onPrimaryを黒(#000000)に設定（コントラスト比 約6.7:1でAA適合）。
     onPrimary: AppColors.onPrimaryLight,
     surface: AppColors.surfaceLight,
     onSurface: AppColors.onSurfaceLight,
-    // errorLight(#8C1D18) は surface 上の文字として 8.36:1
-    // 白文字を載せて 9.11:1。
     error: AppColors.errorLight,
     onError: Colors.white,
   ),
@@ -57,10 +57,6 @@ final ThemeData lightTheme = ThemeData(
   ),
 
   // Elevated button theme
-  // AA対応: 前景色を明示する。Material 3 の ElevatedButton は primary で
-  // 塗りつぶすのではなく、surfaceContainerLow の面に primary のラベルを載せる設計で
-  // TextButton と同じく「面に載る文字」になる。未指定だと AA 未達のため
-  // 文字専用の AppColors.primaryTextLight を指定する。
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       foregroundColor: AppColors.primaryTextLight,
@@ -93,9 +89,6 @@ final ThemeData lightTheme = ThemeData(
 
   // Text button theme
   // AA対応: ダイアログ等のTextButtonは既定36pxでタップターゲット不足のため44pxを保証。
-  // AA対応: 前景色を明示する。未指定だと Material 3 が colorScheme.primary を
-  // 使うが、primary は「塗り」用途の色で面に載る文字としては AA 未達のため
-  // 文字専用の AppColors.primaryTextLight を指定する。
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(
       foregroundColor: AppColors.primaryTextLight,

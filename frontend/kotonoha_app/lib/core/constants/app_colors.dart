@@ -19,42 +19,43 @@ class AppColors {
 
   // ライトモード
 
-  /// ライトモードのプライマリカラー（青系）
-  static const Color primaryLight = Color(0xFF2196F3);
+  /// 青緑のアクセント色。
+  static const Color primaryLight = Color(0xFF006D77);
 
-  /// ライトモードのプライマリ上テキスト色（黒）
-  /// primary(#2196F3)上では白文字が約3.1:1でWCAG AA不足のため
-  /// 黒文字（コントラスト比 約6.7:1）を採用しAAを満たす。
-  static const Color onPrimaryLight = Color(0xFF000000);
+  /// 青緑の上に載せる白文字。
+  static const Color onPrimaryLight = Colors.white;
 
-  /// ライトモードの背景色（白）
-  static const Color backgroundLight = Color(0xFFFFFFFF);
+  /// 少し温かみのある背景色。
+  static const Color backgroundLight = Color(0xFFFAFAF8);
 
-  /// ライトモードの背景上テキスト色（黒）
-  static const Color onBackgroundLight = Color(0xFF000000);
+  /// 背景上の濃い文字色。
+  static const Color onBackgroundLight = Color(0xFF17242B);
 
-  /// ライトモードのサーフェス色（薄いグレー）
-  static const Color surfaceLight = Color(0xFFF5F5F5);
+  /// ホームと各画面のサーフェス色。
+  static const Color surfaceLight = backgroundLight;
 
-  /// ライトモードのサーフェス上テキスト色（黒）
-  static const Color onSurfaceLight = Color(0xFF000000);
+  /// サーフェス上の文字色。
+  static const Color onSurfaceLight = onBackgroundLight;
 
   // ダークモード
 
-  /// ダークモードのプライマリカラー（やや暗い青系）
-  static const Color primaryDark = Color(0xFF1976D2);
+  /// 暗い背景で読める明るい青緑。
+  static const Color primaryDark = Color(0xFF71D6D7);
 
-  /// ダークモードの背景色（濃い灰色）
-  static const Color backgroundDark = Color(0xFF121212);
+  /// 明るい青緑の上に載せる濃い文字色。
+  static const Color onPrimaryDark = Color(0xFF002F34);
 
-  /// ダークモードの背景上テキスト色（白）
-  static const Color onBackgroundDark = Color(0xFFFFFFFF);
+  /// 青緑を含む暗い背景色。
+  static const Color backgroundDark = Color(0xFF142124);
 
-  /// ダークモードのサーフェス色（やや明るい灰色）
-  static const Color surfaceDark = Color(0xFF1E1E1E);
+  /// 背景上の明るい文字色。
+  static const Color onBackgroundDark = Color(0xFFEDF3F4);
 
-  /// ダークモードのサーフェス上テキスト色（白）
-  static const Color onSurfaceDark = Color(0xFFFFFFFF);
+  /// ホームと各画面のサーフェス色。
+  static const Color surfaceDark = backgroundDark;
+
+  /// サーフェス上の文字色。
+  static const Color onSurfaceDark = onBackgroundDark;
 
   // 高コントラストモード（WCAG 2.1 AA準拠）
 
@@ -81,11 +82,9 @@ class AppColors {
   // 「ボタン背景（+ onError）」の双方で使われるため、どちらでも
   // 4.5:1 を満たす必要がある。
   /// ライトモードのエラー色（前景・背景の両用）
-  /// surfaceLight (#F5F5F5) 上の文字として 8.36:1、白文字を載せて 9.11:1。
   static const Color errorLight = Color(0xFF8C1D18);
 
   /// ダークモードのエラー色（前景・背景の両用）
-  /// surfaceDark (#1E1E1E) 上の文字として 9.76:1、黒文字を載せて 12.30:1。
   /// 暗い背景では文字としても読める明るい赤が必要なため
   /// Material 3 のダーク既定エラー色と同系の淡い赤を採る。
   static const Color errorDark = Color(0xFFF2B8B5);
@@ -95,24 +94,13 @@ class AppColors {
   /// 色相を保ったまま暗くした #CC0000 を使う（白との比 5.89:1）。
   static const Color errorHighContrast = Color(0xFFCC0000);
 
-  // 面に載る文字としてのプライマリ色（primaryText 系）
-  // [primaryLight] 等は「塗り」用途で選ばれた色であり、面に載る文字としては
-  // 検証されていなかった。Material 3 は TextButton / OutlinedButton の既定の
-  // 前景色に colorScheme.primary を使うため、そのままではダイアログの
-  // 「キャンセル」「OK」といった操作ラベルが AA 未達になる
-  // （primaryLight は surfaceLight 上で 2.87:1、primaryDark は surfaceDark 上で 3.62:1）。
-  // 塗りとしての primary は変えずに、文字としての役割だけを別トークンに分離する。
-  // 色相は primary 系と揃え、明度だけを動かして見た目の一貫性を保つ。
+  // 面に載る操作ラベルの色。塗りと文字の役割を分けて参照する。
 
-  /// ライトモードのプライマリ文字色（面に載る操作ラベル用）
-  /// backgroundLight (#FFFFFF) 上で 5.75:1、surfaceLight (#F5F5F5) 上で 5.27:1。
-  /// [primaryLight] (#2196F3) と同じ青系で、明度だけを下げた色。
-  static const Color primaryTextLight = Color(0xFF1565C0);
+  /// ライトモードの操作ラベル色。
+  static const Color primaryTextLight = primaryLight;
 
-  /// ダークモードのプライマリ文字色（面に載る操作ラベル用）
-  /// backgroundDark (#121212) 上で 8.46:1、surfaceDark (#1E1E1E) 上で 7.53:1。
-  /// [primaryDark] (#1976D2) と同じ青系で、明度だけを上げた色。
-  static const Color primaryTextDark = Color(0xFF64B5F6);
+  /// ダークモードの操作ラベル色。
+  static const Color primaryTextDark = primaryDark;
 
   /// 高コントラストモードのプライマリ文字色（面に載る操作ラベル用）
   /// backgroundHighContrast / surfaceHighContrast (#FFFFFF) 上で 21.00:1。
@@ -149,49 +137,29 @@ class AppColors {
 
   /// テーマの surface 上に載せる警告アイコン色（ライト・高コントラスト）
   /// [warningContainer] ではなくテーマ背景に対する値である点に注意。
-  /// ライトテーマの背景 (#F5F5F5) に対し 5.4:1
   /// 高コントラストの白背景に対し 5.9:1。
   static const Color warningIcon = Color(0xFFB23C00);
 
   /// テーマの surface 上に載せる警告アイコン色（ダーク）
-  /// ダークテーマの背景 (#1E1E1E) に対し 9.6:1。
-  /// ライト用の濃色をダークで使うと 2.81:1 まで落ちるため分ける。
   static const Color warningIconDark = Color(0xFFFFB74D);
 
-  // AI変換結果の強調表示
-  // 従来は `primary.withValues(alpha: 0.1〜0.3)` の半透明色を
-  // ダイアログ背景に重ねていた。コントラスト比は合成後の色で決まるため
-  // 半透明のままでは検証できず、枠線もテーマのプライマリ色そのままで
-  // ライト 2.60:1 と非テキスト基準(3:1)未達だった。
-  // ここでは**合成後と同じ色**を不透明な定数として持つ。見た目は
-  // 変わらないまま、実際に描画される色でコントラストを検証できる。
+  // AI変換結果の強調表示。背景と枠線は不透明色で指定する。
 
-  /// AI変換結果ボックスの背景（ライト）
-  /// primaryLight を alpha 0.1 で surfaceLight に重ねた合成色と同一。
-  /// 黒文字に対し 17.5:1。
-  static const Color aiResultContainerLight = Color(0xFFE0ECF5);
+  /// AI変換結果ボックスの背景（ライト）。
+  static const Color aiResultContainerLight = Color(0xFFE6F2F0);
 
-  /// AI変換結果ボックスの背景（ダーク）
-  /// primaryDark を alpha 0.2 で surfaceDark に重ねた合成色と同一。
-  /// 白文字に対し 13.5:1。
-  static const Color aiResultContainerDark = Color(0xFF1D3042);
+  /// AI変換結果ボックスの背景（ダーク）。
+  static const Color aiResultContainerDark = Color(0xFF1A353B);
 
-  /// AI変換結果ボックスの背景（高コントラスト）
-  /// 黄色を alpha 0.3 で白に重ねた合成色と同一。黒文字に対し 19.6:1。
+  /// AI変換結果ボックスの背景（高コントラスト）。
   static const Color aiResultContainerHighContrast = Color(0xFFFFF9C4);
 
-  /// AI変換結果ボックスの枠線・「元の文を使う」ボタンの枠線（ライト）
-  /// 枠線は「隣接する色」の双方から 3:1 以上離す必要がある。
-  /// [aiResultContainerLight] に対し 4.78:1、surfaceLight に対し 5.27:1。
-  /// primaryLight(#2196F3) では 2.60:1 / 2.87:1 で未達だった。
-  static const Color aiResultOutlineLight = Color(0xFF1565C0);
+  /// AI変換結果ボックスと「元の文を使う」ボタンの枠線（ライト）。
+  static const Color aiResultOutlineLight = primaryTextLight;
 
-  /// AI変換結果ボックスの枠線・「元の文を使う」ボタンの枠線（ダーク）
-  /// [aiResultContainerDark] に対し 6.10:1、surfaceDark に対し 7.53:1。
-  /// primaryDark(#1976D2) では 2.94:1 / 3.62:1 だった。
-  static const Color aiResultOutlineDark = Color(0xFF64B5F6);
+  /// AI変換結果ボックスと「元の文を使う」ボタンの枠線（ダーク）。
+  static const Color aiResultOutlineDark = primaryTextDark;
 
-  /// AI変換結果ボックスの枠線・「元の文を使う」ボタンの枠線（高コントラスト）
-  /// [aiResultContainerHighContrast] に対し 19.6:1、白背景に対し 21:1。
+  /// AI変換結果ボックスと「元の文を使う」ボタンの枠線（高コントラスト）。
   static const Color aiResultOutlineHighContrast = Color(0xFF000000);
 }
