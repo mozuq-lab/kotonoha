@@ -106,6 +106,35 @@ fvm dart format --output=none --set-exit-if-changed .
 scripts/inventory.sh                                                    # 監査の計測。数えるだけ
 ```
 
+## デプロイ（Cloudflare Containers）
+
+backend は Cloudflare Containers で動かす（`deploy/cloudflare/`）。前段の Worker がすべてのリクエストを
+1 つのコンテナへ渡す。インスタンスは 1 つに固定する（レート制限はプロセス内メモリ — ADR-002）。
+Worker は利用者が送った `X-Forwarded-For` を捨て、`CF-Connecting-IP` で上書きしてから渡す。backend は
+`TRUSTED_PROXY_COUNT=1` でその値だけを読む。上書きを外すと、利用者が値を変えるだけで制限を逃れられる。
+
+前提: Workers Paid の契約、AI Gateway（支出上限・回数制限を設定済み）、Workers AI を呼べる API トークン、
+Docker（イメージを手元で作ってから送る）。
+
+```bash
+cd deploy/cloudflare
+npm ci
+npx wrangler login
+# 秘密は wrangler.jsonc に書かない。1 つずつ入力する
+npx wrangler secret put API_KEYS           # 端末キー（カンマ区切り）。アプリの AI_API_KEY に渡す値
+npx wrangler secret put CF_API_TOKEN       # Workers AI を呼べる API トークン
+npx wrangler secret put CF_ACCOUNT_ID      # 32 桁の 16 進数
+npx wrangler secret put CF_AI_GATEWAY_ID   # 無いと本番ゲートで起動しない（支出上限が効かないため）
+npx wrangler deploy
+curl -s https://<Worker の URL>/api/v1/health
+```
+
+秘密はコンテナの起動時にしか渡らない。差し替えたら `npx wrangler deploy` し直し、新しい値が効いているかを
+確かめる（動いているコンテナが古い値のまま残ることがある）。
+
+手元での確認は `npx wrangler dev --env-file <秘密を書いたファイル>`（Docker が要る）。
+`npx wrangler deploy --dry-run --outdir <任意のディレクトリ>` はイメージを作るだけで送らない。
+
 ## CI（`.github/workflows/`）
 
 - `python.yml` — backend の lint・型・層契約・ゲート・テストを `main` / `develop` への push・PR で実行
@@ -136,6 +165,7 @@ scripts/inventory.sh                                                    # 監査
 - `backend/` — FastAPI バックエンド（ステートレス。DB 無し）
 - `frontend/kotonoha_app/` — Flutter アプリ
 - `docker/` — backend の開発用コンテナ設定
+- `deploy/cloudflare/` — backend の本番デプロイ（Cloudflare Containers と前段の Worker）
 - `scripts/` — ビルド・棚卸し・ADR索引貼付などの補助スクリプト
 - `docs/` — 決定・仕様・計画・倉庫
 - `.github/workflows/` — CI
