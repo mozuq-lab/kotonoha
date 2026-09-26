@@ -58,8 +58,11 @@ USER_MESSAGE: Final[Mapping[ErrorCode, str]] = MappingProxyType(
         ErrorCode.AI_PROVIDER_ERROR: (
             "AI変換サービスが一時的に利用できません。しばらく待ってから再度お試しください。"
         ),
+        # プロバイダ側の 429。混雑とも支出上限（AI Gateway）の到達とも区別できない。
+        # 上限なら待っても直らないので、元の文で伝える道を示す
         ErrorCode.AI_RATE_LIMIT: (
-            "AI変換APIのレート制限に達しました。しばらく待ってから再度お試しください。"
+            "いまAI変換を使えません。混み合っているか、利用の上限に達しています。"
+            "時間をおいて試すか、元の文をお使いください。"
         ),
         ErrorCode.AI_API_ERROR: (
             "AI変換APIからのレスポンスに失敗しました。しばらく待ってから再度お試しください。"

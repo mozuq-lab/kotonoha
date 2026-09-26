@@ -147,8 +147,11 @@ def test_provider_rate_limit_is_429(
         )
     )
     response = _post_convert(client, headers)
-    _assert_error_shape(response, 429, "AI_RATE_LIMIT")
+    error = _assert_error_shape(response, 429, "AI_RATE_LIMIT")
     assert "CANARY-PROVIDER-429" not in response.text
+    # プロバイダの 429 は混雑とも支出上限の到達とも区別できない。上限なら待っても直らないので、
+    # 「待てば直る」とだけ告げず、元の文で伝える道を示す
+    assert "上限" in str(error["message"]) and "元の文" in str(error["message"])
 
 
 def test_provider_server_error_is_500(
