@@ -7,8 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:kotonoha_app/app.dart';
+import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_button.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/input_limit_notice.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
@@ -81,6 +86,57 @@ void main() {
       await container.read(favoriteProvider.notifier).addFavorite(content);
     }
     return container;
+  }
+
+  for (final size in [
+    const Size(390, 844),
+    const Size(844, 390),
+    const Size(820, 1180),
+  ]) {
+    testWidgets('標準アプリの$sizeでは入力後もAI変換を表示せず、読み上げ・削除・全消去を使える', (tester) async {
+      SharedPreferences.setMockInitialValues({'tutorial_completed': true});
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final container = await buildContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: const KotonohaApp(),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('あ').first);
+      await tester.tap(find.text('い').first);
+      await tester.pumpAndSettle();
+      expect(container.read(inputBufferProvider), 'あい');
+      expect(find.byType(AIConversionButton), findsNothing);
+      expect(find.text('AI変換'), findsNothing);
+      expect(find.byType(OfflineIndicator), findsNothing);
+
+      await tester.tap(find.text('読み上げ'));
+      await tester.pumpAndSettle();
+      verify(() => mockFlutterTts.speak('あい')).called(1);
+      expect(container.read(historyProvider).histories.first.content, 'あい');
+
+      await tester.tap(find.byType(DeleteButton));
+      await tester.pumpAndSettle();
+      expect(container.read(inputBufferProvider), 'あ');
+
+      await tester.tap(find.byType(ClearAllButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('はい'),
+      ));
+      await tester.pumpAndSettle();
+      expect(container.read(inputBufferProvider), isEmpty);
+      expect(find.byType(AIConversionButton), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
   }
 
   group('お気に入りのホーム画面統合', () {

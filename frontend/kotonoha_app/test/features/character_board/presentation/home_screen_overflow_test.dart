@@ -90,8 +90,9 @@ void main() {
                   child: child!,
                 ),
                 home: shell
-                    ? const AppShell(child: HomeScreen())
-                    : const HomeScreen(),
+                    ? const AppShell(
+                        child: HomeScreen(enableAIConversion: true))
+                    : const HomeScreen(enableAIConversion: true),
               )),
     ));
     await settle(tester);

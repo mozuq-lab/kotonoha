@@ -216,9 +216,13 @@ class HomeLayoutHarness {
             home: extraChrome > 0
                 ? Column(children: [
                     SizedBox(height: extraChrome),
-                    const Expanded(child: AppShell(child: HomeScreen())),
+                    const Expanded(
+                      child: AppShell(
+                        child: HomeScreen(enableAIConversion: true),
+                      ),
+                    ),
                   ])
-                : const AppShell(child: HomeScreen()),
+                : const AppShell(child: HomeScreen(enableAIConversion: true)),
           ),
         ),
       ));

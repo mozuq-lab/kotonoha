@@ -1,6 +1,7 @@
 /// AI変換E2Eテスト
 /// AI変換機能（入力→変換→結果表示→採用/再生成/元の文）と
 /// オフライン対応、パフォーマンス要件のE2Eテストを実施。
+/// 実行時は --dart-define=ENABLE_AI_CONVERSION=true で開発用の入口を有効にする。
 @Tags(['e2e'])
 library;
 

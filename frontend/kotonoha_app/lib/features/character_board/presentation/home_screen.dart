@@ -81,8 +81,15 @@ double _stackedBoardHeight(double availableHeight) =>
 /// クイック応答ボタン（はい/いいえ/わからない）
 /// TTS読み上げ機能
 class HomeScreen extends ConsumerWidget {
+  /// AI変換の入口を表示するか。初回リリースでは既定で非表示にする。
+  final bool enableAIConversion;
+
   /// ホーム画面を作成する。
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.enableAIConversion =
+        const bool.fromEnvironment('ENABLE_AI_CONVERSION'),
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -695,31 +702,32 @@ class HomeScreen extends ConsumerWidget {
                 spacing: gap,
                 runSpacing: gap,
                 children: [
-                  AIConversionButton(
-                    inputText: inputBuffer,
-                    politenessLevel: aiPoliteness,
-                    height: height,
-                    onConvert: () => _convertWithAI(
-                      context,
-                      ref,
-                      inputBuffer,
-                      aiPoliteness,
-                    ),
-                    onConversionComplete: (convertedText) {
-                      if (!context.mounted) return;
-                      _showConversionResult(
+                  if (enableAIConversion)
+                    AIConversionButton(
+                      inputText: inputBuffer,
+                      politenessLevel: aiPoliteness,
+                      height: height,
+                      onConvert: () => _convertWithAI(
                         context,
                         ref,
                         inputBuffer,
-                        convertedText,
                         aiPoliteness,
-                      );
-                    },
-                    onConversionError: (error) {
-                      if (!context.mounted) return;
-                      _showAIConversionError(context, error);
-                    },
-                  ),
+                      ),
+                      onConversionComplete: (convertedText) {
+                        if (!context.mounted) return;
+                        _showConversionResult(
+                          context,
+                          ref,
+                          inputBuffer,
+                          convertedText,
+                          aiPoliteness,
+                        );
+                      },
+                      onConversionError: (error) {
+                        if (!context.mounted) return;
+                        _showAIConversionError(context, error);
+                      },
+                    ),
                   TTSButton(
                     text: inputBuffer,
                     height: height,
@@ -736,13 +744,14 @@ class HomeScreen extends ConsumerWidget {
           ),
           // 文字数不足の案内は出さない。入力のたびに出入りして行の高さが
           // 変わり、押そうとした文字盤のキーが指の下で動いてしまうため。
-          const Padding(
-            padding: EdgeInsets.only(top: AppSizes.paddingXSmall),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: OfflineIndicator(),
+          if (enableAIConversion)
+            const Padding(
+              padding: EdgeInsets.only(top: AppSizes.paddingXSmall),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: OfflineIndicator(),
+              ),
             ),
-          ),
         ],
       ),
     );
