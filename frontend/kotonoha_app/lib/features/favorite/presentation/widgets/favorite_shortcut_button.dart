@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
 import 'package:kotonoha_app/features/favorite/presentation/constants/favorite_colors.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
@@ -27,27 +28,34 @@ class FavoriteShortcutButton extends StatelessWidget {
       FontSize.medium => AppSizes.fontSizeMedium,
       FontSize.large => AppSizes.fontSizeLarge,
     };
-    return Semantics(
-      button: true,
-      label: favorite.content,
-      child: SizedBox(
-        height: height,
-        child: ElevatedButton(
-          key: Key('home_favorite_${favorite.id}'),
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: favoriteBackground(favorite, scheme),
-            foregroundColor: favoriteForeground(favorite, scheme),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+    final background =
+        Color.lerp(scheme.surface, favoriteBackground(favorite, scheme), 0.22)!;
+    return Tooltip(
+      message: favorite.content,
+      child: Semantics(
+        button: true,
+        label: favorite.content,
+        child: SizedBox(
+          height: height,
+          child: ElevatedButton(
+            key: Key('home_favorite_${favorite.id}'),
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: background,
+              foregroundColor: bestContrastingTextColor(background),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(AppSizes.borderRadiusMedium),
+              ),
             ),
-          ),
-          child: Text(
-            favorite.content,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: textSize, fontWeight: FontWeight.bold),
+            child: Text(
+              favorite.content,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: textSize, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ),

@@ -20,6 +20,7 @@ class DeleteButton extends StatelessWidget {
 
   /// ボタンの一辺の長さ（正方形。[AppSizes.minTapTarget] 未満にはしない）
   final double size;
+  final bool showLabel;
 
   /// DeleteButtonを作成する
   const DeleteButton({
@@ -27,6 +28,7 @@ class DeleteButton extends StatelessWidget {
     this.onPressed,
     this.enabled = true,
     this.size = AppSizes.recommendedTapTarget,
+    this.showLabel = false,
   });
 
   @override
@@ -42,8 +44,10 @@ class DeleteButton extends StatelessWidget {
         onPressed: enabled ? onPressed : null,
         style: ElevatedButton.styleFrom(
           minimumSize: Size.square(side),
-          fixedSize: Size.square(side),
-          padding: EdgeInsets.zero,
+          fixedSize: showLabel ? Size.fromHeight(side) : Size.square(side),
+          padding: showLabel
+              ? const EdgeInsets.symmetric(horizontal: 4)
+              : EdgeInsets.zero,
           backgroundColor: theme.colorScheme.surface,
           foregroundColor: theme.colorScheme.onSurface,
           shape: RoundedRectangleBorder(
@@ -52,10 +56,14 @@ class DeleteButton extends StatelessWidget {
           disabledBackgroundColor: theme.disabledColor.withValues(alpha: 0.12),
           disabledForegroundColor: theme.disabledColor.withValues(alpha: 0.38),
         ),
-        child: const Icon(
-          Icons.backspace_outlined,
-          size: AppSizes.iconSizeMedium,
-        ),
+        child: showLabel
+            ? const Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.backspace_outlined, size: AppSizes.iconSizeMedium),
+                SizedBox(width: 6),
+                Flexible(child: Text('削除', maxLines: 2)),
+              ])
+            : const Icon(Icons.backspace_outlined,
+                size: AppSizes.iconSizeMedium),
       ),
     );
   }

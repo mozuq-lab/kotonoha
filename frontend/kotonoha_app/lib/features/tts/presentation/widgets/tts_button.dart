@@ -44,6 +44,7 @@ class TTSButton extends ConsumerWidget {
   /// ボタンの高さ（オプション）
   /// 指定しない場合はデフォルト60px、最小44px保証
   final double? height;
+  final double labelFontSize;
 
   /// TTSButtonを作成する
   const TTSButton({
@@ -54,6 +55,7 @@ class TTSButton extends ConsumerWidget {
     this.stopButtonColor,
     this.width,
     this.height,
+    this.labelFontSize = 16,
   });
 
   /// 実際に使用する高さを計算（最小44px保証）
@@ -119,8 +121,8 @@ class TTSButton extends ConsumerWidget {
             icon: Icon(icon),
             label: Text(
               label,
-              style: const TextStyle(
-                fontSize: 16.0,
+              style: TextStyle(
+                fontSize: labelFontSize,
                 fontWeight: FontWeight.bold,
               ),
             ),

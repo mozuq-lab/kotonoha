@@ -181,7 +181,7 @@ class _AIConversionButtonState extends ConsumerState<AIConversionButton> {
           // 隣に並ぶ削除・読み上げボタンと同じ角丸・配色にそろえる。
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.surface,
-            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            foregroundColor: Theme.of(context).colorScheme.primary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
             ),
@@ -196,7 +196,11 @@ class _AIConversionButtonState extends ConsumerState<AIConversionButton> {
                   ),
                 )
               // 通常表示: 「AI変換」ラベル
-              : const Text('AI変換'),
+              : const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.auto_awesome, size: 20),
+                  SizedBox(width: 6),
+                  Flexible(child: Text('AI変換', maxLines: 2)),
+                ]),
         ),
       ),
     );

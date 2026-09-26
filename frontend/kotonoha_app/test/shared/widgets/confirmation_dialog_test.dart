@@ -459,12 +459,13 @@ void main() {
       final widget = tester.widget<ElevatedButton>(
         find.widgetWithText(ElevatedButton, '同意して利用'),
       );
-      final themeSide = theme.elevatedButtonTheme.style?.side?.resolve(
+      final dialogTheme = Theme.of(tester.element(find.text('同意して利用')));
+      final themeSide = dialogTheme.elevatedButtonTheme.style?.side?.resolve(
         const <WidgetState>{},
       );
 
       // データを消す操作ではないので error ではなく primary
-      expect(confirm, theme.colorScheme.primary,
+      expect(confirm, dialogTheme.colorScheme.primary,
           reason: '$themeName: 同意ボタンが primary 色で塗られていない');
       // 取り消しと同じ見た目では、そもそも見分けがつかない
       expect(cancel, isNot(confirm),

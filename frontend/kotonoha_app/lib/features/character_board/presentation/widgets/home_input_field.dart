@@ -55,7 +55,8 @@ class _HomeInputFieldState extends ConsumerState<HomeInputField> {
       child: TextField(
         key: const Key('home_input_field'),
         controller: _controller,
-        style: TextStyle(fontSize: size),
+        style:
+            TextStyle(fontSize: size, height: 1.5, fontWeight: FontWeight.w600),
         maxLines: 3,
         minLines: 1,
         keyboardType: TextInputType.multiline,
@@ -68,6 +69,11 @@ class _HomeInputFieldState extends ConsumerState<HomeInputField> {
           border: InputBorder.none,
           hintText: '入力してください...',
           labelText: '入力欄',
+          labelStyle: const TextStyle(fontSize: 16),
+          floatingLabelStyle: const TextStyle(fontSize: 16),
+          floatingLabelBehavior: FloatingLabelBehavior.always,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: AppSizes.paddingSmall),
           suffixIcon: IconButton(
             key: const Key('favorite_current_input'),
             tooltip: '入力中の文をお気に入りに登録',

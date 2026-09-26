@@ -89,6 +89,7 @@ class QuickResponseButton extends StatefulWidget {
   /// フォントサイズ設定（オプション）
   /// フォントサイズ設定への追従
   final FontSize? fontSize;
+  final bool showIcon;
 
   /// QuickResponseButtonを作成する
   const QuickResponseButton({
@@ -101,6 +102,7 @@ class QuickResponseButton extends StatefulWidget {
     this.width,
     this.height,
     this.fontSize,
+    this.showIcon = false,
   });
 
   @override
@@ -202,15 +204,27 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
             // 縮小表示する。status_button.dartの対策と同方式。
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(
-                _label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: _fontSize,
-                  fontWeight: FontWeight.bold,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (widget.showIcon) ...[
+                  Icon(
+                      switch (widget.responseType) {
+                        QuickResponseType.yes => Icons.check_circle,
+                        QuickResponseType.no => Icons.close_rounded,
+                        QuickResponseType.unknown => Icons.help,
+                      },
+                      size: _fontSize),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  _label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: _fontSize,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
+              ]),
             ),
           ),
         ),

@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/router/app_router.dart';
+import 'package:kotonoha_app/features/character_board/presentation/home_theme.dart';
+import 'package:kotonoha_app/features/settings/models/app_theme.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/exceptions/ai_conversion_exception.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
 import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_button.dart';
@@ -56,10 +58,6 @@ const double _minBoardPaneWidth =
 /// 2行目のセルが25pxに切れるため、0.2pxの不足より2ペインの方が使える
 /// （台帳 L-155）。幅320の右ペインは189pxで、この許容では届かない。
 const double _boardPaneWidthTolerance = 1.0;
-
-/// 状態ボタン1個に要る最小幅
-/// 8個を1行に並べるか、4列×2行にするかの判定に使う。
-const double _minStatusButtonWidth = 80.0;
 
 /// 縦積みで文字盤に残す高さ（カテゴリと44pxセル2行ぶん）
 const double _boardReserve = 200.0;
@@ -115,134 +113,146 @@ class HomeScreen extends ConsumerWidget {
     final showAppName =
         MediaQuery.sizeOf(context).width >= AppSizes.phoneMaxWidth;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-              child: Image.asset(
-                'assets/images/kotonoha_icon.png',
-                key: const Key('home_app_icon'),
-                width: AppSizes.iconSizeLarge,
-                height: AppSizes.iconSizeLarge,
-                semanticLabel: 'kotonoha',
-                excludeFromSemantics: showAppName,
-              ),
-            ),
-            if (showAppName) ...[
-              const SizedBox(width: AppSizes.paddingSmall),
-              const Flexible(
-                child: Text('kotonoha',
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-              ),
-            ],
-          ],
-        ),
-        // シンプルモード: 文字盤を使わない大ボタン画面に切り替えている間は
-        // 認知負荷を下げるため他のナビゲーションアイコンは表示せず
-        // 通常モードへ戻すトグルアイコンのみを表示する。
-        actions: simpleMode
-            ? [_buildSimpleModeToggleButton(ref, simpleMode: true)]
-            : [
-                IconButton(
-                  icon: const Icon(Icons.open_in_full),
-                  tooltip: '対面表示',
-                  onPressed: () => _openFaceToFace(context, ref, inputBuffer),
+    return Theme(
+      data: homeTheme(Theme.of(context),
+          highContrast: settings?.theme == AppTheme.highContrast),
+      child: Builder(
+          builder: (context) => Scaffold(
+                appBar: AppBar(
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(AppSizes.borderRadiusMedium),
+                        child: Image.asset(
+                          'assets/images/kotonoha_icon.png',
+                          key: const Key('home_app_icon'),
+                          width: AppSizes.iconSizeLarge,
+                          height: AppSizes.iconSizeLarge,
+                          semanticLabel: 'kotonoha',
+                          excludeFromSemantics: showAppName,
+                        ),
+                      ),
+                      if (showAppName) ...[
+                        const SizedBox(width: AppSizes.paddingSmall),
+                        const Flexible(
+                          child: Text('kotonoha',
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
+                      ],
+                    ],
+                  ),
+                  // シンプルモード: 文字盤を使わない大ボタン画面に切り替えている間は
+                  // 認知負荷を下げるため他のナビゲーションアイコンは表示せず
+                  // 通常モードへ戻すトグルアイコンのみを表示する。
+                  actions: simpleMode
+                      ? [_buildSimpleModeToggleButton(ref, simpleMode: true)]
+                      : [
+                          IconButton(
+                            icon: const Icon(Icons.open_in_full),
+                            tooltip: '対面表示',
+                            onPressed: () =>
+                                _openFaceToFace(context, ref, inputBuffer),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.format_list_bulleted),
+                            tooltip: '定型文',
+                            onPressed: () =>
+                                context.push(AppRoutes.presetPhrases),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.access_time),
+                            tooltip: '履歴',
+                            onPressed: () => context.push(AppRoutes.history),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.favorite_border),
+                            tooltip: 'お気に入り',
+                            onPressed: () => context.push(AppRoutes.favorites),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.settings_outlined),
+                            tooltip: '設定',
+                            onPressed: () => context.push(AppRoutes.settings),
+                          ),
+                          _buildSimpleModeToggleButton(ref, simpleMode: false),
+                        ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.format_list_bulleted),
-                  tooltip: '定型文',
-                  onPressed: () => context.push(AppRoutes.presetPhrases),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.history),
-                  tooltip: '履歴',
-                  onPressed: () => context.push(AppRoutes.history),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.favorite),
-                  tooltip: 'お気に入り',
-                  onPressed: () => context.push(AppRoutes.favorites),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  tooltip: '設定',
-                  onPressed: () => context.push(AppRoutes.settings),
-                ),
-                _buildSimpleModeToggleButton(ref, simpleMode: false),
-              ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 音量0警告: 警告不要時はSizedBox.shrinkで高さ0のため
-            // 既存レイアウトへの影響はない。シンプルモード中も表示する。
-            VolumeWarningWidget(
-              isVisible: showVolumeWarning,
-              onDismiss: () =>
-                  ref.read(volumeWarningProvider.notifier).dismissWarning(),
-            ),
-            Expanded(
-              child: simpleMode
-                  ? _buildSimpleModeContent(ref, fontSize: fontSize)
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        // レスポンシブ対応: 可視高さ・幅に応じてレイアウトを切り替える。
-                        // isCompactHeight: 可視高さが乏しい画面（主に横持ち）。
-                        // 固定サイズのセクションを縦に積むと必要高さが可視高さを超え
-                        // RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
-                        // isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
-                        // しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
-                        final isCompactHeight = constraints.maxHeight <
-                            AppSizes.compactHeightThreshold;
-                        final isPhoneWidth =
-                            constraints.maxWidth < AppSizes.phoneMaxWidth;
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      // 音量0警告: 警告不要時はSizedBox.shrinkで高さ0のため
+                      // 既存レイアウトへの影響はない。シンプルモード中も表示する。
+                      VolumeWarningWidget(
+                        isVisible: showVolumeWarning,
+                        onDismiss: () => ref
+                            .read(volumeWarningProvider.notifier)
+                            .dismissWarning(),
+                      ),
+                      Expanded(
+                        child: simpleMode
+                            ? _buildSimpleModeContent(ref, fontSize: fontSize)
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  // レスポンシブ対応: 可視高さ・幅に応じてレイアウトを切り替える。
+                                  // isCompactHeight: 可視高さが乏しい画面（主に横持ち）。
+                                  // 固定サイズのセクションを縦に積むと必要高さが可視高さを超え
+                                  // RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
+                                  // isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
+                                  // しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
+                                  final isCompactHeight =
+                                      constraints.maxHeight <
+                                          AppSizes.compactHeightThreshold;
+                                  final isPhoneWidth = constraints.maxWidth <
+                                      AppSizes.phoneMaxWidth;
 
-                        // 2ペインは、右ペインに文字盤をそのまま置ける幅が
-                        // あるときだけ成立する。置けない幅で2ペインにすると
-                        // 五十音の5列を44pxで並べられずセルが痩せ
-                        // （台帳 L-155: 幅320で25.12px）、左ペインでは告知が
-                        // 横にはみ出す（台帳 L-156）。
-                        final boardPaneWidth =
-                            (constraints.maxWidth - AppSizes.paddingXSmall) *
-                                _compactBoardFlex /
-                                (_compactControlsFlex + _compactBoardFlex);
-                        // 判定は幅だけで行う。可視高さが低いことを理由に
-                        // 2ペインへ戻すと、幅320（右ペイン189px）で
-                        // セル25.12pxを選び直してしまう（台帳 L-155 そのもの）。
-                        final hasBoardPaneWidth = boardPaneWidth >=
-                            _minBoardPaneWidth - _boardPaneWidthTolerance;
+                                  // 2ペインは、右ペインに文字盤をそのまま置ける幅が
+                                  // あるときだけ成立する。置けない幅で2ペインにすると
+                                  // 五十音の5列を44pxで並べられずセルが痩せ
+                                  // （台帳 L-155: 幅320で25.12px）、左ペインでは告知が
+                                  // 横にはみ出す（台帳 L-156）。
+                                  final boardPaneWidth = (constraints.maxWidth -
+                                          AppSizes.paddingXSmall) *
+                                      _compactBoardFlex /
+                                      (_compactControlsFlex +
+                                          _compactBoardFlex);
+                                  // 判定は幅だけで行う。可視高さが低いことを理由に
+                                  // 2ペインへ戻すと、幅320（右ペイン189px）で
+                                  // セル25.12pxを選び直してしまう（台帳 L-155 そのもの）。
+                                  final hasBoardPaneWidth = boardPaneWidth >=
+                                      _minBoardPaneWidth -
+                                          _boardPaneWidthTolerance;
 
-                        // 幅320でオフラインバナーが出ると可視高さが446pxとなり
-                        // 幅が足りないので縦積みに入る。
-                        if (isCompactHeight && hasBoardPaneWidth) {
-                          return _buildCompactLandscapeLayout(
-                            context,
-                            ref,
-                            inputBuffer: inputBuffer,
-                            fontSize: fontSize,
-                            aiPoliteness: aiPoliteness,
-                            availableHeight: constraints.maxHeight,
-                          );
-                        }
+                                  // 幅320でオフラインバナーが出ると可視高さが446pxとなり
+                                  // 幅が足りないので縦積みに入る。
+                                  if (isCompactHeight && hasBoardPaneWidth) {
+                                    return _buildCompactLandscapeLayout(
+                                      context,
+                                      ref,
+                                      inputBuffer: inputBuffer,
+                                      fontSize: fontSize,
+                                      aiPoliteness: aiPoliteness,
+                                      availableHeight: constraints.maxHeight,
+                                    );
+                                  }
 
-                        return _buildStandardLayout(
-                          context,
-                          ref,
-                          inputBuffer: inputBuffer,
-                          fontSize: fontSize,
-                          aiPoliteness: aiPoliteness,
-                          compact: isPhoneWidth,
-                          availableHeight: constraints.maxHeight,
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
+                                  return _buildStandardLayout(
+                                    context,
+                                    ref,
+                                    inputBuffer: inputBuffer,
+                                    fontSize: fontSize,
+                                    aiPoliteness: aiPoliteness,
+                                    compact: isPhoneWidth,
+                                    availableHeight: constraints.maxHeight,
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              )),
     );
   }
 
@@ -354,6 +364,7 @@ class HomeScreen extends ConsumerWidget {
           ref,
           inputBuffer: inputBuffer,
           aiPoliteness: aiPoliteness,
+          fontSize: fontSize,
           gutter: gutter,
           compact: compact,
         ),
@@ -428,6 +439,7 @@ class HomeScreen extends ConsumerWidget {
                   ref,
                   inputBuffer: inputBuffer,
                   aiPoliteness: aiPoliteness,
+                  fontSize: fontSize,
                   gutter: AppSizes.paddingSmall,
                   compact: true,
                 ),
@@ -462,6 +474,7 @@ class HomeScreen extends ConsumerWidget {
     return Padding(
       padding: padding,
       child: QuickResponseButtons(
+        illustrated: true,
         onResponse: (type) {
           _saveToHistory(ref, type.label, HistoryType.quickButton);
         },
@@ -483,8 +496,6 @@ class HomeScreen extends ConsumerWidget {
     required bool compact,
   }) {
     const gap = AppSizes.paddingSmall;
-    final height =
-        compact ? AppSizes.minTapTarget : AppSizes.recommendedTapTarget;
     final favorites = List<Favorite>.from(ref.watch(favoriteProvider).favorites)
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
     final shortcuts = favorites.take(8).toList();
@@ -494,14 +505,27 @@ class HomeScreen extends ConsumerWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final count = shortcuts.length;
+          final textSize = switch (fontSize) {
+            FontSize.small => AppSizes.fontSizeSmall,
+            FontSize.medium => AppSizes.fontSizeMedium,
+            FontSize.large => AppSizes.fontSizeLarge,
+          };
+          final scaledText = MediaQuery.textScalerOf(context).scale(textSize);
+          final needsTwoLines = scaledText > 26 ||
+              shortcuts
+                  .any((favorite) => favorite.content.characters.length > 3);
+          final height = (scaledText * (needsTwoLines ? 2.4 : 1.4) + 12).clamp(
+              compact ? 48.0 : AppSizes.recommendedTapTarget, double.infinity);
+          final minWidth = (scaledText * (scaledText > 26 ? 3 : 2.4) + 8)
+              .clamp(AppSizes.minTapTarget, double.infinity);
           bool fits(int columns, double minWidth) =>
               constraints.maxWidth >= columns * minWidth + (columns - 1) * gap;
           // 2ペインの狭い左ペインでも1個44px以上を保つよう、列を減らす。
-          final columns = fits(count, _minStatusButtonWidth)
+          final columns = fits(count, minWidth)
               ? count
-              : fits(count < 4 ? count : 4, AppSizes.minTapTarget)
+              : fits(count < 4 ? count : 4, minWidth)
                   ? (count < 4 ? count : 4)
-                  : fits(2, AppSizes.minTapTarget)
+                  : fits(2, minWidth)
                       ? 2
                       : 1;
           Widget button(Favorite favorite) => Expanded(
@@ -522,6 +546,15 @@ class HomeScreen extends ConsumerWidget {
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.only(bottom: AppSizes.paddingXSmall),
+                  child: Text('お気に入り',
+                      style: Theme.of(context).textTheme.labelLarge),
+                ),
+              ),
               for (var start = 0; start < count; start += columns) ...[
                 if (start > 0) const SizedBox(height: gap),
                 Row(
@@ -555,9 +588,22 @@ class HomeScreen extends ConsumerWidget {
     required bool compact,
     required double availableHeight,
   }) {
-    final minHeight = compact
+    final baseMinHeight = compact
         ? AppSizes.inputAreaMinHeightCompact
         : AppSizes.inputAreaMinHeightStandard;
+    final inputFontSize = switch (fontSize) {
+      FontSize.small => AppSizes.fontSizeSmall,
+      FontSize.medium => AppSizes.fontSizeMedium,
+      FontSize.large => AppSizes.fontSizeLarge,
+    };
+    final textScaler = MediaQuery.textScalerOf(context);
+    // 入力の1行・浮動ラベル・内外の余白を、横持ちでも確保する。
+    final oneLineHeight = textScaler.scale(inputFontSize) * 1.5 +
+        textScaler.scale(16) +
+        AppSizes.paddingSmall * 4 +
+        2;
+    final minHeight =
+        oneLineHeight > baseMinHeight ? oneLineHeight : baseMinHeight;
     final ratioBasedMaxHeight = availableHeight.isFinite
         ? availableHeight * AppSizes.inputAreaMaxHeightRatio
         : double.infinity;
@@ -565,8 +611,7 @@ class HomeScreen extends ConsumerWidget {
         ratioBasedMaxHeight > minHeight ? ratioBasedMaxHeight : minHeight;
     final horizontalMargin =
         compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;
-    final contentPadding =
-        compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;
+    const contentPadding = AppSizes.paddingSmall;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -579,8 +624,9 @@ class HomeScreen extends ConsumerWidget {
             horizontal: horizontalMargin,
             vertical: AppSizes.paddingSmall,
           ),
-          padding: EdgeInsets.all(contentPadding),
+          padding: const EdgeInsets.all(contentPadding),
           decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             border: Border.all(
               color: Theme.of(context).colorScheme.outline,
             ),
@@ -654,105 +700,139 @@ class HomeScreen extends ConsumerWidget {
     WidgetRef ref, {
     required String inputBuffer,
     required PolitenessLevel aiPoliteness,
+    required FontSize fontSize,
     required double gutter,
     required bool compact,
   }) {
     const gap = AppSizes.paddingSmall;
-    final height = compact
-        ? AppSizes.quickResponseButtonHeightCompact
-        : AppSizes.recommendedTapTarget;
+    final scheme = Theme.of(context).colorScheme;
+    final labelSize = 16 * fontSize.scaleFactor;
+    final scaledLabel = MediaQuery.textScalerOf(context).scale(labelSize);
+    final height = (scaledLabel * 1.5 + 16)
+        .clamp(compact ? 48.0 : AppSizes.recommendedTapTarget, double.infinity);
+    final delete = DeleteButton(
+      size: height,
+      showLabel: true,
+      enabled: inputBuffer.isNotEmpty,
+      onPressed: () {
+        ref.read(inputBufferProvider.notifier).deleteLastCharacter();
+      },
+    );
+    final clear = ClearAllButton(
+      size: height,
+      showLabel: true,
+      enabled: inputBuffer.isNotEmpty,
+      onConfirmed: () {
+        ref.read(inputBufferProvider.notifier).clear();
+      },
+    );
+    final ai = AIConversionButton(
+      inputText: inputBuffer,
+      politenessLevel: aiPoliteness,
+      height: height,
+      onConvert: () => _convertWithAI(context, ref, inputBuffer, aiPoliteness),
+      onConversionComplete: (convertedText) {
+        if (!context.mounted) return;
+        _showConversionResult(
+            context, ref, inputBuffer, convertedText, aiPoliteness);
+      },
+      onConversionError: (error) {
+        if (!context.mounted) return;
+        _showAIConversionError(context, error);
+      },
+    );
+    final speak = TTSButton(
+      text: inputBuffer,
+      height: height,
+      labelFontSize: labelSize,
+      speakButtonColor: scheme.primary,
+      onSpeak: () {
+        if (inputBuffer.isNotEmpty) {
+          _saveToHistory(ref, inputBuffer, HistoryType.manualInput);
+        }
+      },
+    );
+    Widget row(List<Widget> buttons) => Row(children: [
+          for (var i = 0; i < buttons.length; i++) ...[
+            if (i > 0) const SizedBox(width: gap),
+            Expanded(child: buttons[i]),
+          ],
+        ]);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: gutter),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            // 片方のグループが折り返しても、もう片方を上端にそろえる。
-            crossAxisAlignment: WrapCrossAlignment.start,
-            spacing: gap,
-            runSpacing: gap,
-            children: [
-              // 内側のグループもWrapにする。外側のWrapは子をまたぐ折り返し
-              // しか制御せず、2ボタン分の幅すら無い極端に狭い幅では
-              // 単一の子の中でオーバーフローするため。
-              Wrap(
-                spacing: gap,
-                runSpacing: gap,
-                children: [
-                  DeleteButton(
-                    size: height,
-                    enabled: inputBuffer.isNotEmpty,
-                    onPressed: () {
-                      ref
-                          .read(inputBufferProvider.notifier)
-                          .deleteLastCharacter();
-                    },
-                  ),
-                  ClearAllButton(
-                    size: height,
-                    enabled: inputBuffer.isNotEmpty,
-                    onConfirmed: () {
-                      ref.read(inputBufferProvider.notifier).clear();
-                    },
-                  ),
-                ],
-              ),
-              Wrap(
-                spacing: gap,
-                runSpacing: gap,
-                children: [
-                  if (enableAIConversion)
-                    AIConversionButton(
-                      inputText: inputBuffer,
-                      politenessLevel: aiPoliteness,
-                      height: height,
-                      onConvert: () => _convertWithAI(
-                        context,
-                        ref,
-                        inputBuffer,
-                        aiPoliteness,
-                      ),
-                      onConversionComplete: (convertedText) {
-                        if (!context.mounted) return;
-                        _showConversionResult(
-                          context,
-                          ref,
-                          inputBuffer,
-                          convertedText,
-                          aiPoliteness,
-                        );
-                      },
-                      onConversionError: (error) {
-                        if (!context.mounted) return;
-                        _showAIConversionError(context, error);
-                      },
-                    ),
-                  TTSButton(
-                    text: inputBuffer,
-                    height: height,
-                    onSpeak: () {
-                      if (inputBuffer.isNotEmpty) {
-                        _saveToHistory(
-                            ref, inputBuffer, HistoryType.manualInput);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
+                  textStyle: WidgetStatePropertyAll(TextStyle(
+                      fontSize: labelSize, fontWeight: FontWeight.w600)),
+                ),
           ),
-          // 文字数不足の案内は出さない。入力のたびに出入りして行の高さが
-          // 変わり、押そうとした文字盤のキーが指の下で動いてしまうため。
-          if (enableAIConversion)
-            const Padding(
-              padding: EdgeInsets.only(top: AppSizes.paddingXSmall),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: OfflineIndicator(),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LayoutBuilder(builder: (context, constraints) {
+              final editMinWidth = scaledLabel * 2 + 38;
+              final voiceMinWidth = scaledLabel * 4 + 48;
+              final fullWidth = voiceMinWidth * (enableAIConversion ? 5 : 4) +
+                  gap * (enableAIConversion ? 3 : 2);
+              // スマホでAIが有効な場合は必ず2段。拡大時はさらに縦に並べる。
+              if (!compact && constraints.maxWidth >= fullWidth) {
+                return Row(children: [
+                  Expanded(child: delete),
+                  const SizedBox(width: gap),
+                  Expanded(child: clear),
+                  const Spacer(),
+                  if (enableAIConversion) ...[
+                    Expanded(child: ai),
+                    const SizedBox(width: gap),
+                  ],
+                  Expanded(child: speak),
+                ]);
+              }
+              final editsFit = constraints.maxWidth >= editMinWidth * 2 + gap;
+              final voicesFit = constraints.maxWidth >= voiceMinWidth * 2 + gap;
+              // AI無し・通常文字のスマホでは読み上げへ十分な幅を配分する。
+              if (!enableAIConversion &&
+                  constraints.maxWidth >=
+                      editMinWidth * 2 + voiceMinWidth + gap * 2) {
+                return Row(children: [
+                  Expanded(child: delete),
+                  const SizedBox(width: gap),
+                  Expanded(child: clear),
+                  const SizedBox(width: gap),
+                  Expanded(flex: 2, child: speak),
+                ]);
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (editsFit)
+                    row([delete, clear])
+                  else ...[delete, const SizedBox(height: gap), clear],
+                  const SizedBox(height: gap),
+                  if (enableAIConversion && voicesFit)
+                    row([ai, speak])
+                  else ...[
+                    if (enableAIConversion) ...[
+                      ai,
+                      const SizedBox(height: gap)
+                    ],
+                    speak,
+                  ],
+                ],
+              );
+            }),
+            if (enableAIConversion)
+              const Padding(
+                padding: EdgeInsets.only(top: AppSizes.paddingXSmall),
+                child: Align(
+                    alignment: Alignment.centerRight,
+                    child: OfflineIndicator()),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1010,9 +1090,10 @@ class _ScrollableHomeControlsState extends State<_ScrollableHomeControls> {
 
   void _move(int direction) {
     final position = _controller.position;
-    // 停止位置の間に操作が隠れないよう、半画面ずつ重ねて移動する。
+    // 拡大した複数行の告知も、停止位置の間で飛び越さない。
+    final step = (position.viewportDimension / 2).clamp(1.0, _buttonHeight);
     _controller.animateTo(
-      (position.pixels + direction * position.viewportDimension / 2)
+      (position.pixels + direction * step)
           .clamp(position.minScrollExtent, position.maxScrollExtent),
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
