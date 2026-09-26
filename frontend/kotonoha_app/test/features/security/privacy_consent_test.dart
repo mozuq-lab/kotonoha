@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  group('NFR-102: AI変換プライバシー通知', () {
+  group('AI変換プライバシー通知', () {
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
     });

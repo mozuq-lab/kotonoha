@@ -667,7 +667,7 @@ void main() {
     // エッジケーステスト
     group('エッジケーステスト', () {
       /// TC-: 同じボタンを連続タップした場合デバウンスが機能する
-      testWidgets('TC-EDGE-001: 連続タップ時にデバウンスが機能する', (tester) async {
+      testWidgets('連続タップ時にデバウンスが機能する', (tester) async {
         // Arrange
         int callCount = 0;
 
@@ -696,7 +696,7 @@ void main() {
       });
 
       /// TC-: TTSサービスがnull/未初期化でもボタンタップが動作する
-      testWidgets('TC-EDGE-008: onTTSSpeakがnullでもボタンタップが動作する', (tester) async {
+      testWidgets('onTTSSpeakがnullでもボタンタップが動作する', (tester) async {
         // Arrange
         bool tapped = false;
 

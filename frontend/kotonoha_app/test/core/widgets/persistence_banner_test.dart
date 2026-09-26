@@ -222,7 +222,7 @@ void main() {
     });
   });
 
-  group('コントラスト比（WCAG 2.1 AA / REQ-5006）', () {
+  group('コントラスト比（WCAG 2.1 AA）', () {
     // なぜ測るか: 色の妥当性をコメントで主張すると、テーマを足したときに
     // 主張だけが残る。実際に計算して確かめる。
     // 範囲の正確な記述: Unavailable は colorScheme.error/onError なので
@@ -610,7 +610,7 @@ void main() {
     });
   });
 
-  group('下書きの保存失敗の告知（NFR-302、L-104）', () {
+  group('下書きの保存失敗の告知（L-104）', () {
     Future<ProviderContainer> pumpWithContainer(
         WidgetTester tester, PersistenceState state) async {
       final container = ProviderContainer(

@@ -41,7 +41,7 @@ void main() {
         expect(
           stopwatch.elapsedMilliseconds,
           lessThan(200),
-          reason: 'タップ応答時間が200ms以内である必要がある（CI環境、本番は100ms: NFR-003）',
+          reason: 'タップ応答時間が200ms以内である必要がある（CI環境、本番は100ms）',
         );
         expect(tappedCharacter, equals('あ'));
       });

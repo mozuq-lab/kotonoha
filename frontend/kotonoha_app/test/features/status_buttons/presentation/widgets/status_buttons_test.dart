@@ -446,7 +446,7 @@ void main() {
     // エッジケーステスト
     group('エッジケーステスト', () {
       /// TC-: 同じボタンを連続タップした場合デバウンスが機能する
-      testWidgets('TC-EDGE-001: 同じボタンを連続タップした場合デバウンスが機能する', (tester) async {
+      testWidgets('同じボタンを連続タップした場合デバウンスが機能する', (tester) async {
         int callCount = 0;
 
         await tester.pumpWidget(
@@ -473,7 +473,7 @@ void main() {
       });
 
       /// TC-: 連続タップ時にonStatusが1回だけ呼ばれる（デバウンス期間内）
-      testWidgets('TC-EDGE-003: 連続タップ時にonStatusが1回だけ呼ばれる', (tester) async {
+      testWidgets('連続タップ時にonStatusが1回だけ呼ばれる', (tester) async {
         int callCount = 0;
 
         await tester.pumpWidget(
@@ -499,7 +499,7 @@ void main() {
       });
 
       /// TC-: 狭い画面幅（320px）でもボタンが44px以上を維持
-      testWidgets('TC-EDGE-004: 狭い画面幅（320px）でもボタンが44px以上を維持', (tester) async {
+      testWidgets('狭い画面幅（320px）でもボタンが44px以上を維持', (tester) async {
         // 狭い画面サイズを設定
         tester.view.physicalSize = const Size(320, 568);
         tester.view.devicePixelRatio = 1.0;
@@ -530,7 +530,7 @@ void main() {
       });
 
       /// TC-: ボタン数が8個の場合に正しく表示される（最小値）
-      testWidgets('TC-EDGE-012: ボタン数が8個の場合に正しく表示される', (tester) async {
+      testWidgets('ボタン数が8個の場合に正しく表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -546,7 +546,7 @@ void main() {
       });
 
       /// TC-: ボタン数が12個の場合に正しく表示される（最大値）
-      testWidgets('TC-EDGE-013: ボタン数が12個の場合に正しく表示される', (tester) async {
+      testWidgets('ボタン数が12個の場合に正しく表示される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -563,7 +563,7 @@ void main() {
       });
 
       /// TC-: ボタン間隔が4px（最小値）で正しく配置される
-      testWidgets('TC-EDGE-014: ボタン間隔が4px以上で正しく配置される', (tester) async {
+      testWidgets('ボタン間隔が4px以上で正しく配置される', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(

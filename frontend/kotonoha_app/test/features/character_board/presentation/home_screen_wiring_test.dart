@@ -250,7 +250,7 @@ void main() {
     });
   });
 
-  group('音量ゼロ警告のTTS側配線 (EDGE-202)', () {
+  group('音量ゼロ警告のTTS側配線', () {
     testWidgets('音量が0の状態で読み上げを実行すると警告が表示される', (tester) async {
       final container = await buildContainer(volume: 0.0);
       addTearDown(container.dispose);
@@ -344,7 +344,7 @@ void main() {
     });
   });
 
-  group('対面表示モードへの導線 (TASK-0052/0053, REQ-501〜503)', () {
+  group('対面表示モードへの導線 (TASK-0052/0053)', () {
     testWidgets('AppBarに対面表示アイコンが表示される', (tester) async {
       final container = await buildContainer();
       addTearDown(container.dispose);
@@ -361,7 +361,7 @@ void main() {
     });
   });
 
-  group('入力上限の告知 (L-73、EDGE-101)', () {
+  group('入力上限の告知 (L-73)', () {
     testWidgets('入力欄が 1000 文字に達すると、入力欄の下に告知が出る（L-73）', (tester) async {
       final container = await buildContainer();
       addTearDown(container.dispose);

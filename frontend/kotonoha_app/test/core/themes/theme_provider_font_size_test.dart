@@ -1,4 +1,4 @@
-/// フォントサイズ設定がテーマの textTheme に反映される（REQ-802・REQ-2007、台帳 L-74）
+/// フォントサイズ設定がテーマの textTheme に反映される（台帳 L-74）
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

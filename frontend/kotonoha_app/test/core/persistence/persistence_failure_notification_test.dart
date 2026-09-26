@@ -49,7 +49,7 @@ void main() {
       expect(tester.getSize(find.byType(PersistenceBanner)).height, 0);
     });
 
-    testWidgets('保存できない状態でも画面本体は表示され、操作を止めない（NFR-301）', (tester) async {
+    testWidgets('保存できない状態でも画面本体は表示され、操作を止めない', (tester) async {
       await _pumpShell(tester, const PersistenceUnavailable());
 
       expect(find.text('画面本体'), findsOneWidget);

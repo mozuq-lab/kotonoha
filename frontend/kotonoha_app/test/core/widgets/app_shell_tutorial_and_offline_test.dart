@@ -17,7 +17,7 @@ import 'package:kotonoha_app/features/network/presentation/widgets/offline_banne
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 
 void main() {
-  group('AppShell 初回チュートリアル配線テスト (TASK-0075 / REQ-3001)', () {
+  group('AppShell 初回チュートリアル配線テスト (TASK-0075)', () {
     testWidgets('チュートリアル未完了（初回起動）の場合、TutorialOverlayが表示される', (tester) async {
       SharedPreferences.setMockInitialValues({});
       final container = ProviderContainer();
@@ -95,7 +95,7 @@ void main() {
     });
   });
 
-  group('AppShell オフラインバナー配線テスト (REQ-1002)', () {
+  group('AppShell オフラインバナー配線テスト', () {
     testWidgets('オフライン状態になると、AppShell配下に常時バナーが表示される', (tester) async {
       SharedPreferences.setMockInitialValues({'tutorial_completed': true});
       final container = ProviderContainer();
@@ -151,7 +151,7 @@ void main() {
       expect(find.text('オフライン - 基本機能のみ利用可能'), findsNothing);
     });
 
-    testWidgets('オンライン復帰時、一時的な復帰通知（EDGE-001）が表示される', (tester) async {
+    testWidgets('オンライン復帰時、一時的な復帰通知が表示される', (tester) async {
       SharedPreferences.setMockInitialValues({'tutorial_completed': true});
       final container = ProviderContainer();
       addTearDown(container.dispose);

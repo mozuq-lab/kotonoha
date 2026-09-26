@@ -70,7 +70,7 @@ void main() {
     });
 
     group('totalCount', () {
-      test('全定型文が50個以上存在すること (REQ-107)', () {
+      test('全定型文が50個以上存在すること', () {
         expect(DefaultPhrases.totalCount, greaterThanOrEqualTo(50));
       });
 

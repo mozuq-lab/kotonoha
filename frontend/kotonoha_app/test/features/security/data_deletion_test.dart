@@ -31,7 +31,7 @@ void main() {
     registerFallbackValue(FakeFavoriteItem());
   });
 
-  group('NFR-103: データ削除機能', () {
+  group('データ削除機能', () {
     late MockHistoryBox mockHistoryBox;
     late MockPresetPhraseBox mockPresetPhraseBox;
     late MockFavoriteBox mockFavoriteBox;

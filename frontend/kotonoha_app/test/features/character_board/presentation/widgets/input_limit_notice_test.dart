@@ -1,4 +1,4 @@
-/// 入力上限の告知（L-73、EDGE-101）
+/// 入力上限の告知（L-73）
 library;
 
 import 'package:flutter/material.dart';

@@ -102,7 +102,7 @@ void main() {
       expect(find.textContaining('180度回転'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('誤操作防止設定セクションが表示される NFR-205', (tester) async {
+    testWidgets('誤操作防止設定セクションが表示される', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -114,7 +114,7 @@ void main() {
       expect(find.text('誤操作防止の設定'), findsOneWidget);
     });
 
-    testWidgets('iOSガイド付きアクセスの説明が表示される NFR-205', (tester) async {
+    testWidgets('iOSガイド付きアクセスの説明が表示される', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -126,7 +126,7 @@ void main() {
       expect(find.textContaining('ガイド付きアクセス'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('Android画面ピン留めの説明が表示される NFR-205', (tester) async {
+    testWidgets('Android画面ピン留めの説明が表示される', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -165,7 +165,7 @@ void main() {
     });
   });
 
-  group('HelpScreen チュートリアル再表示導線 (REQ-3001)', () {
+  group('HelpScreen チュートリアル再表示導線', () {
     testWidgets('「チュートリアルをもう一度見る」ボタンが表示される', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(

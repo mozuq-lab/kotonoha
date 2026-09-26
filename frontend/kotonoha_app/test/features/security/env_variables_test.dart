@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('NFR-105: 環境変数管理', () {
+  group('環境変数管理', () {
     group('TC-105-001: APIキーがソースコードにハードコードされていない', () {
       test('libディレクトリにAnthropicAPIキーがハードコードされていない', () async {
         // lib/ディレクトリ内の全Dartファイルを検索

@@ -711,7 +711,7 @@ void main() {
     // エッジケーステスト
     group('エッジケーステスト', () {
       /// TC-: TTSサービスがnull/未初期化でもボタンタップが動作する
-      testWidgets('TC-EDGE-009: onTTSSpeakがnullでもボタンタップが動作する', (tester) async {
+      testWidgets('onTTSSpeakがnullでもボタンタップが動作する', (tester) async {
         bool tapped = false;
 
         await tester.pumpWidget(
@@ -733,7 +733,7 @@ void main() {
       });
 
       /// TC-: onTTSSpeak未設定でもonPressedは動作する
-      testWidgets('TC-EDGE-011: onTTSSpeak未設定でもonPressedは動作する', (tester) async {
+      testWidgets('onTTSSpeak未設定でもonPressedは動作する', (tester) async {
         bool onPressedCalled = false;
 
         await tester.pumpWidget(

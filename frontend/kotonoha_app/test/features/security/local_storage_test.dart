@@ -31,7 +31,7 @@ void main() {
     registerFallbackValue(FakeFavoriteItem());
   });
 
-  group('NFR-101: ローカルストレージ保存', () {
+  group('ローカルストレージ保存', () {
     late MockHistoryBox mockHistoryBox;
     late MockPresetPhraseBox mockPresetPhraseBox;
     late MockFavoriteBox mockFavoriteBox;
