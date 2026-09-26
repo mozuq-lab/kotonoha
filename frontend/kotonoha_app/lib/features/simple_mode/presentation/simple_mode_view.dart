@@ -82,6 +82,7 @@ class SimpleModeView extends StatelessWidget {
                     onResponse: onQuickResponse,
                     onTTSSpeak: onTTSSpeak,
                     fontSize: fontSize,
+                    illustrated: true,
                   ),
                   if (topFavorites.isNotEmpty) ...[
                     const SizedBox(height: AppSizes.paddingLarge),
