@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -46,7 +47,7 @@ void main() {
       await tester.pumpWidget(buildTestApp(router));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.input), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.arrow_right_square), findsOneWidget);
       expect(find.text('入力欄へ'), findsOneWidget);
     });
 

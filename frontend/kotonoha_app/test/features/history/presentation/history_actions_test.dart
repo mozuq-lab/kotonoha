@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
@@ -290,7 +291,7 @@ void main() {
         // 実装に応じて検証方法を調整
         // 例: 読み上げ中アイコンの存在確認
         expect(
-          find.byIcon(Icons.volume_up),
+          find.byIcon(CupertinoIcons.speaker_2),
           findsOneWidget,
           reason: '読み上げ中のアイコンが表示される必要がある',
         );
@@ -333,7 +334,7 @@ void main() {
 
         // Then: 停止ボタンが表示される
         expect(
-          find.byIcon(Icons.stop),
+          find.byIcon(CupertinoIcons.stop_fill),
           findsOneWidget,
           reason: '読み上げ中は停止ボタンが表示される必要がある',
         );
@@ -385,12 +386,12 @@ void main() {
 
         // Then: 読み上げ中（停止）アイコンはちょうど1つ（項目Aのみ）
         expect(
-          find.byIcon(Icons.stop),
+          find.byIcon(CupertinoIcons.stop_fill),
           findsOneWidget,
           reason: '読み上げ中表示はタップした1項目のみであるべき',
         );
         expect(
-          find.byIcon(Icons.volume_up),
+          find.byIcon(CupertinoIcons.speaker_2),
           findsOneWidget,
           reason: '読み上げ中アイコンはタップした1項目のみであるべき',
         );
@@ -436,7 +437,7 @@ void main() {
         );
 
         // When: 削除ボタンをタップする
-        await tester.tap(find.byIcon(Icons.delete).first);
+        await tester.tap(find.byTooltip('削除').first);
         await tester.pumpAndSettle();
 
         // Then: 確認ダイアログは表示されず、即座に削除される
@@ -484,7 +485,7 @@ void main() {
         );
 
         // When: 全削除ボタンをタップしてダイアログを表示する
-        await tester.tap(find.byIcon(Icons.delete_sweep));
+        await tester.tap(find.byTooltip('全削除'));
         await tester.pumpAndSettle();
 
         // ダイアログが表示されることを確認
@@ -545,7 +546,7 @@ void main() {
 
         // When: 1件目の履歴を削除する
         // 改善: 個別削除は確認ダイアログを廃止したため、削除ボタンタップのみで即実行される
-        await tester.tap(find.byIcon(Icons.delete).first);
+        await tester.tap(find.byTooltip('削除').first);
         await tester.pumpAndSettle();
 
         // Then: リストが自動的に更新される
@@ -589,10 +590,10 @@ void main() {
         );
 
         // 全削除ボタンが表示されることを確認
-        expect(find.byIcon(Icons.delete_sweep), findsOneWidget);
+        expect(find.byTooltip('全削除'), findsOneWidget);
 
         // When: 全削除を実行する（全削除ダイアログで「すべて削除」選択）
-        await tester.tap(find.byIcon(Icons.delete_sweep));
+        await tester.tap(find.byTooltip('全削除'));
         await tester.pumpAndSettle();
 
         await tester.tap(confirmationButton('削除'));

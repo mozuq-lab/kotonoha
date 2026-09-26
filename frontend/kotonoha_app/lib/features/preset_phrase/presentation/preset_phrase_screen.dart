@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_add_dialog.dart';
@@ -65,7 +66,7 @@ class _PresetPhraseScreenState extends ConsumerState<PresetPhraseScreen>
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context),
         tooltip: '定型文を追加',
-        child: const Icon(Icons.add),
+        child: const Icon(CupertinoIcons.plus),
       ),
     );
   }

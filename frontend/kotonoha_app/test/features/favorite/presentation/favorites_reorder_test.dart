@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
@@ -85,12 +86,12 @@ void main() {
       );
 
       // When: 編集ボタンをタップする
-      await tester.tap(find.byIcon(Icons.edit));
+      await tester.tap(find.byIcon(CupertinoIcons.pencil));
       await tester.pumpAndSettle();
 
-      // Then: ドラッグハンドル（Icons.drag_handle）が表示される
+      // Then: ドラッグハンドル（CupertinoIcons.line_horizontal_3）が表示される
       expect(
-        find.byIcon(Icons.drag_handle),
+        find.byIcon(CupertinoIcons.line_horizontal_3),
         findsNWidgets(3),
         reason: '編集モード時にドラッグハンドルが表示される必要がある',
       );
@@ -118,12 +119,13 @@ void main() {
       );
 
       // 編集モードに入る
-      await tester.tap(find.byIcon(Icons.edit));
+      await tester.tap(find.byIcon(CupertinoIcons.pencil));
       await tester.pumpAndSettle();
 
       // When: 1番目の項目を3番目にドラッグ
       // ReorderableListViewのドラッグテストはハンドルを使用する
-      final firstDragHandle = find.byIcon(Icons.drag_handle).first;
+      final firstDragHandle =
+          find.byIcon(CupertinoIcons.line_horizontal_3).first;
 
       // ドラッグ開始
       final gesture = await tester.startGesture(
@@ -168,19 +170,19 @@ void main() {
       );
 
       // 編集モードに入る
-      await tester.tap(find.byIcon(Icons.edit));
+      await tester.tap(find.byIcon(CupertinoIcons.pencil));
       await tester.pumpAndSettle();
 
       // ドラッグハンドルが表示されていることを確認
-      expect(find.byIcon(Icons.drag_handle), findsNWidgets(2));
+      expect(find.byIcon(CupertinoIcons.line_horizontal_3), findsNWidgets(2));
 
       // When: 完了ボタン（Icons.check）をタップする
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byTooltip('完了'));
       await tester.pumpAndSettle();
 
       // Then: ドラッグハンドルが非表示になる
       expect(
-        find.byIcon(Icons.drag_handle),
+        find.byIcon(CupertinoIcons.line_horizontal_3),
         findsNothing,
         reason: '編集モード終了時にドラッグハンドルが非表示になる必要がある',
       );
@@ -209,7 +211,7 @@ void main() {
 
       // Then: 編集ボタンが表示される
       expect(
-        find.byIcon(Icons.edit),
+        find.byIcon(CupertinoIcons.pencil),
         findsOneWidget,
         reason: 'お気に入りが2件以上存在する場合、編集ボタンが表示される必要がある',
       );
@@ -237,7 +239,7 @@ void main() {
 
       // Then: 編集ボタンが表示されない
       expect(
-        find.byIcon(Icons.edit),
+        find.byIcon(CupertinoIcons.pencil),
         findsNothing,
         reason: 'お気に入りが1件のみの場合、編集ボタンが非表示である必要がある',
       );
@@ -262,7 +264,7 @@ void main() {
 
       // Then: 編集ボタンが表示されない
       expect(
-        find.byIcon(Icons.edit),
+        find.byIcon(CupertinoIcons.pencil),
         findsNothing,
         reason: 'お気に入りが0件の場合、編集ボタンが非表示である必要がある',
       );
@@ -287,12 +289,12 @@ void main() {
       );
 
       // When: 編集モードに入る
-      await tester.tap(find.byIcon(Icons.edit));
+      await tester.tap(find.byIcon(CupertinoIcons.pencil));
       await tester.pumpAndSettle();
 
       // Then: 上へ/下へ移動ボタンが表示される
-      expect(find.byIcon(Icons.arrow_upward), findsNWidgets(3));
-      expect(find.byIcon(Icons.arrow_downward), findsNWidgets(3));
+      expect(find.byIcon(CupertinoIcons.arrow_up), findsNWidgets(3));
+      expect(find.byIcon(CupertinoIcons.arrow_down), findsNWidgets(3));
     });
 
     /// TC-A11Y-002: 先頭項目の「上へ移動」と末尾項目の「下へ移動」は無効化される
@@ -312,7 +314,7 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byIcon(Icons.edit));
+      await tester.tap(find.byIcon(CupertinoIcons.pencil));
       await tester.pumpAndSettle();
 
       // 先頭項目の上移動ボタンは無効（onPressed == null）
@@ -356,7 +358,7 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byIcon(Icons.edit));
+      await tester.tap(find.byIcon(CupertinoIcons.pencil));
       await tester.pumpAndSettle();
 
       // When: 先頭項目(test_1)の下へ移動ボタンをタップ

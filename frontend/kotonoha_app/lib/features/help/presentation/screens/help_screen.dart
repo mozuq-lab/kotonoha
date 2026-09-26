@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
@@ -40,7 +41,7 @@ class HelpScreen extends ConsumerWidget {
             // 基本操作セクション
             const HelpSectionWidget(
               title: '基本操作',
-              icon: Icons.touch_app,
+              icon: CupertinoIcons.hand_draw,
               children: [
                 _HelpItem(
                   title: '文字盤で入力',
@@ -66,7 +67,7 @@ class HelpScreen extends ConsumerWidget {
             // 便利な機能セクション
             const HelpSectionWidget(
               title: '便利な機能',
-              icon: Icons.lightbulb_outline,
+              icon: CupertinoIcons.lightbulb,
               children: [
                 _HelpItem(
                   title: '対面表示モード',
@@ -95,7 +96,7 @@ class HelpScreen extends ConsumerWidget {
             // 誤操作防止設定セクション
             const HelpSectionWidget(
               title: '誤操作防止の設定',
-              icon: Icons.security,
+              icon: CupertinoIcons.shield,
               children: [
                 _HelpItem(
                   title: 'iOSの場合（ガイド付きアクセス）',
@@ -120,7 +121,7 @@ class HelpScreen extends ConsumerWidget {
             // 設定セクション
             const HelpSectionWidget(
               title: '設定について',
-              icon: Icons.settings,
+              icon: CupertinoIcons.gear_alt,
               children: [
                 _HelpItem(
                   title: '文字サイズ・テーマ',
@@ -141,7 +142,7 @@ class HelpScreen extends ConsumerWidget {
             // 初回起動時に表示されるチュートリアルを、いつでも再度見られる導線。
             HelpSectionWidget(
               title: 'チュートリアル',
-              icon: Icons.school,
+              icon: CupertinoIcons.book,
               children: [
                 const _HelpItem(
                   title: '基本の使い方をもう一度確認する',

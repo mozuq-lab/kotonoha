@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/face_to_face_provider.dart';
 
@@ -39,7 +40,7 @@ class RotationToggleButton extends ConsumerWidget {
             height: 60,
             alignment: Alignment.center,
             child: Icon(
-              Icons.screen_rotation,
+              CupertinoIcons.rotate_right,
               size: 32,
               color: state.isRotated180
                   ? Theme.of(context).colorScheme.onPrimaryContainer

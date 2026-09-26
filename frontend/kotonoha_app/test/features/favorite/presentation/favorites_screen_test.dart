@@ -301,7 +301,7 @@ void main() {
 
         // 全削除ボタンが非表示になる
         expect(
-          find.byIcon(Icons.delete_sweep),
+          find.byTooltip('全削除'),
           findsNothing,
           reason: '空状態では全削除ボタンが非表示である必要がある',
         );
@@ -325,14 +325,14 @@ void main() {
 
         // Then: 全削除ボタンが非表示になる
         expect(
-          find.byIcon(Icons.delete_sweep),
+          find.byTooltip('全削除'),
           findsNothing,
           reason: '全削除ボタンが非表示である必要がある',
         );
 
-        // 個別削除ボタン（Icons.delete）も表示されない
+        // 個別削除ボタンも表示されない
         expect(
-          find.byIcon(Icons.delete),
+          find.byTooltip('削除'),
           findsNothing,
           reason: '個別削除ボタンが表示されない必要がある',
         );
@@ -410,7 +410,7 @@ void main() {
         );
 
         // When: お気に入り項目の削除ボタンをタップする
-        await tester.tap(find.byIcon(Icons.delete));
+        await tester.tap(find.byTooltip('削除'));
         await tester.pumpAndSettle();
 
         // Then: 確認ダイアログが表示される
@@ -481,7 +481,7 @@ void main() {
         );
 
         // When: 削除ボタンをタップして確認ダイアログを開き、「キャンセル」をタップする
-        await tester.tap(find.byIcon(Icons.delete));
+        await tester.tap(find.byTooltip('削除'));
         await tester.pumpAndSettle();
         await tester.tap(confirmationButton('キャンセル'));
         await tester.pumpAndSettle();
@@ -526,7 +526,7 @@ void main() {
         );
 
         // When: 削除ボタンをタップして確認ダイアログを開く
-        await tester.tap(find.byIcon(Icons.delete));
+        await tester.tap(find.byTooltip('削除'));
         await tester.pumpAndSettle();
 
         // ダイアログ外（バリア部分）をタップする
@@ -569,7 +569,7 @@ void main() {
         );
 
         // 確認ダイアログを経て削除する
-        await tester.tap(find.byIcon(Icons.delete));
+        await tester.tap(find.byTooltip('削除'));
         await tester.pumpAndSettle();
         await tester.tap(confirmationButton('削除'));
         await tester.pumpAndSettle();
@@ -607,7 +607,7 @@ void main() {
         );
 
         // When: 全削除ボタンをタップしてダイアログを表示する
-        await tester.tap(find.byIcon(Icons.delete_sweep));
+        await tester.tap(find.byTooltip('全削除'));
         await tester.pumpAndSettle();
 
         // ダイアログ外（バリア部分）をタップする
@@ -646,7 +646,7 @@ void main() {
 
         // Then: AppBarのアクションエリアに全削除ボタン（またはアイコン）が表示される
         expect(
-          find.byIcon(Icons.delete_sweep),
+          find.byTooltip('全削除'),
           findsOneWidget,
           reason: '全削除ボタンが表示される必要がある',
         );
@@ -671,7 +671,7 @@ void main() {
         );
 
         // When: 全削除ボタンをタップする
-        await tester.tap(find.byIcon(Icons.delete_sweep));
+        await tester.tap(find.byTooltip('全削除'));
         await tester.pumpAndSettle();
 
         // Then: AlertDialogが表示される

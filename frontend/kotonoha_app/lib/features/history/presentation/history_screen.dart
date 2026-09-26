@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
@@ -86,7 +87,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         actions: histories.isNotEmpty
             ? [
                 IconButton(
-                  icon: const Icon(Icons.delete_sweep),
+                  icon: const Icon(CupertinoIcons.trash),
                   onPressed: () => _showDeleteAllDialog(context),
                   tooltip: HistoryUIConstants.deleteAllTooltip,
                 ),
@@ -194,7 +195,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.favorite_border),
+                leading: const Icon(CupertinoIcons.heart),
                 title: const Text(HistoryUIConstants.addToFavoriteLabel),
                 onTap: () {
                   Navigator.of(sheetContext).pop();

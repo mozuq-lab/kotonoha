@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:go_router/go_router.dart';
 
 import 'package:kotonoha_app/core/router/app_router.dart';
@@ -92,9 +93,9 @@ class _HelpListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.help_outline),
+      leading: const Icon(CupertinoIcons.question_circle),
       title: const Text('使い方'),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const Icon(CupertinoIcons.chevron_right),
       onTap: onTap,
     );
   }

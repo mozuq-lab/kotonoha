@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -85,7 +86,7 @@ void main() {
       );
 
       // 結果検証: お気に入りアイコンが表示されることを確認
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget);
     });
 
     // タップ時にコールバックが発火する
@@ -277,7 +278,7 @@ void main() {
 
       // 実際の処理実行: お気に入りアイコンをタップ
       // お気に入りでない場合はstar_borderアイコン
-      await tester.tap(find.byIcon(Icons.star_border));
+      await tester.tap(find.byIcon(CupertinoIcons.heart));
       await tester.pumpAndSettle();
 
       // 結果検証: コールバックが呼び出されたことを確認

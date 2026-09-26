@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_list_item.dart';
 
@@ -12,7 +13,7 @@ import 'helpers/test_helpers.dart';
 /// 定型文画面にナビゲートするヘルパー
 Future<void> navigateToPresetPhrases(WidgetTester tester) async {
   // AppBarのアイコンボタン（定型文）をタップ
-  final presetPhraseButton = find.byIcon(Icons.format_list_bulleted);
+  final presetPhraseButton = find.byTooltip('定型文');
   expect(presetPhraseButton, findsOneWidget);
   await tester.tap(presetPhraseButton);
   await tester.pumpAndSettle();
@@ -67,12 +68,12 @@ void main() {
 
         // 実際の処理実行: 任意の定型文をお気に入りに登録
         // お気に入りアイコン（星）を探してタップ（まず最初の定型文のお気に入りボタンを見つける）
-        final favoriteIcon = find.byIcon(Icons.star_border).first;
+        final favoriteIcon = find.byIcon(CupertinoIcons.heart).first;
         await tester.tap(favoriteIcon);
         await tester.pumpAndSettle();
 
         // 結果検証: お気に入りマーク（塗りつぶされた星アイコン）が表示される
-        expect(find.byIcon(Icons.star), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget);
 
         // 結果検証: お気に入りセクションヘッダーが表示される
         expect(find.text('お気に入り'), findsOneWidget);
@@ -230,7 +231,7 @@ void main() {
         await navigateToPresetPhrases(tester);
 
         // 実際の処理実行: 追加ボタン（FAB）をタップ
-        final addButton = find.byIcon(Icons.add);
+        final addButton = find.byIcon(CupertinoIcons.plus);
         await tester.tap(addButton);
         await tester.pumpAndSettle();
 
@@ -262,7 +263,7 @@ void main() {
         await navigateToPresetPhrases(tester);
 
         // 実際の処理実行: 定型文の編集ボタンをタップ
-        final editButton = find.byIcon(Icons.edit).first;
+        final editButton = find.byIcon(CupertinoIcons.pencil).first;
         await tester.tap(editButton);
         await tester.pumpAndSettle();
 
@@ -298,7 +299,7 @@ void main() {
         expect(targetPhrase, findsOneWidget);
 
         // 実際の処理実行: 削除ボタン（ゴミ箱アイコン）をタップ
-        final deleteButton = find.byIcon(Icons.delete_outline).first;
+        final deleteButton = find.byTooltip('削除').first;
         await tester.tap(deleteButton);
         await tester.pumpAndSettle();
 
@@ -326,8 +327,8 @@ void main() {
         // .first を使う理由: 一覧には複数の定型文があり星アイコンも複数ある。
         // findsOneWidget は「1件だけ」を要求するので必ず落ちる。
         // 先頭の1つを対象にする意図なので、その1つが存在することを確認する。
-        await scrollIntoView(tester, find.byIcon(Icons.star_border));
-        final favoriteIcon = find.byIcon(Icons.star_border).first;
+        await scrollIntoView(tester, find.byIcon(CupertinoIcons.heart));
+        final favoriteIcon = find.byIcon(CupertinoIcons.heart).first;
         expect(favoriteIcon, findsOneWidget);
 
         // 実際の処理実行: お気に入りボタン（星アイコン）をタップ
@@ -338,18 +339,18 @@ void main() {
         // findsWidgets を使う理由: お気に入りに登録すると、一覧のアイテム側と
         // 画面上部の「お気に入り」セクション側の両方に星が出る。2件になるのが
         // 正しい挙動であり、findsOneWidget は必ず落ちる。
-        expect(find.byIcon(Icons.star), findsWidgets);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsWidgets);
 
         // 結果検証: お気に入りセクションが表示される
         expect(find.text('お気に入り'), findsOneWidget);
 
         // 実際の処理実行: もう一度タップしてお気に入り解除
-        final filledStar = find.byIcon(Icons.star).first;
+        final filledStar = find.byIcon(CupertinoIcons.heart_fill).first;
         await tester.tap(filledStar);
         await tester.pumpAndSettle();
 
         // 結果検証: 星アイコンが元に戻る
-        expect(find.byIcon(Icons.star_border), findsWidgets);
+        expect(find.byIcon(CupertinoIcons.heart), findsWidgets);
       },
     );
   });
@@ -368,7 +369,7 @@ void main() {
         // 実際の処理実行: すべての定型文を削除（最初の定型文を繰り返し削除）
         // 注: パフォーマンス上、最大10件のみ削除
         for (var i = 0; i < 10; i++) {
-          final deleteButton = find.byIcon(Icons.delete_outline);
+          final deleteButton = find.byTooltip('削除');
           if (deleteButton.evaluate().isEmpty) break;
 
           await tester.tap(deleteButton.first);
@@ -384,7 +385,7 @@ void main() {
         );
 
         // 結果検証: 追加ボタンは表示され、新規作成が可能
-        expect(find.byIcon(Icons.add), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.plus), findsOneWidget);
 
         // 結果検証: アプリがクラッシュしないことを確認
         await tester.pumpAndSettle();
@@ -406,7 +407,7 @@ void main() {
         expect(targetPhrase, findsOneWidget);
 
         // 実際の処理実行: 削除ボタン（ゴミ箱アイコン）をタップ
-        final deleteButtons = find.byIcon(Icons.delete_outline);
+        final deleteButtons = find.byTooltip('削除');
         // 「こんにちは」の削除ボタンを見つける（インデックスは実装依存）
         await tester.tap(deleteButtons.at(1));
         await tester.pumpAndSettle();
@@ -456,7 +457,7 @@ void main() {
               !await _canReach(tester, target)) {
             continue;
           }
-          await tapIconInPhraseRow(tester, target, Icons.delete_outline);
+          await tapIconInPhraseRow(tester, target, CupertinoIcons.trash);
           await tapDialogButton(tester, '削除');
         }
 
@@ -485,7 +486,7 @@ void main() {
         await navigateToPresetPhrases(tester);
 
         // 実際の処理実行: 追加ボタンをタップ
-        final addButton = find.byIcon(Icons.add);
+        final addButton = find.byIcon(CupertinoIcons.plus);
         await tester.tap(addButton);
         await tester.pumpAndSettle();
 
@@ -500,7 +501,7 @@ void main() {
 
         // 結果検証: 500文字の定型文が保存される
         // （一覧表示では省略される可能性があるため、編集画面で確認）
-        final editButton = find.byIcon(Icons.edit).last;
+        final editButton = find.byIcon(CupertinoIcons.pencil).last;
         await tester.tap(editButton);
         await tester.pumpAndSettle();
 
@@ -519,7 +520,7 @@ void main() {
         await navigateToPresetPhrases(tester);
 
         // 実際の処理実行: 追加ボタンをタップ
-        final addButton = find.byIcon(Icons.add);
+        final addButton = find.byIcon(CupertinoIcons.plus);
         await tester.tap(addButton);
         await tester.pumpAndSettle();
 
@@ -617,7 +618,7 @@ void main() {
         await navigateToPresetPhrases(tester);
 
         // 実際の処理実行: 新規定型文「永続化テスト」を追加
-        final addButton = find.byIcon(Icons.add);
+        final addButton = find.byIcon(CupertinoIcons.plus);
         await tester.tap(addButton);
         await tester.pumpAndSettle();
 
@@ -654,7 +655,7 @@ void main() {
 
         // 実際の処理実行: 通常定型文「こんにちは」をお気に入りに登録
         // 「こんにちは」の星アイコンを見つけてタップ
-        final allStarBorders = find.byIcon(Icons.star_border);
+        final allStarBorders = find.byIcon(CupertinoIcons.heart);
         // 注: インデックスは実装依存（仮に2番目とする）
         if (allStarBorders.evaluate().length >= 2) {
           await tester.tap(allStarBorders.at(1));
@@ -662,7 +663,7 @@ void main() {
         }
 
         // 前提条件確認: お気に入りマークが表示されることを確認
-        expect(find.byIcon(Icons.star), findsWidgets);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsWidgets);
 
         // 実際の処理実行: アプリを再起動
         // pumpApp の再呼び出しでは要素が更新されるだけで画面遷移も残る
@@ -672,7 +673,7 @@ void main() {
         await navigateToPresetPhrases(tester);
 
         // 結果検証: お気に入りマーク（星アイコン）が表示される
-        expect(find.byIcon(Icons.star), findsWidgets);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsWidgets);
 
         // 結果検証: お気に入りセクションが表示される
         expect(find.text('お気に入り'), findsOneWidget);
@@ -692,7 +693,7 @@ void main() {
         await navigateToPresetPhrases(tester);
 
         // ステップ1: 新規定型文「統合テスト」を追加（日常カテゴリ）
-        final addButton = find.byIcon(Icons.add);
+        final addButton = find.byIcon(CupertinoIcons.plus);
         await tester.tap(addButton);
         await tester.pumpAndSettle();
 
@@ -708,20 +709,20 @@ void main() {
         // ステップ2: お気に入りに登録
         // 行で特定する理由: `.last` はスクロールのたびに指す要素が変わり
         // 画面外を指し続ける（Issue #84）。追加した定型文の行を名指しする。
-        await tapIconInPhraseRow(tester, '統合テスト', Icons.star_border);
+        await tapIconInPhraseRow(tester, '統合テスト', CupertinoIcons.heart);
 
         // 結果検証: お気に入り登録が成功し、一覧上部に移動する
         // スクロールが要る理由: 登録すると項目は一覧**上部**の
         // 「お気に入り」セクションへ移動するが、ビューポートは元の位置に
         // 残るため、移動先は ListView.builder に構築されていない。
-        // `find.byIcon(Icons.star)` は 0 件を返し、「登録されていない」ように
+        // `find.byIcon(CupertinoIcons.heart_fill)` は 0 件を返し、「登録されていない」ように
         // 見える（Issue #84）。
         await scrollIntoView(tester, find.text('お気に入り'));
         expect(find.text('お気に入り'), findsOneWidget);
 
         await scrollIntoView(tester, find.text('統合テスト'));
         expect(
-          iconInPhraseRow('統合テスト', Icons.star),
+          iconInPhraseRow('統合テスト', CupertinoIcons.heart_fill),
           findsOneWidget,
           reason: '「統合テスト」の行の星が塗りつぶしになっていない',
         );

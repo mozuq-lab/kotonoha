@@ -10,6 +10,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'app_visual_theme.dart';
 
 final _highContrastButtonSide =
     WidgetStateProperty.resolveWith<BorderSide?>((states) {
@@ -27,7 +28,10 @@ final _highContrastButtonSide =
 /// フォントサイズ: AppSizesの定義に従う
 /// テキストの太さ: 視認性向上のためやや太め（w600）
 /// 境界線: 2px以上の黒色で明確な区別
-final ThemeData highContrastTheme = ThemeData(
+final ThemeData highContrastTheme =
+    appVisualTheme(_baseHighContrastTheme, highContrast: true);
+
+final ThemeData _baseHighContrastTheme = ThemeData(
   brightness: Brightness.light,
   visualDensity: VisualDensity.standard,
   materialTapTargetSize: MaterialTapTargetSize.padded,

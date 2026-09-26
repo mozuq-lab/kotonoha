@@ -90,7 +90,7 @@ void main() {
     expect(find.text(keptContent), findsOneWidget);
 
     // When: 消したい方の削除ボタンを押す
-    final deleteButtons = find.byIcon(Icons.delete);
+    final deleteButtons = find.byTooltip('削除');
     expect(deleteButtons, findsNWidgets(2), reason: '2件とも削除できること');
 
     // どちらを消すか: 対象のカードの中の削除ボタンに限定する。
@@ -100,7 +100,7 @@ void main() {
         of: find.text(deletedContent),
         matching: find.byType(Card),
       ),
-      matching: find.byIcon(Icons.delete),
+      matching: find.byTooltip('削除'),
     );
     expect(targetDelete, findsOneWidget);
 

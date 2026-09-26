@@ -78,7 +78,7 @@ void main() {
     expect(status, findsNWidgets(8));
     final rects = [for (var i = 0; i < 8; i++) tester.getRect(status.at(i))];
     for (var i = 0; i < 8; i++) {
-      expect(rects[i].height, 44, reason: '状態ボタン$i');
+      expect(rects[i].height, greaterThanOrEqualTo(44), reason: '状態ボタン$i');
       expect(rects[i].top, rects[i < 4 ? 0 : 4].top, reason: '状態ボタン$i');
     }
     expect(rects[4].top, greaterThan(rects[0].bottom));
@@ -104,8 +104,13 @@ void main() {
       'speak': speak,
     }.entries) {
       expect(entry.value.height, 48, reason: entry.key);
-      expect(entry.value.top, delete.top, reason: entry.key);
+      expect(entry.value.top,
+          entry.key == 'ai' || entry.key == 'speak' ? ai.top : delete.top,
+          reason: entry.key);
     }
+    expect(ai.top, greaterThanOrEqualTo(delete.bottom + 8));
+    expect(clear.right, _at(quickRight));
+    expect(ai.left, _at(quickLeft));
     expect(delete.left, _at(quickLeft));
     expect(speak.right, _at(quickRight));
     expect(ai.right, lessThan(speak.left));

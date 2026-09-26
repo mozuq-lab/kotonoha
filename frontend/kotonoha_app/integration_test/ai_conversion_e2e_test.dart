@@ -7,6 +7,7 @@ library;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/ai_conversion/data/api/ai_conversion_api_client.dart';
 import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_provider.dart';
@@ -35,7 +36,7 @@ Future<void> waitForAIConversionDialog(WidgetTester tester) async {
 
 /// 履歴画面にナビゲートするヘルパー
 Future<void> navigateToHistory(WidgetTester tester) async {
-  final historyButton = find.byIcon(Icons.history);
+  final historyButton = find.byIcon(CupertinoIcons.clock);
   expect(historyButton, findsOneWidget);
   await tester.tap(historyButton);
   await tester.pumpAndSettle();
