@@ -91,12 +91,20 @@ void main() {
   });
 
   test('初回だけ必須8件を作り、削除後の再起動では復活しない', () async {
+    const expected = ['トイレ', '暑い', '寒い', '水', '眠い', '助けて', '待って', '痛い'];
     var repository = FavoriteRepository(box: box);
     await repository.ensureInitialFavorites();
     expect(
       repository.loadAllSortedSync().map((item) => item.content).toList(),
-      ['痛い', 'トイレ', '暑い', '寒い', '水', '眠い', '助けて', '待って'],
+      expected,
     );
+    await box.close();
+    box = await Hive.openBox<FavoriteItem>('favorites');
+    repository = FavoriteRepository(box: box);
+    expect(
+        repository.loadAllSortedSync().map((item) => item.content), expected);
+    expect(repository.loadAllSortedSync().first.colorValue, 0xFF2196F3);
+    expect(repository.loadAllSortedSync().last.colorValue, 0xFFFF9800);
 
     await repository.deleteAll();
     await box.close();
@@ -144,7 +152,7 @@ void main() {
       await FavoriteRepository(box: box).ensureInitialFavorites();
       var container = ProviderContainer();
       final notifier = container.read(favoriteProvider.notifier);
-      await notifier.deleteFavorite('initial-favorite-0');
+      await notifier.deleteFavorite('initial-favorite-1');
       switch (source) {
         case 'input':
           await notifier.addFavorite('最後に追加');
@@ -153,7 +161,7 @@ void main() {
         case 'preset_phrase':
           await notifier.addFavoriteFromPresetPhrase('最後に追加', 'preset-id');
       }
-      const expected = ['トイレ', '暑い', '寒い', '水', '眠い', '助けて', '待って', '最後に追加'];
+      const expected = ['暑い', '寒い', '水', '眠い', '助けて', '待って', '痛い', '最後に追加'];
       expect(container.read(favoriteProvider).favorites.map((f) => f.content),
           expected);
       container.dispose();
@@ -194,12 +202,12 @@ void main() {
       await container.read(favoriteProvider.notifier).loadFavorites();
     });
     await tester.pump();
-    expect(container.read(favoriteProvider).favorites[1].content, '寒い');
+    expect(container.read(favoriteProvider).favorites[0].content, '寒い');
     await tester.runAsync(() async {
       await box.close();
       box = await Hive.openBox<FavoriteItem>('favorites');
     });
-    expect(FavoriteRepository(box: box).loadAllSortedSync()[1].content, '寒い');
+    expect(FavoriteRepository(box: box).loadAllSortedSync()[0].content, '寒い');
     expect(tester.takeException(), isNull);
   });
 
@@ -317,7 +325,7 @@ void main() {
     expect(shortcuts, hasLength(8));
     expect(shortcuts.first.favorite.content, 'ありがとう');
     expect(shortcuts.map((button) => button.favorite.content),
-        isNot(contains('待って')));
+        isNot(contains('痛い')));
   });
 
   testWidgets('お気に入り box への保存失敗を登録成功と表示しない', (tester) async {

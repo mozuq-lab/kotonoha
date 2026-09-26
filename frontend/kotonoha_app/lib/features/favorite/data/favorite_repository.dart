@@ -80,7 +80,8 @@ class FavoriteRepository {
         id: id,
         content: _initialContents[index],
         createdAt: now,
-        displayOrder: index,
+        // 項目のIDと色は保ち、表示順だけ「痛い」を末尾にする。
+        displayOrder: index == 0 ? _initialContents.length - 1 : index - 1,
         colorValue: colorValue,
       );
     }

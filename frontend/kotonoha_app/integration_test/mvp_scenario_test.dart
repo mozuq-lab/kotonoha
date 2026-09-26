@@ -224,6 +224,13 @@ void main() {
     await _waitQuiet(tester);
     final status = _recordSpeech(tester);
     expect(find.byType(FavoriteShortcutButton), findsNWidgets(8));
+    expect(
+      tester
+          .widgetList<FavoriteShortcutButton>(
+              find.byType(FavoriteShortcutButton))
+          .map((button) => button.favorite.content),
+      ['トイレ', '暑い', '寒い', '水', '眠い', '助けて', '待って', '痛い'],
+    );
     await tester.tap(find.descendant(
       of: find.byType(FavoriteShortcutButton),
       matching: find.text('痛い'),
