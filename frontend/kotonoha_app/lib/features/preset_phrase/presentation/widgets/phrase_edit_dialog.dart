@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/persistence/programming_error_report.dart';
+import 'package:kotonoha_app/features/preset_phrase/domain/phrase_constants.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/phrase_update_result.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/preset_phrase_validator.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_form_content.dart';
@@ -79,12 +80,15 @@ class _PhraseEditDialogState extends State<PhraseEditDialog> {
     var result = PhraseUpdateResult.failed;
     try {
       // 更新処理: updatedAt自動更新
-      result = await widget.onSave?.call(widget.phrase.copyWith(
-            content: _contentController.text,
-            category: _selectedCategory,
-            updatedAt: DateTime.now(),
-          )) ??
-          PhraseUpdateResult.failed;
+      final pending = widget.onSave?.call(widget.phrase.copyWith(
+        content: _contentController.text,
+        category: _selectedCategory,
+        updatedAt: DateTime.now(),
+      ));
+      // 書込が返らなくても凍結したままにしない（L-197）。上限を過ぎたら失敗と同じに扱う
+      if (pending != null) {
+        result = await pending.timeout(PhraseConstants.saveTimeout);
+      }
     } catch (e, s) {
       // 入力を残し、同じ場所で再試行できるようにする。catchは狭めない
       // （`_saving` が戻らなくなる方が悪い）。Errorだけログへ流す。

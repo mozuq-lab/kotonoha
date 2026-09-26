@@ -1,7 +1,10 @@
 /// PhraseEditDialog ウィジェットテスト
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/features/preset_phrase/domain/phrase_constants.dart';
 import 'package:kotonoha_app/features/preset_phrase/domain/phrase_update_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_edit_dialog.dart';
@@ -339,5 +342,44 @@ void main() {
       expect(saveCallbackCalled, isFalse);
       expect(find.byType(PhraseEditDialog), findsNothing);
     });
+  });
+
+  // 台帳 L-197（追加と同じ）
+  testWidgets('保存が返らなくても、上限の時間で凍結が解け、編集内容を残して閉じられる', (tester) async {
+    final never = Completer<PhraseUpdateResult>();
+    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+      return TextButton(
+        onPressed: () => showDialog<void>(
+          context: context,
+          builder: (_) => PhraseEditDialog(
+            phrase: createTestPhrase(id: '1', content: '元の本文'),
+            onSave: (_) => never.future,
+          ),
+        ),
+        child: const Text('編集'),
+      );
+    })));
+    await tester.tap(find.text('編集'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '直した本文');
+    await tester.tap(find.text('保存'));
+    await tester.pump();
+
+    await tester
+        .pump(PhraseConstants.saveTimeout - const Duration(milliseconds: 1));
+    expect(
+        tester
+            .widget<TextButton>(find.widgetWithText(TextButton, 'キャンセル'))
+            .onPressed,
+        isNull);
+
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+    expect(find.text('保存を確認できませんでした。入力内容を残しています。'), findsOneWidget);
+    expect(find.text('直した本文'), findsOneWidget);
+
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PhraseEditDialog), findsNothing);
   });
 }

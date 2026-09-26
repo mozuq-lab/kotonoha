@@ -27,7 +27,6 @@
 - [ ] L-152 CI の成功が main 更新の必須条件になっているか確認できない（classic protection は 404、ruleset 10494480 は `include=[]`、required contexts `Python CI`・`Flutter CI` が job 名と一致しない。実 push の拒否は未検証） — `gh api` で 2026-09-21 に確認、.github/workflows/{python,flutter}.yml
 - [ ] L-173 OfflineBanner の読み上げ用ラベルが Web の semantics tree に出ない — offline_banner.dart。決定（2026-09-23）: iOS/Android の実機 QA（L-25）で読み上げに出るかを見て、出なければ直し、出れば閉じる
 - [ ] L-178 常設バナー（保存失敗の告知）の文言が Web の DOM と semantics tree に出ない（L-173 と同型） — persistence_banner.dart。決定（2026-09-23）: L-173 と同じく実機 QA（L-25）で見る
-- [ ] L-197 定型文の保存の待機には上限が無い。Hive の書込が返らないと、ダイアログは凍結したまま閉じる・戻るも止まる — phrase_add_dialog.dart・phrase_edit_dialog.dart の `_saving`。決定（2026-09-23）: 直す（上限の値と、上限の後に遅れて成功した保存の扱いは実装時に決める）
 
 ## 受け入れた限界（直さないと決めた、利用者に見える限界）
 利用者の声が届くか、守る約束を破る経路が見つかったら `[ ]` に戻す。
