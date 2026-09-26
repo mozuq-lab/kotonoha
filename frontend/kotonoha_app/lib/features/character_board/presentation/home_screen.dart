@@ -114,6 +114,9 @@ class HomeScreen extends ConsumerWidget {
     final showVolumeWarning = ref.watch(volumeWarningProvider).showWarning;
     final showAppName =
         MediaQuery.sizeOf(context).width >= AppSizes.phoneMaxWidth;
+    // キーボードが塞いでいる高さ。Scaffold の本文の中では取り除かれて 0 に
+    // 見えるので、Scaffold の外側で読む。
+    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
 
     return Theme(
       data: homeTheme(Theme.of(context),
@@ -204,8 +207,12 @@ class HomeScreen extends ConsumerWidget {
                                   // RenderFlexオーバーフローが発生するため、左右2ペイン構成に切替える。
                                   // isPhoneWidth: 縦持ちスマホ幅（< phoneMaxWidth）。オーバーフローは
                                   // しないが、各セクションをコンパクト化し文字盤の可視行数を増やす。
+                                  // キーボードの出し入れでは配置を切り替えない。切り替えると
+                                  // 入力欄が作り直されて入力の対象から外れ、出たばかりの
+                                  // キーボードが閉じる（iPad の横向き）。キーボードが無い
+                                  // ときの高さで判定する。
                                   final isCompactHeight =
-                                      constraints.maxHeight <
+                                      constraints.maxHeight + keyboardHeight <
                                           AppSizes.compactHeightThreshold;
                                   final isPhoneWidth = constraints.maxWidth <
                                       AppSizes.phoneMaxWidth;
