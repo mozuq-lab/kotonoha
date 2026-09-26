@@ -93,7 +93,7 @@ void main() {
     const Size(844, 390),
     const Size(820, 1180),
   ]) {
-    testWidgets('標準アプリの$sizeでは入力後もAI変換を表示せず、読み上げ・削除・全消去を使える', (tester) async {
+    testWidgets('標準アプリの$sizeでは入力後にAI変換を表示し、読み上げ・削除・全消去も使える', (tester) async {
       SharedPreferences.setMockInitialValues({'tutorial_completed': true});
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
@@ -111,9 +111,9 @@ void main() {
       await tester.tap(find.text('い').first);
       await tester.pumpAndSettle();
       expect(container.read(inputBufferProvider), 'あい');
-      expect(find.byType(AIConversionButton), findsNothing);
-      expect(find.text('AI変換'), findsNothing);
-      expect(find.byType(OfflineIndicator), findsNothing);
+      // 初回リリースから AI 変換を含める（ADR-007）
+      expect(find.byType(AIConversionButton), findsOneWidget);
+      expect(find.text('AI変換'), findsOneWidget);
 
       // 横持ちでは入力1行を確保した操作域をスクロールして使う。
       await tester.ensureVisible(find.text('読み上げ'));
@@ -139,7 +139,6 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(container.read(inputBufferProvider), isEmpty);
-      expect(find.byType(AIConversionButton), findsNothing);
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(const SizedBox.shrink());

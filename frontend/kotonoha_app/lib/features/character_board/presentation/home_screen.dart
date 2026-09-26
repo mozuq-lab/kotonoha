@@ -80,14 +80,15 @@ double _stackedBoardHeight(double availableHeight) =>
 /// クイック応答ボタン（はい/いいえ/わからない）
 /// TTS読み上げ機能
 class HomeScreen extends ConsumerWidget {
-  /// AI変換の入口を表示するか。初回リリースでは既定で非表示にする。
+  /// AI変換の入口を表示するか。初回リリースから含める（ADR-007）。
+  /// `--dart-define=ENABLE_AI_CONVERSION=false` で隠せる。
   final bool enableAIConversion;
 
   /// ホーム画面を作成する。
   const HomeScreen({
     super.key,
     this.enableAIConversion =
-        const bool.fromEnvironment('ENABLE_AI_CONVERSION'),
+        const bool.fromEnvironment('ENABLE_AI_CONVERSION', defaultValue: true),
   });
 
   @override
