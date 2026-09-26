@@ -43,8 +43,8 @@ def test_default_rate_limit_allows_twelve_requests_per_minute() -> None:
 
 
 def test_default_provider_matches_the_disclosed_destination() -> None:
-    # 同意ダイアログ・プライバシーポリシーは送り先を OpenAI と告げている
-    assert RuntimeConfig(_env_file=None).DEFAULT_AI_PROVIDER == "openai"
+    # 同意ダイアログ・プライバシーポリシーは送り先を Cloudflare（Workers AI）と告げている
+    assert RuntimeConfig(_env_file=None).DEFAULT_AI_PROVIDER == "workers_ai"
 
 
 def test_empty_provider_key_means_none() -> None:
@@ -101,7 +101,8 @@ def test_non_local_load_fails_with_every_problem(monkeypatch: pytest.MonkeyPatch
 def test_production_with_symbol_keys_loads(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-" + SYMBOL_KEY)
+    monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
+    monkeypatch.setenv("CF_ACCOUNT_ID", "0123456789abcdef0123456789abcdef")
     config = load_config(env_file=None)
     assert config.api_keys() == (SYMBOL_KEY.encode("ascii"),)
 
@@ -152,3 +153,12 @@ def test_cors_origins_are_split() -> None:
         "http://a",
         "http://b",
     )
+
+
+def test_production_workers_ai_needs_the_account_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
+    monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
+    with pytest.raises(ConfigError) as info:
+        load_config(env_file=None)
+    assert info.value.problems == (("CF_ACCOUNT_ID", "missing"),)

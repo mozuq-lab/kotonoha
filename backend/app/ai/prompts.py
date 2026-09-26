@@ -47,7 +47,8 @@ class Prompt:
     system: str
     user: str
     temperature: float
-    max_tokens: int = 1024
+    # 変換結果は短い文。1 回の費用の上限を抑える（上限で切れたら provider が失敗にする）
+    max_tokens: int = 256
 
 
 def conversion_prompt(input_text: str, level: PolitenessLevel) -> Prompt:

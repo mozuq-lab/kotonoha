@@ -119,6 +119,35 @@ def test_openai_provider_round_trip_through_http_boundary() -> None:
             )
 
 
+def test_workers_ai_provider_round_trip_through_http_boundary() -> None:
+    account = "0123456789abcdef0123456789abcdef"
+    config = make_config(
+        DEFAULT_AI_PROVIDER="workers_ai", CF_API_TOKEN="cf-t", CF_ACCOUNT_ID=account
+    )
+    body = {
+        "id": "c1",
+        "object": "chat.completion",
+        "created": 1,
+        "model": "@cf/google/gemma-4-26b-a4b-it",
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": "お水をください"},
+                "finish_reason": "stop",
+            }
+        ],
+    }
+    url = f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/v1/chat/completions"
+    with respx.mock(assert_all_mocked=True) as http:
+        http.post(url).mock(return_value=httpx.Response(200, json=body))
+        with TestClient(create_app(config, environ={}, argv=[])) as client:
+            assert client.get("/api/v1/health").json()["ai_provider"] == "workers_ai"
+            assert (
+                client.post(CONVERT, json=BODY, headers=HEADERS).json()["converted_text"]
+                == "お水をください"
+            )
+
+
 def test_docs_hidden_outside_local_environments() -> None:
     with client_with(FixedProvider("x"), ENVIRONMENT="production") as client:
         assert client.get("/docs").status_code == 404

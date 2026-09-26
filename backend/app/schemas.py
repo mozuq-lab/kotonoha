@@ -74,7 +74,9 @@ class ConversionResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str = Field(..., examples=["ok"])
     ai_provider: str = Field(
-        ..., description="実際に使う AI プロバイダ", examples=["anthropic", "openai", "none"]
+        ...,
+        description="実際に使う AI プロバイダ",
+        examples=["workers_ai", "openai", "anthropic", "none"],
     )
     version: str = Field(..., examples=["1.0.0"])
     timestamp: str = Field(..., description="ISO 8601（UTC）", examples=["2026-09-02T12:34:56Z"])

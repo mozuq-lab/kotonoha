@@ -31,3 +31,8 @@ def test_fidelity_rules_reach_every_conversion_and_regeneration() -> None:
     for prompt in prompts:
         for rule in ("本人", "否定", "足さない", "尊敬語", "症状"):
             assert rule in prompt.system, rule
+
+
+def test_output_cap_fits_a_short_sentence() -> None:
+    # 変換結果は短い文。上限を小さくして 1 回の費用の上限を抑える（切れたら provider が失敗にする）
+    assert conversion_prompt("あ", PolitenessLevel.POLITE).max_tokens == 256
