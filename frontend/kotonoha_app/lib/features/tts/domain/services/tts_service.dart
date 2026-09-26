@@ -151,7 +151,7 @@ class TTSService {
       await tts.setLanguage('ja-JP');
 
       // 速度設定: 現在保持している速度（デフォルトはnormal=1.0倍速）を設定
-      await tts.setSpeechRate(currentSpeed.value);
+      await tts.setSpeechRate(_pluginRate(currentSpeed));
 
       // 完了コールバック登録: 読み上げ完了時に状態をidleに戻す
       tts.setCompletionHandler(() {
@@ -320,6 +320,15 @@ class TTSService {
     }
   }
 
+  /// アプリの速さ（標準に対する倍率）を flutter_tts の尺度に直す
+  ///
+  /// flutter_tts の `setSpeechRate` は 0.0〜1.0 で 0.5 が標準の速さ
+  /// （iOS は AVSpeechUtterance.rate にそのまま入れ、Android は 2 倍して渡す）。
+  /// Web だけは Web Speech API の rate にそのまま入れるので 1.0 が標準。
+  /// 倍率をそのまま渡すと、「普通」が iOS では最速、Android では 2 倍速になる。
+  static double _pluginRate(TTSSpeed speed) =>
+      kIsWeb ? speed.value : speed.value * 0.5;
+
   /// 読み上げ速度を設定
   /// 読み上げ速度を変更する。
   /// 設定可能な速度
@@ -330,7 +339,7 @@ class TTSService {
   /// [speed] 読み上げ速度（slow/normal/fast）
   Future<void> setSpeed(TTSSpeed speed) async {
     // 速度変更: OS標準TTSエンジンに新しい速度を設定
-    await tts.setSpeechRate(speed.value);
+    await tts.setSpeechRate(_pluginRate(speed));
 
     // 状態保存: 現在の速度を記録
     currentSpeed = speed;

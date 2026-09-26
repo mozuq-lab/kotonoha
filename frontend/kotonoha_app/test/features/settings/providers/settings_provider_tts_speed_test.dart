@@ -170,10 +170,10 @@ void main() {
 
         // Then: 結果検証: 状態だけでなく、実際のTTSエンジンにも速度(1.3倍速)が
         // 適用されていることを確認する
-        // setSpeechRate(1.0)への上書きが発生せず、最終的な速度が
+        // setSpeechRate(0.5)への上書きが発生せず、最終的な速度が
         // fast(1.3)であること
         expect(settings.ttsSpeed, TTSSpeed.fast);
-        verify(() => mockFlutterTts.setSpeechRate(1.3))
+        verify(() => mockFlutterTts.setSpeechRate(0.65))
             .called(greaterThanOrEqualTo(1));
         expect(
           service.currentSpeed,

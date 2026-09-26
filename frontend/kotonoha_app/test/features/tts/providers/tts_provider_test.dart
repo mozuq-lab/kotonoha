@@ -127,22 +127,22 @@ void main() {
         // 処理内容: 速度を「遅い」に設定
         await notifier.setSpeed(TTSSpeed.slow);
 
-        // Then: 結果検証: setSpeechRate(0.7)が呼ばれることを確認
-        verify(() => mockFlutterTts.setSpeechRate(0.7)).called(1);
+        // Then: 結果検証: setSpeechRate(0.35)が呼ばれることを確認
+        verify(() => mockFlutterTts.setSpeechRate(0.35)).called(1);
 
         // When: 実際の処理実行: TTSSpeed.normalを設定
         // 処理内容: 速度を「普通」に設定
         await notifier.setSpeed(TTSSpeed.normal);
 
-        // Then: 結果検証: setSpeechRate(1.0)が呼ばれることを確認
-        verify(() => mockFlutterTts.setSpeechRate(1.0)).called(1);
+        // Then: 結果検証: setSpeechRate(0.5)が呼ばれることを確認
+        verify(() => mockFlutterTts.setSpeechRate(0.5)).called(1);
 
         // When: 実際の処理実行: TTSSpeed.fastを設定
         // 処理内容: 速度を「速い」に設定
         await notifier.setSpeed(TTSSpeed.fast);
 
-        // Then: 結果検証: setSpeechRate(1.3)が呼ばれることを確認
-        verify(() => mockFlutterTts.setSpeechRate(1.3)).called(1);
+        // Then: 結果検証: setSpeechRate(0.65)が呼ばれることを確認
+        verify(() => mockFlutterTts.setSpeechRate(0.65)).called(1);
       });
 
       /// 読み上げ中に新しいテキストの読み上げを開始すると前の読み上げが停止する
@@ -237,7 +237,7 @@ void main() {
         // setLanguage → setSpeechRate → speak の順序
         verifyInOrder([
           () => mockFlutterTts.setLanguage('ja-JP'),
-          () => mockFlutterTts.setSpeechRate(1.0),
+          () => mockFlutterTts.setSpeechRate(0.5),
           () => mockFlutterTts.speak('テスト'),
         ]);
       });

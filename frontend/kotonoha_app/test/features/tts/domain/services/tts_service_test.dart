@@ -45,10 +45,10 @@ void main() {
         final result = await service.initialize();
 
         // Then: 結果検証: 初期化が成功することを確認
-        // trueが返され、setLanguage("ja-JP")とsetSpeechRate(1.0)が呼ばれる
+        // trueが返され、setLanguage("ja-JP")とsetSpeechRate(0.5)が呼ばれる
         expect(result, isTrue);
         verify(() => mockFlutterTts.setLanguage('ja-JP')).called(1);
-        verify(() => mockFlutterTts.setSpeechRate(1.0)).called(1);
+        verify(() => mockFlutterTts.setSpeechRate(0.5)).called(1);
       });
 
       test('iOSでは読み上げ前に消音モードでも鳴る音声カテゴリを設定する', () async {
@@ -68,7 +68,7 @@ void main() {
                 IosTextToSpeechAudioMode.defaultMode,
               ),
           () => mockFlutterTts.setLanguage('ja-JP'),
-          () => mockFlutterTts.setSpeechRate(1.0),
+          () => mockFlutterTts.setSpeechRate(0.5),
         ]);
       });
 
@@ -105,9 +105,9 @@ void main() {
         // When: 実際の処理実行: initializeを呼び出す（アプリ起動時の初期化を模擬）
         await service.initialize();
 
-        // Then: 結果検証: setSpeechRate(1.3)が維持され、1.0への上書きが発生しないことを確認
-        verify(() => mockFlutterTts.setSpeechRate(1.3)).called(1);
-        verifyNever(() => mockFlutterTts.setSpeechRate(1.0));
+        // Then: 結果検証: setSpeechRate(0.65)が維持され、1.0への上書きが発生しないことを確認
+        verify(() => mockFlutterTts.setSpeechRate(0.65)).called(1);
+        verifyNever(() => mockFlutterTts.setSpeechRate(0.5));
         expect(service.currentSpeed, TTSSpeed.fast);
       });
 
@@ -171,9 +171,9 @@ void main() {
         // 処理内容: 読み上げ速度を「遅い」に設定
         await service.setSpeed(TTSSpeed.slow);
 
-        // Then: 結果検証: flutter_ttsのsetSpeechRate(0.7)が呼ばれることを確認
-        // setSpeechRate(0.7)が呼ばれ、currentSpeedがslowになる
-        verify(() => mockFlutterTts.setSpeechRate(0.7)).called(1);
+        // Then: 結果検証: flutter_ttsのsetSpeechRate(0.35)が呼ばれることを確認
+        // setSpeechRate(0.35)が呼ばれ、currentSpeedがslowになる
+        verify(() => mockFlutterTts.setSpeechRate(0.35)).called(1);
         expect(service.currentSpeed, TTSSpeed.slow);
       });
 
@@ -190,9 +190,9 @@ void main() {
         // 処理内容: 読み上げ速度を「普通」に設定
         await service.setSpeed(TTSSpeed.normal);
 
-        // Then: 結果検証: flutter_ttsのsetSpeechRate(1.0)が呼ばれることを確認
-        // setSpeechRate(1.0)が呼ばれ、currentSpeedがnormalになる
-        verify(() => mockFlutterTts.setSpeechRate(1.0)).called(1);
+        // Then: 結果検証: flutter_ttsのsetSpeechRate(0.5)が呼ばれることを確認
+        // setSpeechRate(0.5)が呼ばれ、currentSpeedがnormalになる
+        verify(() => mockFlutterTts.setSpeechRate(0.5)).called(1);
         expect(service.currentSpeed, TTSSpeed.normal);
       });
 
@@ -206,9 +206,9 @@ void main() {
         // 処理内容: 読み上げ速度を「速い」に設定
         await service.setSpeed(TTSSpeed.fast);
 
-        // Then: 結果検証: flutter_ttsのsetSpeechRate(1.3)が呼ばれることを確認
-        // setSpeechRate(1.3)が呼ばれ、currentSpeedがfastになる
-        verify(() => mockFlutterTts.setSpeechRate(1.3)).called(1);
+        // Then: 結果検証: flutter_ttsのsetSpeechRate(0.65)が呼ばれることを確認
+        // setSpeechRate(0.65)が呼ばれ、currentSpeedがfastになる
+        verify(() => mockFlutterTts.setSpeechRate(0.65)).called(1);
         expect(service.currentSpeed, TTSSpeed.fast);
       });
 
@@ -222,9 +222,9 @@ void main() {
         // 処理内容: 読み上げ速度を「とても遅い」に設定
         await service.setSpeed(TTSSpeed.verySlow);
 
-        // Then: 結果検証: flutter_ttsのsetSpeechRate(0.5)が呼ばれることを確認
-        // setSpeechRate(0.5)が呼ばれ、currentSpeedがverySlowになる
-        verify(() => mockFlutterTts.setSpeechRate(0.5)).called(1);
+        // Then: 結果検証: flutter_ttsのsetSpeechRate(0.25)が呼ばれることを確認
+        // setSpeechRate(0.25)が呼ばれ、currentSpeedがverySlowになる
+        verify(() => mockFlutterTts.setSpeechRate(0.25)).called(1);
         expect(service.currentSpeed, TTSSpeed.verySlow);
       });
 

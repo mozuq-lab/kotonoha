@@ -343,7 +343,7 @@ void main() {
       ).called(1);
 
       verify(
-        () => mockFlutterTts.setSpeechRate(1.0),
+        () => mockFlutterTts.setSpeechRate(0.5),
       ).called(1);
 
       container.dispose();
