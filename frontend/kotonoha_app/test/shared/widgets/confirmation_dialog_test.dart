@@ -425,6 +425,26 @@ void main() {
     ),
   );
 
+  // 初回リリースから AI 変換を含める（ADR-007、2026-09-26）。標準のビルドで入口が出ること
+  testWidgets('標準のビルドでは AI 変換ボタンが表示される', (tester) async {
+    tester.view.physicalSize = const Size(375, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inputBufferProvider.overrideWith(_FilledBuffer.new),
+          networkProvider.overrideWith(_Online.new),
+          settingsNotifierProvider.overrideWith(_NotYetAccepted.new),
+          ttsProvider.overrideWith(_StubTts.new),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
+    await pumpFrames(tester);
+    expect(find.widgetWithText(ElevatedButton, 'AI変換'), findsOneWidget);
+  });
+
   // App Store 審査ガイドライン 5.1.2(i): 外部の AI へ送る前に、何を・誰に送るかを示して許可を得る
   testWidgets('AI変換の同意は、送る中身と送り先（Cloudflare・米国）を示す', (tester) async {
     tester.view.physicalSize = const Size(375, 900);
