@@ -42,7 +42,7 @@ class PersistedBox<T> {
       _inOrder(() => _box.put(key, value));
 
   /// [entries] をまとめて書く
-  Future<void> putAll(Map<dynamic, T> entries) =>
+  Future<bool> putAll(Map<dynamic, T> entries) =>
       _inOrder(() => _box.putAll(entries));
 
   /// [key] を削除し、消した内容をファイルからも取り除く（台帳 L-119）
@@ -50,8 +50,14 @@ class PersistedBox<T> {
   /// フレームは Hive 自身の compaction（削除 60 件超かつ 15% 超）まで残り、
   /// OS のバックアップにも乗る。保存しているのは利用者の発話そのものなので、
   /// 1 件ごとに実際に取り除く（履歴の上限あふれもここを通る）。
-  Future<void> delete(dynamic key) => _inOrder(() async {
+  Future<bool> delete(dynamic key) => _inOrder(() async {
         await _box.delete(key);
+        await _removeDeletedFromFile();
+      });
+
+  /// 指定したキーをまとめて削除し、削除済みフレームも取り除く。
+  Future<bool> deleteAll(Iterable<dynamic> keys) => _inOrder(() async {
+        await _box.deleteAll(keys);
         await _removeDeletedFromFile();
       });
 

@@ -18,7 +18,8 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/input
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
-import 'package:kotonoha_app/features/status_buttons/status_buttons.dart';
+import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
+import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
 import 'package:kotonoha_app/features/tts/domain/services/volume_service.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_widget.dart';
@@ -58,13 +59,13 @@ void main() {
     when(() => mockVolumeController.getMute()).thenAnswer((_) async => false);
   });
 
-  ProviderContainer buildContainer({double volume = 0.5}) {
+  Future<ProviderContainer> buildContainer({double volume = 0.5}) async {
     when(() => mockVolumeController.getVolume())
         .thenAnswer((_) async => volume);
     when(() => mockVolumeController.getMute())
         .thenAnswer((_) async => volume == 0.0);
 
-    return ProviderContainer(
+    final container = ProviderContainer(
       overrides: [
         ttsProvider.overrideWith(() => _createTestTTSNotifier(mockFlutterTts)),
         volumeServiceProvider.overrideWithValue(
@@ -72,6 +73,19 @@ void main() {
         ),
       ],
     );
+    for (final content in [
+      '痛い',
+      'トイレ',
+      '暑い',
+      '寒い',
+      '水',
+      '眠い',
+      '助けて',
+      '待って',
+    ]) {
+      await container.read(favoriteProvider.notifier).addFavorite(content);
+    }
+    return container;
   }
 
   for (final size in [
@@ -84,7 +98,7 @@ void main() {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      final container = buildContainer();
+      final container = await buildContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(UncontrolledProviderScope(
@@ -125,9 +139,9 @@ void main() {
     });
   }
 
-  group('状態ボタンのホーム画面統合 (TASK-0044, REQ-202〜204)', () {
-    testWidgets('状態ボタン（痛い/トイレ等）がホーム画面に表示される', (tester) async {
-      final container = buildContainer();
+  group('お気に入りのホーム画面統合', () {
+    testWidgets('お気に入り上位8件がホーム画面に表示される', (tester) async {
+      final container = await buildContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -138,13 +152,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(StatusButton), findsWidgets);
+      expect(find.byType(FavoriteShortcutButton), findsNWidgets(8));
       expect(find.text('痛い'), findsOneWidget);
       expect(find.text('トイレ'), findsOneWidget);
     });
 
-    testWidgets('状態ボタンをタップすると読み上げが呼ばれ、履歴が大ボタン扱いで保存される', (tester) async {
-      final container = buildContainer();
+    testWidgets('お気に入りをタップすると読み上げが呼ばれ、履歴が大ボタン扱いで保存される', (tester) async {
+      final container = await buildContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -168,12 +182,11 @@ void main() {
       expect(
         histories.first.type,
         HistoryType.quickButton,
-        reason: '状態ボタン由来の履歴はHistoryType.quickButton（大ボタン）である必要がある',
+        reason: 'お気に入りボタン由来の履歴はHistoryType.quickButtonである必要がある',
       );
     });
 
-    testWidgets('横持ちスマホ幅の小さい可視高さでも状態ボタンストリップが表示される（コンパクトレイアウト）',
-        (tester) async {
+    testWidgets('横持ちスマホ幅の小さい可視高さでもお気に入りが表示される', (tester) async {
       tester.view.physicalSize = const Size(844, 390);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -181,7 +194,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      final container = buildContainer();
+      final container = await buildContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -193,14 +206,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(StatusButton), findsWidgets);
+      expect(find.byType(FavoriteShortcutButton), findsWidgets);
     });
   });
 
   group('クイック応答・履歴種類の修正確認', () {
     testWidgets('クイック応答（はい）タップでspeak()が1回だけ呼ばれ、履歴が大ボタン扱いで保存される',
         (tester) async {
-      final container = buildContainer();
+      final container = await buildContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -232,7 +245,7 @@ void main() {
 
   group('音量ゼロ警告のTTS側配線 (EDGE-202)', () {
     testWidgets('音量が0の状態で読み上げを実行すると警告が表示される', (tester) async {
-      final container = buildContainer(volume: 0.0);
+      final container = await buildContainer(volume: 0.0);
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -256,7 +269,7 @@ void main() {
     });
 
     testWidgets('音量が正常な場合は読み上げを実行しても警告が表示されない', (tester) async {
-      final container = buildContainer(volume: 0.5);
+      final container = await buildContainer(volume: 0.5);
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -274,7 +287,7 @@ void main() {
     });
 
     testWidgets('警告表示中に閉じるボタンをタップすると警告が消える', (tester) async {
-      final container = buildContainer(volume: 0.0);
+      final container = await buildContainer(volume: 0.0);
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -299,7 +312,7 @@ void main() {
   group('文字盤（手動入力）の履歴種類の確認', () {
     testWidgets('文字盤で入力して読み上げると履歴はHistoryType.manualInputで保存される',
         (tester) async {
-      final container = buildContainer();
+      final container = await buildContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -326,7 +339,7 @@ void main() {
 
   group('対面表示モードへの導線 (TASK-0052/0053, REQ-501〜503)', () {
     testWidgets('AppBarに対面表示アイコンが表示される', (tester) async {
-      final container = buildContainer();
+      final container = await buildContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -344,7 +357,7 @@ void main() {
 
   group('入力上限の告知 (L-73、EDGE-101)', () {
     testWidgets('入力欄が 1000 文字に達すると、入力欄の下に告知が出る（L-73）', (tester) async {
-      final container = buildContainer();
+      final container = await buildContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(

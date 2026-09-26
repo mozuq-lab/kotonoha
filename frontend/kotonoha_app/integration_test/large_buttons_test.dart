@@ -101,21 +101,21 @@ void main() {
 
         // 結果検証: 必須の状態ボタンが表示される
         // 検証項目: 「痛い」ボタンの存在確認
-        await revealStatusButton(tester, '痛い');
+        await revealFavoriteShortcut(tester, '痛い');
         // 検証項目: 「トイレ」ボタンの存在確認
-        await revealStatusButton(tester, 'トイレ');
+        await revealFavoriteShortcut(tester, 'トイレ');
         // 検証項目: 「暑い」ボタンの存在確認
-        await revealStatusButton(tester, '暑い');
+        await revealFavoriteShortcut(tester, '暑い');
         // 検証項目: 「寒い」ボタンの存在確認
-        await revealStatusButton(tester, '寒い');
+        await revealFavoriteShortcut(tester, '寒い');
         // 検証項目: 「水」ボタンの存在確認
-        await revealStatusButton(tester, '水');
+        await revealFavoriteShortcut(tester, '水');
         // 検証項目: 「眠い」ボタンの存在確認
-        await revealStatusButton(tester, '眠い');
+        await revealFavoriteShortcut(tester, '眠い');
         // 検証項目: 「助けて」ボタンの存在確認
-        await revealStatusButton(tester, '助けて');
+        await revealFavoriteShortcut(tester, '助けて');
         // 検証項目: 「待って」ボタンの存在確認
-        await revealStatusButton(tester, '待って');
+        await revealFavoriteShortcut(tester, '待って');
       },
     );
 
@@ -161,7 +161,7 @@ void main() {
 
         for (final buttonLabel in requiredButtons) {
           // ボタンをタップ
-          await revealStatusButton(tester, buttonLabel);
+          await revealFavoriteShortcut(tester, buttonLabel);
           await tapAndExpectSpeech(tester, find.text(buttonLabel));
 
           // 読み上げを停止して次のテストに備える（短い語は既に終わっていることがある）
@@ -184,7 +184,7 @@ void main() {
 
         // 結果検証: ホーム画面が引き続き表示されること
         await stopSpeechIfSpeaking(tester);
-        expect(find.text('kotonoha'), findsOneWidget);
+        expectHomeBrand();
       },
     );
   });

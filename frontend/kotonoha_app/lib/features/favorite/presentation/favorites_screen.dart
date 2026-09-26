@@ -10,6 +10,7 @@ import '../../tts/domain/models/tts_state.dart';
 import 'widgets/favorite_item_card.dart';
 import 'widgets/empty_favorite_widget.dart';
 import 'constants/favorite_ui_constants.dart';
+import 'constants/favorite_colors.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
 
@@ -121,8 +122,42 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           favorite: favorite,
           onTap: () => _onFavoriteTap(favorite.content),
           onDelete: () => _showDeleteDialog(context, favorite.id),
+          onColorChange: () => _selectFavoriteColor(context, favorite),
         );
       },
+    );
+  }
+
+  Future<void> _selectFavoriteColor(
+    BuildContext context,
+    Favorite favorite,
+  ) async {
+    final chosen = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text('「${favorite.content}」の色'),
+        children: [
+          for (final (name, colorValue) in favoriteColorChoices)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop(colorValue),
+              child: Row(
+                children: [
+                  CircleAvatar(backgroundColor: Color(colorValue), radius: 16),
+                  const SizedBox(width: 16),
+                  Text(name),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (chosen == null || !context.mounted) return;
+    final saved = await ref
+        .read(favoriteProvider.notifier)
+        .updateFavoriteColor(favorite.id, chosen);
+    if (!context.mounted || saved) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('お気に入りの色を保存できませんでした')),
     );
   }
 
@@ -202,12 +237,12 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   /// 1つ上へ移動（タップ操作による並べ替え）
   void _moveUp(Favorite favorite, int index) {
     if (index <= 0) return;
-    ref.read(favoriteProvider.notifier).reorderFavorite(favorite.id, index - 1);
+    ref.read(favoriteProvider.notifier).moveFavorite(favorite.id, -1);
   }
 
   /// 1つ下へ移動（タップ操作による並べ替え）
   void _moveDown(Favorite favorite, int index) {
-    ref.read(favoriteProvider.notifier).reorderFavorite(favorite.id, index + 1);
+    ref.read(favoriteProvider.notifier).moveFavorite(favorite.id, 1);
   }
 
   /// 並び替え処理
@@ -261,13 +296,39 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   /// 個別削除処理（確認ダイアログの「削除」タップ後に実行）+ Undo
   /// 確認ダイアログ通過後に削除を実行し、さらにSnackBarの「元に戻す」
   /// 操作（8秒間）でも復元できるようにする（誤操作からの二重の安全策）。
-  void _deleteFavoriteWithUndo(BuildContext context, String id) {
-    ref.read(favoriteProvider.notifier).deleteFavorite(id);
+  Future<void> _deleteFavoriteWithUndo(BuildContext context, String id) async {
+    final deleted =
+        await ref.read(favoriteProvider.notifier).deleteFavorite(id);
+    if (!context.mounted) return;
+    if (!deleted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('お気に入りを削除できませんでした')),
+      );
+      return;
+    }
     showUndoSnackBar(
       context,
       message: '削除しました',
       onUndo: () =>
           ref.read(favoriteProvider.notifier).restoreLastDeletedFavorite(),
+    );
+  }
+
+  Future<void> _clearAllWithUndo(BuildContext context) async {
+    final deleted =
+        await ref.read(favoriteProvider.notifier).clearAllFavorites();
+    if (!context.mounted) return;
+    if (!deleted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('すべてのお気に入りを削除できませんでした')),
+      );
+      return;
+    }
+    showUndoSnackBar(
+      context,
+      message: 'すべて削除しました',
+      onUndo: () =>
+          ref.read(favoriteProvider.notifier).restoreClearedFavorites(),
     );
   }
 
@@ -287,13 +348,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           confirmLabel: FavoriteUIConstants.deleteButtonLabel,
           onConfirm: () {
             Navigator.of(dialogContext).pop();
-            ref.read(favoriteProvider.notifier).clearAllFavorites();
-            showUndoSnackBar(
-              context,
-              message: 'すべて削除しました',
-              onUndo: () =>
-                  ref.read(favoriteProvider.notifier).restoreClearedFavorites(),
-            );
+            _clearAllWithUndo(context);
           },
           onCancel: () => Navigator.of(dialogContext).pop(),
         );

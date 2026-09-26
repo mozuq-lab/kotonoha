@@ -139,8 +139,8 @@ void main() {
       );
     });
 
-    /// 履歴画面 お気に入り追加成功
-    testWidgets('TC-066-011: 「お気に入りに追加」タップでお気に入りに追加される',
+    /// 保存先がないときは一時登録であることを伝える
+    testWidgets('TC-066-011: 保存先なしで履歴から追加すると一時登録を告げる',
         (WidgetTester tester) async {
       // Given: 履歴データを準備する
       final testHistory = createTestHistory(
@@ -171,12 +171,13 @@ void main() {
       await tester.tap(find.text('お気に入りに追加'));
       await tester.pumpAndSettle();
 
-      // Then: スナックバーに成功メッセージが表示される
+      // Then: 再起動では残らないことを伝え、画面内では登録される
       expect(
-        find.text('お気に入りに追加しました'),
+        find.text('一時的に登録しました。保存できないため、再起動すると消えます'),
         findsOneWidget,
-        reason: 'お気に入り追加成功時にスナックバーが表示される必要がある',
+        reason: 'インメモリ登録を永続保存の成功と告げない',
       );
+      expect(find.byIcon(Icons.star), findsOneWidget);
     });
 
     /// 履歴画面 重複追加エラーメッセージ
@@ -237,7 +238,7 @@ void main() {
     /// 改善: 履歴からのお気に入り追加が長押しメニューのみだったため
     /// タップ主体の操作要件に反していた。星アイコンによる
     /// 明示的なタップ操作を追加する（長押しメニューは併存）。
-    testWidgets('TC-A11Y-STAR-001: 星ボタンタップでお気に入りに追加され、成功メッセージが表示される',
+    testWidgets('TC-A11Y-STAR-001: 星ボタンで一時登録され、再起動で消えることを伝える',
         (WidgetTester tester) async {
       final testHistory = createTestHistory(
         id: 'test_1',
@@ -268,8 +269,8 @@ void main() {
       await tester.tap(find.byIcon(Icons.star_border));
       await tester.pumpAndSettle();
 
-      // Then: お気に入りに追加され、成功メッセージが表示される
-      expect(find.text('お気に入りに追加しました'), findsOneWidget);
+      // Then: インメモリの登録であることを伝える
+      expect(find.text('一時的に登録しました。保存できないため、再起動すると消えます'), findsOneWidget);
       // 追加後は塗りつぶしのstarアイコンに切り替わる
       expect(find.byIcon(Icons.star), findsOneWidget);
     });

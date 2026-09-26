@@ -13,25 +13,29 @@ import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conv
 import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_provider.dart';
 import 'package:kotonoha_app/features/character_board/domain/character_data.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
-import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_all_button.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/delete_button.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/home_input_field.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/input_limit_notice.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
-import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_buttons.dart';
-import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
 import 'package:kotonoha_app/features/face_to_face/providers/face_to_face_provider.dart';
+import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
+import 'package:kotonoha_app/features/favorite/presentation/constants/favorite_ui_constants.dart';
+import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
+import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
+import 'package:kotonoha_app/features/history/providers/history_provider.dart';
+import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
+import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_buttons.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/features/simple_mode/presentation/simple_mode_view.dart';
-import 'package:kotonoha_app/features/status_buttons/status_buttons.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_widget.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
-import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
-import 'package:kotonoha_app/features/settings/models/font_size.dart';
-import 'package:kotonoha_app/features/history/providers/history_provider.dart';
-import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 
 /// コンパクト2ペインの幅の配分（左: 操作UI 2 / 右: 文字盤 3）
@@ -108,10 +112,34 @@ class HomeScreen extends ConsumerWidget {
       }
     });
     final showVolumeWarning = ref.watch(volumeWarningProvider).showWarning;
+    final showAppName =
+        MediaQuery.sizeOf(context).width >= AppSizes.phoneMaxWidth;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('kotonoha'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+              child: Image.asset(
+                'assets/images/kotonoha_icon.png',
+                key: const Key('home_app_icon'),
+                width: AppSizes.iconSizeLarge,
+                height: AppSizes.iconSizeLarge,
+                semanticLabel: 'kotonoha',
+                excludeFromSemantics: showAppName,
+              ),
+            ),
+            if (showAppName) ...[
+              const SizedBox(width: AppSizes.paddingSmall),
+              const Flexible(
+                child: Text('kotonoha',
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ],
+        ),
         // シンプルモード: 文字盤を使わない大ボタン画面に切り替えている間は
         // 認知負荷を下げるため他のナビゲーションアイコンは表示せず
         // 通常モードへ戻すトグルアイコンのみを表示する。
@@ -237,7 +265,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// シンプルモード画面の中身を構築する
-  /// 文字盤を使わない大ボタン画面。クイック応答・状態ボタン・お気に入りを
+  /// 文字盤を使わない大ボタン画面。クイック応答・お気に入りを
   /// 再利用し、TTS読み上げ・履歴保存はこのメソッド内のコールバックで配線する。
   Widget _buildSimpleModeContent(
     WidgetRef ref, {
@@ -249,9 +277,6 @@ class HomeScreen extends ConsumerWidget {
       fontSize: fontSize,
       favorites: favorites,
       onQuickResponse: (type) {
-        _saveToHistory(ref, type.label, HistoryType.quickButton);
-      },
-      onStatusButton: (type) {
         _saveToHistory(ref, type.label, HistoryType.quickButton);
       },
       onTTSSpeak: (text) {
@@ -308,7 +333,7 @@ class HomeScreen extends ConsumerWidget {
           padding: EdgeInsets.all(gutter),
           compact: compact,
         ),
-        _buildStatusButtonsSection(
+        _buildFavoriteShortcutsSection(
           ref,
           fontSize: fontSize,
           gutter: gutter,
@@ -317,6 +342,7 @@ class HomeScreen extends ConsumerWidget {
         // 入力表示エリア
         _buildInputArea(
           context,
+          ref: ref,
           inputBuffer: inputBuffer,
           fontSize: fontSize,
           compact: compact,
@@ -383,7 +409,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   compact: true,
                 ),
-                _buildStatusButtonsSection(
+                _buildFavoriteShortcutsSection(
                   ref,
                   fontSize: fontSize,
                   gutter: AppSizes.paddingSmall,
@@ -391,6 +417,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 _buildInputArea(
                   context,
+                  ref: ref,
                   inputBuffer: inputBuffer,
                   fontSize: fontSize,
                   compact: true,
@@ -448,11 +475,8 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  /// 「痛い」「トイレ」「暑い」「寒い」等の状態ボタンをホーム画面に統合する。
-  /// 必須8個をスワイプなしで全部見せる。幅が足りれば1行に8個、足りなければ
-  /// 4列×2行に並べる。タップで即座にTTS読み上げ＋履歴保存（大ボタン扱い:
-  /// HistoryType.quickButton）を行う。
-  Widget _buildStatusButtonsSection(
+  /// 表示順上位8件のお気に入りを、スワイプなしで並べる。
+  Widget _buildFavoriteShortcutsSection(
     WidgetRef ref, {
     required FontSize fontSize,
     required double gutter,
@@ -461,35 +485,38 @@ class HomeScreen extends ConsumerWidget {
     const gap = AppSizes.paddingSmall;
     final height =
         compact ? AppSizes.minTapTarget : AppSizes.recommendedTapTarget;
+    final favorites = List<Favorite>.from(ref.watch(favoriteProvider).favorites)
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    final shortcuts = favorites.take(8).toList();
+    if (shortcuts.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: gutter),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final count = defaultStatusTypes.length;
+          final count = shortcuts.length;
           bool fits(int columns, double minWidth) =>
               constraints.maxWidth >= columns * minWidth + (columns - 1) * gap;
           // 2ペインの狭い左ペインでも1個44px以上を保つよう、列を減らす。
           final columns = fits(count, _minStatusButtonWidth)
               ? count
-              : fits(count ~/ 2, AppSizes.minTapTarget)
-                  ? count ~/ 2
-                  : count ~/ 4;
-          final colors = Theme.of(context).colorScheme;
-          Widget button(StatusButtonType type) => Expanded(
-                child: StatusButton(
-                  statusType: type,
+              : fits(count < 4 ? count : 4, AppSizes.minTapTarget)
+                  ? (count < 4 ? count : 4)
+                  : fits(2, AppSizes.minTapTarget)
+                      ? 2
+                      : 1;
+          Widget button(Favorite favorite) => Expanded(
+                child: FavoriteShortcutButton(
+                  favorite: favorite,
                   height: height,
                   fontSize: fontSize,
-                  backgroundColor: Color.lerp(
-                    colors.surface,
-                    StatusButtonColors.getColor(type),
-                    0.16,
-                  ),
-                  textColor: colors.onSurface,
-                  onTTSSpeak: (text) =>
-                      ref.read(ttsProvider.notifier).speak(text),
-                  onPressed: () =>
-                      _saveToHistory(ref, type.label, HistoryType.quickButton),
+                  onPressed: () {
+                    ref.read(ttsProvider.notifier).speak(favorite.content);
+                    _saveToHistory(
+                      ref,
+                      favorite.content,
+                      HistoryType.quickButton,
+                    );
+                  },
                 ),
               );
           return Column(
@@ -499,9 +526,11 @@ class HomeScreen extends ConsumerWidget {
                 if (start > 0) const SizedBox(height: gap),
                 Row(
                   children: [
-                    for (var i = start; i < start + columns; i++) ...[
+                    for (var i = start;
+                        i < start + columns && i < count;
+                        i++) ...[
                       if (i > start) const SizedBox(width: gap),
-                      button(defaultStatusTypes[i]),
+                      button(shortcuts[i]),
                     ],
                   ],
                 ),
@@ -520,6 +549,7 @@ class HomeScreen extends ConsumerWidget {
   /// スクロール可能にする。
   Widget _buildInputArea(
     BuildContext context, {
+    required WidgetRef ref,
     required String inputBuffer,
     required FontSize fontSize,
     required bool compact,
@@ -543,6 +573,7 @@ class HomeScreen extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
+          key: const Key('home_input_area'),
           width: double.infinity,
           margin: EdgeInsets.symmetric(
             horizontal: horizontalMargin,
@@ -557,25 +588,10 @@ class HomeScreen extends ConsumerWidget {
           ),
           constraints:
               BoxConstraints(minHeight: minHeight, maxHeight: maxHeight),
-          // アクセシビリティ対応: liveRegionで入力中テキストの変化を
-          // スクリーンリーダーが自動読み上げできるようにする。
-          child: Semantics(
-            liveRegion: true,
-            child: SingleChildScrollView(
-              reverse: true,
-              child: Text(
-                inputBuffer.isEmpty ? '入力してください...' : inputBuffer,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: _getFontSizeValue(fontSize),
-                      color: inputBuffer.isEmpty
-                          ? Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withAlpha(128)
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
-              ),
-            ),
+          child: HomeInputField(
+            fontSize: fontSize,
+            onFavoritePressed: () =>
+                _addInputToFavorites(context, ref, inputBuffer),
           ),
         ),
         Padding(
@@ -583,6 +599,47 @@ class HomeScreen extends ConsumerWidget {
           child: const InputLimitNotice(),
         ),
       ],
+    );
+  }
+
+  Future<void> _addInputToFavorites(
+    BuildContext context,
+    WidgetRef ref,
+    String content,
+  ) async {
+    if (content.trim().isEmpty) return;
+    final exists = ref
+        .read(favoriteProvider)
+        .favorites
+        .any((favorite) => favorite.content == content);
+    if (exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('すでにお気に入りに登録されています')),
+      );
+      return;
+    }
+    final saved =
+        await ref.read(favoriteProvider.notifier).addFavorite(content);
+    if (!context.mounted) return;
+    final registered = ref
+        .read(favoriteProvider)
+        .favorites
+        .any((favorite) => favorite.content == content);
+    final temporary =
+        registered && ref.read(favoriteRepositoryProvider) == null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(saved
+            ? 'お気に入りに登録しました'
+            : temporary
+                ? FavoriteUIConstants.temporaryRegistrationMessage
+                : registered
+                    ? 'すでにお気に入りに登録されています'
+                    : FavoriteUIConstants.saveFailureMessage),
+        backgroundColor: !registered || temporary
+            ? Theme.of(context).colorScheme.error
+            : null,
+      ),
     );
   }
 
@@ -900,20 +957,6 @@ class HomeScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
-  }
-
-  /// FontSizeからフォントサイズ値を取得
-  /// 入力欄のフォントサイズを設定に追従させる
-  /// AppSizesの定義に基づく
-  double _getFontSizeValue(FontSize fontSize) {
-    switch (fontSize) {
-      case FontSize.small:
-        return AppSizes.fontSizeSmall;
-      case FontSize.medium:
-        return AppSizes.fontSizeMedium;
-      case FontSize.large:
-        return AppSizes.fontSizeLarge;
-    }
   }
 }
 

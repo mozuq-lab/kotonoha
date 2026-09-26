@@ -21,6 +21,8 @@ import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
+import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
+import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_item_card.dart';
 import 'package:kotonoha_app/features/settings/models/app_theme.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
@@ -134,7 +136,11 @@ void main() {
     }
     await tapButton(tester, 'はじめる');
     expect(find.text('準備完了'), findsNothing, reason: '「はじめる」でチュートリアルが閉じない');
-    expect(find.text('kotonoha'), findsOneWidget);
+    expect(
+      find.text('kotonoha').evaluate().isNotEmpty ||
+          find.byKey(const Key('home_app_icon')).evaluate().isNotEmpty,
+      isTrue,
+    );
 
     await _relaunchKeepingSettings(tester);
     expect(find.text('ようこそ、ことのはへ'), findsNothing, reason: '完了したチュートリアルが再び出る');
@@ -173,7 +179,11 @@ void main() {
     await tester.tap(find.text('こんにちは'));
     await _expectSpoke(tester, again, 'お気に入りのタップ');
     await _back(tester);
-    expect(find.text('kotonoha'), findsOneWidget);
+    expect(
+      find.text('kotonoha').evaluate().isNotEmpty ||
+          find.byKey(const Key('home_app_icon')).evaluate().isNotEmpty,
+      isTrue,
+    );
   });
 
   testWidgets('3. 定型文をタップすると読み上げて履歴に残り、追加した定型文は再起動後も残る', (tester) async {
@@ -204,7 +214,7 @@ void main() {
     expect(find.text('シナリオで足した文'), findsOneWidget, reason: '追加した定型文が再起動で消える');
   });
 
-  testWidgets('4. 大ボタンと状態ボタンは押すとすぐ読み上げ、履歴に残る', (tester) async {
+  testWidgets('4. 大ボタンと初期お気に入りは押すとすぐ読み上げ、履歴に残る', (tester) async {
     await pumpApp(tester);
 
     final quick = _recordSpeech(tester);
@@ -213,7 +223,18 @@ void main() {
 
     await _waitQuiet(tester);
     final status = _recordSpeech(tester);
-    await tester.tap(find.text('痛い'));
+    expect(find.byType(FavoriteShortcutButton), findsNWidgets(8));
+    expect(
+      tester
+          .widgetList<FavoriteShortcutButton>(
+              find.byType(FavoriteShortcutButton))
+          .map((button) => button.favorite.content),
+      ['トイレ', '暑い', '寒い', '水', '眠い', '助けて', '待って', '痛い'],
+    );
+    await tester.tap(find.descendant(
+      of: find.byType(FavoriteShortcutButton),
+      matching: find.text('痛い'),
+    ));
     await _expectSpoke(tester, status, '「痛い」');
 
     await _openFromHome(tester, '履歴');
@@ -273,5 +294,51 @@ void main() {
     await _back(tester);
     await _openFromHome(tester, 'お気に入り');
     expect(find.text('みず'), findsOneWidget, reason: 'お気に入りが再起動で消える');
+  });
+
+  testWidgets('7. キーボード入力を直接お気に入りにして色を選び、再起動後も使える', (tester) async {
+    await pumpApp(tester);
+
+    await tester.enterText(
+        find.byKey(const Key('home_input_field')), '直接入力した文👨‍👩‍👧');
+    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('削除'));
+    await tester.pump();
+    expect(find.text('直接入力した文'), findsOneWidget,
+        reason: 'キーボードの絵文字を1文字として削除できない');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('favorite_current_input')));
+    await tester.pumpAndSettle();
+
+    await _openFromHome(tester, 'お気に入り');
+    await scrollIntoView(tester, find.text('直接入力した文'));
+    final card = find.ancestor(
+      of: find.text('直接入力した文'),
+      matching: find.byType(FavoriteItemCard),
+    );
+    await tester.tap(find.descendant(
+      of: card,
+      matching: find.byTooltip('色を変更'),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('緑'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<Card>(find.descendant(of: card, matching: find.byType(Card)))
+          .color,
+      const Color(0xFF4CAF50),
+    );
+
+    await restartApp(tester);
+    await _openFromHome(tester, 'お気に入り');
+    await scrollIntoView(tester, find.text('直接入力した文'));
+    expect(
+      tester
+          .widget<Card>(find.descendant(of: card, matching: find.byType(Card)))
+          .color,
+      const Color(0xFF4CAF50),
+      reason: '登録した文と色が再起動後に残らない',
+    );
   });
 }

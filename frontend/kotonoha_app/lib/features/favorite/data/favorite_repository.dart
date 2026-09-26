@@ -14,6 +14,18 @@ import 'package:kotonoha_app/shared/models/favorite_item.dart';
 /// updateDisplayOrder: 並び順を単一更新
 /// reorderFavorites: 並び順を一括更新
 class FavoriteRepository {
+  static const _initialFavoritesMarkerId = '__initial_favorites_done__';
+  static const _initialContents = [
+    '痛い',
+    'トイレ',
+    '暑い',
+    '寒い',
+    '水',
+    '眠い',
+    '助けて',
+    '待って',
+  ];
+
   /// フィールド定義: Hive Box（お気に入り保存用）
   /// 実装内容: コンストラクタで注入されたBoxを保持
   final PersistedBox<FavoriteItem> _box;
@@ -45,8 +57,41 @@ class FavoriteRepository {
   /// メソッド定義: お気に入りを保存
   /// 実装内容: IDをキーとしてHive Boxに保存
   /// 引数: favorite - 保存するお気に入り
-  Future<void> save(FavoriteItem favorite) async {
-    await _box.put(favorite.id, favorite);
+  Future<bool> save(FavoriteItem favorite) => _box.put(favorite.id, favorite);
+
+  Future<bool> saveAll(Iterable<FavoriteItem> favorites) => _box.putAll({
+        for (final favorite in favorites) favorite.id: favorite,
+      });
+
+  /// 初回だけ必須のお気に入りを作る。印は同じ box に置き、全削除後も残す。
+  /// 項目と印を同じ Hive 書き込みで保存し、項目だけが残る失敗を避ける。
+  Future<bool> ensureInitialFavorites() async {
+    if (_box.get(_initialFavoritesMarkerId) != null) return true;
+    final now = DateTime.now();
+    final initial = <String, FavoriteItem>{};
+    for (var index = 0; index < _initialContents.length; index++) {
+      final id = 'initial-favorite-$index';
+      if (_box.get(id) != null) continue;
+      final colorValue = switch (index) {
+        0 || 2 || 3 || 5 => 0xFFFF9800,
+        _ => 0xFF2196F3,
+      };
+      initial[id] = FavoriteItem(
+        id: id,
+        content: _initialContents[index],
+        createdAt: now,
+        // 項目のIDと色は保ち、表示順だけ「痛い」を末尾にする。
+        displayOrder: index == 0 ? _initialContents.length - 1 : index - 1,
+        colorValue: colorValue,
+      );
+    }
+    initial[_initialFavoritesMarkerId] = FavoriteItem(
+      id: _initialFavoritesMarkerId,
+      content: '',
+      createdAt: now,
+      displayOrder: -1,
+    );
+    return _box.putAll(initial);
   }
 
   /// メソッド定義: IDでお気に入りを取得
@@ -61,15 +106,15 @@ class FavoriteRepository {
   /// 実装内容: IDをキーとしてHive Boxから削除
   /// 引数: id - 削除するお気に入りのID
   /// エッジケース: 存在しないIDでも例外を投げない
-  Future<void> delete(String id) async {
-    await _box.delete(id);
-  }
+  Future<bool> delete(String id) => _box.delete(id);
 
   /// メソッド定義: 全お気に入りを削除
-  /// 実装内容: Hive Boxの全データをクリア
-  Future<void> deleteAll() async {
-    await _box.clear();
-  }
+  /// 初期化済みの印を残し、利用者のお気に入りだけを消す。
+  Future<bool> deleteAll() => _box.deleteAll(
+        _box.values
+            .where((item) => item.id != _initialFavoritesMarkerId)
+            .map((item) => item.id),
+      );
 
   /// メソッド定義: 並び順を単一更新
   /// 実装内容: 特定のお気に入りのdisplayOrderを更新
@@ -99,7 +144,9 @@ class FavoriteRepository {
   /// 二次ソート: displayOrder同値の場合、createdAtの降順（新しい順）
   /// 戻り値: `List<FavoriteItem>`（displayOrder昇順）
   List<FavoriteItem> _getSortedFavorites() {
-    final favorites = _box.values.toList();
+    final favorites = _box.values
+        .where((item) => item.id != _initialFavoritesMarkerId)
+        .toList();
     // displayOrderの昇順でソート、同値の場合はcreatedAtの降順（新しい順）
     favorites.sort((a, b) {
       final orderCompare = a.displayOrder.compareTo(b.displayOrder);

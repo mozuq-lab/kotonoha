@@ -143,7 +143,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // 結果検証: ホーム画面が引き続き表示されること
-        expect(find.text('kotonoha'), findsOneWidget);
+        expectHomeBrand();
       },
     );
 
@@ -245,7 +245,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // 結果検証: ホーム画面が引き続き表示されること
-        expect(find.text('kotonoha'), findsOneWidget);
+        expectHomeBrand();
       },
     );
   });
@@ -374,7 +374,7 @@ void main() {
 
         // 結果検証: アプリが安定動作していること
         await tester.pumpAndSettle();
-        expect(find.text('kotonoha'), findsOneWidget);
+        expectHomeBrand();
       },
     );
   });
