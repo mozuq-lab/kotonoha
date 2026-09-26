@@ -35,8 +35,10 @@ android {
 
     signingConfigs {
         create("release") {
-            // CI・ローカルともに、用意された key.properties から署名設定を読む。
-            val keystorePropertiesFile = rootProject.file("key.properties")
+            // 用意された key.properties から署名設定を読む。CI は鍵を workspace に置かないため
+            // 環境変数 KOTONOHA_KEY_PROPERTIES で場所を渡す（ランナーの一時ディレクトリ。L-94）。
+            val keystorePropertiesFile = System.getenv("KOTONOHA_KEY_PROPERTIES")
+                ?.let { file(it) } ?: rootProject.file("key.properties")
             if (keystorePropertiesFile.exists()) {
                 val keystoreProperties = Properties()
                 keystoreProperties.load(keystorePropertiesFile.inputStream())
