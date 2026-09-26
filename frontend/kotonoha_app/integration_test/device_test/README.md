@@ -10,10 +10,10 @@ TASK-0095: 実機テスト（iOS/Android/タブレット）
 
 | ファイル名 | テスト内容 | テストケースID |
 |-----------|----------|--------------|
-| `device_basic_test.dart` | 基本動作テスト | RT-001〜RT-016 |
+| `device_basic_test.dart` | 基本動作テスト | RT-001〜RT-007、RT-009・RT-010、RT-012〜RT-016 |
 | `orientation_test.dart` | 画面方向対応テスト | RT-101〜RT-103 |
 | `tablet_layout_test.dart` | タブレット表示テスト | RT-104〜RT-107 |
-| `tts_device_test.dart` | TTS実機動作テスト | RT-201〜RT-206、RT-301〜RT-307 |
+| `tts_device_test.dart` | TTS実機動作テスト | RT-201〜RT-206、RT-301、RT-303〜RT-307 |
 
 ## 実行方法
 
@@ -38,7 +38,7 @@ flutter test integration_test/device_test/ -d <DEVICE_ID>
 ### 個別のテストファイルを実行
 
 ```bash
-# 基本動作テスト（RT-001〜RT-016）
+# 基本動作テスト
 flutter test integration_test/device_test/device_basic_test.dart -d <DEVICE_ID>
 
 # 画面方向対応テスト（RT-101〜RT-103）
@@ -47,7 +47,7 @@ flutter test integration_test/device_test/orientation_test.dart -d <DEVICE_ID>
 # タブレット表示テスト（RT-104〜RT-107）
 flutter test integration_test/device_test/tablet_layout_test.dart -d <DEVICE_ID>
 
-# TTS実機動作テスト（RT-201〜RT-206、RT-301〜RT-307）
+# TTS実機動作テスト
 flutter test integration_test/device_test/tts_device_test.dart -d <DEVICE_ID>
 ```
 
@@ -79,7 +79,7 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 
 ## テストケース一覧
 
-### 基本動作テストケース（RT-001〜RT-016）
+### 基本動作テストケース
 
 - RT-001: アプリ起動
 - RT-002: 文字盤タップ入力（100ms以内）
@@ -90,7 +90,6 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 - RT-007: 大ボタンタップ
 - RT-009: 履歴保存・再生
 - RT-010: お気に入り登録
-- RT-011: AI変換（3秒以内）
 - RT-012: オフライン動作
 - RT-013: フォントサイズ変更
 - RT-014: テーマ変更
@@ -122,7 +121,7 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 - RT-205: Android Navigation Bar対応
 - RT-206: Android画面ピン留め
 
-### エッジケーステストケース（RT-301〜RT-307）
+### エッジケーステストケース
 
 - RT-301: OS音量0での読み上げ
 - RT-303: TTS音声エンジン未インストール
@@ -154,19 +153,17 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 - RT-204: Android TTS（実機で音声確認）
 - RT-206: Android画面ピン留め（設定変更が必要）
 - RT-301: OS音量0（音量調整が必要）
-- RT-302: マナーモード（マナーモード設定が必要）
+- iOS の消音スイッチをオンにしても読み上げが聞こえること（物理 iPad で確認。シミュレータでは再現できない）
 - RT-303: TTS音声エンジン未インストール（音声エンジン削除が必要）
 - RT-304: バックグラウンド復帰（アプリ切り替えが必要）
 - RT-307: ストレージ容量不足（ストレージを満杯にする必要）
 
 ## 受け入れ基準
 
-詳細は `/docs/archive/implements/kotonoha/TASK-0095/kotonoha-testcases.md` を参照してください。
-
 ### 必須項目
 
-- [ ] iOS実機で基本動作テストケース（RT-001〜RT-016）がすべて完了
-- [ ] Android実機で基本動作テストケース（RT-001〜RT-016）がすべて完了
+- [ ] iOS実機で上記の基本動作テストケースがすべて完了
+- [ ] Android実機で上記の基本動作テストケースがすべて完了
 - [ ] 画面方向対応テストケース（RT-101〜RT-103）がすべて完了
 - [ ] タブレット表示テストケース（RT-104〜RT-107）がすべて完了
 - [ ] TTS読み上げが1秒以内に開始される（NFR-001）
@@ -175,6 +172,6 @@ flutter test integration_test/device_test/device_basic_test.dart -d ABCD1234EFGH
 
 ## 関連ドキュメント
 
-- [テストケース定義書](../../../../docs/archive/implements/kotonoha/TASK-0095/kotonoha-testcases.md)
-- [要件定義書](../../../../docs/archive/implements/kotonoha/TASK-0095/kotonoha-requirements.md)
+- [旧テストケース定義書（履歴）](../../../../docs/archive/implements/kotonoha/TASK-0095/kotonoha-testcases.md)
+- [旧要件定義書（履歴）](../../../../docs/archive/implements/kotonoha/TASK-0095/kotonoha-requirements.md)
 - [Phase 5 タスク（歴史記録）](../../../../docs/archive/tasks/kotonoha-phase5.md)
