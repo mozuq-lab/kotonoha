@@ -7,7 +7,6 @@
 /// iOS では最速、Android では 2 倍速になっていた。
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
@@ -25,22 +24,19 @@ void main() {
     service = TTSService(tts: tts);
   });
 
-  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
-    test('${platform.name}: 「普通」はプラグインの標準（0.5）、他はその倍率で渡す', () async {
-      debugDefaultTargetPlatformOverride = platform;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
-      for (final (speed, rate) in [
-        (TTSSpeed.verySlow, 0.25),
-        (TTSSpeed.slow, 0.35),
-        (TTSSpeed.normal, 0.5),
-        (TTSSpeed.fast, 0.65),
-      ]) {
-        await service.setSpeed(speed);
-        final passed =
-            verify(() => tts.setSpeechRate(captureAny())).captured.single;
-        expect(passed, closeTo(rate, 1e-9), reason: '${speed.name} の速さ');
-      }
-    });
-  }
+  // 変換は kIsWeb でだけ分かれる（iOS と Android は同じ尺度）。Web の分岐
+  // （倍率をそのまま渡す）は実 Chromium の結合テストで確かめる。
+  test('「普通」はプラグインの標準（0.5）、他はその倍率で渡す', () async {
+    for (final (speed, rate) in [
+      (TTSSpeed.verySlow, 0.25),
+      (TTSSpeed.slow, 0.35),
+      (TTSSpeed.normal, 0.5),
+      (TTSSpeed.fast, 0.65),
+    ]) {
+      await service.setSpeed(speed);
+      final passed =
+          verify(() => tts.setSpeechRate(captureAny())).captured.single;
+      expect(passed, closeTo(rate, 1e-9), reason: '${speed.name} の速さ');
+    }
+  });
 }

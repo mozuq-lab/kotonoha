@@ -20,7 +20,8 @@ enum TTSSpeed {
 }
 
 /// TTSSpeed拡張メソッド
-/// flutter_tts用の速度値を取得する拡張。
+/// 標準の速さに対する倍率を取得する拡張。flutter_tts にそのまま渡す値ではない
+/// （尺度の変換は TTSService._pluginRate）。
 extension TTSSpeedExtension on TTSSpeed {
   /// 速度値を取得
   double get value {
