@@ -424,6 +424,40 @@ void main() {
     ),
   );
 
+  // App Store 審査ガイドライン 5.1.2(i): 外部の AI へ送る前に、何を・誰に送るかを示して許可を得る
+  testWidgets('AI変換の同意は、送る中身と送り先（OpenAI・米国）を示す', (tester) async {
+    tester.view.physicalSize = const Size(375, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inputBufferProvider.overrideWith(_FilledBuffer.new),
+          networkProvider.overrideWith(_Online.new),
+          settingsNotifierProvider.overrideWith(_NotYetAccepted.new),
+          ttsProvider.overrideWith(_StubTts.new),
+        ],
+        child: const MaterialApp(
+          home: HomeScreen(enableAIConversion: true),
+        ),
+      ),
+    );
+    await pumpFrames(tester);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'AI変換'));
+    await pumpFrames(tester);
+
+    for (final phrase in ['入力した文章', '丁寧さ', '前回の変換結果', 'OpenAI（米国）']) {
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.textContaining(phrase),
+        ),
+        findsOneWidget,
+        reason: '同意ダイアログに「$phrase」が無い',
+      );
+    }
+  });
+
   // AI 同意も 3 テーマで、取り消しとの区別まで見る（destructive と同じ扱い）
   for (final (themeName, theme) in [
     ('ライト', lightTheme),

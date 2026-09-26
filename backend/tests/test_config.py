@@ -42,6 +42,11 @@ def test_default_rate_limit_allows_twelve_requests_per_minute() -> None:
     assert (config.RATE_LIMIT_TIMES, config.RATE_LIMIT_SECONDS) == (12, 60)  # ADR-002
 
 
+def test_default_provider_matches_the_disclosed_destination() -> None:
+    # 同意ダイアログ・プライバシーポリシーは送り先を OpenAI と告げている
+    assert RuntimeConfig(_env_file=None).DEFAULT_AI_PROVIDER == "openai"
+
+
 def test_empty_provider_key_means_none() -> None:
     config = make_config(ANTHROPIC_API_KEY="", OPENAI_API_KEY="")
     assert (
@@ -96,7 +101,7 @@ def test_non_local_load_fails_with_every_problem(monkeypatch: pytest.MonkeyPatch
 def test_production_with_symbol_keys_loads(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-" + SYMBOL_KEY)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-" + SYMBOL_KEY)
     config = load_config(env_file=None)
     assert config.api_keys() == (SYMBOL_KEY.encode("ascii"),)
 

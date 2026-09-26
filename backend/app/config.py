@@ -78,7 +78,8 @@ class RuntimeConfig(BaseSettings):
     TRUSTED_PROXY_COUNT: int = Field(default=0, ge=0)
 
     # AI プロバイダ
-    DEFAULT_AI_PROVIDER: ProviderName = "anthropic"
+    # 送り先は同意ダイアログと公開文（privacy-policy）が告げる先と一致させる。変えるなら文面も直す
+    DEFAULT_AI_PROVIDER: ProviderName = "openai"
     ANTHROPIC_API_KEY: SecretStr | None = None
     ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
     OPENAI_API_KEY: SecretStr | None = None
