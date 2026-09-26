@@ -62,9 +62,13 @@ class _PhraseAddDialogState extends State<PhraseAddDialog> {
     setState(() => _saving = true);
     var succeeded = false;
     try {
-      succeeded = await widget.onSave
-              ?.call(_contentController.text, _selectedCategory) ??
-          false;
+      final pending =
+          widget.onSave?.call(_contentController.text, _selectedCategory);
+      // 書込が返らなくても凍結したままにしない（L-197）。上限を過ぎたら失敗と同じに
+      // 扱い、保存されたかは分からないと告げる。遅れて成功しても、再試行は同じ key へ
+      // 届くので 2 件にはならない（L-143）。
+      succeeded =
+          pending != null && await pending.timeout(PhraseConstants.saveTimeout);
     } catch (e, s) {
       // 入力を残し、同じ場所で再試行できるようにする。catchは狭めない
       // （`_saving` が戻らなくなる方が悪い）。Errorだけログへ流す。

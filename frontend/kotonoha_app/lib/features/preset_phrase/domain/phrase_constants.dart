@@ -14,6 +14,11 @@ class PhraseConstants {
   /// 定数定義: 有効なカテゴリ一覧
   static const List<String> validCategories = ['daily', 'health', 'other'];
 
+  /// 保存（端末への書込）を待つ上限（台帳 L-197）。
+  /// 書込が返らなくても、この時間で追加・編集ダイアログの凍結を解き、入力を残して
+  /// 操作を返す。通常の書込は数ミリ秒で返るので、十分に長く取る。
+  static const Duration saveTimeout = Duration(seconds: 10);
+
   /// 定数定義: デフォルトカテゴリ
   static const String defaultCategory = 'daily';
 
