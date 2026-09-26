@@ -11,6 +11,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart' show StringCharacters;
 import 'package:kotonoha_app/features/character_board/domain/dakuten_converter.dart';
 
 /// 文字入力バッファのプロバイダー
@@ -29,7 +30,8 @@ final inputBufferProvider = NotifierProvider<InputBufferNotifier, String>(
 /// 上限で黙って捨てるのではなく、利用者に伝えるための派生状態（EDGE-101、台帳 L-73）。
 final inputLimitReachedProvider = Provider<bool>(
   (ref) =>
-      ref.watch(inputBufferProvider).length >= InputBufferNotifier.maxLength,
+      ref.watch(inputBufferProvider).characters.length >=
+      InputBufferNotifier.maxLength,
 );
 
 /// 直近のテキスト設定で超過分を切り詰めたか。削除・全消去・次の設定で解除する。
@@ -70,24 +72,24 @@ class InputBufferNotifier extends Notifier<String> {
   void addCharacter(String character) {
     if (character.isEmpty) return;
 
-    final charToAdd = character[0];
+    final charToAdd = character.characters.first;
 
     // 制御文字は拒否
     if (_rejectedControlChars.contains(charToAdd)) return;
 
     // 最大文字数制限
-    if (state.length >= maxLength) return;
+    if (state.characters.length >= maxLength) return;
 
     state = state + charToAdd;
   }
 
   /// 最後の1文字を削除する
   /// バッファが空の場合は何もしない。
-  /// 将来的にはgrapheme cluster単位での削除（絵文字対応）を検討。
+  /// OSキーボードの絵文字や結合文字も、表示上の1文字単位で削除する。
   void deleteLastCharacter() {
     if (state.isEmpty) return;
     ref.read(_inputTruncationProvider.notifier).update(false);
-    state = state.substring(0, state.length - 1);
+    state = state.characters.skipLast(1).toString();
   }
 
   /// 入力バッファを全消去する
@@ -100,8 +102,11 @@ class InputBufferNotifier extends Notifier<String> {
   /// [text]が[maxLength]を超える場合は切り捨てる。
   /// 既存のテキストは上書きされる。
   void setText(String text) {
-    ref.read(_inputTruncationProvider.notifier).update(text.length > maxLength);
-    state = text.length > maxLength ? text.substring(0, maxLength) : text;
+    final characters = text.characters;
+    ref
+        .read(_inputTruncationProvider.notifier)
+        .update(characters.length > maxLength);
+    state = characters.take(maxLength).toString();
   }
 
   /// 入力バッファ末尾の文字を濁音化（または清音に戻すトグル）する
@@ -110,11 +115,11 @@ class InputBufferNotifier extends Notifier<String> {
   void applyDakuten() {
     if (state.isEmpty) return;
 
-    final lastChar = state[state.length - 1];
+    final lastChar = state.characters.last;
     final converted = DakutenConverter.applyDakuten(lastChar);
     if (converted == null) return;
 
-    state = state.substring(0, state.length - 1) + converted;
+    state = state.characters.skipLast(1).toString() + converted;
   }
 
   /// 入力バッファ末尾の文字を半濁音化（または清音に戻すトグル）する
@@ -123,10 +128,10 @@ class InputBufferNotifier extends Notifier<String> {
   void applyHandakuten() {
     if (state.isEmpty) return;
 
-    final lastChar = state[state.length - 1];
+    final lastChar = state.characters.last;
     final converted = DakutenConverter.applyHandakuten(lastChar);
     if (converted == null) return;
 
-    state = state.substring(0, state.length - 1) + converted;
+    state = state.characters.skipLast(1).toString() + converted;
   }
 }
