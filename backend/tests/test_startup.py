@@ -10,6 +10,7 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from collections.abc import Iterator
@@ -91,7 +92,8 @@ def _spawn(port: int, env: dict[str, str], *args: str) -> subprocess.Popen[str]:
             str(port),
             *args,
         ],
-        cwd=BACKEND,
+        # 開発者の backend/.env を読ませない（読むと送り先などが紛れ込み、CI と結果が変わる）
+        cwd=tempfile.mkdtemp(prefix="kotonoha-spawn-"),
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -144,7 +146,7 @@ def test_symbol_keys_health_and_conversion_round_trip(fake_provider: FakeAnthrop
     env = _base_env(
         ENVIRONMENT="production",
         API_KEYS=DEVICE_KEY,
-        # .env の DEFAULT_AI_PROVIDER に依存しない（偽プロバイダは Anthropic 形式）
+        # 偽プロバイダは Anthropic 形式（既定の送り先は workers_ai）
         DEFAULT_AI_PROVIDER="anthropic",
         ANTHROPIC_API_KEY=PROVIDER_KEY,
         ANTHROPIC_BASE_URL=f"http://127.0.0.1:{fake_provider.server_address[1]}",
