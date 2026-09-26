@@ -86,10 +86,10 @@ void main() {
         await settingsNotifier.setTTSSpeed(TTSSpeed.verySlow);
         await ttsNotifier.speak('こんにちは');
 
-        // Then: 結果検証: setSpeechRate(0.5)とspeakが呼ばれたことを確認
+        // Then: 結果検証: setSpeechRate(0.25)とspeakが呼ばれたことを確認
         // 期待値確認: 要件定義書のデータフローに基づく
         // 品質保証: エンドツーエンドで速度設定→読み上げが正しく機能することを確認
-        verify(() => mockFlutterTts.setSpeechRate(0.5)).called(1);
+        verify(() => mockFlutterTts.setSpeechRate(0.25)).called(1);
         verify(() => mockFlutterTts.speak('こんにちは')).called(1);
 
         // 確認ポイント: SettingsNotifier→TTSNotifier→TTSService→FlutterTtsの連携
@@ -125,10 +125,10 @@ void main() {
         await settingsNotifier.setTTSSpeed(TTSSpeed.slow);
         await ttsNotifier.speak('こんにちは');
 
-        // Then: 結果検証: setSpeechRate(0.7)とspeakが呼ばれたことを確認
+        // Then: 結果検証: setSpeechRate(0.35)とspeakが呼ばれたことを確認
         // 期待値確認: requirements.md（218-226行目）の使用例に基づく
         // 品質保証: エンドツーエンドで速度設定→読み上げが正しく機能することを確認
-        verify(() => mockFlutterTts.setSpeechRate(0.7)).called(1);
+        verify(() => mockFlutterTts.setSpeechRate(0.35)).called(1);
         verify(() => mockFlutterTts.speak('こんにちは')).called(1);
 
         // 確認ポイント: 速度設定後、次回の読み上げから新しい速度が適用される
@@ -164,10 +164,10 @@ void main() {
         await settingsNotifier.setTTSSpeed(TTSSpeed.normal);
         await ttsNotifier.speak('こんにちは');
 
-        // Then: 結果検証: setSpeechRate(1.0)とspeakが呼ばれたことを確認
-        // 期待値確認: TTSSpeed.normalの値が1.0であること（tts_speed.dart 67-69行目）
+        // Then: 結果検証: setSpeechRate(0.5)とspeakが呼ばれたことを確認
+        // 期待値確認: 「普通」（1.0倍）は flutter_tts の尺度で標準の 0.5 になる
         // 品質保証: デフォルト速度が正しく動作することを確認
-        verify(() => mockFlutterTts.setSpeechRate(1.0)).called(1);
+        verify(() => mockFlutterTts.setSpeechRate(0.5)).called(1);
         verify(() => mockFlutterTts.speak('こんにちは')).called(1);
 
         // 確認ポイント: 1.0倍速が標準的な読み上げ速度として機能する
@@ -203,10 +203,10 @@ void main() {
         await settingsNotifier.setTTSSpeed(TTSSpeed.fast);
         await ttsNotifier.speak('こんにちは');
 
-        // Then: 結果検証: setSpeechRate(1.3)とspeakが呼ばれたことを確認
+        // Then: 結果検証: setSpeechRate(0.65)とspeakが呼ばれたことを確認
         // 期待値確認: requirements.md（228-236行目）の使用例に基づく
         // 品質保証: 最大速度が正しく動作することを確認
-        verify(() => mockFlutterTts.setSpeechRate(1.3)).called(1);
+        verify(() => mockFlutterTts.setSpeechRate(0.65)).called(1);
         verify(() => mockFlutterTts.speak('こんにちは')).called(1);
 
         // 確認ポイント: 1.3倍速でも聞き取れる範囲内の速度設定
@@ -268,7 +268,7 @@ void main() {
         }
 
         // 確認ポイント: 最小速度（0.7）と最大速度（1.3）が正しく設定される
-        // 確認ポイント: flutter_ttsの速度範囲（0.5〜2.0）内に収まる
+        // 確認ポイント: flutter_tts の尺度（0.0〜1.0、0.5 が標準）に直して渡す
       });
 
       /// 読み上げ中に速度を変更しても、現在の読み上げは元の速度で継続
@@ -311,7 +311,7 @@ void main() {
         // Then: 結果検証: 次回の読み上げから新しい速度が適用されたことを確認
         // 期待値確認: requirements.md（286-296行目）のに基づく
         // 品質保証: 並行処理の安全性を確認
-        verify(() => mockFlutterTts.setSpeechRate(1.3))
+        verify(() => mockFlutterTts.setSpeechRate(0.65))
             .called(greaterThanOrEqualTo(1));
         verify(() => mockFlutterTts.speak('次のテキスト')).called(1);
 
