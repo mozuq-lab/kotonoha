@@ -25,20 +25,20 @@ void main() {
     /// 前提条件
     /// darkThemeがインポートされている
     /// 期待結果
-    /// darkTheme.scaffoldBackgroundColorがAppColors.backgroundDark（#121212）である
+    /// darkTheme.scaffoldBackgroundColorがAppColors.backgroundDark（#142124）である
     test('TC-202: ダークテーマの背景色が暗い灰色系である', () {
       // Assert
       expect(
           darkTheme.scaffoldBackgroundColor, equals(AppColors.backgroundDark));
       expect(
-          darkTheme.scaffoldBackgroundColor, equals(const Color(0xFF121212)));
+          darkTheme.scaffoldBackgroundColor, equals(const Color(0xFF142124)));
     });
 
     /// ダークテーマのテキスト色が白系である
     /// 前提条件
     /// darkThemeがインポートされている
     /// 期待結果
-    /// テキスト色がAppColors.onBackgroundDark（#FFFFFF）である
+    /// テキスト色がAppColors.onBackgroundDark（#EDF3F4）である
     test('TC-203: ダークテーマのテキスト色が白系である', () {
       // Assert
       expect(
@@ -47,7 +47,7 @@ void main() {
       );
       expect(
         darkTheme.textTheme.bodyLarge?.color,
-        equals(const Color(0xFFFFFFFF)),
+        equals(const Color(0xFFEDF3F4)),
       );
     });
 
@@ -95,13 +95,13 @@ void main() {
       expect(minimumSize?.height, greaterThanOrEqualTo(44.0));
     });
 
-    /// ダークテーマのプライマリ色が暗い青系である
+    /// ダークテーマのプライマリ色が明るい青緑系である
     /// 期待結果
-    /// darkTheme.colorScheme.primaryがAppColors.primaryDark（#1976D2）である
-    test('ダークテーマのプライマリ色が暗い青系である', () {
+    /// darkTheme.colorScheme.primaryがAppColors.primaryDark（#71D6D7）である
+    test('ダークテーマのプライマリ色が明るい青緑系である', () {
       // Assert
       expect(darkTheme.colorScheme.primary, equals(AppColors.primaryDark));
-      expect(darkTheme.colorScheme.primary, equals(const Color(0xFF1976D2)));
+      expect(darkTheme.colorScheme.primary, equals(const Color(0xFF71D6D7)));
     });
 
     /// ダークテーマのフォントサイズがAppSizes.fontSizeMediumである

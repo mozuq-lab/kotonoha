@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/clear_confirmation_dialog.dart';
 
@@ -31,6 +32,7 @@ class ClearAllButton extends StatelessWidget {
 
   /// ボタンの一辺の長さ（正方形。[AppSizes.minTapTarget] 未満にはしない）
   final double size;
+  final bool showLabel;
 
   /// ClearAllButtonを作成する
   const ClearAllButton({
@@ -38,6 +40,7 @@ class ClearAllButton extends StatelessWidget {
     this.onConfirmed,
     this.enabled = true,
     this.size = AppSizes.recommendedTapTarget,
+    this.showLabel = false,
   });
 
   @override
@@ -53,18 +56,16 @@ class ClearAllButton extends StatelessWidget {
         onPressed: enabled ? () => _showConfirmationDialog(context) : null,
         style: ElevatedButton.styleFrom(
           minimumSize: Size.square(side),
-          fixedSize: Size.square(side),
-          padding: EdgeInsets.zero,
+          fixedSize: showLabel ? Size.fromHeight(side) : Size.square(side),
+          padding: showLabel
+              ? const EdgeInsets.symmetric(horizontal: 4)
+              : EdgeInsets.zero,
           backgroundColor: WidgetStateColor.resolveWith(
             (states) {
               if (states.contains(WidgetState.disabled)) {
                 return theme.disabledColor.withValues(alpha: 0.12);
               }
-              return Color.lerp(
-                theme.colorScheme.surface,
-                theme.colorScheme.error,
-                0.14,
-              )!;
+              return theme.colorScheme.surface;
             },
           ),
           foregroundColor: WidgetStateColor.resolveWith(
@@ -79,10 +80,13 @@ class ClearAllButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           ),
         ),
-        child: const Icon(
-          Icons.delete_outline,
-          size: AppSizes.iconSizeMedium,
-        ),
+        child: showLabel
+            ? const Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(CupertinoIcons.trash, size: AppSizes.iconSizeMedium),
+                SizedBox(width: 6),
+                Flexible(child: Text('全消去', maxLines: 2)),
+              ])
+            : const Icon(CupertinoIcons.trash, size: AppSizes.iconSizeMedium),
       ),
     );
   }

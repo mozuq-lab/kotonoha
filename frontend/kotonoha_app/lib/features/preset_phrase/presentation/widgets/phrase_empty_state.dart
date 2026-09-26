@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
 /// 機能概要: 空状態ウィジェット
@@ -32,7 +33,7 @@ class PhraseEmptyState extends StatelessWidget {
         children: [
           // アイコン表示: 空状態を視覚的に示すアイコン
           Icon(
-            Icons.inbox_outlined,
+            CupertinoIcons.tray,
             size: AppSizes.iconSizeXLarge,
             color: theme.colorScheme.onSurfaceVariant,
           ),

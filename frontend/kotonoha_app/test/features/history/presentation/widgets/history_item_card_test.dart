@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/history/domain/models/history.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
@@ -42,7 +43,7 @@ void main() {
         expect(find.text('11/28 14:30'), findsOneWidget);
 
         // キーボードアイコンが表示される
-        expect(find.byIcon(Icons.keyboard), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.keyboard), findsOneWidget);
       });
 
       /// タップ時にコールバックが発火する
@@ -102,7 +103,7 @@ void main() {
         );
 
         // Then: 削除ボタン（ゴミ箱アイコン）が表示される
-        expect(find.byIcon(Icons.delete), findsOneWidget);
+        expect(find.byTooltip('削除'), findsOneWidget);
       });
 
       /// 削除ボタンタップでコールバックが発火する
@@ -131,7 +132,7 @@ void main() {
         );
 
         // When: 削除ボタンをタップする
-        await tester.tap(find.byIcon(Icons.delete));
+        await tester.tap(find.byTooltip('削除'));
         await tester.pumpAndSettle();
 
         // Then: 削除コールバックが1回呼び出される
@@ -163,7 +164,7 @@ void main() {
           ),
         );
 
-        expect(find.byIcon(Icons.keyboard), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.keyboard), findsOneWidget);
       });
 
       /// 定型文アイコンが表示される
@@ -188,7 +189,7 @@ void main() {
           ),
         );
 
-        expect(find.byIcon(Icons.list), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.list_bullet), findsOneWidget);
       });
 
       /// AI変換アイコンが表示される
@@ -213,7 +214,7 @@ void main() {
           ),
         );
 
-        expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.sparkles), findsOneWidget);
       });
 
       /// 大ボタンアイコンが表示される
@@ -238,7 +239,7 @@ void main() {
           ),
         );
 
-        expect(find.byIcon(Icons.smart_button), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.square_grid_2x2), findsOneWidget);
       });
     });
 
@@ -266,8 +267,8 @@ void main() {
           ),
         );
 
-        expect(find.byIcon(Icons.star), findsNothing);
-        expect(find.byIcon(Icons.star_border), findsNothing);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsNothing);
+        expect(find.byIcon(CupertinoIcons.heart), findsNothing);
       });
 
       /// 未お気に入りの場合、star_borderアイコンが表示されタップでコールバックが発火する
@@ -295,10 +296,10 @@ void main() {
           ),
         );
 
-        expect(find.byIcon(Icons.star_border), findsOneWidget);
-        expect(find.byIcon(Icons.star), findsNothing);
+        expect(find.byIcon(CupertinoIcons.heart), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsNothing);
 
-        await tester.tap(find.byIcon(Icons.star_border));
+        await tester.tap(find.byIcon(CupertinoIcons.heart));
         await tester.pump();
 
         expect(favoriteTapped, isTrue);
@@ -328,8 +329,8 @@ void main() {
           ),
         );
 
-        expect(find.byIcon(Icons.star), findsOneWidget);
-        expect(find.byIcon(Icons.star_border), findsNothing);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart), findsNothing);
       });
     });
 

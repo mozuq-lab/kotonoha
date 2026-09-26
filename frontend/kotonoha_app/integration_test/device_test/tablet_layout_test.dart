@@ -85,7 +85,7 @@ void main() {
         expect(find.text('テスト'), findsWidgets);
 
         // 実際の処理実行: 読み上げ
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(milliseconds: 500));
 
         // 結果検証: スマートフォンで基本機能が動作する

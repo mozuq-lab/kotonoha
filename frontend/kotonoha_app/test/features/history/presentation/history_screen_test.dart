@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
@@ -228,28 +229,28 @@ void main() {
         // Then: 各アイコンの存在を確認する
         // 文字盤入力: キーボードアイコン
         expect(
-          find.byIcon(Icons.keyboard),
+          find.byIcon(CupertinoIcons.keyboard),
           findsOneWidget,
           reason: '文字盤入力のキーボードアイコンが表示される必要がある',
         );
 
         // 定型文: リストアイコン
         expect(
-          find.byIcon(Icons.list),
+          find.byIcon(CupertinoIcons.list_bullet),
           findsOneWidget,
           reason: '定型文のリストアイコンが表示される必要がある',
         );
 
         // AI変換結果: AIアイコン
         expect(
-          find.byIcon(Icons.auto_awesome),
+          find.byIcon(CupertinoIcons.sparkles),
           findsOneWidget,
           reason: 'AI変換結果のAIアイコンが表示される必要がある',
         );
 
         // 大ボタン: ボタンアイコン
         expect(
-          find.byIcon(Icons.smart_button),
+          find.byIcon(CupertinoIcons.square_grid_2x2),
           findsOneWidget,
           reason: '大ボタンのボタンアイコンが表示される必要がある',
         );
@@ -386,7 +387,7 @@ void main() {
         );
 
         // When: 履歴項目の削除ボタンをタップする
-        await tester.tap(find.byIcon(Icons.delete));
+        await tester.tap(find.byTooltip('削除'));
         await tester.pumpAndSettle();
 
         // Then: 確認ダイアログは表示されず、即座に削除される
@@ -435,7 +436,7 @@ void main() {
           ),
         );
 
-        await tester.tap(find.byIcon(Icons.delete));
+        await tester.tap(find.byTooltip('削除'));
         await tester.pumpAndSettle();
 
         expect(find.text('こんにちは'), findsNothing);
@@ -476,7 +477,7 @@ void main() {
 
         // Then: AppBarのアクションエリアに全削除ボタン（またはアイコン）が表示される
         expect(
-          find.byIcon(Icons.delete_sweep),
+          find.byTooltip('全削除'),
           findsOneWidget,
           reason: '全削除ボタンが表示される必要がある',
         );
@@ -501,7 +502,7 @@ void main() {
         );
 
         // When: 全削除ボタンをタップする
-        await tester.tap(find.byIcon(Icons.delete_sweep));
+        await tester.tap(find.byTooltip('全削除'));
         await tester.pumpAndSettle();
 
         // Then: AlertDialogが表示される
@@ -554,7 +555,7 @@ void main() {
         );
 
         // When: 全削除ボタンをタップしてダイアログを表示する
-        await tester.tap(find.byIcon(Icons.delete_sweep));
+        await tester.tap(find.byTooltip('全削除'));
         await tester.pumpAndSettle();
 
         // ダイアログ外（バリア部分）をタップする

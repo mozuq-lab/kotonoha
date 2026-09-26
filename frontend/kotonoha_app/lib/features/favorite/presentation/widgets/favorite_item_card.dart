@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import '../../../favorite/domain/models/favorite.dart';
 import 'package:intl/intl.dart';
 import '../constants/favorite_ui_constants.dart';
@@ -68,7 +69,7 @@ class FavoriteItemCard extends StatelessWidget {
               children: [
                 // お気に入りアイコン
                 Icon(
-                  Icons.favorite,
+                  CupertinoIcons.heart_fill,
                   size: FavoriteUIConstants.favoriteIconSize,
                   color: foreground,
                 ),
@@ -107,7 +108,7 @@ class FavoriteItemCard extends StatelessWidget {
                 if (onColorChange != null)
                   IconButton(
                     key: Key('favorite_color_${favorite.id}'),
-                    icon: Icon(Icons.palette_outlined, color: foreground),
+                    icon: Icon(CupertinoIcons.paintbrush, color: foreground),
                     onPressed: onColorChange,
                     tooltip: '色を変更',
                     constraints: const BoxConstraints(
@@ -117,7 +118,7 @@ class FavoriteItemCard extends StatelessWidget {
                   ),
                 // 削除ボタン
                 IconButton(
-                  icon: Icon(Icons.delete, color: foreground),
+                  icon: Icon(CupertinoIcons.trash, color: foreground),
                   onPressed: onDelete,
                   tooltip: FavoriteUIConstants.deleteTooltip,
                   constraints: const BoxConstraints(

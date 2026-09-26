@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -77,7 +78,7 @@ void main() {
 
         // パフォーマンス計測: TTS読み上げ開始時間
         final stopwatch = Stopwatch()..start();
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         stopwatch.stop();
 
         final elapsed = stopwatch.elapsedMilliseconds;
@@ -106,7 +107,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 設定画面に遷移
-        await tapIconButton(tester, Icons.settings);
+        await tapIconButton(tester, CupertinoIcons.gear_alt);
         expect(find.text('設定'), findsOneWidget);
 
         // 実際の処理実行: TTS速度を「遅い」に変更
@@ -147,11 +148,11 @@ void main() {
         await typeOnCharacterBoard(tester, 'これはテストです。長い文章を入力して読み上げを確認します。');
 
         // 実際の処理実行: 読み上げを開始
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(milliseconds: 500));
 
         // 実際の処理実行: 停止ボタンをタップ
-        final stopButton = find.byIcon(Icons.stop);
+        final stopButton = find.text('停止');
         if (stopButton.evaluate().isNotEmpty) {
           await tester.tap(stopButton);
           await tester.pumpAndSettle();
@@ -236,7 +237,7 @@ void main() {
 
         // 実際の処理実行: 文字列を入力して読み上げ
         await typeOnCharacterBoard(tester, 'テスト履歴');
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(seconds: 1));
 
         // 実際の処理実行: 履歴画面に遷移
@@ -275,7 +276,7 @@ void main() {
 
         // 実際の処理実行: 文字列を入力して読み上げ
         await typeOnCharacterBoard(tester, 'お気に入りテスト');
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(seconds: 1));
 
         // 実際の処理実行: 履歴画面に遷移
@@ -286,7 +287,7 @@ void main() {
         }
 
         // 実際の処理実行: お気に入りボタンをタップ
-        final favoriteFinder = find.byIcon(Icons.star_border);
+        final favoriteFinder = find.byIcon(CupertinoIcons.heart);
         if (favoriteFinder.evaluate().isNotEmpty) {
           await tester.tap(favoriteFinder.first);
           await tester.pumpAndSettle();
@@ -324,7 +325,7 @@ void main() {
         expect(find.text('オフライン'), findsWidgets);
 
         // 実際の処理実行: 読み上げ
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(seconds: 1));
 
         // 結果検証: オフラインでも基本機能が動作する
@@ -345,7 +346,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 設定画面に遷移
-        await tapIconButton(tester, Icons.settings);
+        await tapIconButton(tester, CupertinoIcons.gear_alt);
         expect(find.text('設定'), findsOneWidget);
 
         // 実際の処理実行: フォントサイズ「大」を選択
@@ -379,7 +380,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 設定画面に遷移
-        await tapIconButton(tester, Icons.settings);
+        await tapIconButton(tester, CupertinoIcons.gear_alt);
         expect(find.text('設定'), findsOneWidget);
 
         // 実際の処理実行: テーマ「ダーク」を選択
@@ -413,7 +414,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 設定画面に遷移
-        await tapIconButton(tester, Icons.settings);
+        await tapIconButton(tester, CupertinoIcons.gear_alt);
         expect(find.text('設定'), findsOneWidget);
 
         // 実際の処理実行: テーマ「高コントラスト」を選択

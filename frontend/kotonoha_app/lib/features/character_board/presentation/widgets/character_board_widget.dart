@@ -90,8 +90,9 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
   /// 文字種の切り替え（基本・濁音・半濁音・小文字・記号）
   /// 横スクロールにすると狭い画面で右端のラベルが切れて見えるため、
   /// 5つを等幅の1行に並べる。長いラベルは折り返さずに縮めて1行に保つ。
-  /// 選択中は色に加えて太字・下線でも示す（色だけに頼らない）。
+  /// 選択中はタブ全体を塗り、太字・太い下線でも示す。
   Widget _buildCategoryTabs(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       children: CharacterCategory.values.map((category) {
         final isSelected = category == _currentCategory;
@@ -102,6 +103,15 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
             ),
             child: ChoiceChip(
               showCheckmark: false,
+              selectedColor: scheme.primary,
+              backgroundColor: scheme.surface,
+              side: isSelected
+                  ? BorderSide(color: scheme.primary, width: 2)
+                  : BorderSide.none,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(AppSizes.borderRadiusMedium),
+              ),
               labelPadding: EdgeInsets.zero,
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.paddingXSmall,
@@ -113,8 +123,10 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
                   child: Text(
                     category.displayName,
                     style: TextStyle(
+                      color: isSelected ? scheme.onPrimary : scheme.onSurface,
                       fontWeight: isSelected ? FontWeight.bold : null,
                       decoration: isSelected ? TextDecoration.underline : null,
+                      decorationThickness: isSelected ? 2 : null,
                     ),
                   ),
                 ),

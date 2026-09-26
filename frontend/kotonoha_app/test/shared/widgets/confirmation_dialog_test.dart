@@ -10,6 +10,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -151,7 +152,7 @@ void main() {
   expectMeetsContract(
     '全消去の確認',
     home: () => _screenWith(const ClearAllButton(enabled: true)),
-    open: (tester) => _tapIcon(tester, Icons.delete_outline),
+    open: (tester) => tester.tap(find.byType(ClearAllButton)),
     cancelLabel: 'いいえ',
     confirmLabel: 'はい',
   );
@@ -172,7 +173,7 @@ void main() {
   expectMeetsContract(
     '定型文の削除',
     home: PresetPhraseScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.delete_outline),
+    open: (tester) => tester.tap(find.byTooltip('削除')),
     cancelLabel: 'キャンセル',
     confirmLabel: '削除',
     scope: phraseScope,
@@ -185,7 +186,7 @@ void main() {
     // 本文がフォーム。キーボードが出た状態でも当てる（`scrollable` が効く場面）
     withKeyboard: true,
     home: PresetPhraseScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.add),
+    open: (tester) => _tapIcon(tester, CupertinoIcons.plus),
     cancelLabel: 'キャンセル',
     confirmLabel: '保存',
     scope: phraseScope,
@@ -196,7 +197,7 @@ void main() {
     // 本文がフォーム。キーボードが出た状態でも当てる（`scrollable` が効く場面）
     withKeyboard: true,
     home: PresetPhraseScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.edit),
+    open: (tester) => _tapIcon(tester, CupertinoIcons.pencil),
     cancelLabel: 'キャンセル',
     confirmLabel: '保存',
     scope: phraseScope,
@@ -222,7 +223,7 @@ void main() {
   expectMeetsContract(
     'お気に入りの削除（個別）',
     home: FavoritesScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.delete),
+    open: (tester) => tester.tap(find.byTooltip('削除')),
     cancelLabel: 'キャンセル',
     confirmLabel: '削除',
     scope: favoriteScope,
@@ -231,7 +232,7 @@ void main() {
   expectMeetsContract(
     'お気に入りの削除（全件）',
     home: FavoritesScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.delete_sweep),
+    open: (tester) => tester.tap(find.byTooltip('全削除')),
     cancelLabel: 'キャンセル',
     confirmLabel: '削除',
     scope: favoriteScope,
@@ -240,7 +241,7 @@ void main() {
   expectMeetsContract(
     '履歴の削除（全件）',
     home: HistoryScreen.new,
-    open: (tester) => _tapIcon(tester, Icons.delete_sweep),
+    open: (tester) => tester.tap(find.byTooltip('全削除')),
     cancelLabel: 'キャンセル',
     confirmLabel: '削除',
     scope: (app) => ProviderScope(
@@ -282,7 +283,7 @@ void main() {
     '入力の破棄の確認',
     home: PresetPhraseScreen.new,
     open: (tester) async {
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '打った文');
       await tester.pumpAndSettle();
@@ -317,7 +318,7 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byType(ClearAllButton));
       await tester.pumpAndSettle();
 
       final confirm = renderedButtonColor(tester, 'はい');
@@ -459,12 +460,13 @@ void main() {
       final widget = tester.widget<ElevatedButton>(
         find.widgetWithText(ElevatedButton, '同意して利用'),
       );
-      final themeSide = theme.elevatedButtonTheme.style?.side?.resolve(
+      final dialogTheme = Theme.of(tester.element(find.text('同意して利用')));
+      final themeSide = dialogTheme.elevatedButtonTheme.style?.side?.resolve(
         const <WidgetState>{},
       );
 
       // データを消す操作ではないので error ではなく primary
-      expect(confirm, theme.colorScheme.primary,
+      expect(confirm, dialogTheme.colorScheme.primary,
           reason: '$themeName: 同意ボタンが primary 色で塗られていない');
       // 取り消しと同じ見た目では、そもそも見分けがつかない
       expect(cancel, isNot(confirm),

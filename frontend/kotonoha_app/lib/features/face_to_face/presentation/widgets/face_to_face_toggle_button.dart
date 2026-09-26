@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 
 /// 対面表示モード切り替えボタン
 /// 1タップで対面表示モードの有効/無効を切り替えるボタン。
@@ -43,7 +44,9 @@ class FaceToFaceToggleButton extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           child: Icon(
             // モード状態に応じたアイコン
-            isEnabled ? Icons.fullscreen_exit : Icons.zoom_out_map,
+            isEnabled
+                ? CupertinoIcons.arrow_down_right_arrow_up_left
+                : CupertinoIcons.arrow_up_left_arrow_down_right,
             size: 24,
             semanticLabel: isEnabled ? '対面表示モードを終了' : '対面表示モードを開始',
           ),

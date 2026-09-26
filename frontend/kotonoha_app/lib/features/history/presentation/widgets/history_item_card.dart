@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import '../../domain/models/history.dart';
 import '../../domain/models/history_type.dart';
 import 'package:intl/intl.dart';
@@ -86,7 +87,9 @@ class HistoryItemCard extends StatelessWidget {
               children: [
                 // 種類アイコンまたは読み上げ中インジケーター
                 Icon(
-                  isSpeaking ? Icons.volume_up : _getIconForType(history.type),
+                  isSpeaking
+                      ? CupertinoIcons.speaker_2
+                      : _getIconForType(history.type),
                   size: HistoryUIConstants.historyIconSize,
                   color: isSpeaking
                       ? Theme.of(context).colorScheme.secondary
@@ -126,7 +129,9 @@ class HistoryItemCard extends StatelessWidget {
                 if (onFavoriteTap != null)
                   IconButton(
                     icon: Icon(
-                      isFavorited ? Icons.star : Icons.star_border,
+                      isFavorited
+                          ? CupertinoIcons.heart_fill
+                          : CupertinoIcons.heart,
                       color: isFavorited
                           ? Theme.of(context).colorScheme.primary
                           : null,
@@ -143,7 +148,7 @@ class HistoryItemCard extends StatelessWidget {
                 // 読み上げ中は停止ボタン、それ以外は削除ボタン
                 if (isSpeaking && onStop != null)
                   IconButton(
-                    icon: const Icon(Icons.stop),
+                    icon: const Icon(CupertinoIcons.stop_fill),
                     onPressed: onStop,
                     tooltip: '停止',
                     constraints: const BoxConstraints(
@@ -153,7 +158,7 @@ class HistoryItemCard extends StatelessWidget {
                   )
                 else
                   IconButton(
-                    icon: const Icon(Icons.delete),
+                    icon: const Icon(CupertinoIcons.trash),
                     onPressed: onDelete,
                     tooltip: HistoryUIConstants.deleteTooltip,
                     constraints: const BoxConstraints(
@@ -173,10 +178,10 @@ class HistoryItemCard extends StatelessWidget {
   /// 履歴の種類を視覚的に区別
   IconData _getIconForType(HistoryType type) {
     return switch (type) {
-      HistoryType.manualInput => Icons.keyboard, // 文字盤入力
-      HistoryType.preset => Icons.list, // 定型文
-      HistoryType.aiConverted => Icons.auto_awesome, // AI変換結果
-      HistoryType.quickButton => Icons.smart_button, // 大ボタン
+      HistoryType.manualInput => CupertinoIcons.keyboard, // 文字盤入力
+      HistoryType.preset => CupertinoIcons.list_bullet, // 定型文
+      HistoryType.aiConverted => CupertinoIcons.sparkles, // AI変換結果
+      HistoryType.quickButton => CupertinoIcons.square_grid_2x2, // 大ボタン
     };
   }
 

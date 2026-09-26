@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
@@ -177,7 +178,7 @@ void main() {
         findsOneWidget,
         reason: 'インメモリ登録を永続保存の成功と告げない',
       );
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget);
     });
 
     /// 履歴画面 重複追加エラーメッセージ
@@ -263,16 +264,16 @@ void main() {
       );
 
       // 未お気に入りなのでstar_borderが表示される
-      expect(find.byIcon(Icons.star_border), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.heart), findsOneWidget);
 
       // When: 星ボタンをタップする
-      await tester.tap(find.byIcon(Icons.star_border));
+      await tester.tap(find.byIcon(CupertinoIcons.heart));
       await tester.pumpAndSettle();
 
       // Then: インメモリの登録であることを伝える
       expect(find.text('一時的に登録しました。保存できないため、再起動すると消えます'), findsOneWidget);
       // 追加後は塗りつぶしのstarアイコンに切り替わる
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget);
     });
 
     /// TC-A11Y-STAR-002: 既にお気に入り登録済みの履歴は塗りつぶし星で表示される
@@ -314,8 +315,8 @@ void main() {
       );
 
       // Then: 既に登録済みのため塗りつぶしのstarアイコンが表示される
-      expect(find.byIcon(Icons.star), findsOneWidget);
-      expect(find.byIcon(Icons.star_border), findsNothing);
+      expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.heart), findsNothing);
     });
 
     /// Stage 1（Phase 3 / WP-2）: 履歴由来のお気に入りに出所（sourceId）が記録される
@@ -345,7 +346,7 @@ void main() {
       );
 
       // When: 星ボタンをタップする
-      await tester.tap(find.byIcon(Icons.star_border));
+      await tester.tap(find.byIcon(CupertinoIcons.heart));
       await tester.pumpAndSettle();
 
       // Then: 作られたお気に入りのsourceIdが履歴のidと一致する

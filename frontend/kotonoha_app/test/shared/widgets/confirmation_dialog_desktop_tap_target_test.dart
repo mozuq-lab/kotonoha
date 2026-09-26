@@ -41,7 +41,7 @@ void main() {
             ),
           ),
         );
-        await tester.tap(find.byIcon(Icons.delete_outline));
+        await tester.tap(find.byType(ClearAllButton));
         await tester.pumpAndSettle();
 
         final cancel = _button('いいえ');

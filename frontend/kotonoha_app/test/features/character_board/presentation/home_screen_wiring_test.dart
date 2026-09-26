@@ -115,15 +115,22 @@ void main() {
       expect(find.text('AI変換'), findsNothing);
       expect(find.byType(OfflineIndicator), findsNothing);
 
+      // 横持ちでは入力1行を確保した操作域をスクロールして使う。
+      await tester.ensureVisible(find.text('読み上げ'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('読み上げ'));
       await tester.pumpAndSettle();
       verify(() => mockFlutterTts.speak('あい')).called(1);
       expect(container.read(historyProvider).histories.first.content, 'あい');
 
+      await tester.ensureVisible(find.byType(DeleteButton));
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(DeleteButton));
       await tester.pumpAndSettle();
       expect(container.read(inputBufferProvider), 'あ');
 
+      await tester.ensureVisible(find.byType(ClearAllButton));
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(ClearAllButton));
       await tester.pumpAndSettle();
       await tester.tap(find.descendant(
@@ -350,7 +357,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.open_in_full), findsOneWidget);
       expect(find.byTooltip('対面表示'), findsOneWidget);
     });
   });

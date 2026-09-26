@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
@@ -30,31 +31,31 @@ const _tutorialSteps = [
     title: 'ようこそ、ことのはへ',
     description: 'このアプリは、文字盤を使ってコミュニケーションをサポートするアプリです。\n'
         '基本的な使い方をご説明します。',
-    icon: Icons.waving_hand,
+    icon: CupertinoIcons.hand_raised,
   ),
   _TutorialStep(
     title: '文字盤で入力',
     description: '五十音の文字盤をタップして文字を入力します。\n'
         '入力した文字は画面上部に表示されます。',
-    icon: Icons.grid_view,
+    icon: CupertinoIcons.square_grid_2x2,
   ),
   _TutorialStep(
     title: '定型文を使う',
     description: 'よく使う言葉は定型文として登録できます。\n'
         'タップするだけですばやく入力できます。',
-    icon: Icons.format_quote,
+    icon: CupertinoIcons.quote_bubble,
   ),
   _TutorialStep(
     title: '読み上げ機能',
     description: '入力したテキストを音声で読み上げます。\n'
         '話し相手にメッセージを伝えられます。',
-    icon: Icons.volume_up,
+    icon: CupertinoIcons.speaker_2,
   ),
   _TutorialStep(
     title: '準備完了',
     description: 'これで基本的な使い方はおしまいです。\n'
         '詳しい使い方は「設定」→「使い方」から確認できます。',
-    icon: Icons.check_circle,
+    icon: CupertinoIcons.checkmark_circle,
   ),
 ];
 

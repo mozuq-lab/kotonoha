@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import '../constants/favorite_ui_constants.dart';
 
 /// 空状態表示ウィジェット
@@ -27,7 +28,7 @@ class EmptyFavoriteWidget extends StatelessWidget {
           children: [
             // 空状態アイコン
             Icon(
-              Icons.favorite_border,
+              CupertinoIcons.heart,
               size: FavoriteUIConstants.emptyStateIconSize,
               color: Theme.of(context)
                   .colorScheme

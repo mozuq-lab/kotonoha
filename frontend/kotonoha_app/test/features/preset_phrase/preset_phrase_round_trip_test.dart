@@ -12,6 +12,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -94,8 +95,9 @@ void main() {
     await tester.pumpWidget(
         const ProviderScope(child: MaterialApp(home: PresetPhraseScreen())));
     await tester.pumpAndSettle();
-    await tester.tap(
-        edit ? find.byIcon(Icons.edit) : find.byType(FloatingActionButton));
+    await tester.tap(edit
+        ? find.byIcon(CupertinoIcons.pencil)
+        : find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '残さない本文');
     await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
@@ -195,8 +197,9 @@ void main() {
     await tester.pumpWidget(
         const ProviderScope(child: MaterialApp(home: PresetPhraseScreen())));
     await tester.pumpAndSettle();
-    await tester.tap(
-        edit ? find.byIcon(Icons.edit) : find.byType(FloatingActionButton));
+    await tester.tap(edit
+        ? find.byIcon(CupertinoIcons.pencil)
+        : find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '初回の保存本文');
     await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
@@ -245,7 +248,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
       await tester.tap(edit
-          ? find.byIcon(Icons.edit).first
+          ? find.byIcon(CupertinoIcons.pencil).first
           : find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '失敗しても残す本文');
@@ -302,8 +305,9 @@ void main() {
           child: const MaterialApp(home: PresetPhraseScreen()),
         ));
         await tester.pumpAndSettle();
-        await tester.tap(
-            edit ? find.byIcon(Icons.edit) : find.byType(FloatingActionButton));
+        await tester.tap(edit
+            ? find.byIcon(CupertinoIcons.pencil)
+            : find.byType(FloatingActionButton));
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField), '待機中に変えない本文');
         await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
@@ -392,7 +396,7 @@ void main() {
             child: const MaterialApp(home: PresetPhraseScreen()),
           ));
           await tester.pumpAndSettle();
-          await tester.tap(find.byIcon(Icons.edit).first);
+          await tester.tap(find.byIcon(CupertinoIcons.pencil).first);
           await tester.pumpAndSettle();
           await tester.enterText(find.byType(TextField), '競合しても残す本文');
           await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
@@ -474,8 +478,9 @@ void main() {
         ),
       ));
       await tester.pumpAndSettle();
-      await tester.tap(
-          edit ? find.byIcon(Icons.edit) : find.byType(FloatingActionButton));
+      await tester.tap(edit
+          ? find.byIcon(CupertinoIcons.pencil)
+          : find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '画面が消えても保存する本文');
       await tester.tap(find.widgetWithText(ChoiceChip, '体調'));
@@ -527,7 +532,7 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.delete_outline).first);
+    await tester.tap(find.byTooltip('削除').first);
     await tester.pumpAndSettle();
     showScreen.value = false;
     await tester.pumpAndSettle();
@@ -555,12 +560,12 @@ void main() {
     await tester.pump();
 
     expect(find.text(phraseContent), findsOneWidget);
-    expect(find.byIcon(Icons.star_border), findsOneWidget,
+    expect(find.byIcon(CupertinoIcons.heart), findsOneWidget,
         reason: 'まだお気に入りではないこと（往復の出発点）');
 
     // When: 星をタップする
     await tester.runAsync(() async {
-      await tester.tap(find.byIcon(Icons.star_border).first);
+      await tester.tap(find.byIcon(CupertinoIcons.heart).first);
       await Future<void>.delayed(const Duration(milliseconds: 200));
     });
     await tester.pump();
@@ -587,9 +592,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byIcon(Icons.star), findsOneWidget,
+    expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget,
         reason: '定型文 UI が favorites box の内容から星を描いていること'
             '（PresetPhrase 側にフラグを持たない＝1概念1真実）');
-    expect(find.byIcon(Icons.star_border), findsNothing);
+    expect(find.byIcon(CupertinoIcons.heart), findsNothing);
   });
 }

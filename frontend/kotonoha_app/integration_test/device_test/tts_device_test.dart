@@ -29,7 +29,7 @@ void main() {
         await typeOnCharacterBoard(tester, 'こんにちは。これはiOSのテストです。');
 
         // 実際の処理実行: 読み上げを開始
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(seconds: 2));
 
         // 結果検証: TTS読み上げが実行される
@@ -81,7 +81,7 @@ void main() {
 
         // 実際の処理実行: 基本機能を実行
         await typeOnCharacterBoard(tester, 'ガイド付きアクセス');
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(seconds: 1));
 
         // 結果検証: アプリが正常動作する
@@ -113,7 +113,7 @@ void main() {
         await typeOnCharacterBoard(tester, 'こんにちは。これはAndroidのテストです。');
 
         // 実際の処理実行: 読み上げを開始
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(seconds: 2));
 
         // 結果検証: TTS読み上げが実行される
@@ -166,7 +166,7 @@ void main() {
 
         // 実際の処理実行: 基本機能を実行
         await typeOnCharacterBoard(tester, '画面ピン留め');
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(seconds: 1));
 
         // 結果検証: アプリが正常動作する
@@ -202,7 +202,7 @@ void main() {
         await typeOnCharacterBoard(tester, '音量テスト');
 
         // 実際の処理実行: 読み上げを実行
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pumpAndSettle();
 
         // 結果検証: 音量警告が表示される可能性がある
@@ -231,7 +231,7 @@ void main() {
         await typeOnCharacterBoard(tester, '音声エンジンテスト');
 
         // 実際の処理実行: 読み上げを実行
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pumpAndSettle();
 
         // 結果検証: エラーメッセージが表示される可能性がある
@@ -298,7 +298,7 @@ void main() {
         await typeOnCharacterBoard(tester, longText);
 
         // 実際の処理実行: 読み上げを開始
-        await tapIconButton(tester, Icons.volume_up);
+        await tapButton(tester, '読み上げ');
         await tester.pump(const Duration(seconds: 3));
 
         // 結果検証: 長文が表示される
@@ -314,7 +314,7 @@ void main() {
         await takeScreenshot(binding, 'RT-305_long_text_tts');
 
         // 実際の処理実行: 停止ボタンで中断できる
-        final stopButton = find.byIcon(Icons.stop);
+        final stopButton = find.text('停止');
         if (stopButton.evaluate().isNotEmpty) {
           await tester.tap(stopButton);
           await tester.pumpAndSettle();
@@ -338,7 +338,7 @@ void main() {
         // 実際の処理実行: 10回連続で読み上げ
         for (int i = 0; i < 10; i++) {
           debugPrint('連続読み上げ: ${i + 1}回目');
-          await tapIconButton(tester, Icons.volume_up);
+          await tapButton(tester, '読み上げ');
           await tester.pump(const Duration(milliseconds: 500));
 
           // 短い待機
@@ -371,7 +371,7 @@ void main() {
         for (int i = 0; i < 60; i++) {
           // 50件制限を超える
           await typeOnCharacterBoard(tester, 'テスト履歴${i + 1}');
-          await tapIconButton(tester, Icons.volume_up);
+          await tapButton(tester, '読み上げ');
           await tester.pump(const Duration(milliseconds: 100));
 
           // 入力欄をクリア

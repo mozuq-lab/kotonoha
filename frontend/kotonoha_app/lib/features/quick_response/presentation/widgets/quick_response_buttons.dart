@@ -43,6 +43,7 @@ class QuickResponseButtons extends StatefulWidget {
   /// 可視高さの乏しいレイアウト（スマホ縦持ち・横持ち）でのコンパクト化に使用。
   /// 44px未満に丸められることはない（QuickResponseButton側で保証）。
   final double? buttonHeight;
+  final bool illustrated;
 
   /// QuickResponseButtonsを作成する
   const QuickResponseButtons({
@@ -52,6 +53,7 @@ class QuickResponseButtons extends StatefulWidget {
     this.fontSize,
     this.spacing,
     this.buttonHeight,
+    this.illustrated = false,
   });
 
   @override
@@ -108,6 +110,11 @@ class _QuickResponseButtonsState extends State<QuickResponseButtons>
               onTTSSpeak: null, // デバウンスはこのウィジェットで管理
               fontSize: widget.fontSize,
               height: widget.buttonHeight,
+              showIcon: widget.illustrated,
+              backgroundColor: widget.illustrated
+                  ? Color.lerp(Theme.of(context).colorScheme.surface,
+                      QuickResponseButtonColors.getColor(type), 0.22)
+                  : null,
             ),
           ),
         );

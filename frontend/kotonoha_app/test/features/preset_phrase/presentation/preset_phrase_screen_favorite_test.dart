@@ -11,6 +11,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -113,12 +114,12 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Then: お気に入りセクションに表示され、星が塗りつぶし（Icons.star）で出る。
+        // Then: お気に入りセクションに表示され、星が塗りつぶし（CupertinoIcons.heart_fill）で出る。
         // 検証は最も外側の境界（描画されたウィジェット）で行う。
         expect(find.text('お気に入り'), findsOneWidget);
         expect(find.text('おはようございます'), findsOneWidget);
-        expect(find.byIcon(Icons.star), findsOneWidget);
-        expect(find.byIcon(Icons.star_border), findsNothing);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart), findsNothing);
       },
     );
 
@@ -160,8 +161,8 @@ void main() {
 
         // Then: お気に入りセクションは出ない（sourceTypeで絞られている）
         expect(find.text('お気に入り'), findsNothing);
-        expect(find.byIcon(Icons.star), findsNothing);
-        expect(find.byIcon(Icons.star_border), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsNothing);
+        expect(find.byIcon(CupertinoIcons.heart), findsOneWidget);
       },
     );
 
@@ -198,27 +199,27 @@ void main() {
         await tester.pumpAndSettle();
 
         // 前提: 星は空（枠線）で、お気に入りセクションは出ていない
-        expect(find.byIcon(Icons.star_border), findsOneWidget);
-        expect(find.byIcon(Icons.star), findsNothing);
+        expect(find.byIcon(CupertinoIcons.heart), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsNothing);
         expect(find.text('お気に入り'), findsNothing);
 
         // When: 星をタップする
-        await tester.tap(find.byIcon(Icons.star_border));
+        await tester.tap(find.byIcon(CupertinoIcons.heart));
         await tester.pumpAndSettle();
 
         // Then: 描画結果として星が塗りつぶしに変わり、お気に入りセクションが現れる
-        expect(find.byIcon(Icons.star), findsOneWidget);
-        expect(find.byIcon(Icons.star_border), findsNothing);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart), findsNothing);
         expect(find.text('お気に入り'), findsOneWidget);
         expect(find.text('おはようございます'), findsOneWidget);
 
         // When: もう一度タップして解除する
-        await tester.tap(find.byIcon(Icons.star));
+        await tester.tap(find.byIcon(CupertinoIcons.heart_fill));
         await tester.pumpAndSettle();
 
         // Then: 星が空に戻り、お気に入りセクションも消える
-        expect(find.byIcon(Icons.star_border), findsOneWidget);
-        expect(find.byIcon(Icons.star), findsNothing);
+        expect(find.byIcon(CupertinoIcons.heart), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsNothing);
         expect(find.text('お気に入り'), findsNothing);
       },
     );
@@ -261,15 +262,15 @@ void main() {
         // 前提: お気に入りセクションは無く、「日常」セクションに2件並んでいる
         expect(find.text('お気に入り'), findsNothing);
         expect(find.text('日常'), findsOneWidget);
-        expect(find.byIcon(Icons.star_border), findsNWidgets(2));
+        expect(find.byIcon(CupertinoIcons.heart), findsNWidgets(2));
 
         // When: 1件目の星をタップしてお気に入りにする
-        await tester.tap(find.byIcon(Icons.star_border).first);
+        await tester.tap(find.byIcon(CupertinoIcons.heart).first);
         await tester.pumpAndSettle();
 
         // Then: 星が塗りつぶしに変わり、両セクションが出ている
-        expect(find.byIcon(Icons.star), findsOneWidget);
-        expect(find.byIcon(Icons.star_border), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart_fill), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.heart), findsOneWidget);
         expect(find.text('お気に入り'), findsOneWidget);
         expect(find.text('日常'), findsOneWidget);
 

@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -140,7 +141,7 @@ void main() {
         await takeScreenshot(binding, 'rotation_landscape');
 
         // 実際の処理実行: 設定画面に遷移して回転
-        await tapIconButton(tester, Icons.settings);
+        await tapIconButton(tester, CupertinoIcons.gear_alt);
         expect(find.text('設定'), findsOneWidget);
 
         await takeScreenshot(binding, 'rotation_settings_landscape');

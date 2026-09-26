@@ -18,6 +18,7 @@ library;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -105,7 +106,7 @@ void main() {
     // FakeAsync のタイマー待ちのまま完了せず、その後の box.close が
     // 書き込みロックを待って**デッドロックする**（2026-08-31 に実測）。
     await tester.runAsync(() async {
-      await tester.tap(find.byIcon(Icons.star_border).first);
+      await tester.tap(find.byIcon(CupertinoIcons.heart).first);
       await Future<void>.delayed(const Duration(milliseconds: 200));
     });
     await tester.pump();
@@ -144,13 +145,13 @@ void main() {
       () => Hive.box<FavoriteItem>(PersistedArea.favorites.boxName).close(),
     );
     await tester.runAsync(() async {
-      await tester.tap(find.byIcon(Icons.star_border));
+      await tester.tap(find.byIcon(CupertinoIcons.heart));
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pump();
     expect(find.text('お気に入りに追加しました'), findsNothing);
     expect(find.text('お気に入りを保存できませんでした'), findsOneWidget);
-    expect(find.byIcon(Icons.star_border), findsOneWidget);
+    expect(find.byIcon(CupertinoIcons.heart), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
   test('定型文を削除しても、お気に入りは実 box に残り、開き直しても読める（ADR-005、L-39）', () async {

@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../favorite/providers/favorite_provider.dart';
 import '../../favorite/domain/models/favorite.dart';
@@ -88,7 +89,8 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       // 編集ボタン（2件以上の場合のみ表示）
       if (favorites.length >= 2)
         IconButton(
-          icon: Icon(_isEditMode ? Icons.check : Icons.edit),
+          icon: Icon(
+              _isEditMode ? CupertinoIcons.checkmark : CupertinoIcons.pencil),
           onPressed: _toggleEditMode,
           tooltip: _isEditMode
               ? FavoriteUIConstants.editDoneTooltip
@@ -97,7 +99,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       // 全削除ボタン（編集モードでない場合のみ表示）
       if (!_isEditMode)
         IconButton(
-          icon: const Icon(Icons.delete_sweep),
+          icon: const Icon(CupertinoIcons.trash),
           onPressed: () => _showDeleteAllDialog(context),
           tooltip: FavoriteUIConstants.deleteAllTooltip,
         ),
@@ -191,7 +193,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       child: ListTile(
         leading: ReorderableDragStartListener(
           index: index,
-          child: const Icon(Icons.drag_handle),
+          child: const Icon(CupertinoIcons.line_horizontal_3),
         ),
         title: Text(
           favorite.content,
@@ -207,7 +209,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               label: '${favorite.content}を上へ移動',
               child: IconButton(
                 key: Key('move_up_${favorite.id}'),
-                icon: const Icon(Icons.arrow_upward),
+                icon: const Icon(CupertinoIcons.arrow_up),
                 onPressed: isFirst ? null : () => _moveUp(favorite, index),
                 tooltip: '上へ移動',
               ),
@@ -218,13 +220,13 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               label: '${favorite.content}を下へ移動',
               child: IconButton(
                 key: Key('move_down_${favorite.id}'),
-                icon: const Icon(Icons.arrow_downward),
+                icon: const Icon(CupertinoIcons.arrow_down),
                 onPressed: isLast ? null : () => _moveDown(favorite, index),
                 tooltip: '下へ移動',
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.delete),
+              icon: const Icon(CupertinoIcons.trash),
               onPressed: () => _showDeleteDialog(context, favorite.id),
               tooltip: FavoriteUIConstants.deleteTooltip,
             ),

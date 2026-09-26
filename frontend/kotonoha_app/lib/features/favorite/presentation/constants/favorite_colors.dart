@@ -12,12 +12,14 @@ const favoriteColorChoices = <(String, int)>[
   ('灰', 0xFFB0BEC5),
 ];
 
-Color favoriteBackground(Favorite favorite, ColorScheme scheme) =>
-    favorite.colorValue == null
-        ? scheme.primaryContainer
-        : Color(favorite.colorValue!);
+/// 保存済みの色を変えず、ホームと一覧で同じ落ち着いた面色にする。
+Color favoriteBackground(Favorite favorite, ColorScheme scheme) => Color.lerp(
+      scheme.surface,
+      favorite.colorValue == null
+          ? scheme.primaryContainer
+          : Color(favorite.colorValue!),
+      0.22,
+    )!;
 
 Color favoriteForeground(Favorite favorite, ColorScheme scheme) =>
-    favorite.colorValue == null
-        ? scheme.onPrimaryContainer
-        : bestContrastingTextColor(Color(favorite.colorValue!));
+    bestContrastingTextColor(favoriteBackground(favorite, scheme));

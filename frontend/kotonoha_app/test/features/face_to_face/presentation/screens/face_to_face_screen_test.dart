@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/face_to_face/presentation/screens/face_to_face_screen.dart';
@@ -85,7 +86,7 @@ void main() {
         // 品質保証: ユーザーが通常モードに戻れること
         // 戻るボタンのアイコン（close または arrow_back）を検索
         expect(
-          find.byIcon(Icons.close).evaluate().isNotEmpty ||
+          find.byIcon(CupertinoIcons.xmark).evaluate().isNotEmpty ||
               find.byIcon(Icons.arrow_back).evaluate().isNotEmpty,
           isTrue,
         );
@@ -116,7 +117,7 @@ void main() {
         // When: 実際の処理実行: 戻るボタンをタップ
         // 処理内容: ユーザーが通常モードに戻る操作を模擬
         // closeアイコンまたはarrow_backアイコンを探してタップ
-        final closeButton = find.byIcon(Icons.close);
+        final closeButton = find.byIcon(CupertinoIcons.xmark);
         final backButton = find.byIcon(Icons.arrow_back);
 
         if (closeButton.evaluate().isNotEmpty) {
@@ -216,7 +217,7 @@ void main() {
 
         // Then: 結果検証: 戻るボタンのタップ領域が44px×44px以上であることを確認
         // closeまたはarrow_backを含むInkWellを探す
-        final closeIcon = find.byIcon(Icons.close);
+        final closeIcon = find.byIcon(CupertinoIcons.xmark);
         final backIcon = find.byIcon(Icons.arrow_back);
 
         Finder? iconFinder;

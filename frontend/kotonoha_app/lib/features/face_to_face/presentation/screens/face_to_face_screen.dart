@@ -10,6 +10,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/face_to_face_provider.dart';
 import '../widgets/face_to_face_text_display.dart';
@@ -102,7 +103,7 @@ class FaceToFaceScreen extends ConsumerWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(
-            Icons.close,
+            CupertinoIcons.xmark,
             size: 24,
             semanticLabel: '閉じる',
           ),
