@@ -73,8 +73,8 @@ class RuntimeConfig(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
 
     # レート制限（ADR-002: 単一送信元の burst 抑制。カウンタはプロセス内メモリ）
-    RATE_LIMIT_TIMES: int = Field(default=1, ge=1)
-    RATE_LIMIT_SECONDS: int = Field(default=10, ge=1)
+    RATE_LIMIT_TIMES: int = Field(default=12, ge=1)
+    RATE_LIMIT_SECONDS: int = Field(default=60, ge=1)
     TRUSTED_PROXY_COUNT: int = Field(default=0, ge=0)
 
     # AI プロバイダ

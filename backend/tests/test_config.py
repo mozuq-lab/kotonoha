@@ -37,6 +37,11 @@ def test_api_keys_are_split_and_stripped() -> None:
     assert make_config(API_KEYS=" a , ,b,").api_keys() == (b"a", b"b")
 
 
+def test_default_rate_limit_allows_twelve_requests_per_minute() -> None:
+    config = RuntimeConfig(_env_file=None)
+    assert (config.RATE_LIMIT_TIMES, config.RATE_LIMIT_SECONDS) == (12, 60)  # ADR-002
+
+
 def test_empty_provider_key_means_none() -> None:
     config = make_config(ANTHROPIC_API_KEY="", OPENAI_API_KEY="")
     assert (
