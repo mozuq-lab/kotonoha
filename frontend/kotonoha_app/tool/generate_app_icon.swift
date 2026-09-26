@@ -3,37 +3,7 @@
 import AppKit
 import Foundation
 
-func writeIcon(_ size: Int, to path: String, markScale: CGFloat = 1) throws {
-    guard let bitmap = NSBitmapImageRep(
-        bitmapDataPlanes: nil,
-        pixelsWide: size,
-        pixelsHigh: size,
-        bitsPerSample: 8,
-        samplesPerPixel: 4,
-        hasAlpha: true,
-        isPlanar: false,
-        colorSpaceName: .deviceRGB,
-        bytesPerRow: 0,
-        bitsPerPixel: 0
-    ), let context = NSGraphicsContext(bitmapImageRep: bitmap) else {
-        fatalError("Cannot create icon bitmap")
-    }
-
-    NSGraphicsContext.saveGraphicsState()
-    NSGraphicsContext.current = context
-    context.imageInterpolation = .high
-    context.cgContext.scaleBy(x: CGFloat(size) / 1024, y: CGFloat(size) / 1024)
-
-    let jade = NSColor(calibratedRed: 57 / 255, green: 176 / 255, blue: 155 / 255, alpha: 1)
-    let petrol = NSColor(calibratedRed: 0, green: 70 / 255, blue: 76 / 255, alpha: 1)
-    NSGradient(starting: jade, ending: petrol)!.draw(
-        in: NSRect(x: 0, y: 0, width: 1024, height: 1024), angle: -45
-    )
-
-    context.cgContext.translateBy(x: 512, y: 512)
-    context.cgContext.scaleBy(x: markScale, y: markScale)
-    context.cgContext.translateBy(x: -512, y: -512)
-
+func leafPath() -> NSBezierPath {
     // A single silhouette combines a leaf with a soft speech-bubble tail.
     let leaf = NSBezierPath()
     leaf.move(to: NSPoint(x: 819, y: 813))
@@ -69,8 +39,42 @@ func writeIcon(_ size: Int, to path: String, markScale: CGFloat = 1) throws {
     vein.close()
     leaf.append(vein)
     leaf.windingRule = .evenOdd
+    return leaf
+}
+
+func writeIcon(_ size: Int, to path: String, markScale: CGFloat = 1) throws {
+    guard let bitmap = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: size,
+        pixelsHigh: size,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+    ), let context = NSGraphicsContext(bitmapImageRep: bitmap) else {
+        fatalError("Cannot create icon bitmap")
+    }
+
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = context
+    context.imageInterpolation = .high
+    context.cgContext.scaleBy(x: CGFloat(size) / 1024, y: CGFloat(size) / 1024)
+
+    let jade = NSColor(calibratedRed: 57 / 255, green: 176 / 255, blue: 155 / 255, alpha: 1)
+    let petrol = NSColor(calibratedRed: 0, green: 70 / 255, blue: 76 / 255, alpha: 1)
+    NSGradient(starting: jade, ending: petrol)!.draw(
+        in: NSRect(x: 0, y: 0, width: 1024, height: 1024), angle: -45
+    )
+
+    context.cgContext.translateBy(x: 512, y: 512)
+    context.cgContext.scaleBy(x: markScale, y: markScale)
+    context.cgContext.translateBy(x: -512, y: -512)
+
     NSColor(calibratedRed: 1, green: 253 / 255, blue: 247 / 255, alpha: 1).setFill()
-    leaf.fill()
+    leafPath().fill()
     NSGraphicsContext.restoreGraphicsState()
 
     // iOS app icons must be RGB PNGs without an alpha channel.
@@ -118,6 +122,64 @@ for (name, size) in [
 }
 
 let android = "android/app/src/main/res/"
+
+// Export the same path as a transparent foreground. Android supplies the mask.
+let leaf = leafPath()
+var commands: [String] = []
+for index in 0..<leaf.elementCount {
+    var points = [NSPoint](repeating: .zero, count: 3)
+    let element = leaf.element(at: index, associatedPoints: &points)
+    func point(_ index: Int) -> String {
+        String(format: "%.0f,%.0f", Double(points[index].x), Double(points[index].y))
+    }
+    switch element {
+    case .moveTo: commands.append("M" + point(0))
+    case .lineTo: commands.append("L" + point(0))
+    case .cubicCurveTo: commands.append("C" + point(0) + " " + point(1) + " " + point(2))
+    case .quadraticCurveTo: commands.append("Q" + point(0) + " " + point(1))
+    case .closePath: commands.append("Z")
+    @unknown default: fatalError("Unsupported icon path element")
+    }
+}
+let adaptive = """
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
+
+"""
+for (path, content) in [
+    ("mipmap-anydpi-v26/ic_launcher.xml", adaptive),
+    ("drawable/ic_launcher_background.xml", """
+    <?xml version="1.0" encoding="utf-8"?>
+    <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+        <gradient android:angle="315" android:startColor="#39B09B" android:endColor="#00464C" />
+    </shape>
+
+    """),
+    ("drawable/ic_launcher_foreground.xml", """
+    <?xml version="1.0" encoding="utf-8"?>
+    <vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="108dp" android:height="108dp"
+        android:viewportWidth="1024" android:viewportHeight="1024">
+        <group android:pivotX="512" android:pivotY="512" android:scaleX="0.66" android:scaleY="-0.66">
+            <path android:fillColor="#FFFDF7" android:fillType="evenOdd"
+                android:pathData="\(commands.joined(separator: " "))" />
+        </group>
+    </vector>
+
+    """)
+] {
+    let target = android + path
+    try FileManager.default.createDirectory(
+        atPath: (target as NSString).deletingLastPathComponent,
+        withIntermediateDirectories: true
+    )
+    try Data(content.utf8).write(to: URL(fileURLWithPath: target))
+}
+
 for (density, size) in [
     ("mdpi", 48), ("hdpi", 72), ("xhdpi", 96),
     ("xxhdpi", 144), ("xxxhdpi", 192)
