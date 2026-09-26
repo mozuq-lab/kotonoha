@@ -1,0 +1,23 @@
+// kotonoha backend を Cloudflare Containers で動かす（2026-09-26 決定。docs/now.md・台帳 L-58）。
+// 手順は README の「デプロイ（Cloudflare Containers）」。秘密はここに書かず `wrangler secret put` で入れる。
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kotonoha-backend",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-26",
+  "containers": [
+    {
+      "class_name": "Backend",
+      // backend のイメージをそのまま使う（uvicorn・worker 1 つ・ポート 8000）
+      "image": "../../backend/Dockerfile",
+      "instance_type": "basic",
+      // レート制限のカウンタはプロセス内メモリ。インスタンスは 1 つに限る（ADR-002）
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "BACKEND", "class_name": "Backend" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Backend"] }],
+  "observability": { "enabled": false }
+}
