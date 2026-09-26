@@ -10,8 +10,9 @@ import 'package:integration_test/integration_test.dart';
 import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
+import 'package:kotonoha_app/features/favorite/data/favorite_repository.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
-import 'package:kotonoha_app/features/status_buttons/presentation/widgets/status_button.dart';
+import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/features/preset_phrase/presentation/widgets/phrase_list_item.dart';
@@ -21,6 +22,15 @@ import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 export 'package:flutter/material.dart' show Icons;
+
+/// 電話幅のアイコンとタブレット幅の文字タイトルのどちらかを確認する。
+void expectHomeBrand() {
+  expect(
+    find.text('kotonoha').evaluate().isNotEmpty ||
+        find.byKey(const Key('home_app_icon')).evaluate().isNotEmpty,
+    isTrue,
+  );
+}
 
 /// E2Eテスト用のバインディング初期化
 /// 各E2Eテストファイルの先頭で呼び出す。
@@ -69,6 +79,8 @@ Future<void> pumpApp(
   if (clearData) {
     await clearHistoryAndFavorites();
   }
+  await FavoriteRepository(box: Hive.box<FavoriteItem>('favorites'))
+      .ensureInitialFavorites();
 
   await tester.pumpWidget(
     ProviderScope(
@@ -238,14 +250,14 @@ Future<void> tapCharacterOnBoard(
   await tester.pump();
 }
 
-/// ホームの状態ボタン（8 個すべてがスワイプなしで並ぶ）から [label] のボタンを
+/// ホームのお気に入り上位8件から [label] のボタンを
 /// 画面に出す。操作域がスクロールする低い画面のために ensureVisible する。
-Future<void> revealStatusButton(WidgetTester tester, String label) async {
+Future<void> revealFavoriteShortcut(WidgetTester tester, String label) async {
   final target = find.descendant(
-    of: find.byType(StatusButton),
+    of: find.byType(FavoriteShortcutButton),
     matching: find.text(label),
   );
-  expect(target, findsOneWidget, reason: '状態ボタン「$label」に届かない');
+  expect(target, findsOneWidget, reason: 'お気に入り「$label」に届かない');
   await tester.ensureVisible(target);
   await tester.pumpAndSettle();
 }
