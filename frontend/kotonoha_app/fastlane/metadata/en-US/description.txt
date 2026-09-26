@@ -5,7 +5,7 @@ Our goal is to enable users to express what they want to say with minimal effort
 【Key Features】
 
 - Japanese Syllabary Keyboard
-  - Easy input for hiragana, katakana, voiced and semi-voiced sounds
+  - Easy input for hiragana, voiced and semi-voiced sounds, small kana, and symbols
   - Large, easy-to-tap buttons
   - Immediate text-to-speech playback
 
@@ -15,9 +15,9 @@ Our goal is to enable users to express what they want to say with minimal effort
   - One-tap instant speech
   - Add your own custom phrases
 
-- Quick Response Buttons
+- Quick Responses and Favorites
   - "Yes", "No", "I don't know" for rapid communication
-  - Status buttons: "Pain", "Restroom", etc.
+  - Keep frequently used words such as "Restroom" and "Pain" as favorites on the home screen and speak them with one tap (order and colors can be changed)
 
 - AI Conversion (Optional)
   - Automatically convert text to polite/formal speech
@@ -42,7 +42,7 @@ Core features (keyboard, phrases, speech) work without internet connection. Use 
 
 - Your input data is stored on your device
 - The app itself never syncs to any cloud (your device's OS backup may include it)
-- AI conversion sends data to server only with your consent
+- Only when you use AI conversion, your input is sent to an external AI service (Cloudflare, United States), after asking for your consent
 
 【Target Users】
 

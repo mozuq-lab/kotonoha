@@ -4,7 +4,7 @@ Key Features:
 1. Japanese syllabary keyboard for text input
 2. 80+ preset phrases for quick communication
 3. Text-to-speech using OS standard TTS
-4. Optional AI text conversion (requires network)
+4. Optional AI text conversion (requires network). The input text is sent to Cloudflare Workers AI only after the user agrees in an in-app consent dialog
 
 Testing Notes:
 - The app is designed for Japanese language primarily

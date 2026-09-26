@@ -4,10 +4,10 @@ Version 1.0.0 - Initial Release
 - Japanese syllabary keyboard input
 - 80+ preset phrases
 - Quick response buttons (Yes/No)
-- Status buttons (Pain, Restroom, etc.)
+- Favorites (speak frequently used words such as Restroom and Pain with one tap)
 - AI text conversion (polite/formal)
 - Face-to-face display mode
-- Full offline support
+- Offline support (except AI conversion)
 
 【Accessibility】
 - Three font size options

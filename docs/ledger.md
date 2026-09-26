@@ -13,7 +13,6 @@
 - [ ] L-58 backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復）が未達 — ADR-002。決定（2026-09-26）: 初回リリースに AI 変換を含めるので、ストア提出の前に満たす。L-55 も同日に
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
 - [ ] L-84 開発者登録（Apple Developer Program / Google Play）。アプリが形になってから行う（2026-09-24 決定。`docs/now.md`） — ADR-007 条件 4（人が動かす。旧 remaining-work.md から移記）
-- [ ] L-85 ストア掲載文（`frontend/kotonoha_app/fastlane/metadata/ja-JP`・`en-US`）を「医療・治療効果を謳わない」観点で点検していない — ADR-007 条件 4（旧 remaining-work.md から移記）
 - [ ] L-87 dependabot の PR 15 本が滞留 — .github/dependabot.yml。決定（2026-09-20）: actions 5 本（#66〜#70）はまとめてマージ、backend 5 本（#55〜#59）は close して作り直させる（requirements.txt とずれ、`sqlalchemy` は依存に無い）。frontend 5 本（#60・#62〜#65）は未決（前提の L-80 は #162 で済んだ）
 - [ ] L-88 `fix/backend-production-hardening` がローカルにしか無い（#86 で証拠として残すと決定） — Issue #86。決定（2026-09-20）: push して保全する
 - [ ] L-91 コードや CI が守っているのに ADR に無い決定（`/health` の無認証・無レート制限、環境名による認証省略と `/docs` 公開、CORS の形、`patch('app.` 禁止、lint の設定値） — backend/app/{routes,config,main}.py、backend/scripts/gates.sh、backend/pyproject.toml。決定（2026-09-20）: 次の監査で ADR にするか決める（未卒業 ADR は上限の 5 本）
