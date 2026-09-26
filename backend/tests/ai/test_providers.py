@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 
 import httpx
@@ -75,6 +76,24 @@ async def test_openai_sends_symbol_key_verbatim(http: respx.MockRouter) -> None:
     finally:
         await provider.aclose()
     assert route.calls[0].request.headers["authorization"] == f"Bearer {SYMBOL_KEY}"
+
+
+async def test_openai_request_fits_reasoning_models(http: respx.MockRouter) -> None:
+    # gpt-6-luna の実測（2026-09-26）: max_tokens は 400、推論ありで temperature≠1 も 400。
+    # 推論を切れば temperature（再生成で言い回しを変えるのに使う）を受け付ける。
+    route = http.post(OPENAI_URL).mock(
+        return_value=httpx.Response(200, json=openai_body("お水をください"))
+    )
+    provider = OpenAIProvider(SecretStr("sk"), model="m", timeout_seconds=1.0)
+    try:
+        await provider.complete(PROMPT)
+    finally:
+        await provider.aclose()
+    sent = json.loads(route.calls[0].request.content)
+    assert "max_tokens" not in sent
+    assert sent["max_completion_tokens"] == PROMPT.max_tokens
+    assert sent["reasoning_effort"] == "none"
+    assert sent["temperature"] == PROMPT.temperature
 
 
 @pytest.mark.parametrize(

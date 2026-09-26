@@ -116,7 +116,10 @@ class OpenAIProvider:
                     {"role": "system", "content": prompt.system},
                     {"role": "user", "content": prompt.user},
                 ],
-                max_tokens=prompt.max_tokens,
+                # 推論モデル（gpt-6-luna 等）は max_tokens を拒否し、推論ありでは temperature≠1 も
+                # 拒否する。短文の変換に推論は要らないので切り、temperature を効かせる（実測）。
+                max_completion_tokens=prompt.max_tokens,
+                reasoning_effort="none",
                 temperature=prompt.temperature,
             )
             content = completion.choices[0].message.content if completion.choices else None

@@ -82,7 +82,7 @@ class RuntimeConfig(BaseSettings):
     ANTHROPIC_API_KEY: SecretStr | None = None
     ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
     OPENAI_API_KEY: SecretStr | None = None
-    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_MODEL: str = "gpt-6-luna"
     AI_API_TIMEOUT: float = Field(default=8.0, gt=0)
     AI_MAX_RETRIES: int = Field(default=1, ge=0)
     AI_CALL_DEADLINE_SECONDS: float = Field(default=10.0, gt=0)

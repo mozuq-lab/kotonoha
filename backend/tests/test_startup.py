@@ -144,6 +144,8 @@ def test_symbol_keys_health_and_conversion_round_trip(fake_provider: FakeAnthrop
     env = _base_env(
         ENVIRONMENT="production",
         API_KEYS=DEVICE_KEY,
+        # .env の DEFAULT_AI_PROVIDER に依存しない（偽プロバイダは Anthropic 形式）
+        DEFAULT_AI_PROVIDER="anthropic",
         ANTHROPIC_API_KEY=PROVIDER_KEY,
         ANTHROPIC_BASE_URL=f"http://127.0.0.1:{fake_provider.server_address[1]}",
         CORS_ORIGINS="http://localhost:3000",
