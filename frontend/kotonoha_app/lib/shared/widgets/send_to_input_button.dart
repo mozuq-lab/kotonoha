@@ -21,15 +21,19 @@ import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 class SendToInputButton extends ConsumerWidget {
   /// 「入力欄へ」ボタンを作成する。
   /// [text] - 入力欄に送るテキスト
-  const SendToInputButton({super.key, required this.text});
+  const SendToInputButton(
+      {super.key, required this.text, this.foregroundColor});
 
   /// 入力欄に送るテキスト
   final String text;
 
+  /// 色付きカード上で使う場合の文字・アイコン色。
+  final Color? foregroundColor;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurfaceVariant;
+    final color = foregroundColor ?? theme.colorScheme.onSurfaceVariant;
 
     return Semantics(
       button: true,

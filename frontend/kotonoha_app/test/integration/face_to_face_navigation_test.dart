@@ -97,7 +97,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(FaceToFaceScreen), findsNothing);
-      expect(find.text('入力してください...'), findsNothing);
+      expect(find.text('入力してください...'), findsOneWidget);
       // ホーム画面（文字盤）に戻り、入力していたテキストが表示される
       expect(find.text('テスト'), findsOneWidget);
     });

@@ -23,6 +23,9 @@ class Favorite {
   /// フィールド定義: 元データのID（定型文IDまたは履歴ID）
   final String? sourceId;
 
+  /// ボタンの背景色。未設定なら画面側の既定色を使う。
+  final int? colorValue;
+
   /// コンストラクタ: 全フィールドを受け取る
   const Favorite({
     required this.id,
@@ -31,6 +34,7 @@ class Favorite {
     this.displayOrder = 0,
     this.sourceType,
     this.sourceId,
+    this.colorValue,
   });
 
   /// メソッド定義: copyWithパターンでイミュータブルな更新
@@ -41,6 +45,7 @@ class Favorite {
     int? displayOrder,
     String? sourceType,
     String? sourceId,
+    int? colorValue,
   }) {
     return Favorite(
       id: id ?? this.id,
@@ -49,6 +54,7 @@ class Favorite {
       displayOrder: displayOrder ?? this.displayOrder,
       sourceType: sourceType ?? this.sourceType,
       sourceId: sourceId ?? this.sourceId,
+      colorValue: colorValue ?? this.colorValue,
     );
   }
 
@@ -61,12 +67,13 @@ class Favorite {
         other.createdAt == createdAt &&
         other.displayOrder == displayOrder &&
         other.sourceType == sourceType &&
-        other.sourceId == sourceId;
+        other.sourceId == sourceId &&
+        other.colorValue == colorValue;
   }
 
   @override
   int get hashCode {
     return Object.hash(
-        id, content, createdAt, displayOrder, sourceType, sourceId);
+        id, content, createdAt, displayOrder, sourceType, sourceId, colorValue);
   }
 }

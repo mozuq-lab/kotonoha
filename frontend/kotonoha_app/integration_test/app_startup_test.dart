@@ -15,7 +15,7 @@ void main() {
       await pumpApp(tester);
 
       // ホーム画面が表示されることを確認
-      expect(find.text('kotonoha'), findsOneWidget);
+      expectHomeBrand();
     });
 
     testWidgets('ホーム画面に文字盤が表示される', (tester) async {

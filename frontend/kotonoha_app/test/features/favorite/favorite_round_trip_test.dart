@@ -135,6 +135,24 @@ void main() {
     expect(find.text(seedContent), findsOneWidget,
         reason: '再起動後の UI が、保存された値から描かれていること');
   });
+  testWidgets('履歴からお気に入りを保存できなければ成功を告げない', (tester) async {
+    await tester.pumpWidget(const ProviderScope(
+      child: MaterialApp(home: HistoryScreen()),
+    ));
+    await tester.pump();
+    await tester.runAsync(
+      () => Hive.box<FavoriteItem>(PersistedArea.favorites.boxName).close(),
+    );
+    await tester.runAsync(() async {
+      await tester.tap(find.byIcon(Icons.star_border));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pump();
+    expect(find.text('お気に入りに追加しました'), findsNothing);
+    expect(find.text('お気に入りを保存できませんでした'), findsOneWidget);
+    expect(find.byIcon(Icons.star_border), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   test('定型文を削除しても、お気に入りは実 box に残り、開き直しても読める（ADR-005、L-39）', () async {
     // Given: 実 box を見る ProviderContainer（repository_providers は Hive.isBoxOpen で判定する）
     final container = ProviderContainer();

@@ -44,8 +44,8 @@ class HelpScreen extends ConsumerWidget {
               children: [
                 _HelpItem(
                   title: '文字盤で入力',
-                  description: '五十音の文字盤をタップして文字を入力します。'
-                      '入力した文字は上部のテキストエリアに表示されます。',
+                  description: '五十音の文字盤をタップするか、上部の入力欄を押してキーボードで文字を入力します。'
+                      '入力欄の文は、横のハートからお気に入りに登録できます。',
                 ),
                 SizedBox(height: 16),
                 _HelpItem(
@@ -85,8 +85,9 @@ class HelpScreen extends ConsumerWidget {
                 SizedBox(height: 16),
                 _HelpItem(
                   title: '履歴とお気に入り',
-                  description: '過去に入力したテキストは履歴に保存されます。'
-                      'よく使うものはお気に入りに登録できます。',
+                  description: '読み上げた文は履歴に保存されます。'
+                      'よく使う文はお気に入りに登録し、色や並び順を変えられます。'
+                      '先頭の8件はホーム画面にも表示されます。',
                 ),
               ],
             ),

@@ -42,6 +42,20 @@ void main() {
         // オーバーフローエラーなど、レイアウト例外が発生していないことを確認
         expect(tester.takeException(), isNull);
 
+        // スマホではアプリ名の代わりにアイコンが描画される。
+        final icon = find.byKey(const Key('home_app_icon'));
+        expect(icon, findsOneWidget);
+        expect(find.text('kotonoha'), findsNothing);
+        await tester.runAsync(() => precacheImage(
+              const AssetImage('assets/images/kotonoha_icon.png'),
+              tester.element(icon),
+            ));
+        await tester.pumpAndSettle();
+        final paintedIcon = tester.widget<RawImage>(
+          find.descendant(of: icon, matching: find.byType(RawImage)),
+        );
+        expect(paintedIcon.image, isNotNull);
+
         // 文字盤（アプリの主機能）が表示されている
         expect(find.byType(CharacterBoardWidget), findsOneWidget);
         expect(find.text('あ'), findsOneWidget);
@@ -103,6 +117,27 @@ void main() {
 
         expect(tester.takeException(), isNull);
 
+        // 広い画面ではアイコンとアプリ名が並び、操作ボタンと重ならない。
+        final icon = find.byKey(const Key('home_app_icon'));
+        expect(icon, findsOneWidget);
+        await tester.runAsync(() => precacheImage(
+              const AssetImage('assets/images/kotonoha_icon.png'),
+              tester.element(icon),
+            ));
+        await tester.pumpAndSettle();
+        final paintedIcon = tester.widget<RawImage>(
+          find.descendant(of: icon, matching: find.byType(RawImage)),
+        );
+        expect(paintedIcon.image, isNotNull);
+        final iconRect = tester.getRect(icon);
+        final nameRect = tester.getRect(find.text('kotonoha'));
+        expect(iconRect.width, greaterThan(0));
+        expect(iconRect.right, lessThan(nameRect.left));
+        final appBar = tester.widget<AppBar>(find.byType(AppBar));
+        final firstActionRect =
+            tester.getRect(find.byWidget(appBar.actions!.first));
+        expect(nameRect.right, lessThanOrEqualTo(firstActionRect.left));
+
         // 文字盤内のGridViewが持つScrollableのスクロール可能量を検証する。
         // maxScrollExtentが実質0であれば、基本タブ50文字が1画面に収まって
         // おりスクロールが不要であることを意味する。
@@ -154,18 +189,10 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.text(InputLimitNotice.message), findsOneWidget);
 
-        // 入力テキストのTextウィジェット自体は、SingleChildScrollView配下では
-        // ビューポートに関わらず内容に応じた自然な高さでレンダリングされる
-        // （クリップされて見えなくなるだけ）ため、find.text()のRenderBoxの
-        // 高さでは「ビューポートが実質0に潰れている」ことを検出できない。
-        // 実際に潰れるのは入力テキストを囲むSingleChildScrollView自身
-        // （reverse: trueで一意に識別できる）のRenderBoxの高さなので、
-        // そちらを見る。
-        final scrollViewFinder = find.byWidgetPredicate(
-          (widget) => widget is SingleChildScrollView && widget.reverse,
-        );
-        expect(scrollViewFinder, findsOneWidget);
-        final viewportSize = tester.getSize(scrollViewFinder);
+        // 編集可能な入力欄の表示域そのものが1行分残ることを確認する。
+        final inputFinder = find.byKey(const Key('home_input_field'));
+        expect(inputFinder, findsOneWidget);
+        final viewportSize = tester.getSize(inputFinder);
         expect(
           viewportSize.height,
           greaterThanOrEqualTo(AppSizes.fontSizeMedium),

@@ -9,8 +9,12 @@ import 'package:kotonoha_app/core/persistence/persistence_state.dart';
 /// 警告を出し続けると、直っても利用者には分からない。
 /// 次の書き込みが成功した時点でその領域を外す。
 class WriteFailureNotifier extends Notifier<Set<PersistedArea>> {
+  WriteFailureNotifier({this.initiallyFailed = const <PersistedArea>{}});
+
+  final Set<PersistedArea> initiallyFailed;
+
   @override
-  Set<PersistedArea> build() => const <PersistedArea>{};
+  Set<PersistedArea> build() => initiallyFailed;
 
   /// [area] への書き込み結果を記録する
   void record({required PersistedArea area, required bool succeeded}) {

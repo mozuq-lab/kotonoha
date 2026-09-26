@@ -3,16 +3,19 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/history_provider.dart';
-import '../domain/models/history.dart';
-import '../../favorite/providers/favorite_provider.dart';
-import '../../tts/providers/tts_provider.dart';
-import '../../tts/domain/models/tts_state.dart';
-import 'widgets/history_item_card.dart';
-import 'widgets/empty_history_widget.dart';
-import 'constants/history_ui_constants.dart';
+import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 import 'package:kotonoha_app/shared/widgets/undo_snack_bar.dart';
+
+import '../../favorite/presentation/constants/favorite_ui_constants.dart';
+import '../../favorite/providers/favorite_provider.dart';
+import '../../tts/domain/models/tts_state.dart';
+import '../../tts/providers/tts_provider.dart';
+import '../domain/models/history.dart';
+import '../providers/history_provider.dart';
+import 'constants/history_ui_constants.dart';
+import 'widgets/empty_history_widget.dart';
+import 'widgets/history_item_card.dart';
 
 /// 履歴画面ウィジェット
 /// 過去の入力履歴を表示・管理する画面。
@@ -209,7 +212,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// お気に入り追加機能
   /// 出所記録: 履歴由来であることを sourceType/sourceId として記録する
   /// （Phase 3 / WP-2 / Stage 1）。重複判定は content 一致のまま変えない。
-  void _addToFavorite(BuildContext context, String historyId, String content) {
+  Future<void> _addToFavorite(
+      BuildContext context, String historyId, String content) async {
     final favoriteState = ref.read(favoriteProvider);
     final isDuplicate =
         favoriteState.favorites.any((f) => f.content == content);
@@ -223,14 +227,24 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ),
       );
     } else {
-      // 追加成功
-      ref
+      await ref
           .read(favoriteProvider.notifier)
           .addFavoriteFromHistory(content, historyId);
+      if (!context.mounted) return;
+      final registered =
+          ref.read(favoriteProvider).favorites.any((f) => f.content == content);
+      final temporary =
+          registered && ref.read(favoriteRepositoryProvider) == null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(HistoryUIConstants.addToFavoriteSuccess),
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          content: Text(!registered
+              ? FavoriteUIConstants.saveFailureMessage
+              : temporary
+                  ? FavoriteUIConstants.temporaryRegistrationMessage
+                  : HistoryUIConstants.addToFavoriteSuccess),
+          backgroundColor: !registered || temporary
+              ? Theme.of(context).colorScheme.error
+              : Theme.of(context).colorScheme.primary,
         ),
       );
     }

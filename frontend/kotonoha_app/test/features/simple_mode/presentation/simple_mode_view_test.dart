@@ -2,7 +2,7 @@
 /// fix/improvement-p0-p2: シンプルモード（疲労時・症状進行時の簡易画面）
 /// 対象: lib/features/simple_mode/presentation/simple_mode_view.dart
 /// 検証内容
-/// クイック応答・状態ボタン（12個）・お気に入りが表示される
+/// クイック応答とお気に入りが表示される
 /// お気に入りが0件のときはお気に入りセクションが表示されない
 /// 「通常モードに戻る」ボタンが常に表示され、タップでコールバックが呼ばれる
 /// 各ボタンタップで対応するコールバックが呼ばれる
@@ -42,7 +42,6 @@ void main() {
             fontSize: FontSize.medium,
             favorites: const [],
             onQuickResponse: (_) {},
-            onStatusButton: (_) {},
             onFavoriteTap: (_) {},
             onTTSSpeak: (_) {},
             onExitSimpleMode: () {},
@@ -56,14 +55,13 @@ void main() {
       expect(find.text('わからない'), findsOneWidget);
     });
 
-    testWidgets('状態ボタンが12個（全ボタン）表示される', (tester) async {
+    testWidgets('独立した状態欄を表示しない', (tester) async {
       await tester.pumpWidget(
         wrap(
           SimpleModeView(
             fontSize: FontSize.medium,
-            favorites: const [],
+            favorites: buildFavorites(8),
             onQuickResponse: (_) {},
-            onStatusButton: (_) {},
             onFavoriteTap: (_) {},
             onTTSSpeak: (_) {},
             onExitSimpleMode: () {},
@@ -72,7 +70,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(StatusButton), findsNWidgets(12));
+      expect(find.byType(StatusButton), findsNothing);
+      expect(find.text('状態'), findsNothing);
+      expect(find.text('お気に入り0'), findsOneWidget);
     });
 
     testWidgets('お気に入りが0件のときはお気に入りセクションが表示されない', (tester) async {
@@ -82,7 +82,6 @@ void main() {
             fontSize: FontSize.medium,
             favorites: const [],
             onQuickResponse: (_) {},
-            onStatusButton: (_) {},
             onFavoriteTap: (_) {},
             onTTSSpeak: (_) {},
             onExitSimpleMode: () {},
@@ -101,7 +100,6 @@ void main() {
             fontSize: FontSize.medium,
             favorites: buildFavorites(3),
             onQuickResponse: (_) {},
-            onStatusButton: (_) {},
             onFavoriteTap: (_) {},
             onTTSSpeak: (_) {},
             onExitSimpleMode: () {},
@@ -116,14 +114,13 @@ void main() {
       expect(find.text('お気に入り2'), findsOneWidget);
     });
 
-    testWidgets('お気に入りは最大6件までしか表示されない', (tester) async {
+    testWidgets('お気に入りは通常ホームと同じ上位8件に届く', (tester) async {
       await tester.pumpWidget(
         wrap(
           SimpleModeView(
             fontSize: FontSize.medium,
             favorites: buildFavorites(10),
             onQuickResponse: (_) {},
-            onStatusButton: (_) {},
             onFavoriteTap: (_) {},
             onTTSSpeak: (_) {},
             onExitSimpleMode: () {},
@@ -133,8 +130,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('お気に入り0'), findsOneWidget);
-      expect(find.text('お気に入り5'), findsOneWidget);
-      expect(find.text('お気に入り6'), findsNothing);
+      expect(find.text('お気に入り7'), findsOneWidget);
+      expect(find.text('お気に入り8'), findsNothing);
     });
 
     testWidgets('「通常モードに戻る」ボタンが常に表示される', (tester) async {
@@ -144,7 +141,6 @@ void main() {
             fontSize: FontSize.medium,
             favorites: const [],
             onQuickResponse: (_) {},
-            onStatusButton: (_) {},
             onFavoriteTap: (_) {},
             onTTSSpeak: (_) {},
             onExitSimpleMode: () {},
@@ -168,7 +164,6 @@ void main() {
             fontSize: FontSize.medium,
             favorites: const [],
             onQuickResponse: (_) {},
-            onStatusButton: (_) {},
             onFavoriteTap: (_) {},
             onTTSSpeak: (_) {},
             onExitSimpleMode: () => exited = true,
@@ -193,7 +188,6 @@ void main() {
             fontSize: FontSize.medium,
             favorites: const [],
             onQuickResponse: (type) => respondedType = type,
-            onStatusButton: (_) {},
             onFavoriteTap: (_) {},
             onTTSSpeak: (text) => spoken = text,
             onExitSimpleMode: () {},
@@ -209,32 +203,6 @@ void main() {
       expect(spoken, 'はい');
     });
 
-    testWidgets('状態ボタンタップでonStatusButtonとonTTSSpeakが呼ばれる', (tester) async {
-      StatusButtonType? tappedType;
-      String? spoken;
-
-      await tester.pumpWidget(
-        wrap(
-          SimpleModeView(
-            fontSize: FontSize.medium,
-            favorites: const [],
-            onQuickResponse: (_) {},
-            onStatusButton: (type) => tappedType = type,
-            onFavoriteTap: (_) {},
-            onTTSSpeak: (text) => spoken = text,
-            onExitSimpleMode: () {},
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('痛い'));
-      await tester.pump();
-
-      expect(tappedType, StatusButtonType.pain);
-      expect(spoken, '痛い');
-    });
-
     testWidgets('お気に入りタップでonFavoriteTapが呼ばれる', (tester) async {
       Favorite? tapped;
 
@@ -244,7 +212,6 @@ void main() {
             fontSize: FontSize.medium,
             favorites: buildFavorites(1),
             onQuickResponse: (_) {},
-            onStatusButton: (_) {},
             onFavoriteTap: (favorite) => tapped = favorite,
             onTTSSpeak: (_) {},
             onExitSimpleMode: () {},
@@ -288,7 +255,6 @@ void main() {
                 fontSize: FontSize.medium,
                 favorites: buildFavorites(6),
                 onQuickResponse: (_) {},
-                onStatusButton: (_) {},
                 onFavoriteTap: (_) {},
                 onTTSSpeak: (_) {},
                 onExitSimpleMode: () {},
@@ -302,7 +268,7 @@ void main() {
       );
     }
 
-    testWidgets('状態ボタンの高さは60px以上である（390x844）', (tester) async {
+    testWidgets('お気に入りボタンの高さは60px以上である（390x844）', (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -314,9 +280,8 @@ void main() {
         wrap(
           SimpleModeView(
             fontSize: FontSize.medium,
-            favorites: const [],
+            favorites: buildFavorites(1),
             onQuickResponse: (_) {},
-            onStatusButton: (_) {},
             onFavoriteTap: (_) {},
             onTTSSpeak: (_) {},
             onExitSimpleMode: () {},
@@ -325,7 +290,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final size = tester.getSize(find.byType(StatusButton).first);
+      final size = tester.getSize(
+        find.byKey(const Key('simple_mode_favorite_fav-0')),
+      );
       expect(size.height, greaterThanOrEqualTo(60.0));
     });
   });

@@ -114,10 +114,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 入力プレースホルダーTextを内包するSemanticsにliveRegion=trueが
-      // 設定されていることを確認する。
+      // 編集可能な入力欄を囲むSemanticsにliveRegion=trueが設定されている。
       final liveRegionFinder = find.ancestor(
-        of: find.text('入力してください...'),
+        of: find.byKey(const Key('home_input_field')),
         matching: find.byWidgetPredicate(
           (widget) =>
               widget is Semantics && widget.properties.liveRegion == true,

@@ -17,8 +17,8 @@ Last Updated: September 24, 2026
 
 本アプリは、以下のデータをお使いの端末内に保存します。本アプリ自身がこれらのデータを外部サーバーへ送信することはありません。ただし、AI変換を実行したときは、次項に記載するデータがその経路で送信されます。
 
-- **入力履歴**: 文字盤で入力した内容（最大50件）
-- **入力中の文**: 文字盤で入力している途中の内容。アプリが終了しても入力が消えないように保存します。入力欄を空にすると削除されます
+- **入力履歴**: 文字盤やキーボードで入力し、読み上げた内容など（最大50件）
+- **入力中の文**: 文字盤やキーボードで入力している途中の内容。アプリが終了しても入力が消えないように保存します。入力欄を空にすると削除されます
 - **定型文**: ユーザーが追加したカスタム定型文
 - **お気に入り**: お気に入りに登録したフレーズ
 - **アプリ設定**: フォントサイズ、テーマ、音声速度などの設定
@@ -119,7 +119,7 @@ This Privacy Policy explains how "Kotonoha" (hereinafter "the App") handles pers
 
 The App stores the following data on your device. The App itself does not send this data to external servers, except for the data and transmission described in the next section when you choose to use AI conversion.
 
-- **Input History**: Content entered via the keyboard (up to 50 entries)
+- **Input History**: Content entered via the character board or keyboard and spoken, among other entries (up to 50 entries)
 - **Text Being Entered**: The text you are currently typing. It is saved so that it is not lost if the App closes, and it is deleted when you clear the input field
 - **Preset Phrases**: Custom phrases added by the user
 - **Favorites**: Phrases registered as favorites

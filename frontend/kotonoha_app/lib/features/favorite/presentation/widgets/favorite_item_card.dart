@@ -6,6 +6,7 @@ import '../../../favorite/domain/models/favorite.dart';
 import 'package:intl/intl.dart';
 import '../constants/favorite_ui_constants.dart';
 import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
+import 'package:kotonoha_app/features/favorite/presentation/constants/favorite_colors.dart';
 
 /// お気に入り項目カードウィジェット
 /// 各お気に入り項目を表示するカード形式のウィジェット。
@@ -22,6 +23,7 @@ class FavoriteItemCard extends StatelessWidget {
     required this.favorite,
     required this.onTap,
     required this.onDelete,
+    this.onColorChange,
     super.key,
   });
 
@@ -34,6 +36,9 @@ class FavoriteItemCard extends StatelessWidget {
   /// 削除ボタンタップ時のコールバック
   final VoidCallback onDelete;
 
+  /// ボタン色を選び直す操作。
+  final VoidCallback? onColorChange;
+
   /// 日時フォーマッター（パフォーマンス最適化のため静的）
   static final DateFormat _dateFormatter =
       DateFormat(FavoriteUIConstants.dateTimeFormat);
@@ -41,12 +46,16 @@ class FavoriteItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formattedDate = _formatDateTime(favorite.createdAt);
+    final scheme = Theme.of(context).colorScheme;
+    final background = favoriteBackground(favorite, scheme);
+    final foreground = favoriteForeground(favorite, scheme);
 
     return Semantics(
       label: 'お気に入り、${favorite.content}、$formattedDate',
       hint: 'タップして再読み上げ',
       button: true,
       child: Card(
+        color: background,
         margin: const EdgeInsets.symmetric(
           horizontal: FavoriteUIConstants.cardHorizontalMargin,
           vertical: FavoriteUIConstants.cardVerticalMargin,
@@ -61,7 +70,7 @@ class FavoriteItemCard extends StatelessWidget {
                 Icon(
                   Icons.favorite,
                   size: FavoriteUIConstants.favoriteIconSize,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: foreground,
                 ),
                 const SizedBox(width: FavoriteUIConstants.iconTextSpacing),
                 // テキストと日時
@@ -72,7 +81,9 @@ class FavoriteItemCard extends StatelessWidget {
                       // お気に入りテキスト
                       Text(
                         favorite.content,
-                        style: Theme.of(context).textTheme.bodyLarge,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: foreground,
+                            ),
                         maxLines: FavoriteUIConstants.maxTextLines,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -82,22 +93,31 @@ class FavoriteItemCard extends StatelessWidget {
                       Text(
                         formattedDate,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(
-                                      alpha:
-                                          FavoriteUIConstants.dateTextOpacity),
+                              color: foreground,
                             ),
                       ),
                     ],
                   ),
                 ),
                 // 入力欄へボタン: お気に入りの内容を入力欄に入れて編集する動線
-                SendToInputButton(text: favorite.content),
+                SendToInputButton(
+                  text: favorite.content,
+                  foregroundColor: foreground,
+                ),
+                if (onColorChange != null)
+                  IconButton(
+                    key: Key('favorite_color_${favorite.id}'),
+                    icon: Icon(Icons.palette_outlined, color: foreground),
+                    onPressed: onColorChange,
+                    tooltip: '色を変更',
+                    constraints: const BoxConstraints(
+                      minWidth: FavoriteUIConstants.minTapTargetSize,
+                      minHeight: FavoriteUIConstants.minTapTargetSize,
+                    ),
+                  ),
                 // 削除ボタン
                 IconButton(
-                  icon: const Icon(Icons.delete),
+                  icon: Icon(Icons.delete, color: foreground),
                   onPressed: onDelete,
                   tooltip: FavoriteUIConstants.deleteTooltip,
                   constraints: const BoxConstraints(

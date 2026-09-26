@@ -41,8 +41,8 @@ void main() {
       child: const MaterialApp(home: HomeScreen()),
     ));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('あ'));
-    await tester.tap(find.text('あ'));
+    await tester.tap(find.byKey(const ValueKey('character_button_あ')));
+    await tester.tap(find.byKey(const ValueKey('character_button_あ')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('AI変換'));
     await tester.pumpAndSettle();
@@ -69,7 +69,7 @@ void main() {
     final truncated = find.textContaining('切り詰め');
     final reached = find.textContaining('達しました');
     input.setText('あ' * 999);
-    await tester.tap(find.text('あ'));
+    await tester.tap(find.byKey(const ValueKey('character_button_あ')));
     await tester.pumpAndSettle();
     expect(reached.hitTestable(), findsOneWidget);
     expect(truncated, findsNothing);
