@@ -544,9 +544,9 @@ class HomeScreen extends ConsumerWidget {
               .clamp(AppSizes.minTapTarget, double.infinity);
           bool fits(int columns, double minWidth) =>
               constraints.maxWidth >= columns * minWidth + (columns - 1) * gap;
+          // ボタンの文字と同じ形（字間なし・太字）で測る
           final labelStyle =
-              (Theme.of(context).textTheme.labelLarge ?? const TextStyle())
-                  .copyWith(fontSize: textSize, fontWeight: FontWeight.bold);
+              TextStyle(fontSize: textSize, fontWeight: FontWeight.bold);
           double oneLineWidth(String content) {
             final painter = TextPainter(
               text: TextSpan(text: content, style: labelStyle),
@@ -554,8 +554,8 @@ class HomeScreen extends ConsumerWidget {
               textScaler: textScaler,
               maxLines: 1,
             )..layout();
-            // ボタンの左右の余白（4 ずつ）と、測り方の差の分の余裕
-            final width = painter.width + 8 + 2;
+            // ボタンの左右の余白（4 ずつ）と、端数の分の余裕
+            final width = painter.width + 8 + 1;
             painter.dispose();
             return width;
           }
@@ -675,7 +675,7 @@ class HomeScreen extends ConsumerWidget {
     final maxLines = ratioBasedMaxHeight.isFinite
         ? (1 + (ratioBasedMaxHeight - oneLineHeight) / lineHeight)
             .floor()
-            .clamp(1, 3)
+            .clamp(2, 3)
         : 3;
     final horizontalMargin =
         compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;

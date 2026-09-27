@@ -87,4 +87,24 @@ void main() {
     expect(label.bottom <= text.top + 0.5, isTrue,
         reason: 'ラベル $label と入力の文字 $text が重なる');
   });
+
+  testWidgets('入力欄の行数を絞っても、キーボードで打ったときに改行が消えない', (tester) async {
+    // 最大行数が 1 になると、Flutter は改行を消す処理を自動で差し込む。
+    // 定型文や貼り付けで入った改行が、1 文字打っただけで黙って消えていた。
+    final container = await _pump(tester, 'medium');
+    container.read(inputBufferProvider.notifier).setText('いたい\nくすり');
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(HomeInputField),
+        matching: find.byType(EditableText),
+      ),
+      'いたい\nくすりを',
+    );
+    await tester.pumpAndSettle();
+
+    expect(container.read(inputBufferProvider), 'いたい\nくすりを',
+        reason: 'キーボードで打つと改行が消えた');
+  });
 }
