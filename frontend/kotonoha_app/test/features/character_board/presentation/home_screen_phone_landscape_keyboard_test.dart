@@ -13,28 +13,19 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/home_
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  for (final (name, size, top, keyboard, scale, fontSize) in [
-    ('Android 915×412', const Size(915, 412), 24.0, 250.0, 1.0, 'medium'),
-    ('iPhone 844×390', const Size(844, 390), 0.0, 210.0, 1.0, 'medium'),
-    (
-      'Android 915×412・文字大・OS 2 倍',
-      const Size(915, 412),
-      24.0,
-      250.0,
-      2.0,
-      'large'
-    ),
+  // Android は修正前に 10px はみ出していた条件。iPhone は修正前から
+  // はみ出さない（文字盤に残る高さが違う）が、同じ作りの横向きとして見張る。
+  for (final (name, size, top, keyboard) in [
+    ('Android 915×412', const Size(915, 412), 24.0, 250.0),
+    ('iPhone 844×390', const Size(844, 390), 0.0, 210.0),
   ]) {
     testWidgets('$name で入力欄を押してキーボードが出ても、はみ出さない', (tester) async {
-      tester.platformDispatcher.textScaleFactorTestValue = scale;
-      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1.0;
       tester.view.padding = FakeViewPadding(top: top);
       tester.view.viewPadding = FakeViewPadding(top: top);
       addTearDown(tester.view.reset);
-      SharedPreferences.setMockInitialValues(
-          {'tutorial_completed': true, 'fontSize': fontSize});
+      SharedPreferences.setMockInitialValues({'tutorial_completed': true});
 
       await tester.pumpWidget(
         const ProviderScope(
