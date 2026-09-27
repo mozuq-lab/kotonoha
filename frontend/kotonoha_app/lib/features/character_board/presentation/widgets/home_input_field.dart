@@ -12,10 +12,15 @@ class HomeInputField extends ConsumerStatefulWidget {
     super.key,
     required this.onFavoritePressed,
     this.fontSize = FontSize.medium,
+    this.maxLines = 3,
   });
 
   final VoidCallback? onFavoritePressed;
   final FontSize fontSize;
+
+  /// 入力が伸びるときの最大の行数。高さの上限はこれで守り、欄そのものを
+  /// 押しつぶさない（押しつぶすとラベルと文字が重なる）。2 未満は 2 として扱う。
+  final int maxLines;
 
   @override
   ConsumerState<HomeInputField> createState() => _HomeInputFieldState();
@@ -58,7 +63,9 @@ class _HomeInputFieldState extends ConsumerState<HomeInputField> {
         controller: _controller,
         style:
             TextStyle(fontSize: size, height: 1.5, fontWeight: FontWeight.w600),
-        maxLines: 3,
+        // 1 にしない: 最大行数が 1 だと Flutter が改行を消す処理を自動で差し込み、
+        // 定型文や貼り付けで入った改行が、キーボードで 1 文字打つだけで黙って消える
+        maxLines: widget.maxLines < 2 ? 2 : widget.maxLines,
         minLines: 1,
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.done,

@@ -538,24 +538,57 @@ class HomeScreen extends ConsumerWidget {
             FontSize.medium => AppSizes.fontSizeMedium,
             FontSize.large => AppSizes.fontSizeLarge,
           };
-          final scaledText = MediaQuery.textScalerOf(context).scale(textSize);
-          final needsTwoLines = scaledText > 26 ||
-              shortcuts
-                  .any((favorite) => favorite.content.characters.length > 3);
-          final height = (scaledText * (needsTwoLines ? 2.4 : 1.4) + 12).clamp(
-              compact ? 48.0 : AppSizes.recommendedTapTarget, double.infinity);
+          final textScaler = MediaQuery.textScalerOf(context);
+          final scaledText = textScaler.scale(textSize);
           final minWidth = (scaledText * (scaledText > 26 ? 3 : 2.4) + 8)
               .clamp(AppSizes.minTapTarget, double.infinity);
           bool fits(int columns, double minWidth) =>
               constraints.maxWidth >= columns * minWidth + (columns - 1) * gap;
+          // ボタンの文字と同じ形（字間なし・太字）で測る
+          final labelStyle =
+              TextStyle(fontSize: textSize, fontWeight: FontWeight.bold);
+          double oneLineWidth(String content) {
+            final painter = TextPainter(
+              text: TextSpan(text: content, style: labelStyle),
+              textDirection: TextDirection.ltr,
+              textScaler: textScaler,
+              maxLines: 1,
+            )..layout();
+            // ボタンの左右の余白（4 ずつ）と、端数の分の余裕
+            final width = painter.width + 8 + 1;
+            painter.dispose();
+            return width;
+          }
+
+          // 3 文字までの名前は 1 行で見せたい。2 行に折ると「トイ／レ」の
+          // ように語の途中で切れて読みにくい。
+          final shortWidth = shortcuts
+              .where((favorite) => favorite.content.characters.length <= 3)
+              .map((favorite) => oneLineWidth(favorite.content))
+              .fold(0.0, (a, b) => a > b ? a : b);
+          double buttonWidth(int columns) =>
+              (constraints.maxWidth - (columns - 1) * gap) / columns;
           // 2ペインの狭い左ペインでも1個44px以上を保つよう、列を減らす。
-          final columns = fits(count, minWidth)
-              ? count
-              : fits(count < 4 ? count : 4, minWidth)
-                  ? (count < 4 ? count : 4)
-                  : fits(2, minWidth)
-                      ? 2
-                      : 1;
+          // 短い名前が 1 行に収まる列数を優先し、無ければ 2 行にする。
+          final candidates = [
+            count,
+            if (count > 4) 4,
+            if (count > 2) 2,
+            1,
+          ];
+          final columns = candidates.firstWhere(
+            (c) => fits(c, minWidth) && shortWidth <= buttonWidth(c),
+            orElse: () => candidates.firstWhere(
+              (c) => fits(c, minWidth),
+              orElse: () => 1,
+            ),
+          );
+          final needsTwoLines = scaledText > 26 ||
+              shortcuts.any((favorite) =>
+                  favorite.content.characters.length > 3 ||
+                  oneLineWidth(favorite.content) > buttonWidth(columns));
+          final height = (scaledText * (needsTwoLines ? 2.4 : 1.4) + 12).clamp(
+              compact ? 48.0 : AppSizes.recommendedTapTarget, double.infinity);
           Widget button(Favorite favorite) => Expanded(
                 child: FavoriteShortcutButton(
                   favorite: favorite,
@@ -632,11 +665,18 @@ class HomeScreen extends ConsumerWidget {
         2;
     final minHeight =
         oneLineHeight > baseMinHeight ? oneLineHeight : baseMinHeight;
+    // 高さの上限（可視高さの一定割合）は、箱の maxHeight ではなく入力が
+    // 伸びる行数で守る。箱で縛ると、見積もりより欄が高いとき（文字「大」の
+    // 横持ち）に欄が押しつぶされ、「入力欄」のラベルと文字が重なっていた。
     final ratioBasedMaxHeight = availableHeight.isFinite
         ? availableHeight * AppSizes.inputAreaMaxHeightRatio
         : double.infinity;
-    final maxHeight =
-        ratioBasedMaxHeight > minHeight ? ratioBasedMaxHeight : minHeight;
+    final lineHeight = textScaler.scale(inputFontSize) * 1.5;
+    final maxLines = ratioBasedMaxHeight.isFinite
+        ? (1 + (ratioBasedMaxHeight - oneLineHeight) / lineHeight)
+            .floor()
+            .clamp(2, 3)
+        : 3;
     final horizontalMargin =
         compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;
     const contentPadding = AppSizes.paddingSmall;
@@ -660,10 +700,10 @@ class HomeScreen extends ConsumerWidget {
             ),
             borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           ),
-          constraints:
-              BoxConstraints(minHeight: minHeight, maxHeight: maxHeight),
+          constraints: BoxConstraints(minHeight: minHeight),
           child: HomeInputField(
             fontSize: fontSize,
+            maxLines: maxLines,
             onFavoritePressed: () =>
                 _addInputToFavorites(context, ref, inputBuffer),
           ),
