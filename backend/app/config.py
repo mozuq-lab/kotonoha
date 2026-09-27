@@ -49,11 +49,6 @@ REMOVED_SETTINGS: Final[frozenset[str]] = frozenset(
         "SESSION_EXPIRE_MINUTES",
         "RATE_LIMIT_STORAGE_URI",
         "LOG_FILE_PATH",
-        # Workers AI の旧名。wrangler が自分の認証に読む名前（CF_API_TOKEN・CF_ACCOUNT_ID）と
-        # 重なり、動作確認でシェルに入れると wrangler が別の鍵で認証していたので改名した
-        "CF_API_TOKEN",
-        "CF_ACCOUNT_ID",
-        "CF_AI_GATEWAY_ID",
     }
 )
 

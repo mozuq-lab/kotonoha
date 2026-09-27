@@ -129,9 +129,9 @@ npx wrangler deploy
 curl -s https://<Worker の URL>/api/v1/health
 ```
 
-`CF_API_TOKEN`・`CF_ACCOUNT_ID`・`CLOUDFLARE_API_TOKEN` をシェルに入れたまま wrangler を使わない。wrangler は
-これらをログインより優先して自分の認証に使うので、Workers AI 用の狭い権限で認証してデプロイや削除が失敗する
-（backend の設定名を `WORKERS_AI_…` にしたのはこのため。旧名が残っていると backend は起動時に警告する）。
+`CF_`・`CLOUDFLARE_` で始まる環境変数（トークンやアカウント ID）をシェルに入れたまま wrangler を使わない。
+wrangler はこれらをログインより優先して自分の認証に使うので、Workers AI 用の狭い権限で認証してデプロイや
+削除が失敗する。backend の設定名はこれと重ならないよう `WORKERS_AI_…` にしている。
 
 秘密はコンテナの起動時にしか渡らない。差し替えたら `npx wrangler deploy` し直し、新しい値が効いているかを
 確かめる（動いているコンテナが古い値のまま残ることがある）。

@@ -149,31 +149,6 @@ def test_removed_keys_in_environment_warn(
     assert '"key": "SECRET_KEY"' in out and "CANARY" not in out
 
 
-def test_old_workers_ai_names_warn_so_a_leftover_is_noticed(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """旧名（CF_ で始まる）が残っていたら警告する。
-
-    旧名は wrangler が自分の認証に読む名前と重なっていたので改名した。
-    旧名のままだと新しい名前の設定が空になり、本番では起動しない。
-    """
-    from app.logging import configure_logging
-
-    configure_logging("WARNING")
-    monkeypatch.setenv("CF_API_TOKEN", "CANARY")
-    monkeypatch.setenv("CF_ACCOUNT_ID", "CANARY")
-    monkeypatch.setenv("CF_AI_GATEWAY_ID", "CANARY")
-    load_config(env_file=None)
-    out = capsys.readouterr().out
-    events = [json.loads(line) for line in out.splitlines() if line.strip()]
-    assert {e["key"] for e in events if e["event"] == "RemovedSettingIgnored"} >= {
-        "CF_API_TOKEN",
-        "CF_ACCOUNT_ID",
-        "CF_AI_GATEWAY_ID",
-    }
-    assert "CANARY" not in out
-
-
 def test_cors_origins_are_split() -> None:
     assert make_config(CORS_ORIGINS=" http://a , http://b ").cors_origins() == (
         "http://a",
