@@ -168,7 +168,7 @@ curl -s https://<Worker の URL>/api/v1/health   # 応答が無くなったこ�
 `wrangler delete` では、次のものは消えない。必要に応じてダッシュボードで片付ける。
 
 | 残るもの | 場所 | メモ |
-|---|---|---|
+| --- | --- | --- |
 | AI Gateway と、その支出上限・回数制限の設定 | AI → AI Gateway | 作り直すなら残しておく方が楽 |
 | Workers AI の API トークン | My Profile → API Tokens | 当分使わないなら無効にする |
 | 前払いのクレジット | Billing | 残る |
