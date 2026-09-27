@@ -168,12 +168,15 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 横幅に応じて列数を計算（最低5列＝[CharacterBoardWidget.minColumns]）
+        // 横幅に応じて列数を 5 か 10 にする（最低5列＝[CharacterBoardWidget.minColumns]）。
+        // 文字の並びはどの文字種も 5 列前提（や行・わ行の空きの位置も含む）。
+        // 6〜9 列にすると「あいうえお」の段に「か」がはみ出し、行がずれる。
         final spacing = AppSizes.characterBoardButtonSpacing;
         final availableWidth = constraints.maxWidth;
         final availableHeight = constraints.maxHeight;
         final columnsCount = (availableWidth / (buttonSize + spacing)).floor();
-        final columns = columnsCount.clamp(CharacterBoardWidget.minColumns, 10);
+        final columns =
+            columnsCount >= 10 ? 10 : CharacterBoardWidget.minColumns;
 
         // fit-to-height対応: 列数だけでなく行数・可視高さも考慮してセルの
         // 高さを決定する。スマホ縦持ちのように高さが乏しい画面では、幅基準の
