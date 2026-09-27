@@ -101,9 +101,9 @@ def test_non_local_load_fails_with_every_problem(monkeypatch: pytest.MonkeyPatch
 def test_production_with_symbol_keys_loads(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
-    monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
-    monkeypatch.setenv("CF_ACCOUNT_ID", "0123456789abcdef0123456789abcdef")
-    monkeypatch.setenv("CF_AI_GATEWAY_ID", "kotonoha-prod")
+    monkeypatch.setenv("WORKERS_AI_API_TOKEN", SYMBOL_KEY)
+    monkeypatch.setenv("WORKERS_AI_ACCOUNT_ID", "0123456789abcdef0123456789abcdef")
+    monkeypatch.setenv("WORKERS_AI_GATEWAY_ID", "kotonoha-prod")
     config = load_config(env_file=None)
     assert config.api_keys() == (SYMBOL_KEY.encode("ascii"),)
 
@@ -149,6 +149,31 @@ def test_removed_keys_in_environment_warn(
     assert '"key": "SECRET_KEY"' in out and "CANARY" not in out
 
 
+def test_old_workers_ai_names_warn_so_a_leftover_is_noticed(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """旧名（CF_ で始まる）が残っていたら警告する。
+
+    旧名は wrangler が自分の認証に読む名前と重なっていたので改名した。
+    旧名のままだと新しい名前の設定が空になり、本番では起動しない。
+    """
+    from app.logging import configure_logging
+
+    configure_logging("WARNING")
+    monkeypatch.setenv("CF_API_TOKEN", "CANARY")
+    monkeypatch.setenv("CF_ACCOUNT_ID", "CANARY")
+    monkeypatch.setenv("CF_AI_GATEWAY_ID", "CANARY")
+    load_config(env_file=None)
+    out = capsys.readouterr().out
+    events = [json.loads(line) for line in out.splitlines() if line.strip()]
+    assert {e["key"] for e in events if e["event"] == "RemovedSettingIgnored"} >= {
+        "CF_API_TOKEN",
+        "CF_ACCOUNT_ID",
+        "CF_AI_GATEWAY_ID",
+    }
+    assert "CANARY" not in out
+
+
 def test_cors_origins_are_split() -> None:
     assert make_config(CORS_ORIGINS=" http://a , http://b ").cors_origins() == (
         "http://a",
@@ -159,8 +184,11 @@ def test_cors_origins_are_split() -> None:
 def test_production_workers_ai_needs_the_account_id(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
-    monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
+    monkeypatch.setenv("WORKERS_AI_API_TOKEN", SYMBOL_KEY)
     with pytest.raises(ConfigError) as info:
         load_config(env_file=None)
     # ゲートウェイを通らないと支出上限が効かない（ADR-002 の必須条件）
-    assert info.value.problems == (("CF_ACCOUNT_ID", "missing"), ("CF_AI_GATEWAY_ID", "missing"))
+    assert info.value.problems == (
+        ("WORKERS_AI_ACCOUNT_ID", "missing"),
+        ("WORKERS_AI_GATEWAY_ID", "missing"),
+    )

@@ -227,13 +227,13 @@ def build_provider(config: RuntimeConfig) -> Provider | None:
             key, model=config.ANTHROPIC_MODEL, timeout_seconds=config.AI_API_TIMEOUT
         )
     if config.DEFAULT_AI_PROVIDER == "workers_ai":
-        if not config.CF_ACCOUNT_ID:
+        if not config.WORKERS_AI_ACCOUNT_ID:
             return None
         return WorkersAIProvider(
             key,
-            account_id=config.CF_ACCOUNT_ID,
+            account_id=config.WORKERS_AI_ACCOUNT_ID,
             model=config.WORKERS_AI_MODEL,
-            gateway_id=config.CF_AI_GATEWAY_ID,
+            gateway_id=config.WORKERS_AI_GATEWAY_ID,
             timeout_seconds=config.AI_API_TIMEOUT,
         )
     return OpenAIProvider(key, model=config.OPENAI_MODEL, timeout_seconds=config.AI_API_TIMEOUT)

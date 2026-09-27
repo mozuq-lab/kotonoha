@@ -295,9 +295,13 @@ async def test_workers_ai_failures_become_safe_errors(
 
 
 def test_build_provider_builds_workers_ai_only_with_token_and_account() -> None:
-    ok = make_config(DEFAULT_AI_PROVIDER="workers_ai", CF_API_TOKEN="t", CF_ACCOUNT_ID=CF_ACCOUNT)
+    ok = make_config(
+        DEFAULT_AI_PROVIDER="workers_ai", WORKERS_AI_API_TOKEN="t", WORKERS_AI_ACCOUNT_ID=CF_ACCOUNT
+    )
     assert build_provider(ok).name == "workers_ai"
     assert (
-        build_provider(make_config(DEFAULT_AI_PROVIDER="workers_ai", CF_ACCOUNT_ID=CF_ACCOUNT))
+        build_provider(
+            make_config(DEFAULT_AI_PROVIDER="workers_ai", WORKERS_AI_ACCOUNT_ID=CF_ACCOUNT)
+        )
         is None
     )
