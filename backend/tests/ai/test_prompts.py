@@ -42,7 +42,17 @@ def test_polite_level_does_not_invite_archaic_adjective_forms() -> None:
     # 「〜でございます」を例に挙げると「痛うございます」「寒うございます」と古風になった（2026-09-27 実測）
     polite = conversion_prompt("いたい", PolitenessLevel.POLITE)
     assert "でございます" not in polite.user
-    assert "うございます" in polite.system  # 使わない、と明記する
+    assert "うございます" in polite.user  # 使わない、と丁寧の指示で明記する
+
+
+def test_archaic_rule_does_not_leak_desu_examples_into_other_levels() -> None:
+    # 古い言い方の決まりを「『痛いです』のように」と全段階共通の system に書いたら、
+    # カジュアルが「水が欲しいです」のように「です」に寄った（2026-09-27 実測）。
+    # 決まりは丁寧の指示の中だけに置き、共通部分に形容詞の「です」の例（痛いです・寒いです）を書かない
+    for level in PolitenessLevel:
+        prompt = conversion_prompt("いたい", level)
+        assert "うございます" not in prompt.system
+        assert "痛いです" not in prompt.system and "寒いです" not in prompt.system
 
 
 def test_bare_word_inputs_are_not_expanded_into_guessed_actions() -> None:

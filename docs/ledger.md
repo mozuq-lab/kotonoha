@@ -8,7 +8,6 @@
 - [ ] L-25 `frontend/kotonoha_app/integration_test/device_test/`（実機QA手順、1,773行）が一度も実行されていない — ADR-007 条件 4（ストア提出前に必要）
 - [ ] L-51 サポート連絡先が `support@kotonoha-app.example.com` のまま（RFC 2606 の予約ドメイン） — docs/support.md, docs/privacy-policy.md。ADR-007 条件 4
 - [ ] L-52 Android のアップロード鍵が無い。無いと release ビルドは debug 鍵で署名される（`frontend/kotonoha_app/android/app/build.gradle.kts:67-73`） — .github/workflows/release.yml。ADR-007 条件 4。開発者登録（L-84）の後
-- [ ] L-55 AI 変換の平均応答時間（3秒以内）が未測定 — ADR-002 のプロバイダ支出上限設定と同日に実測（backend 公開の前提）
 - [ ] L-57 Android 12 以上と iOS の実機で、OS のバックアップから履歴・定型文・お気に入り・設定が復元されることを確認 — NFR-106（2026-09-12 に #99 の除外を撤回）
 - [ ] L-58 backend 公開の 4 条件（支出上限・デプロイと proxy 段数・端末キー配布・実プロバイダでの往復）が未達 — ADR-002。決定（2026-09-26）: 初回リリースに AI 変換を含めるので、ストア提出の前に満たす。L-55 も同日に
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
@@ -35,6 +34,7 @@
 - [~] L-217 フォント設定がサイズを持たないスタイル（ダイアログの見出し等）に効かず、REQ-2007「すべてのテキスト要素」は未達。決定: 根治（アプリ根の textScaler）は今はやらない。移るときはテーマの倍率がけ `_scaled` を同時に外す（残すと二重掛け） — theme_provider.dart（旧 L-111）
 - [~] L-220 320×690・1000 文字で入力上限の告知の末尾が操作域の下端で切れて見える（未計測、screenshot のみ） — input_limit_notice.dart、home_screen.dart（旧 L-174）
 - [~] L-221 2 ペインの左ペインでフォント大のプレースホルダが 2 行に折り返して 1 行目が切れる。上下ボタンが無く、AI ボタンと offline チップはスクロールで届く（BASE から） — home_screen.dart `_buildCompactLandscapeLayout`（旧 L-175）
+- [~] L-222 AI 変換の「丁寧」で、形容詞が「寒うございます」「眠うございます」のような古風な言い方になることがある（24 件中 4〜5 件。意味と文法は正しい。プロンプトでは押さえきれず、押さえ込むと「痛いでございます」の誤りが出た）。決定（2026-09-27）: 受け入れる。機械的な書き換えや別モデルは、利用者の声が出てから考える — backend/app/ai/prompts.py
 
 ## 計測（監査の記録。最新の 1 回だけ残す）
 | 日付 | 核（字） | 未卒業 ADR | 台帳 予定/受け入れ | 全置き場の合計（字） | 製品/全体（前回から） |
