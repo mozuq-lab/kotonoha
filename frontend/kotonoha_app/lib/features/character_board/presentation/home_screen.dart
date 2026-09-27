@@ -262,6 +262,7 @@ class HomeScreen extends ConsumerWidget {
                                     aiPoliteness: aiPoliteness,
                                     compact: isPhoneWidth,
                                     availableHeight: constraints.maxHeight,
+                                    keyboardOpen: keyboardHeight > 0,
                                   );
                                 },
                               ),
@@ -346,6 +347,7 @@ class HomeScreen extends ConsumerWidget {
     required PolitenessLevel aiPoliteness,
     required bool compact,
     required double availableHeight,
+    required bool keyboardOpen,
   }) {
     // すべての行の左右端を、クイック応答ボタンの左右端にそろえる。
     final gutter = compact ? AppSizes.paddingSmall : AppSizes.paddingMedium;
@@ -390,11 +392,20 @@ class HomeScreen extends ConsumerWidget {
     );
     // 文字盤に残す高さ（[_stackedBoardHeight]）を引いた残りを操作域へ渡し
     // 上部の超過分だけをそのスクロールへ移す。
-    final controlsMaxHeight =
-        availableHeight - _stackedBoardHeight(availableHeight);
+    // 電話でキーボードで打っている間は文字盤を使わないので、高さを全部
+    // 操作域へ回し、下端（入力欄と読み上げボタンの行）を見せる。文字盤に
+    // 高さを残すと、操作域が小さく切れて読み上げボタンが押せなかった。
+    final typingOnPhone = compact && keyboardOpen;
+    final controlsMaxHeight = typingOnPhone
+        ? availableHeight
+        : availableHeight - _stackedBoardHeight(availableHeight);
     return Column(
       children: [
-        _ScrollableHomeControls(maxHeight: controlsMaxHeight, child: controls),
+        _ScrollableHomeControls(
+          maxHeight: controlsMaxHeight,
+          showEnd: typingOnPhone,
+          child: controls,
+        ),
         Expanded(child: _buildCharacterBoard(ref, fontSize: fontSize)),
       ],
     );
@@ -1063,10 +1074,18 @@ class HomeScreen extends ConsumerWidget {
 
 /// 操作群が収まらない場合だけ、固定した上下ボタンで移動できる領域。
 class _ScrollableHomeControls extends StatefulWidget {
-  const _ScrollableHomeControls({required this.maxHeight, required this.child});
+  const _ScrollableHomeControls({
+    required this.maxHeight,
+    required this.child,
+    this.showEnd = false,
+  });
 
   final double maxHeight;
   final Widget child;
+
+  /// true の間は下端を基準にスクロールする（下端が見え、高さが変わっても
+  /// 下端のまま保たれる）。利用者の操作や入力欄が自分を見せる動きは妨げない。
+  final bool showEnd;
 
   @override
   State<_ScrollableHomeControls> createState() =>
@@ -1097,8 +1116,13 @@ class _ScrollableHomeControlsState extends State<_ScrollableHomeControls> {
       // 補助を除いた高さに収まれば消す。表示後のviewportだけでは残り続ける。
       final overflow =
           position.maxScrollExtent > (_overflow ? _buttonHeight : 0) + 0.5;
-      final canUp = position.extentBefore > 0.5;
-      final canDown = position.extentAfter > 0.5;
+      // 下端基準（reverse）では、上に隠れている分が extentAfter になる
+      final above =
+          widget.showEnd ? position.extentAfter : position.extentBefore;
+      final below =
+          widget.showEnd ? position.extentBefore : position.extentAfter;
+      final canUp = above > 0.5;
+      final canDown = below > 0.5;
       if (overflow != _overflow || canUp != _canUp || canDown != _canDown) {
         setState(() {
           _overflow = overflow;
@@ -1109,8 +1133,10 @@ class _ScrollableHomeControlsState extends State<_ScrollableHomeControls> {
     });
   }
 
+  /// [direction] は見た目の向き（-1 が上へ）
   void _move(int direction) {
     final position = _controller.position;
+    if (widget.showEnd) direction = -direction;
     // 拡大した複数行の告知も、停止位置の間で飛び越さない。
     final step = (position.viewportDimension / 2).clamp(1.0, _buttonHeight);
     _controller.animateTo(
@@ -1142,6 +1168,7 @@ class _ScrollableHomeControlsState extends State<_ScrollableHomeControls> {
                 child: SingleChildScrollView(
                   key: const ValueKey('home-controls-scroll'),
                   controller: _controller,
+                  reverse: widget.showEnd,
                   child: widget.child,
                 ),
               ),
