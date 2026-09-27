@@ -73,7 +73,7 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
     final characters = CharacterData.getCharacters(_currentCategory);
     final buttonSize = AppSizes.characterBoardButtonSize;
 
-    return Column(
+    final board = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         // カテゴリタブ
@@ -85,7 +85,20 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
         ),
       ],
     );
+    // 横向きの電話でキーボードが出ると、文字盤に残る高さはタブにも足りない
+    // （915×412 で 46px）。そのときは最低限の高さで組み、文字盤ごとスクロールさせる。
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxHeight >= _minBoardHeight) return board;
+        return SingleChildScrollView(
+          child: SizedBox(height: _minBoardHeight, child: board),
+        );
+      },
+    );
   }
+
+  /// 文字種タブ（48）＋間（8）＋キー 1 行（44）。これより低いと組めない
+  static const double _minBoardHeight = 100;
 
   /// 文字種の切り替え（基本・濁音・半濁音・小文字・記号）
   /// 横スクロールにすると狭い画面で右端のラベルが切れて見えるため、
