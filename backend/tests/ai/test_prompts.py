@@ -36,3 +36,16 @@ def test_fidelity_rules_reach_every_conversion_and_regeneration() -> None:
 def test_output_cap_fits_a_short_sentence() -> None:
     # 変換結果は短い文。上限を小さくして 1 回の費用の上限を抑える（切れたら provider が失敗にする）
     assert conversion_prompt("あ", PolitenessLevel.POLITE).max_tokens == 256
+
+
+def test_polite_level_does_not_invite_archaic_adjective_forms() -> None:
+    # 「〜でございます」を例に挙げると「痛うございます」「寒うございます」と古風になった（2026-09-27 実測）
+    polite = conversion_prompt("いたい", PolitenessLevel.POLITE)
+    assert "でございます" not in polite.user
+    assert "うございます" in polite.system  # 使わない、と明記する
+
+
+def test_bare_word_inputs_are_not_expanded_into_guessed_actions() -> None:
+    # 「トイレ」が「トイレに行きたいです」になった（言っていない動作を足す。2026-09-27 実測）
+    system = conversion_prompt("トイレ", PolitenessLevel.NORMAL).system
+    assert "推測" in system and "トイレ" in system

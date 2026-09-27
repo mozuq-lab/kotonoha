@@ -85,3 +85,28 @@ async def test_missing_provider_is_provider_error() -> None:
     with pytest.raises(SafeError) as info:
         await svc.convert("水", PolitenessLevel.NORMAL)
     assert info.value.code is ErrorCode.AI_PROVIDER_ERROR
+
+
+@pytest.mark.parametrize(
+    ("input_text", "expected"),
+    [("はい", "はい。"), ("いいえ", "いいえ。"), (" うん ", "うん。"), ("ううん。", "ううん。")],
+)
+@pytest.mark.parametrize("level", list(PolitenessLevel))
+async def test_answer_words_are_returned_as_is_without_the_provider(
+    input_text: str, expected: str, level: PolitenessLevel
+) -> None:
+    # 「はい」「いいえ」は答えそのもの。AI に渡すと「いいえ」が「ううん、いいよ」（かまわない、とも
+    # 取れる）になり、意味が逆になりうる（2026-09-27 実測）。送らずにそのまま返す（守る約束 ③）
+    provider = ScriptedProvider()
+    s = service(provider)
+    assert await s.convert(input_text, level) == expected
+    assert await s.regenerate(input_text, level, expected) == expected
+    assert provider.calls == 0
+
+
+async def test_answer_word_inside_a_sentence_still_goes_to_the_provider() -> None:
+    provider = ScriptedProvider("はい、お水をください。")
+    assert await service(provider).convert("はい みず", PolitenessLevel.NORMAL) == (
+        "はい、お水をください。"
+    )
+    assert provider.calls == 1
