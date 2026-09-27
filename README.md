@@ -133,11 +133,50 @@ curl -s https://<Worker の URL>/api/v1/health
 wrangler はこれらをログインより優先して自分の認証に使うので、Workers AI 用の狭い権限で認証してデプロイや
 削除が失敗する。backend の設定名はこれと重ならないよう `WORKERS_AI_…` にしている。
 
-秘密はコンテナの起動時にしか渡らない。差し替えたら `npx wrangler deploy` し直し、新しい値が効いているかを
-確かめる（動いているコンテナが古い値のまま残ることがある）。
+秘密はコンテナの起動時にしか渡らない。`npx wrangler deploy` はイメージ（backend のコード）が変わらないと
+動いているコンテナを入れ替えないので、`secret put` と `deploy` だけでは古い値のまま動き続ける（2026-09-27 に
+作り直したトークンが効かず、無効にした古いトークンのまま Workers AI に断られた）。秘密を差し替えたら、
+コンテナのアプリを消してからデプロイし、新しい値が効いているかを確かめる:
+
+```bash
+npx wrangler secret put <名前>
+npx wrangler containers list                 # kotonoha-backend-backend の ID を確かめる
+npx wrangler containers delete <ID>
+npx wrangler deploy
+```
 
 手元での確認は `npx wrangler dev --env-file <秘密を書いたファイル>`（Docker が要る）。
 `npx wrangler deploy --dry-run --outdir <任意のディレクトリ>` はイメージを作るだけで送らない。
+
+### Cloudflare の環境を消す
+
+取り消せない操作なので、消す前に何が残り何が消えるかを確かめる。先に `unset` して、wrangler が自分の
+ログイン（OAuth）で動くようにしておく。
+
+```bash
+cd deploy/cloudflare
+env | grep -E '^(CF_|CLOUDFLARE_)'          # 何も出ないことを確かめる。出たら unset する
+npx wrangler whoami                          # 自分のアカウントに OAuth でログインしていること
+npx wrangler delete                          # Worker（kotonoha-backend）・secret・Durable Object を消す
+npx wrangler containers list                 # コンテナのアプリが残っていれば
+npx wrangler containers delete <ID>          # その ID で消す
+npx wrangler containers images list          # 保存されたイメージ（任意）
+npx wrangler containers images delete <イメージ名:タグ>
+curl -s https://<Worker の URL>/api/v1/health   # 応答が無くなったことを確かめる
+```
+
+`wrangler delete` では、次のものは消えない。必要に応じてダッシュボードで片付ける。
+
+| 残るもの | 場所 | メモ |
+|---|---|---|
+| AI Gateway と、その支出上限・回数制限の設定 | AI → AI Gateway | 作り直すなら残しておく方が楽 |
+| Workers AI の API トークン | My Profile → API Tokens | 当分使わないなら無効にする |
+| 前払いのクレジット | Billing | 残る |
+| Workers Paid の契約 | Workers & Pages → Plans | 月額が続く。止めるなら解約する |
+| `API_BASE_URL`（Variables）・`AI_API_KEY`（Secrets） | GitHub の Settings → Secrets and variables → Actions | 残したままだと、ビルドは消えた URL を指す |
+
+作り直すときは、上の「デプロイ」の手順で secret を 4 つとも登録し直す（Worker と一緒に消えている）。
+`name` が同じなら URL も同じになり、端末キーを変えなければ GitHub の設定はそのまま使える。
 
 ## CI（`.github/workflows/`）
 
