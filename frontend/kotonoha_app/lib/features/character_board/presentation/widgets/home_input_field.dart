@@ -12,10 +12,15 @@ class HomeInputField extends ConsumerStatefulWidget {
     super.key,
     required this.onFavoritePressed,
     this.fontSize = FontSize.medium,
+    this.maxLines = 3,
   });
 
   final VoidCallback? onFavoritePressed;
   final FontSize fontSize;
+
+  /// 入力が伸びるときの最大の行数（1 以上）。高さの上限はこれで守り、
+  /// 欄そのものを押しつぶさない（押しつぶすとラベルと文字が重なる）。
+  final int maxLines;
 
   @override
   ConsumerState<HomeInputField> createState() => _HomeInputFieldState();
@@ -58,7 +63,7 @@ class _HomeInputFieldState extends ConsumerState<HomeInputField> {
         controller: _controller,
         style:
             TextStyle(fontSize: size, height: 1.5, fontWeight: FontWeight.w600),
-        maxLines: 3,
+        maxLines: widget.maxLines,
         minLines: 1,
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.done,
