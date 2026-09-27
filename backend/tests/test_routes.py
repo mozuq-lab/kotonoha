@@ -122,7 +122,7 @@ def test_openai_provider_round_trip_through_http_boundary() -> None:
 def test_workers_ai_provider_round_trip_through_http_boundary() -> None:
     account = "0123456789abcdef0123456789abcdef"
     config = make_config(
-        DEFAULT_AI_PROVIDER="workers_ai", CF_API_TOKEN="cf-t", CF_ACCOUNT_ID=account
+        DEFAULT_AI_PROVIDER="workers_ai", WORKERS_AI_API_TOKEN="cf-t", WORKERS_AI_ACCOUNT_ID=account
     )
     body = {
         "id": "c1",

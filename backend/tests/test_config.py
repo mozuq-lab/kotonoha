@@ -101,9 +101,9 @@ def test_non_local_load_fails_with_every_problem(monkeypatch: pytest.MonkeyPatch
 def test_production_with_symbol_keys_loads(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
-    monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
-    monkeypatch.setenv("CF_ACCOUNT_ID", "0123456789abcdef0123456789abcdef")
-    monkeypatch.setenv("CF_AI_GATEWAY_ID", "kotonoha-prod")
+    monkeypatch.setenv("WORKERS_AI_API_TOKEN", SYMBOL_KEY)
+    monkeypatch.setenv("WORKERS_AI_ACCOUNT_ID", "0123456789abcdef0123456789abcdef")
+    monkeypatch.setenv("WORKERS_AI_GATEWAY_ID", "kotonoha-prod")
     config = load_config(env_file=None)
     assert config.api_keys() == (SYMBOL_KEY.encode("ascii"),)
 
@@ -159,8 +159,11 @@ def test_cors_origins_are_split() -> None:
 def test_production_workers_ai_needs_the_account_id(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("API_KEYS", SYMBOL_KEY)
-    monkeypatch.setenv("CF_API_TOKEN", SYMBOL_KEY)
+    monkeypatch.setenv("WORKERS_AI_API_TOKEN", SYMBOL_KEY)
     with pytest.raises(ConfigError) as info:
         load_config(env_file=None)
     # ゲートウェイを通らないと支出上限が効かない（ADR-002 の必須条件）
-    assert info.value.problems == (("CF_ACCOUNT_ID", "missing"), ("CF_AI_GATEWAY_ID", "missing"))
+    assert info.value.problems == (
+        ("WORKERS_AI_ACCOUNT_ID", "missing"),
+        ("WORKERS_AI_GATEWAY_ID", "missing"),
+    )

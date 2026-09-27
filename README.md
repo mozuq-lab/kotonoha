@@ -122,12 +122,16 @@ npm ci
 npx wrangler login
 # 秘密は wrangler.jsonc に書かない。1 つずつ入力する
 npx wrangler secret put API_KEYS           # 端末キー（カンマ区切り）。アプリの AI_API_KEY に渡す値
-npx wrangler secret put CF_API_TOKEN       # Workers AI を呼べる API トークン
-npx wrangler secret put CF_ACCOUNT_ID      # 32 桁の 16 進数
-npx wrangler secret put CF_AI_GATEWAY_ID   # 無いと本番ゲートで起動しない（支出上限が効かないため）
+npx wrangler secret put WORKERS_AI_API_TOKEN    # Workers AI を呼べる API トークン
+npx wrangler secret put WORKERS_AI_ACCOUNT_ID   # 32 桁の 16 進数
+npx wrangler secret put WORKERS_AI_GATEWAY_ID   # 無いと本番ゲートで起動しない（支出上限が効かないため）
 npx wrangler deploy
 curl -s https://<Worker の URL>/api/v1/health
 ```
+
+`CF_`・`CLOUDFLARE_` で始まる環境変数（トークンやアカウント ID）をシェルに入れたまま wrangler を使わない。
+wrangler はこれらをログインより優先して自分の認証に使うので、Workers AI 用の狭い権限で認証してデプロイや
+削除が失敗する。backend の設定名はこれと重ならないよう `WORKERS_AI_…` にしている。
 
 秘密はコンテナの起動時にしか渡らない。差し替えたら `npx wrangler deploy` し直し、新しい値が効いているかを
 確かめる（動いているコンテナが古い値のまま残ることがある）。

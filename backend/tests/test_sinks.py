@@ -160,7 +160,11 @@ def test_config_boundary_in_a_real_process(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "provider_env",
     [
-        {"DEFAULT_AI_PROVIDER": "workers_ai", "CF_API_TOKEN": "cf-x", "CF_ACCOUNT_ID": "0" * 32},
+        {
+            "DEFAULT_AI_PROVIDER": "workers_ai",
+            "WORKERS_AI_API_TOKEN": "cf-x",
+            "WORKERS_AI_ACCOUNT_ID": "0" * 32,
+        },
         {"DEFAULT_AI_PROVIDER": "anthropic", "ANTHROPIC_API_KEY": "sk-x"},
     ],
     ids=["workers_ai", "anthropic"],

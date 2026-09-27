@@ -14,9 +14,9 @@ import { env } from "cloudflare:workers";
 interface Env {
   BACKEND: DurableObjectNamespace<Backend>;
   API_KEYS: string;
-  CF_API_TOKEN: string;
-  CF_ACCOUNT_ID: string;
-  CF_AI_GATEWAY_ID: string;
+  WORKERS_AI_API_TOKEN: string;
+  WORKERS_AI_ACCOUNT_ID: string;
+  WORKERS_AI_GATEWAY_ID: string;
 }
 
 const secrets = env as unknown as Env;
@@ -29,9 +29,9 @@ export class Backend extends Container<Env> {
     ENVIRONMENT: "production",
     TRUSTED_PROXY_COUNT: "1",
     API_KEYS: secrets.API_KEYS,
-    CF_API_TOKEN: secrets.CF_API_TOKEN,
-    CF_ACCOUNT_ID: secrets.CF_ACCOUNT_ID,
-    CF_AI_GATEWAY_ID: secrets.CF_AI_GATEWAY_ID,
+    WORKERS_AI_API_TOKEN: secrets.WORKERS_AI_API_TOKEN,
+    WORKERS_AI_ACCOUNT_ID: secrets.WORKERS_AI_ACCOUNT_ID,
+    WORKERS_AI_GATEWAY_ID: secrets.WORKERS_AI_GATEWAY_ID,
   };
 }
 
