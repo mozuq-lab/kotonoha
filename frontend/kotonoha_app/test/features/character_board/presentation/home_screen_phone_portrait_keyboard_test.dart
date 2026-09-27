@@ -31,7 +31,7 @@ void main() {
     ('iPhone SE・OS 2 倍', const Size(375, 667), 20.0, 0.0, 260.0, 2.0),
     ('Android・OS 2 倍', const Size(412, 915), 24.0, 24.0, 300.0, 2.0),
   ]) {
-    testWidgets('$name: キーボードで打った後、入力欄も読み上げボタンも押せる', (tester) async {
+    testWidgets('$name: キーボードで打つ間、打った文字が見え、読み上げボタンに届く', (tester) async {
       tester.platformDispatcher.textScaleFactorTestValue = scale;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       tester.view.physicalSize = size;
@@ -58,19 +58,39 @@ void main() {
       tester.view.padding = FakeViewPadding(top: top);
       tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
       await tester.pumpAndSettle();
+      if (scale == 1.0) {
+        // 全部が収まる大きさなら、キーボードが出たときに読み上げボタンも見える
+        // （収まらないときは、入力欄が自分を見せる動きが優先される）
+        expect(_tappable(tester, find.text('読み上げ')), isTrue,
+            reason: 'キーボードが出たとき、読み上げボタンが見えず押せない');
+      }
+
       await tester.enterText(field, 'すこしやすみたい');
       await tester.pumpAndSettle();
-
       expect(tester.takeException(), isNull);
       expect(tester.testTextInput.isVisible, isTrue, reason: 'キーボードが閉じた');
-      expect(_tappable(tester, find.text('読み上げ')), isTrue,
-          reason: '読み上げボタンが見えず押せない');
-      // 文字 2 倍の電話では、入力欄と読み上げボタンの行の両方は収まらない
-      // （iPhone 17 で約 260px に対し見える高さ約 190px）。打った後に押す
-      // 読み上げボタンを優先し、入力欄は「上へ」で戻れる位置に置く。
-      if (scale == 1.0) {
-        expect(_tappable(tester, field), isTrue, reason: '入力欄が見えず押せない');
+      // 打った文字は、読み上げる前に確かめられる
+      expect(_tappable(tester, field), isTrue, reason: '打った文字が見えない');
+
+      // 読み上げボタンは、見えていなければ「下へ」で届く
+      // （文字 2 倍の電話では、入力欄と読み上げボタンの行の両方は収まらない）
+      for (var i = 0; i < 10 && !_tappable(tester, find.text('読み上げ')); i++) {
+        expect(find.text('下へ'), findsOneWidget, reason: '読み上げボタンが見えず、「下へ」も無い');
+        await tester.tap(find.text('下へ'));
+        await tester.pumpAndSettle();
       }
+      expect(_tappable(tester, find.text('読み上げ')), isTrue,
+          reason: '「下へ」を押しても読み上げボタンに届かない');
+      if (scale == 1.0) {
+        expect(find.text('下へ'), findsNothing,
+            reason: '通常の文字の大きさでは、スクロールせずに全部見える');
+      }
+
+      // 上へ戻した位置は、そのまま保たれる（下端へ引き戻さない）
+      await tester.ensureVisible(find.text('はい'));
+      await tester.pumpAndSettle();
+      expect(_tappable(tester, find.text('はい')), isTrue,
+          reason: '上へ戻しても引き戻されて「はい」が押せない');
     });
   }
 }

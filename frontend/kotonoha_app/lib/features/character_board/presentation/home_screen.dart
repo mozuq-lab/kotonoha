@@ -1083,7 +1083,8 @@ class _ScrollableHomeControls extends StatefulWidget {
   final double maxHeight;
   final Widget child;
 
-  /// true になったとき、下端までスクロールして見せる
+  /// true の間は下端を基準にスクロールする（下端が見え、高さが変わっても
+  /// 下端のまま保たれる）。利用者の操作や入力欄が自分を見せる動きは妨げない。
   final bool showEnd;
 
   @override
@@ -1099,22 +1100,10 @@ class _ScrollableHomeControlsState extends State<_ScrollableHomeControls> {
   bool _canDown = false;
   bool _scheduled = false;
 
-  /// [showEnd] の間に利用者が自分で動かしたか。動かしたら下端へ送り直さない
-  bool _userMoved = false;
-
   @override
   void initState() {
     super.initState();
     _controller.addListener(_scheduleUpdate);
-  }
-
-  @override
-  void didUpdateWidget(_ScrollableHomeControls oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.showEnd && !oldWidget.showEnd) {
-      _userMoved = false;
-      _scheduleUpdate();
-    }
   }
 
   void _scheduleUpdate() {
@@ -1124,18 +1113,16 @@ class _ScrollableHomeControlsState extends State<_ScrollableHomeControls> {
       _scheduled = false;
       if (!mounted || !_controller.hasClients) return;
       final position = _controller.position;
-      // 下端を見せる間は、高さが変わるたびに（補助の表示・入力欄の伸びなど）
-      // 下端へ送り直す。利用者が自分で動かした後は送らない。
-      if (widget.showEnd &&
-          !_userMoved &&
-          position.pixels < position.maxScrollExtent - 0.5) {
-        _controller.jumpTo(position.maxScrollExtent);
-      }
       // 補助を除いた高さに収まれば消す。表示後のviewportだけでは残り続ける。
       final overflow =
           position.maxScrollExtent > (_overflow ? _buttonHeight : 0) + 0.5;
-      final canUp = position.extentBefore > 0.5;
-      final canDown = position.extentAfter > 0.5;
+      // 下端基準（reverse）では、上に隠れている分が extentAfter になる
+      final above =
+          widget.showEnd ? position.extentAfter : position.extentBefore;
+      final below =
+          widget.showEnd ? position.extentBefore : position.extentAfter;
+      final canUp = above > 0.5;
+      final canDown = below > 0.5;
       if (overflow != _overflow || canUp != _canUp || canDown != _canDown) {
         setState(() {
           _overflow = overflow;
@@ -1146,9 +1133,10 @@ class _ScrollableHomeControlsState extends State<_ScrollableHomeControls> {
     });
   }
 
+  /// [direction] は見た目の向き（-1 が上へ）
   void _move(int direction) {
-    _userMoved = true;
     final position = _controller.position;
+    if (widget.showEnd) direction = -direction;
     // 拡大した複数行の告知も、停止位置の間で飛び越さない。
     final step = (position.viewportDimension / 2).clamp(1.0, _buttonHeight);
     _controller.animateTo(
@@ -1173,47 +1161,39 @@ class _ScrollableHomeControlsState extends State<_ScrollableHomeControls> {
             if (notification.depth == 0) _scheduleUpdate();
             return false;
           },
-          child: NotificationListener<ScrollStartNotification>(
-            // 指で動かし始めたら、下端へ送り直すのをやめる
-            onNotification: (notification) {
-              if (notification.depth == 0 && notification.dragDetails != null) {
-                _userMoved = true;
-              }
-              return false;
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: SingleChildScrollView(
-                    key: const ValueKey('home-controls-scroll'),
-                    controller: _controller,
-                    child: widget.child,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: SingleChildScrollView(
+                  key: const ValueKey('home-controls-scroll'),
+                  controller: _controller,
+                  reverse: widget.showEnd,
+                  child: widget.child,
+                ),
+              ),
+              if (_overflow)
+                SizedBox(
+                  height: _buttonHeight,
+                  child: Row(
+                    children: [
+                      for (final direction in [-1, 1])
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(44, 44),
+                              padding: EdgeInsets.zero,
+                            ),
+                            onPressed: (direction < 0 ? _canUp : _canDown)
+                                ? () => _move(direction)
+                                : null,
+                            child: Text(direction < 0 ? '上へ' : '下へ'),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                if (_overflow)
-                  SizedBox(
-                    height: _buttonHeight,
-                    child: Row(
-                      children: [
-                        for (final direction in [-1, 1])
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(44, 44),
-                                padding: EdgeInsets.zero,
-                              ),
-                              onPressed: (direction < 0 ? _canUp : _canDown)
-                                  ? () => _move(direction)
-                                  : null,
-                              child: Text(direction < 0 ? '上へ' : '下へ'),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         ),
       );
