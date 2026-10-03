@@ -32,7 +32,7 @@ AI変換機能（オプション）を使用すると、以下のデータが本
 - **前回の変換結果**: 再変換を行う場合のみ
 - **接続元の IP アドレス**: 通信の仕組み上、送信のたびに届きます。ことのは backend は、短い時間に多くの変換が送られたときに制限するためだけに、この値をメモリ内で一時的に使います（1 分ごとに数え直します）。記録・保存はせず、外部 AI provider へも送りません
 
-ことのは backend は、入力テキスト（再変換時は前回の変換結果も含む）と、選択した丁寧さレベルに応じた指示を prompt に含め、外部 AI provider である Cloudflare（米国）の AI サービス（Workers AI）へ送信します。処理する国・地域は同社の設備によって異なり、日本国外で処理されることがあります。provider が生成した変換結果は、ことのは backend を経由して本アプリへ返されます。
+ことのは backend は、入力テキスト（再変換時は前回の変換結果も含む）と、選択した丁寧さレベルに応じた指示を prompt に含め、外部 AI provider である Cloudflare, Inc.（米国）の AI サービス（Workers AI）へ送信します。処理する国・地域は同社の設備によって異なり、日本国外で処理されることがあります。provider が生成した変換結果は、ことのは backend を経由して本アプリへ返されます。提供先・米国の制度・提供先の措置は「外国にある第三者への提供について」に記載します。
 
 **重要**: AI変換機能の初回使用時に、データ送信についての同意確認を行います。
 
@@ -73,7 +73,7 @@ AI変換機能（オプション）を使用すると、以下のデータが本
 - **ローカルデータ**: お使いの端末内に保存されます。本アプリ自身がクラウドへ同期することはありません。端末の OS のバックアップ機能（Android の自動バックアップ、iOS の iCloud バックアップ）を有効にしている場合は、他のアプリのデータと同様に OS によってバックアップされ、機種変更時に復元されることがあります
 - **壊れたデータの写し**: iOS・Android 版では、端末に保存されたデータのファイルが壊れていることを起動時に見つけた場合、壊れたファイルに手を加える前に、その写しを端末内に残します。写しには、それまでに保存されていた入力履歴・定型文・お気に入りが含まれることがあります（アプリ内で個別に削除した項目が含まれることもあります）。本アプリが写しを外部へ送信することはありません。OS のバックアップ機能を有効にしている場合は、ほかのローカルデータと同様にバックアップの対象になります
 - **ことのは backend における AI 変換データ**: backend はデータベースを持たず、処理後に入力テキスト・前回の変換結果・変換結果を保存しません
-- **外部 AI provider における AI 変換データ**: 保存期間や学習利用について、本ポリシーでは保証しません。各 provider の規約および適用される設定に従います
+- **外部 AI provider における AI 変換データ**: 同社は、送られた内容を AI の学習やサービスの改善に使わないとしています（「外国にある第三者への提供について」）。同社での保存期間について、本ポリシーでは保証しません。ことのはは、同社の AI Gateway に内容の記録を残さない設定で送信しています
 
 ### データの削除
 
@@ -90,6 +90,19 @@ AI変換機能（オプション）を使用すると、以下のデータが本
 ### 第三者への提供
 
 「AI変換機能使用時」に記載した外部 AI provider への送信を除き、本アプリは、法令に基づく場合を除いてユーザーの個人情報を第三者に提供しません。
+
+### 外国にある第三者への提供について
+
+AI変換機能を使うと、「AI変換機能使用時」に記載したデータが、外国にある第三者へ提供されます。本アプリは、初回のAI変換の前に以下の要点を示し、同意を得てから送信します（個人情報保護法第28条）。
+
+- **提供先**: Cloudflare, Inc.（米国カリフォルニア州）。ことのは backend も同社の設備（Cloudflare Containers）の上で動いています
+- **提供する情報と目的**: 入力テキスト・丁寧さレベル・前回の変換結果（再変換時のみ）を、AI変換のためだけに送信します。入力テキストに氏名や体調など個人に関する情報を書いた場合は、それも送信されます
+- **処理する国**: 同社の世界各地の設備で処理され、日本国外になることがあります。どの国の設備で処理されるかは要求ごとに同社の設備の状況で決まるため、前もって特定できません
+- **米国の個人情報保護の制度**: 個人情報保護委員会の調査（2021年10月時点）によると、米国には連邦レベルの包括的な個人情報保護法は無く、通信・金融・医療など分野ごとの法律があります。米国は APEC の越境プライバシールール（CBPR）システムに参加しています。この制度は、参加国の事業者の個人情報の扱いを、国際的な基準に沿って第三者機関が認証する仕組みです。同社の本社があるカリフォルニア州には包括的な消費者プライバシー法（CCPA）があり、OECD プライバシーガイドラインの8原則のうち「責任の原則」に当たる規定は見当たらないとされています。事業者に政府の情報収集への協力を義務づける制度や、データを国内に保存する義務のうち、本人の権利利益に重大な影響を及ぼす可能性のあるものは、同調査では挙げられていません。調査時点より後の法改正は反映されていません（出典: 個人情報保護委員会「外国制度（アメリカ合衆国）」 https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ ）
+- **提供先が講じている措置**: 同社は公式の文書で次のことを示しています。送られた内容を、AI モデルの学習や同社・第三者のサービスの改善に使わず、他の顧客に見せないこと（ https://developers.cloudflare.com/workers-ai/platform/privacy/ ）。データ処理契約（DPA）で、顧客の指示の範囲でだけ処理すること、守秘、暗号化などの安全管理、漏えいの通知、政府からの開示要求への対応を定めていること（ https://www.cloudflare.com/cloudflare-customer-dpa/ ）。ISO/IEC 27001・27018・27701 の認証（ https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ）と、Global CBPR・Global PRP の認証（ https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ ）を受けていること。ことのはは、同社の AI Gateway に内容の記録を残さない設定で送信しています
+- **講じられていない措置**: 同社の措置は概ね OECD プライバシーガイドラインの8原則に対応すると考えられますが、同社の契約（DPA）が名前を挙げている法令は EU・EEA・スイス・英国・米国の州法で、日本の個人情報保護法の名前は無く、同法に基づく保護や本人の請求への協力は明記されていません
+
+同意しない場合、AI変換は使えませんが、ほかの機能はすべて使えます。
 
 ### お子様のプライバシー
 
@@ -135,7 +148,7 @@ When you use the optional AI conversion feature, the following data is sent from
 - **Previous Conversion Result**: Only when regenerating
 - **Source IP Address**: Received with every request as part of how network communication works. The Kotonoha backend uses it only temporarily in memory to limit requests when many conversions are sent in a short time (the count resets every minute). It is not logged or stored, and it is not sent to the external AI provider.
 
-The Kotonoha backend includes the Input Text (and the Previous Conversion Result when regenerating) and instructions based on the selected Politeness Level in a prompt sent to the AI service (Workers AI) of the external AI provider, Cloudflare (United States). The country or region where processing takes place depends on Cloudflare's infrastructure and may be outside Japan. The provider's Conversion Result is returned to the App through the Kotonoha backend.
+The Kotonoha backend includes the Input Text (and the Previous Conversion Result when regenerating) and instructions based on the selected Politeness Level in a prompt sent to the AI service (Workers AI) of the external AI provider, Cloudflare, Inc. (United States). The country or region where processing takes place depends on Cloudflare's infrastructure and may be outside Japan. The provider's Conversion Result is returned to the App through the Kotonoha backend. The recipient, the US system, and the recipient's measures are described under "Transfer to Third Parties Outside Japan."
 
 **Important**: We will ask for your consent about data transmission when you first use the AI conversion feature.
 
@@ -176,7 +189,7 @@ The collected data is used only for the following purposes:
 - **Local Data**: Stored on your device. The App itself does not synchronize it to any cloud. If you have enabled your device's OS backup (Android Auto Backup or iCloud Backup), the OS may back it up and restore it on a new device, as it does for other apps
 - **Copies of Damaged Data**: On iOS and Android, if the App finds at startup that a data file stored on your device is damaged, it keeps a copy of the damaged file on your device before modifying it. The copy may contain input history, preset phrases, and favorites saved up to that point, including items you had deleted individually within the App. The App never sends the copy off your device. If you have enabled your device's OS backup, the copy may be backed up in the same way as other local data
 - **AI Conversion Data on the Kotonoha Backend**: The backend has no database and does not store Input Text, the Previous Conversion Result, or the Conversion Result after processing
-- **AI Conversion Data at the External AI Provider**: This policy does not guarantee the provider's retention period or whether data is used for model training. These matters are governed by the provider's terms and applicable settings
+- **AI Conversion Data at the External AI Provider**: Cloudflare states that it does not use the content to train AI models or improve its services (see "Transfer to Third Parties Outside Japan"). This policy does not guarantee Cloudflare's retention period. Kotonoha sends requests with logging of content in Cloudflare AI Gateway turned off
 
 ### Data Deletion
 
@@ -193,6 +206,19 @@ The copies of damaged data described under "Data Storage" are not removed by del
 ### Sharing with Third Parties
 
 Except for transmission to the external AI provider described under "When Using AI Conversion," the App does not share users' personal information with third parties unless required by law.
+
+### Transfer to Third Parties Outside Japan
+
+When you use AI conversion, the data described under "When Using AI Conversion" is provided to a third party outside Japan. Before the first AI conversion, the App shows the key points below and sends data only after you consent (Article 28 of Japan's Act on the Protection of Personal Information).
+
+- **Recipient**: Cloudflare, Inc. (California, United States). The Kotonoha backend also runs on Cloudflare's infrastructure (Cloudflare Containers)
+- **Data and purpose**: The Input Text, the Politeness Level, and the Previous Conversion Result (only when regenerating) are sent solely for AI conversion. If you type personal information such as a name or a health condition, it is sent as well
+- **Country of processing**: Processing takes place in Cloudflare facilities around the world and may be outside Japan. The country cannot be identified in advance because it is determined per request by Cloudflare's infrastructure
+- **Personal information protection system in the United States**: According to a survey by Japan's Personal Information Protection Commission (as of October 2021), the United States has no comprehensive federal privacy law and instead has sector-specific laws. The United States participates in the APEC Cross-Border Privacy Rules (CBPR) system, in which third-party bodies certify businesses' handling of personal information against an international standard. California, where Cloudflare is headquartered, has the CCPA, which reportedly has no provision corresponding to the Accountability Principle of the OECD Privacy Guidelines. The survey lists no obligation for businesses to cooperate with government information collection, and no data localization requirement, that may significantly affect individuals' rights and interests. Later legal changes are not reflected (source: https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ )
+- **Measures taken by the recipient**: Cloudflare states that it does not use the content to train AI models or improve its or third parties' services and does not show it to other customers ( https://developers.cloudflare.com/workers-ai/platform/privacy/ ). Its Data Processing Addendum provides for processing only on the customer's instructions, confidentiality, security measures such as encryption, breach notification, and handling of government requests ( https://www.cloudflare.com/cloudflare-customer-dpa/ ). It holds ISO/IEC 27001, 27018, and 27701 certifications ( https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ) and Global CBPR and Global PRP certifications ( https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ ). Kotonoha sends requests with logging of content in Cloudflare AI Gateway turned off
+- **Measures not taken**: We consider that Cloudflare's measures broadly correspond to the eight principles of the OECD Privacy Guidelines. However, the laws its DPA names are those of the EU, the EEA, Switzerland, the UK, and US states; it does not name Japan's Act on the Protection of Personal Information and does not expressly provide protection or cooperation with individuals' requests under that Act
+
+If you do not consent, AI conversion is unavailable, but all other features remain available.
 
 ### Children's Privacy
 
