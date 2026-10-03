@@ -445,8 +445,9 @@ void main() {
     expect(find.widgetWithText(ElevatedButton, 'AI変換'), findsOneWidget);
   });
 
-  // App Store 審査ガイドライン 5.1.2(i): 外部の AI へ送る前に、何を・誰に送るかを示して許可を得る
-  testWidgets('AI変換の同意は、送る中身と送り先（Cloudflare・米国）を示す', (tester) async {
+  // App Store 審査ガイドライン 5.1.2(i): 外部の AI へ送る前に、何を・誰に送るかを示して許可を得る。
+  // 個人情報保護法 28 条（施行規則 17 条 2 項）: 外国の名称・その国の制度・提供先の措置を同意の前に示す
+  testWidgets('AI変換の同意は、送る中身・送り先・米国の制度・提供先の措置を示す', (tester) async {
     tester.view.physicalSize = const Size(375, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -471,8 +472,16 @@ void main() {
       '入力した文章',
       '丁寧さ',
       '前回の変換結果',
-      'Cloudflare（米国）',
-      '日本国外'
+      // 外国の名称と提供先。処理する国は特定できないので、その旨も
+      '米国の Cloudflare, Inc.',
+      '特定できません',
+      // 米国の個人情報保護の制度
+      '包括的な個人情報保護法が無く',
+      // 提供先の措置と、講じられていない措置
+      '学習',
+      '契約に明記されていません',
+      // 詳しい情報の在りか
+      'privacy-policy',
     ]) {
       expect(
         find.descendant(
