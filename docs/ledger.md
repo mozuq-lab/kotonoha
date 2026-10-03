@@ -13,7 +13,6 @@
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
 - [ ] L-84 開発者登録（Apple Developer Program / Google Play）。アプリが形になってから行う（2026-09-24 決定。`docs/now.md`） — ADR-007 条件 4（人が動かす。旧 remaining-work.md から移記）
 - [ ] L-87 dependabot の PR が滞留していた — .github/dependabot.yml。決定（2026-09-27）: actions 5 本（#66〜#70）は `@dependabot recreate` で今の main の上に作り直させ、CI が緑で中身を確かめたものからマージする。backend 5 本（#55〜#59）は閉じた（`sqlalchemy` は ignore）。frontend 5 本（#60・#62〜#65）は、画面や読み上げに影響しうるので本公開の後にまとめて見る
-- [ ] L-88 `fix/backend-production-hardening` がローカルにしか無い（#86 で証拠として残すと決定） — Issue #86。決定（2026-09-20）: push して保全する
 - [ ] L-91 コードや CI が守っているのに ADR に無い決定（`/health` の無認証・無レート制限、環境名による認証省略と `/docs` 公開、CORS の形、`patch('app.` 禁止、lint の設定値） — backend/app/{routes,config,main}.py、backend/scripts/gates.sh、backend/pyproject.toml。決定（2026-09-20）: 次の監査で ADR にするか決める（未卒業 ADR は上限の 5 本）
 - [ ] L-98 ストア提出の前に独立監査（ADR-010 の監査、監査スキルの付録）を 1 回行う（結果は PR の `<details>`。直すものは仕分けに通す）。条件 4 の充足判定の前 — ADR-010、ADR-007 条件 4
 - [ ] L-106 ADR-005 が #125〜#127 で 55 行に肥大化し、#128 で構造を変えた（ADR-010「レビュー指摘に応えて ADR に文を足さない」）。次の監査で、以後の ADR 差分に細部が入っていないかを見て、効いていなければ上限を見直す — docs/adr/ADR-010-document-framework.md
@@ -21,7 +20,6 @@
 - [ ] L-145 Android のクローズドテスト（12 人以上 × 14 日連続。代行サービスで集める）と、その後の production access の申請が未実施。申請の回答は実際に起きたことで書く — ADR-007 条件 4。人が動かす。L-84 の後、Android 公開の直前
 - [ ] L-146 Play Console のプライバシーポリシー URL は fastlane の metadata に無く、コンソールで設定する（iOS は `privacy_url.txt`）。同じ URL にする — ADR-007 条件 4。人が動かす。L-84 の後
 - [ ] L-147 台帳の 1 行の字数に上限が無い（2026-09-24 の整理で長い行は縮めた） — ADR-010。決定（2026-09-20）: 次の監査で 200 字の上限を ADR-010 の改訂として置く
-- [ ] L-152 CI の成功が main 更新の必須条件になっているか確認できない（classic protection は 404、ruleset 10494480 は `include=[]`、required contexts `Python CI`・`Flutter CI` が job 名と一致しない。実 push の拒否は未検証） — `gh api` で 2026-09-21 に確認、.github/workflows/{python,flutter}.yml
 - [ ] L-173 OfflineBanner の読み上げ用ラベルが Web の semantics tree に出ない — offline_banner.dart。決定（2026-09-23）: iOS/Android の実機 QA（L-25）で読み上げに出るかを見て、出なければ直し、出れば閉じる
 - [ ] L-178 常設バナー（保存失敗の告知）の文言が Web の DOM と semantics tree に出ない（L-173 と同型） — persistence_banner.dart。決定（2026-09-23）: L-173 と同じく実機 QA（L-25）で見る
 
