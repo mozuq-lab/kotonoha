@@ -11,6 +11,8 @@ import 'package:kotonoha_app/app.dart';
 import 'package:kotonoha_app/core/persistence/recreated_areas_provider.dart';
 import 'package:kotonoha_app/core/utils/hive_init.dart';
 import 'package:kotonoha_app/features/favorite/data/favorite_repository.dart';
+import 'package:kotonoha_app/features/character_board/domain/character_data.dart';
+import 'package:kotonoha_app/features/character_board/domain/dakuten_converter.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/character_board_widget.dart';
 import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/shared/models/favorite_item.dart';
@@ -265,12 +267,28 @@ Future<void> revealFavoriteShortcut(WidgetTester tester, String label) async {
 /// 複数の文字を順番に入力
 /// [tester]: WidgetTester
 /// [characters]: 入力する文字列
+/// 濁音・半濁音は、利用者と同じく基本の文字盤で清音を押してから「゛」「゜」を押す
+/// （が＝か＋゛、ぱ＝は＋゜）。
 Future<void> typeOnCharacterBoard(
   WidgetTester tester,
   String characters,
 ) async {
   for (final char in characters.split('')) {
-    await tapCharacterOnBoard(tester, char);
+    final viaDakuten = DakutenConverter.applyDakuten(char);
+    final viaHandakuten = DakutenConverter.applyHandakuten(char);
+    if (viaDakuten != null &&
+        CharacterData.basic.contains(viaDakuten) &&
+        DakutenConverter.applyDakuten(viaDakuten) == char) {
+      await tapCharacterOnBoard(tester, viaDakuten);
+      await tapCharacterOnBoard(tester, CharacterData.dakutenKey);
+    } else if (viaHandakuten != null &&
+        CharacterData.basic.contains(viaHandakuten) &&
+        DakutenConverter.applyHandakuten(viaHandakuten) == char) {
+      await tapCharacterOnBoard(tester, viaHandakuten);
+      await tapCharacterOnBoard(tester, CharacterData.handakutenKey);
+    } else {
+      await tapCharacterOnBoard(tester, char);
+    }
   }
 }
 

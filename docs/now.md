@@ -15,11 +15,11 @@
 - AI 変換の質は 24 件で確認済み（古風な「丁寧」は受け入れた限界 L-222）
 - プライバシーポリシーは GitHub Pages で配信中。ストア用のスクリーンショット（iPhone 6.9・iPad 13・Android 電話）は 2026-10-03 に今の画面で撮り直し、`fastlane/screenshots/ja-JP/` にある
 - `integration_test/mvp_scenario_test.dart`（7 本）は 2026-10-03 に今の画面で、iPad シミュレータ（iPad (A16)）・Android エミュレータ（`Medium_Phone_API_36.1`）・Chromium（main の CI）で通過（ADR-007 条件 2）
+- `integration_test/ai_conversion_e2e_test.dart`（AI 変換の利用シナリオ 6 本。偽物はネットワークと接続状態の境界だけ）は 2026-10-03 に iPad シミュレータ・Android エミュレータ・ヘッドレス Chrome（手元）で通過（ADR-007 条件 5 のうち利用シナリオ）。CI の Web 実行では今も対象外（`.github/workflows/flutter.yml` の `EXCLUDED`）
 
 ## 最短経路（上から順に。終わった行は消す）
-1. AI 変換の利用シナリオを iOS シミュレータ・Android エミュレータ・実 Chromium で通す（ADR-007 条件 5。`ai_conversion_e2e_test.dart` はモックサーバー相手）
-2. Play 用のアイコン 512 とフィーチャーグラフィック 1024×500（L-107。Android 公開の前まで）
-3. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする。最後に行う
+1. Play 用のアイコン 512 とフィーチャーグラフィック 1024×500（L-107。Android 公開の前まで）
+2. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする。最後に行う
 
 ## 人待ち
 - 開発者登録（L-84）: 審査と Play Console はここから始まる。コード作業と並行できる
