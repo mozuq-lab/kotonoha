@@ -41,10 +41,20 @@ class _StubTTSNotifier extends TTSNotifier {
 }
 
 void main() {
-  for (final size in const [Size(1032, 1376), Size(440, 956)]) {
-    testWidgets('最後までスクロールすると、最後の行の削除ボタンが「＋」に隠れない（$size）', (tester) async {
+  // 下端の余白: 0（ホームボタンの iPad 等）、34（ホームインジケータの iPhone）、
+  // 48（Android の 3 ボタンナビ）。「＋」はこの余白の上に置かれる
+  for (final (size, bottomInset) in const [
+    (Size(1032, 1376), 0.0),
+    (Size(440, 956), 0.0),
+    (Size(440, 956), 34.0),
+    (Size(412, 915), 48.0),
+  ]) {
+    testWidgets('最後までスクロールすると、最後の行の削除ボタンが「＋」に隠れない（$size 下端$bottomInset）',
+        (tester) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
+      tester.view.padding = FakeViewPadding(bottom: bottomInset);
+      tester.view.viewPadding = FakeViewPadding(bottom: bottomInset);
       addTearDown(tester.view.reset);
 
       final now = DateTime(2026, 1, 1);
