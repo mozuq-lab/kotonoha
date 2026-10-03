@@ -116,6 +116,14 @@ Worker は利用者が送った `X-Forwarded-For` を捨て、`CF-Connecting-IP`
 前提: Workers Paid の契約、AI Gateway（支出上限・回数制限を設定済み）、Workers AI を呼べる API トークン、
 Docker（イメージを手元で作ってから送る）。
 
+端末キー（`API_KEYS`）は、推測されにくい値を自分で作る。同じ値を GitHub の Settings → Secrets and
+variables → Actions の **Secrets** に `AI_API_KEY` として登録すると、`release.yml` がアプリのビルドに渡す
+（Variables に置くとワークフローは読まず、空の鍵でビルドされる）。接続先は Variables の `API_BASE_URL` に置く。
+
+```bash
+openssl rand -hex 32    # 16 進数 64 文字。表示された値を下の API_KEYS と GitHub の AI_API_KEY に使う
+```
+
 ```bash
 cd deploy/cloudflare
 npm ci
