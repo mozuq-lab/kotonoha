@@ -113,6 +113,15 @@ void main() {
     });
   }
 
+  // 他の画面のタイトルは中央に揃えるが、ホームのロゴは左端に置く
+  for (final size in const [Size(1032, 1376), Size(390, 844)]) {
+    testWidgets('$size: ホームのロゴは左端にある', (tester) async {
+      await pumpHome(tester, size);
+      final logo = tester.getTopLeft(find.bySemanticsLabel('kotonoha'));
+      expect(logo.dx, lessThan(32));
+    });
+  }
+
   testWidgets('長いお気に入りは2行で表示し、全文をtooltipで確認できる', (tester) async {
     await pumpHome(tester, const Size(390, 844));
     const text = '体の向きを変えてください。右側を下にしてください。';

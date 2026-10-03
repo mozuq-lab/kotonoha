@@ -131,6 +131,8 @@ class HomeScreen extends ConsumerWidget {
       child: Builder(
           builder: (context) => Scaffold(
                 appBar: AppBar(
+                  // 他の画面のタイトルは中央（テーマ）。ホームのロゴは左端に置く
+                  centerTitle: false,
                   title: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

@@ -57,6 +57,7 @@ class SettingsChoiceGroup<T> extends StatelessWidget {
               labelStyle: TextStyle(
                 color:
                     isSelected ? scheme.onSecondaryContainer : scheme.onSurface,
+                fontSize: 16,
                 fontWeight: isSelected ? FontWeight.bold : null,
               ),
               // 見た目の高さも 44px 以上にする（タップ領域は padded で 48px 四方）
