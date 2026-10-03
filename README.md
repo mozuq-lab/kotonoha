@@ -137,6 +137,16 @@ npx wrangler deploy
 curl -s https://<Worker の URL>/api/v1/health
 ```
 
+上は初めて作るときの手順。`secret put` で入れた秘密は Worker に残るので、2 回目以降にコード（依存を含む）だけを
+変えたときは `npx wrangler deploy` だけでよい。イメージが変わるので、動いているコンテナが新しいものに入れ替わる:
+
+```bash
+cd deploy/cloudflare
+npm ci
+npx wrangler deploy
+curl -s https://<Worker の URL>/api/v1/health
+```
+
 `CF_`・`CLOUDFLARE_` で始まる環境変数（トークンやアカウント ID）をシェルに入れたまま wrangler を使わない。
 wrangler はこれらをログインより優先して自分の認証に使うので、Workers AI 用の狭い権限で認証してデプロイや
 削除が失敗する。backend の設定名はこれと重ならないよう `WORKERS_AI_…` にしている。
