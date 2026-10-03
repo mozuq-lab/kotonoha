@@ -104,7 +104,7 @@ AI変換機能（オプション）を使用すると、以下のデータが本
 プライバシーに関するご質問は、以下までお問い合わせください。
 
 - サポートURL: https://github.com/mozuq-lab/kotonoha/issues
-- メール: support@kotonoha-app.example.com
+- メール: hello@mozuq-lab.com
 
 ---
 
@@ -207,4 +207,4 @@ If we make changes to this policy, we will post the revised policy and its Last 
 For privacy-related questions, please contact us:
 
 - Support URL: https://github.com/mozuq-lab/kotonoha/issues
-- Email: support@kotonoha-app.example.com
+- Email: hello@mozuq-lab.com

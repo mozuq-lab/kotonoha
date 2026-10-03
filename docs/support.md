@@ -36,7 +36,7 @@
 
 プライバシーに関するお問い合わせや、GitHubをご利用でない場合は、メールでお問い合わせください。
 
-- メール: support@kotonoha-app.example.com
+- メール: hello@mozuq-lab.com
 
 ### お問い合わせの際に
 
@@ -89,7 +89,7 @@ For technical issues, bug reports, or feature requests, please use GitHub Issues
 
 For privacy-related inquiries or if you don't use GitHub, please contact us by email.
 
-- Email: support@kotonoha-app.example.com
+- Email: hello@mozuq-lab.com
 
 ### When Contacting Us
 
