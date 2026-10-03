@@ -322,11 +322,11 @@ class CharacterButton extends StatelessWidget {
         width: size,
         height: size,
         child: Material(
+          // 背景より一段明るい面に置き、影は付けない（縁で境界を示す）
           color: isEnabled
-              ? theme.colorScheme.surface
-              : theme.colorScheme.surface.withValues(alpha: 0.5),
+              ? theme.colorScheme.surfaceContainerLow
+              : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
           borderRadius: borderRadius,
-          elevation: isEnabled ? AppSizes.elevationSmall : 0,
           child: InkWell(
             onTap: isEnabled ? onTap : null,
             borderRadius: borderRadius,

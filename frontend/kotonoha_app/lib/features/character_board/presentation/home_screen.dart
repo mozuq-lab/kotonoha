@@ -696,7 +696,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           padding: const EdgeInsets.all(contentPadding),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
             border: Border.all(
               color: Theme.of(context).colorScheme.outline,
             ),

@@ -200,6 +200,7 @@ class _FavoriteGridButton extends StatelessWidget {
               favoriteBackground(favorite, Theme.of(context).colorScheme),
           foregroundColor:
               favoriteForeground(favorite, Theme.of(context).colorScheme),
+          side: favoriteBorder(favorite, Theme.of(context).colorScheme),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           ),

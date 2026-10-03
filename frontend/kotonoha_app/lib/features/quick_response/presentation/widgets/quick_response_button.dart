@@ -79,6 +79,9 @@ class QuickResponseButton extends StatefulWidget {
   /// 指定しない場合は白色を使用
   final Color? textColor;
 
+  /// 縁の色（オプション）。null ならテーマの縁
+  final Color? borderColor;
+
   /// ボタンの幅（オプション）
   /// 指定しない場合はデフォルト値、最小44px保証
   final double? width;
@@ -100,6 +103,7 @@ class QuickResponseButton extends StatefulWidget {
     this.onTTSSpeak,
     this.backgroundColor,
     this.textColor,
+    this.borderColor,
     this.width,
     this.height,
     this.fontSize,
@@ -197,6 +201,9 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
             style: ElevatedButton.styleFrom(
               backgroundColor: _backgroundColor,
               foregroundColor: _textColor,
+              side: widget.borderColor == null
+                  ? null
+                  : BorderSide(color: widget.borderColor!),
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.paddingMedium,
                 vertical: AppSizes.paddingSmall,

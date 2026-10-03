@@ -144,7 +144,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               onPressed: () => Navigator.of(dialogContext).pop(colorValue),
               child: Row(
                 children: [
-                  CircleAvatar(backgroundColor: Color(colorValue), radius: 16),
+                  // 見本はボタンに実際に付く面と縁で描く（元の鮮やかな色ではない）
+                  _ColorSwatch(
+                    favorite: favorite.copyWith(colorValue: colorValue),
+                  ),
                   const SizedBox(width: 16),
                   Text(name),
                 ],
@@ -355,6 +358,30 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           onCancel: () => Navigator.of(dialogContext).pop(),
         );
       },
+    );
+  }
+}
+
+/// 色選びの見本。ボタンと同じ面と縁の色の丸
+class _ColorSwatch extends StatelessWidget {
+  const _ColorSwatch({required this.favorite});
+
+  final Favorite favorite;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: favoriteBackground(favorite, scheme),
+        border: Border.fromBorderSide(
+          favoriteBorder(favorite, scheme) ??
+              BorderSide(color: scheme.outline, width: 2),
+        ),
+      ),
     );
   }
 }

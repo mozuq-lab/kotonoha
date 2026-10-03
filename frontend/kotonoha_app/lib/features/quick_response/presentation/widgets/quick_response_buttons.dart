@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/core/themes/button_tone.dart';
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_constants.dart';
 import 'package:kotonoha_app/features/quick_response/domain/quick_response_type.dart';
 import 'package:kotonoha_app/features/quick_response/presentation/mixins/debounce_mixin.dart';
@@ -98,6 +99,7 @@ class _QuickResponseButtonsState extends State<QuickResponseButtons>
         final index = entry.key;
         final type = entry.value;
 
+        final tone = widget.illustrated ? _tone(context, type) : null;
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(
@@ -111,14 +113,34 @@ class _QuickResponseButtonsState extends State<QuickResponseButtons>
               fontSize: widget.fontSize,
               height: widget.buttonHeight,
               showIcon: widget.illustrated,
-              backgroundColor: widget.illustrated
-                  ? Color.lerp(Theme.of(context).colorScheme.surface,
-                      QuickResponseButtonColors.getColor(type), 0.22)
-                  : null,
+              // 高コントラストは従来どおり（淡い面とテーマの縁・文字色の自動選択）
+              backgroundColor: tone?.fill ??
+                  (widget.illustrated
+                      ? Color.lerp(Theme.of(context).colorScheme.surface,
+                          QuickResponseButtonColors.getColor(type), 0.22)
+                      : null),
+              textColor: tone?.text,
+              borderColor: tone?.border,
             ),
           ),
         );
       }).toList(),
     );
+  }
+
+  /// はい・いいえは塗りで強く、わからないは落ち着いた面にする。
+  /// 高コントラストは null（呼び出し側で従来どおりの色にする）。
+  ButtonTone? _tone(BuildContext context, QuickResponseType type) {
+    final scheme = Theme.of(context).colorScheme;
+    final base = QuickResponseButtonColors.getColor(type);
+    if (scheme.primary == Colors.black) return null;
+    if (type == QuickResponseType.unknown) {
+      return ButtonTone(
+        fill: scheme.surfaceContainerLow,
+        border: scheme.outline,
+        text: scheme.onSurface,
+      );
+    }
+    return ButtonTone.solid(base, scheme.brightness);
   }
 }
