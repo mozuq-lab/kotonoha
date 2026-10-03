@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -227,10 +229,8 @@ void main() {
 
     // アクセシビリティ（コントラスト）テスト
     group('コントラスト（WCAG AA）テスト', () {
-      /// 非選択ボタンのテキスト色がsurfaceに対しAAを満たす
-      /// 検証内容: 非選択の速度ボタンは onSurface 文字（surface背景）を使い
-      /// primary文字をsurfaceへ載せる（約2.87:1でAA不足）構成になっていないこと。
-      testWidgets('TC-049-A11Y: 非選択ボタンはonSurface、選択ボタンはonPrimaryの文字色',
+      /// 選択中・非選択の速度ボタンとも、描かれた文字色が自分の面の色に対しAAを満たす
+      testWidgets('TC-049-A11Y: 選択中・非選択とも文字が面に対し4.5:1以上',
           (WidgetTester tester) async {
         // Given: ttsSpeed=verySlow（「とても遅い」が選択）の状態。
         // （「普通」はAI丁寧さ設定にも存在し曖昧なため、TTS固有の一意ラベルで検証する）
@@ -256,15 +256,21 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final colorScheme = lightTheme.colorScheme;
-
-        // 非選択（「速い」）の文字色は onSurface（surface背景に対しAA）
-        final unselected = tester.widget<Text>(find.text('速い'));
-        expect(unselected.style?.color, colorScheme.onSurface);
-
-        // 選択（「とても遅い」）の文字色は onPrimary（primary背景に対しAA）
-        final selected = tester.widget<Text>(find.text('とても遅い'));
-        expect(selected.style?.color, colorScheme.onPrimary);
+        for (final (label, selected) in [('速い', false), ('とても遅い', true)]) {
+          final chipFinder = find.ancestor(
+              of: find.text(label), matching: find.byType(ChoiceChip));
+          final chip = tester.widget<ChoiceChip>(chipFinder);
+          expect(chip.selected, selected);
+          final background =
+              selected ? chip.selectedColor! : chip.backgroundColor!;
+          final text = tester
+              .renderObject<RenderParagraph>(find.text(label))
+              .text
+              .style!
+              .color!;
+          expect(wcagContrastRatio(text, background), greaterThanOrEqualTo(4.5),
+              reason: '「$label」の文字 $text が面 $background に対し AA 未満');
+        }
       });
     });
   });

@@ -30,8 +30,9 @@ class HelpSectionWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // stretch: 中身が短いカードも幅いっぱいに広げ、セクションごとに幅を揃える
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // セクションヘッダー
         Padding(

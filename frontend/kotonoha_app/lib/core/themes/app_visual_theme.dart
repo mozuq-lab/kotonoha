@@ -59,6 +59,8 @@ ThemeData appVisualTheme(ThemeData base, {required bool highContrast}) {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
+      // 既定では操作ボタンの数や OS でタイトルの位置が変わる。どの画面も中央に揃える
+      centerTitle: true,
     ),
     cardTheme: base.cardTheme.copyWith(
       color: scheme.surfaceContainerLow,

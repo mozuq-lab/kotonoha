@@ -133,7 +133,9 @@ class PhraseListWidget extends StatelessWidget {
     }
 
     // リスト表示: ListView.builderで効率的に描画
+    // 下端に画面右下の「＋」（56）と余白の分を空け、最後の行の操作ボタンを覆わない
     return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 56 + AppSizes.paddingMedium * 2),
       itemCount: sections.length,
       itemBuilder: (context, index) => sections[index],
     );

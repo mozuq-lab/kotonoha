@@ -62,10 +62,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final selectedLarge = tester.widget<SegmentedButton<FontSize>>(
-      find.byType(SegmentedButton<FontSize>),
+    final selectedLarge = tester.widget<ChoiceChip>(
+      find.ancestor(of: find.text('大'), matching: find.byType(ChoiceChip)),
     );
-    expect(selectedLarge.selected, {FontSize.large},
+    expect(selectedLarge.selected, isTrue,
         reason: '再起動後の UI が、保存された値から描かれていること');
   });
 }

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
 import 'package:kotonoha_app/features/settings/presentation/widgets/ai_politeness_settings_widget.dart';
 
 void main() {
@@ -40,9 +39,8 @@ void main() {
         expect(find.text('丁寧'), findsOneWidget);
       });
 
-      /// TC-A11Y-004: SegmentedButtonの最小タップ高さが44px以上である
-      testWidgets('TC-A11Y-004: SegmentedButtonの最小高さが44px以上である',
-          (WidgetTester tester) async {
+      /// TC-A11Y-004: 選択肢の見た目の高さが44px以上である
+      testWidgets('TC-A11Y-004: 選択肢の高さが44px以上である', (WidgetTester tester) async {
         await tester.pumpWidget(
           const ProviderScope(
             child: MaterialApp(
@@ -54,12 +52,16 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final segmented = tester.widget<SegmentedButton<PolitenessLevel>>(
-          find.byType(SegmentedButton<PolitenessLevel>),
-        );
-        final minSize = segmented.style?.minimumSize?.resolve({});
-        expect(minSize, isNotNull);
-        expect(minSize!.height, greaterThanOrEqualTo(44.0));
+        for (final label in ['カジュアル', '普通', '丁寧']) {
+          final chip = find.ancestor(
+            of: find.text(label),
+            matching: find.byType(ChoiceChip),
+          );
+          final box =
+              find.descendant(of: chip, matching: find.byType(Material));
+          expect(tester.getSize(box.first).height, greaterThanOrEqualTo(44.0),
+              reason: '「$label」の見た目の高さが44px未満');
+        }
       });
     });
   });
