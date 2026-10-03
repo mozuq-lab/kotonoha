@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/face_to_face/presentation/widgets/face_to_face_text_display.dart';
 
@@ -250,4 +251,74 @@ void main() {
       });
     });
   });
+
+  group('画面に合わせた大きさ', () {
+    for (final (size, text) in const [
+      (Size(1032, 1376), 'すこしやすみたい'),
+      (Size(1376, 1032), 'すこしやすみたい'),
+      (Size(440, 956), 'すこしやすみたい'),
+      (Size(1032, 1376), 'お水をください。それと窓を少し開けてもらえますか'),
+    ]) {
+      testWidgets('$size「$text」: 画面に収まる範囲で大きく表示する', (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: FaceToFaceTextDisplay(text: text)),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        final rect = tester.getRect(find.text(text));
+        // 画面からはみ出さない
+        expect(rect.left, greaterThanOrEqualTo(0));
+        expect(rect.right, lessThanOrEqualTo(size.width));
+        expect(rect.top, greaterThanOrEqualTo(0));
+        expect(rect.bottom, lessThanOrEqualTo(size.height));
+        // 幅か高さのどちらかを大きく使う（小さな文字が中央に浮かない）
+        final used = rect.width / size.width > rect.height / size.height
+            ? rect.width / (size.width - 48)
+            : rect.height / (size.height - 176);
+        expect(used, greaterThan(0.7), reason: '文字 $rect が画面 $size に対して小さい');
+      });
+    }
+  });
+
+  // 最小の大きさでも収まらない長い文・大きな文字倍率では、切らずにスクロールで全文を見せる
+  for (final (size, scale) in const [
+    (Size(390, 844), 2.0),
+    (Size(844, 390), 1.0),
+  ]) {
+    testWidgets('$size 文字倍率$scale: 長い文の終わりが切れない', (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final text = 'お水をください。' * 12;
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(scale)),
+            child: child!,
+          ),
+          home: Scaffold(body: FaceToFaceTextDisplay(text: text)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      final paragraph = tester.renderObject<RenderParagraph>(find.text(text));
+      final needed = paragraph.getMinIntrinsicHeight(paragraph.size.width);
+      expect(paragraph.size.height, greaterThanOrEqualTo(needed - 0.5),
+          reason: '文の描画に $needed 要るのに ${paragraph.size.height} で切れている');
+
+      // 最後までスクロールすると、文の終わりが画面の中に来る
+      await tester.drag(find.byType(Scrollable), Offset(0, -size.height * 4));
+      await tester.pumpAndSettle();
+      expect(tester.getRect(find.text(text)).bottom,
+          lessThanOrEqualTo(size.height + 0.5));
+    });
+  }
 }

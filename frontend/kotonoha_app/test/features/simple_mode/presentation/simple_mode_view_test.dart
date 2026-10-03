@@ -295,5 +295,37 @@ void main() {
       );
       expect(size.height, greaterThanOrEqualTo(60.0));
     });
+
+    // タブレットでは空いた高さをボタンに配り、下半分を空けない
+    testWidgets('タブレット（1032x1376）ではボタンが高さいっぱいに大きくなる', (tester) async {
+      tester.view.physicalSize = const Size(1032, 1376);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        wrap(
+          SimpleModeView(
+            fontSize: FontSize.medium,
+            favorites: buildFavorites(8),
+            onQuickResponse: (_) {},
+            onFavoriteTap: (_) {},
+            onTTSSpeak: (_) {},
+            onExitSimpleMode: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final last = tester.getRect(
+        find.byKey(const Key('simple_mode_favorite_fav-7')),
+      );
+      expect(last.bottom, greaterThan(1376 * 0.85),
+          reason: '最後のお気に入り $last の下に大きな空きが残る');
+      expect(last.bottom, lessThanOrEqualTo(1376), reason: '最後のお気に入りが画面からはみ出す');
+      expect(tester.getRect(find.text('お気に入り0')).height, greaterThan(30),
+          reason: 'ボタンが大きくなっても文字が小さいまま');
+      expect(tester.getRect(find.text('はい')).height, greaterThan(30),
+          reason: 'クイック応答の文字が小さいまま');
+    });
   });
 }

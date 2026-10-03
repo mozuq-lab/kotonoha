@@ -172,6 +172,13 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
     widget.onPressed?.call();
   }
 
+  /// 文字の大きさ。ボタンが高いほど大きくする（設定の大きさが下限）。
+  /// 既定の高さ 60px では設定の大きさのまま（小 16px を下回る）。
+  double get _labelSize {
+    final byHeight = _effectiveHeight * 0.26;
+    return byHeight > _fontSize ? byHeight : _fontSize;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -215,7 +222,7 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
                         QuickResponseType.unknown =>
                           CupertinoIcons.question_circle,
                       },
-                      size: _fontSize),
+                      size: _labelSize),
                   const SizedBox(width: 8),
                 ],
                 Text(
@@ -223,7 +230,7 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: _fontSize,
+                    fontSize: _labelSize,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
