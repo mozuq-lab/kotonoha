@@ -1,7 +1,7 @@
 # プライバシーポリシー / Privacy Policy
 
-最終更新日: 2026年9月26日
-Last Updated: September 26, 2026
+最終更新日: 2026年10月3日
+Last Updated: October 3, 2026
 
 ---
 
@@ -30,6 +30,7 @@ AI変換機能（オプション）を使用すると、以下のデータが本
 - **入力テキスト**: AI変換を行うテキスト
 - **丁寧さレベル**: 選択した変換レベル（カジュアル/普通/丁寧）
 - **前回の変換結果**: 再変換を行う場合のみ
+- **接続元の IP アドレス**: 通信の仕組み上、送信のたびに届きます。ことのは backend は、短い時間に多くの変換が送られたときに制限するためだけに、この値をメモリ内で一時的に使います（1 分ごとに数え直します）。記録・保存はせず、外部 AI provider へも送りません
 
 ことのは backend は、入力テキスト（再変換時は前回の変換結果も含む）と、選択した丁寧さレベルに応じた指示を prompt に含め、外部 AI provider である Cloudflare（米国）の AI サービス（Workers AI）へ送信します。処理する国・地域は同社の設備によって異なり、日本国外で処理されることがあります。provider が生成した変換結果は、ことのは backend を経由して本アプリへ返されます。
 
@@ -96,7 +97,7 @@ AI変換機能（オプション）を使用すると、以下のデータが本
 
 ### プライバシーポリシーの変更
 
-本ポリシーを変更する場合は、本ページにて通知します。重要な変更がある場合は、アプリ内でも通知します。
+本ポリシーを変更する場合は、本ページの内容と最終更新日を改めてお知らせします。重要な変更がある場合は、アプリの更新時にストアに載せる更新内容でもお知らせします。
 
 ### お問い合わせ
 
@@ -132,6 +133,7 @@ When you use the optional AI conversion feature, the following data is sent from
 - **Input Text**: Text to be converted by AI
 - **Politeness Level**: Selected conversion level (Casual/Normal/Polite)
 - **Previous Conversion Result**: Only when regenerating
+- **Source IP Address**: Received with every request as part of how network communication works. The Kotonoha backend uses it only temporarily in memory to limit requests when many conversions are sent in a short time (the count resets every minute). It is not logged or stored, and it is not sent to the external AI provider.
 
 The Kotonoha backend includes the Input Text (and the Previous Conversion Result when regenerating) and instructions based on the selected Politeness Level in a prompt sent to the AI service (Workers AI) of the external AI provider, Cloudflare (United States). The country or region where processing takes place depends on Cloudflare's infrastructure and may be outside Japan. The provider's Conversion Result is returned to the App through the Kotonoha backend.
 
@@ -198,7 +200,7 @@ The App does not intentionally collect personal information from children under 
 
 ### Changes to This Policy
 
-If we make changes to this policy, we will notify you on this page. For significant changes, we will also notify you within the App.
+If we make changes to this policy, we will post the revised policy and its Last Updated date on this page. For significant changes, we will also announce them in the release notes shown in the app store when the App is updated.
 
 ### Contact Us
 
