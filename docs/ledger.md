@@ -21,7 +21,6 @@
 - [ ] L-145 Android のクローズドテスト（12 人以上 × 14 日連続。代行サービスで集める）と、その後の production access の申請が未実施。申請の回答は実際に起きたことで書く — ADR-007 条件 4。人が動かす。L-84 の後、Android 公開の直前
 - [ ] L-146 Play Console のプライバシーポリシー URL は fastlane の metadata に無く、コンソールで設定する（iOS は `privacy_url.txt`）。同じ URL にする — ADR-007 条件 4。人が動かす。L-84 の後
 - [ ] L-147 台帳の 1 行の字数に上限が無い（2026-09-24 の整理で長い行は縮めた） — ADR-010。決定（2026-09-20）: 次の監査で 200 字の上限を ADR-010 の改訂として置く
-- [ ] L-152 CI の成功が main 更新の必須条件になっているか確認できない（classic protection は 404、ruleset 10494480 は `include=[]`、required contexts `Python CI`・`Flutter CI` が job 名と一致しない。実 push の拒否は未検証） — `gh api` で 2026-09-21 に確認、.github/workflows/{python,flutter}.yml
 - [ ] L-173 OfflineBanner の読み上げ用ラベルが Web の semantics tree に出ない — offline_banner.dart。決定（2026-09-23）: iOS/Android の実機 QA（L-25）で読み上げに出るかを見て、出なければ直し、出れば閉じる
 - [ ] L-178 常設バナー（保存失敗の告知）の文言が Web の DOM と semantics tree に出ない（L-173 と同型） — persistence_banner.dart。決定（2026-09-23）: L-173 と同じく実機 QA（L-25）で見る
 
