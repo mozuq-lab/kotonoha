@@ -18,8 +18,7 @@
 - `integration_test/ai_conversion_e2e_test.dart`（AI 変換の利用シナリオ 6 本。偽物はネットワークと接続状態の境界だけ）は 2026-10-03 に iPad シミュレータ・Android エミュレータ・ヘッドレス Chrome（手元）で通過（ADR-007 条件 5 のうち利用シナリオ）。CI の Web 実行では今も対象外（`.github/workflows/flutter.yml` の `EXCLUDED`）
 
 ## 最短経路（上から順に。終わった行は消す）
-1. Play 用のアイコン 512 とフィーチャーグラフィック 1024×500（L-107。Android 公開の前まで）
-2. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする。最後に行う
+1. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする。最後に行う
 
 ## 人待ち
 - 開発者登録（L-84）: 審査と Play Console はここから始まる。コード作業と並行できる
