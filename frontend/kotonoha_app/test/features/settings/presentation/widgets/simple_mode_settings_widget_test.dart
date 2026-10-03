@@ -31,6 +31,24 @@ void main() {
       expect(find.byType(SwitchListTile), findsOneWidget);
     });
 
+    testWidgets('説明文はシンプルモードの画面にある区画（クイック応答・お気に入り）だけを挙げる', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: SimpleModeSettingsWidget()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final tile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
+      final subtitle = (tile.subtitle! as Text).data!;
+      expect(subtitle, contains('クイック応答'));
+      expect(subtitle, contains('お気に入り'));
+      // 状態ボタンはホームからもシンプルモードからも外した
+      expect(subtitle, isNot(contains('状態ボタン')));
+    });
+
     testWidgets('初期状態ではスイッチはOFFである', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
