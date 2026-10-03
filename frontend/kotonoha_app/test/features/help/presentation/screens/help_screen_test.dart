@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:kotonoha_app/features/help/presentation/screens/help_screen.dart';
 import 'package:kotonoha_app/features/help/providers/tutorial_provider.dart';
+import 'package:kotonoha_app/features/settings/presentation/widgets/tts_speed_settings_widget.dart';
+import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 
 void main() {
   setUp(() {
@@ -87,6 +89,22 @@ void main() {
       );
 
       expect(find.textContaining('読み上げ'), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('読み上げ速度の説明が、設定画面の選択肢をすべて挙げる', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: HelpScreen(),
+          ),
+        ),
+      );
+
+      for (final speed in TTSSpeed.values) {
+        final label = TTSSpeedSettingsWidget.label(speed);
+        expect(find.textContaining('「$label」'), findsOneWidget,
+            reason: '読み上げ速度「$label」がヘルプに無い');
+      }
     });
 
     testWidgets('対面表示モードの説明が実挙動（画面右上のアイコン・180度回転）と一致する', (tester) async {

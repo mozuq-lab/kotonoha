@@ -15,7 +15,8 @@ class TTSSpeedSettingsWidget extends ConsumerWidget {
   /// TTS速度設定ウィジェットを作成する。
   const TTSSpeedSettingsWidget({super.key});
 
-  static String _label(TTSSpeed speed) => switch (speed) {
+  /// 選択肢の表示名。ヘルプ画面の説明もこれから作る（段階を増やしてもずれない）。
+  static String label(TTSSpeed speed) => switch (speed) {
         TTSSpeed.verySlow => 'とても遅い',
         TTSSpeed.slow => '遅い',
         TTSSpeed.normal => '普通',
@@ -30,7 +31,7 @@ class TTSSpeedSettingsWidget extends ConsumerWidget {
       data: (settings) => SettingsChoiceGroup<TTSSpeed>(
         title: '読み上げ速度',
         values: TTSSpeed.values,
-        labelOf: _label,
+        labelOf: label,
         selected: settings.ttsSpeed,
         // SettingsNotifier内でTTSNotifierのsetSpeedも呼び出される
         onSelected: ref.read(settingsNotifierProvider.notifier).setTTSSpeed,
