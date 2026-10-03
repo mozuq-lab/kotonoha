@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import '../../../favorite/domain/models/favorite.dart';
 import 'package:intl/intl.dart';
@@ -57,6 +58,13 @@ class FavoriteItemCard extends StatelessWidget {
       button: true,
       child: Card(
         color: background,
+        shape: favoriteBorder(favorite, scheme) == null
+            ? null
+            : RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(AppSizes.borderRadiusMedium),
+                side: favoriteBorder(favorite, scheme)!,
+              ),
         margin: const EdgeInsets.symmetric(
           horizontal: FavoriteUIConstants.cardHorizontalMargin,
           vertical: FavoriteUIConstants.cardVerticalMargin,

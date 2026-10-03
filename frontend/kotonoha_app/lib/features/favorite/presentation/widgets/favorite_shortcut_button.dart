@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
-import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
 import 'package:kotonoha_app/features/favorite/presentation/constants/favorite_colors.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
@@ -41,7 +40,8 @@ class FavoriteShortcutButton extends StatelessWidget {
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
               backgroundColor: background,
-              foregroundColor: bestContrastingTextColor(background),
+              foregroundColor: favoriteForeground(favorite, scheme),
+              side: favoriteBorder(favorite, scheme),
               padding: const EdgeInsets.symmetric(horizontal: 4),
               shape: RoundedRectangleBorder(
                 borderRadius:

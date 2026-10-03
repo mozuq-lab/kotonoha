@@ -74,7 +74,12 @@ class _HomeInputFieldState extends ConsumerState<HomeInputField> {
         ],
         onChanged: ref.read(inputBufferProvider.notifier).setText,
         decoration: InputDecoration(
+          // 枠は外側の囲み（home_input_area）が描く。状態ごとの枠も消さないと
+          // 高コントラストのテーマの枠を引き継いで二重になる
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
           hintText: '入力してください...',
           labelText: '入力欄',
           labelStyle: const TextStyle(fontSize: 16),

@@ -35,8 +35,8 @@
   <link rel="apple-touch-icon" sizes="512x512" href="icons/Icon-512.png">
 
   <!-- Theme color for browser UI -->
-  <meta name="theme-color" content="#4A90A4" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1A1A2E" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FAFAF8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#142124" media="(prefers-color-scheme: dark)">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
@@ -55,9 +55,11 @@
   <style>
     /* Loading screen styles */
     :root {
-      --kotonoha-primary: #4A90A4;
-      --kotonoha-bg-light: #F5F5F5;
-      --kotonoha-bg-dark: #1A1A2E;
+      /* アプリの配色（lib/core/constants/app_colors.dart）に合わせる */
+      --kotonoha-primary: #006D77;
+      --kotonoha-bg-light: #FAFAF8;
+      --kotonoha-bg-dark: #142124;
+      --kotonoha-track: #CBD5D7;
     }
 
     body {
@@ -88,6 +90,11 @@
     }
 
     @media (prefers-color-scheme: dark) {
+      :root {
+        --kotonoha-primary: #71D6D7;
+        --kotonoha-track: #51666A;
+      }
+
       #loading {
         background-color: var(--kotonoha-bg-dark);
         color: #ffffff;
@@ -97,7 +104,7 @@
     #loading .spinner {
       width: 60px;
       height: 60px;
-      border: 5px solid #e0e0e0;
+      border: 5px solid var(--kotonoha-track);
       border-top: 5px solid var(--kotonoha-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;

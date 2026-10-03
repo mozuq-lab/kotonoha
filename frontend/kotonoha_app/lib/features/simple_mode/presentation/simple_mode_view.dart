@@ -71,27 +71,35 @@ class SimpleModeView extends StatelessWidget {
           // 誤操作防止: スクロールしなくても常に到達できる位置に固定配置する。
           _buildExitButton(),
           const SizedBox(height: AppSizes.paddingMedium),
+          // 空いた高さをボタンに配る（タブレットで下半分が空かないように）。
+          // 足りない画面（電話の横持ち等）では下限の高さで組み、スクロールさせる。
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildSectionTitle(context, 'クイック応答'),
-                  const SizedBox(height: AppSizes.paddingSmall),
-                  QuickResponseButtons(
-                    onResponse: onQuickResponse,
-                    onTTSSpeak: onTTSSpeak,
-                    fontSize: fontSize,
-                    illustrated: true,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final sizes = _SimpleModeSizes.of(constraints.maxHeight);
+                return SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildSectionTitle(context, 'クイック応答'),
+                      const SizedBox(height: AppSizes.paddingSmall),
+                      QuickResponseButtons(
+                        onResponse: onQuickResponse,
+                        onTTSSpeak: onTTSSpeak,
+                        fontSize: fontSize,
+                        buttonHeight: sizes.quickResponseHeight,
+                        illustrated: true,
+                      ),
+                      if (topFavorites.isNotEmpty) ...[
+                        const SizedBox(height: AppSizes.paddingLarge),
+                        _buildSectionTitle(context, 'お気に入り'),
+                        const SizedBox(height: AppSizes.paddingSmall),
+                        _buildFavoritesGrid(topFavorites, sizes.favoriteHeight),
+                      ],
+                    ],
                   ),
-                  if (topFavorites.isNotEmpty) ...[
-                    const SizedBox(height: AppSizes.paddingLarge),
-                    _buildSectionTitle(context, 'お気に入り'),
-                    const SizedBox(height: AppSizes.paddingSmall),
-                    _buildFavoritesGrid(topFavorites),
-                  ],
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],
@@ -127,16 +135,16 @@ class SimpleModeView extends StatelessWidget {
     );
   }
 
-  Widget _buildFavoritesGrid(List<Favorite> topFavorites) {
+  Widget _buildFavoritesGrid(List<Favorite> topFavorites, double cellHeight) {
     return GridView.builder(
       shrinkWrap: true,
       // 外側のSingleChildScrollViewが全体をスクロールするため
       // グリッド自体はスクロールを持たない。
       physics: const NeverScrollableScrollPhysics(),
       itemCount: topFavorites.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: SimpleModeConstants.favoritesGridColumns,
-        mainAxisExtent: SimpleModeConstants.favoritesGridCellHeight,
+        mainAxisExtent: cellHeight,
         crossAxisSpacing: SimpleModeConstants.favoritesGridSpacing,
         mainAxisSpacing: SimpleModeConstants.favoritesGridSpacing,
       ),
@@ -146,6 +154,7 @@ class SimpleModeView extends StatelessWidget {
           key: Key('simple_mode_favorite_${favorite.id}'),
           favorite: favorite,
           fontSize: fontSize,
+          height: cellHeight,
           onTap: () => onFavoriteTap(favorite),
         );
       },
@@ -157,12 +166,14 @@ class SimpleModeView extends StatelessWidget {
 class _FavoriteGridButton extends StatelessWidget {
   final Favorite favorite;
   final FontSize fontSize;
+  final double height;
   final VoidCallback onTap;
 
   const _FavoriteGridButton({
     super.key,
     required this.favorite,
     required this.fontSize,
+    required this.height,
     required this.onTap,
   });
 
@@ -189,6 +200,7 @@ class _FavoriteGridButton extends StatelessWidget {
               favoriteBackground(favorite, Theme.of(context).colorScheme),
           foregroundColor:
               favoriteForeground(favorite, Theme.of(context).colorScheme),
+          side: favoriteBorder(favorite, Theme.of(context).colorScheme),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           ),
@@ -200,10 +212,54 @@ class _FavoriteGridButton extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: _fontSizeValue),
+            // 文字はボタンの高さに合わせて大きくする（設定の大きさが下限）
+            style: TextStyle(
+              fontSize: height * 0.26 > _fontSizeValue
+                  ? height * 0.26
+                  : _fontSizeValue,
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// シンプルモードのボタンの高さ。お気に入りが上限の件数まであっても
+/// 1 画面に収まるように、空いた高さから決める。
+class _SimpleModeSizes {
+  const _SimpleModeSizes(this.quickResponseHeight, this.favoriteHeight);
+
+  /// 見出し 2 つと間の余白の分（見出しの高さは文字の大きさで変わるので多めに取る）
+  static const double _reserved = 120;
+
+  factory _SimpleModeSizes.of(double availableHeight) {
+    const rows = (SimpleModeConstants.maxFavoritesDisplayCount +
+            SimpleModeConstants.favoritesGridColumns -
+            1) ~/
+        SimpleModeConstants.favoritesGridColumns;
+    if (!availableHeight.isFinite) {
+      return const _SimpleModeSizes(
+        AppSizes.recommendedTapTarget,
+        SimpleModeConstants.favoritesGridCellHeight,
+      );
+    }
+    final quick = (availableHeight * 0.18)
+        .clamp(AppSizes.recommendedTapTarget, 200.0)
+        .toDouble();
+    final favorite = ((availableHeight -
+                _reserved -
+                quick -
+                SimpleModeConstants.favoritesGridSpacing * (rows - 1)) /
+            rows)
+        .clamp(SimpleModeConstants.favoritesGridCellHeight, 240.0)
+        .toDouble();
+    return _SimpleModeSizes(quick, favorite);
+  }
+
+  /// クイック応答ボタンの高さ
+  final double quickResponseHeight;
+
+  /// お気に入りボタン 1 つの高さ
+  final double favoriteHeight;
 }

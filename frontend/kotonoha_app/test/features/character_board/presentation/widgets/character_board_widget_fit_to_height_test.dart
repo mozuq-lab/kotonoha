@@ -51,10 +51,10 @@ void main() {
     );
 
     testWidgets(
-      '可視高さが十分な場合は幅基準の正方形セル（従来動作）が維持される',
+      '可視高さが十分な場合は空いた高さを使ってキーを縦に伸ばす（幅の1.75倍まで）',
       (tester) async {
-        // 高さに余裕がある場合、従来通り幅基準の正方形セル(aspectRatio≒1.0)
-        // のままであることを確認する（タブレット等での回帰防止）。
+        // タブレットの縦持ちのように高さが余る場合、正方形のままだと文字盤の
+        // 下が空く。縦に伸ばして空いた高さを使う。ただし幅の1.75倍を超えない。
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -74,12 +74,67 @@ void main() {
           find.byType(CharacterButton).first,
         );
 
+        expect(buttonSize.height, greaterThan(buttonSize.width * 1.2),
+            reason: '高さが余っているのにキーが伸びていない');
         expect(
-          (buttonSize.width - buttonSize.height).abs(),
-          lessThan(1.0),
-          reason: '高さに余裕がある場合はセルは正方形のままであるべき',
-        );
+            buttonSize.height, lessThanOrEqualTo(buttonSize.width * 1.75 + 0.5),
+            reason: 'キーが幅の1.75倍より縦長になっている');
       },
     );
+
+    // 高さで決まる大きさ（縦に余裕が無い）で比べる。行数の少ない文字種だけ
+    // キーが伸びると、ここで大きく食い違う
+    testWidgets('文字種を切り替えてもキーの大きさは変わらない', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 1000,
+              height: 400,
+              child: CharacterBoardWidget(onCharacterTap: (_) {}),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final basic = tester.getSize(find.byType(CharacterButton).first);
+
+      await tester.tap(find.text('半濁音'));
+      await tester.pumpAndSettle();
+      final handakuon = tester.getSize(find.byType(CharacterButton).first);
+
+      expect(handakuon, basic);
+    });
+
+    testWidgets('大きなキーでは文字もキーに合わせて大きくなる', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      Future<double> glyphSize(double width, double height) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: width,
+                height: height,
+                child: CharacterBoardWidget(onCharacterTap: (_) {}),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        // 描かれた文字の高さ（FittedBox で縮められた分も反映される）
+        return tester.getRect(find.text('あ')).height;
+      }
+
+      // 電話の縦持ち相当の小さなキー
+      final small = await glyphSize(360, 500);
+      // タブレット相当の大きなキー
+      final large = await glyphSize(1000, 900);
+      expect(large, greaterThan(small * 1.5), reason: 'キーが大きくなっても文字が大きくならない');
+    });
   });
 }

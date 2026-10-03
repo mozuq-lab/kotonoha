@@ -131,6 +131,8 @@ class HomeScreen extends ConsumerWidget {
       child: Builder(
           builder: (context) => Scaffold(
                 appBar: AppBar(
+                  // 他の画面のタイトルは中央（テーマ）。ホームのロゴは左端に置く
+                  centerTitle: false,
                   title: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -694,7 +696,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           padding: const EdgeInsets.all(contentPadding),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
             border: Border.all(
               color: Theme.of(context).colorScheme.outline,
             ),

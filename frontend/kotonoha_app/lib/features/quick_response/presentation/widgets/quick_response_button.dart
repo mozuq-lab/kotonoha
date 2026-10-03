@@ -79,6 +79,9 @@ class QuickResponseButton extends StatefulWidget {
   /// 指定しない場合は白色を使用
   final Color? textColor;
 
+  /// 縁の色（オプション）。null ならテーマの縁
+  final Color? borderColor;
+
   /// ボタンの幅（オプション）
   /// 指定しない場合はデフォルト値、最小44px保証
   final double? width;
@@ -100,6 +103,7 @@ class QuickResponseButton extends StatefulWidget {
     this.onTTSSpeak,
     this.backgroundColor,
     this.textColor,
+    this.borderColor,
     this.width,
     this.height,
     this.fontSize,
@@ -172,6 +176,13 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
     widget.onPressed?.call();
   }
 
+  /// 文字の大きさ。ボタンが高いほど大きくする（設定の大きさが下限）。
+  /// 既定の高さ 60px では設定の大きさのまま（小 16px を下回る）。
+  double get _labelSize {
+    final byHeight = _effectiveHeight * 0.26;
+    return byHeight > _fontSize ? byHeight : _fontSize;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -190,6 +201,9 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
             style: ElevatedButton.styleFrom(
               backgroundColor: _backgroundColor,
               foregroundColor: _textColor,
+              side: widget.borderColor == null
+                  ? null
+                  : BorderSide(color: widget.borderColor!),
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.paddingMedium,
                 vertical: AppSizes.paddingSmall,
@@ -215,7 +229,7 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
                         QuickResponseType.unknown =>
                           CupertinoIcons.question_circle,
                       },
-                      size: _fontSize),
+                      size: _labelSize),
                   const SizedBox(width: 8),
                 ],
                 Text(
@@ -223,7 +237,7 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: _fontSize,
+                    fontSize: _labelSize,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

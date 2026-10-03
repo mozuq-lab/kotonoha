@@ -100,6 +100,9 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
   /// 文字種タブ（48）＋間（8）＋キー 1 行（44）。これより低いと組めない
   static const double _minBoardHeight = 100;
 
+  /// キーの高さの上限（幅に対する倍率）。これより縦長にはしない
+  static const double _maxCellHeightRatio = 1.75;
+
   /// 文字種の切り替え（基本・濁音・半濁音・小文字・記号）
   /// 横スクロールにすると狭い画面で右端のラベルが切れて見えるため、
   /// 5つを等幅の1行に並べる。長いラベルは折り返さずに縮めて1行に保つ。
@@ -178,16 +181,17 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
         final columns =
             columnsCount >= 10 ? 10 : CharacterBoardWidget.minColumns;
 
-        // fit-to-height対応: 列数だけでなく行数・可視高さも考慮してセルの
-        // 高さを決定する。スマホ縦持ちのように高さが乏しい画面では、幅基準の
-        // 正方形セル（childAspectRatio: 1.0固定）だと1画面に収まらず大量の
-        // スクロールが発生するため、「幅基準セル」と「高さ基準セル」のうち
-        // 小さい方を採用してセルを縦に押し縮める。
-        // ただし44px未満には縮めない（アクセシビリティ: タップターゲット下限）。
-        // 44pxでも収まらない場合はGridView標準のスクロールに委ねる。
+        // セルの高さ: 幅で決まるセル（widthBasedCellSize）を基準に、縦に余裕があれば
+        // 最大 [_maxCellHeightRatio] 倍まで伸ばして空いた高さを使う（タブレット）。
+        // 足りなければ押し縮める（電話の縦持ち）が、44px 未満には縮めず
+        // GridView のスクロールに委ねる（タップターゲット下限）。
+        // 行数はどの文字種でも基本（五十音）の行数で数え、タブを切り替えても
+        // キーの大きさを変えない。
         const gridPadding = AppSizes.paddingSmall;
-        final rows =
-            characters.isEmpty ? 0 : (characters.length / columns).ceil();
+        final rows = [
+          (characters.length / columns).ceil(),
+          (CharacterData.basic.length / columns).ceil(),
+        ].reduce((a, b) => a > b ? a : b);
 
         final contentWidth = availableWidth - gridPadding * 2;
         final widthBasedCellSize = columns > 0
@@ -200,12 +204,14 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
           heightBasedCellSize = (contentHeight - spacing * (rows - 1)) / rows;
         }
 
-        final smallerCellSize = widthBasedCellSize < heightBasedCellSize
-            ? widthBasedCellSize
-            : heightBasedCellSize;
-        final effectiveCellHeight = smallerCellSize < AppSizes.minTapTarget
-            ? AppSizes.minTapTarget
-            : smallerCellSize;
+        final effectiveCellHeight = heightBasedCellSize
+            .clamp(
+              AppSizes.minTapTarget,
+              widthBasedCellSize * _maxCellHeightRatio < AppSizes.minTapTarget
+                  ? AppSizes.minTapTarget
+                  : widthBasedCellSize * _maxCellHeightRatio,
+            )
+            .toDouble();
 
         final childAspectRatio =
             (widthBasedCellSize > 0 && effectiveCellHeight > 0)
@@ -316,11 +322,11 @@ class CharacterButton extends StatelessWidget {
         width: size,
         height: size,
         child: Material(
+          // 背景より一段明るい面に置き、影は付けない（縁で境界を示す）
           color: isEnabled
-              ? theme.colorScheme.surface
-              : theme.colorScheme.surface.withValues(alpha: 0.5),
+              ? theme.colorScheme.surfaceContainerLow
+              : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
           borderRadius: borderRadius,
-          elevation: isEnabled ? AppSizes.elevationSmall : 0,
           child: InkWell(
             onTap: isEnabled ? onTap : null,
             borderRadius: borderRadius,
@@ -334,14 +340,39 @@ class CharacterButton extends StatelessWidget {
                 borderRadius: borderRadius,
               ),
               alignment: Alignment.center,
-              child: Text(
-                displayLabel ?? character,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontSize: textSize,
-                  color: isEnabled
-                      ? theme.colorScheme.onSurface
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
+              padding: const EdgeInsets.all(AppSizes.paddingXSmall),
+              // 文字はキーの大きさに合わせて大きくする（タブレットで大きな
+              // キーに小さな文字が浮かないように）。設定の大きさは倍率と下限になる。
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final shortSide = constraints.biggest.shortestSide.isFinite
+                      ? constraints.biggest.shortestSide
+                      : 0.0;
+                  final scaled = shortSide * _textRatio();
+                  final size = scaled > textSize ? scaled : textSize;
+                  // 「゛」「゜」は字面の左上に寄った小さな記号なので、
+                  // 大きくして中央へ寄せる
+                  final isMark = CharacterData.isDakutenKey(character) ||
+                      CharacterData.isHandakutenKey(character);
+                  final label = Text(
+                    displayLabel ?? character,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontSize: isMark ? size * 1.5 : size,
+                      color: isEnabled
+                          ? theme.colorScheme.onSurface
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  );
+                  return FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: isMark
+                        ? Transform.translate(
+                            offset: Offset(size * 0.3, size * 0.35),
+                            child: label,
+                          )
+                        : label,
+                  );
+                },
               ),
             ),
           ),
@@ -349,6 +380,13 @@ class CharacterButton extends StatelessWidget {
       ),
     );
   }
+
+  /// キーの短い辺に対する文字の大きさ
+  double _textRatio() => switch (fontSize) {
+        FontSize.small => 0.34,
+        FontSize.medium => 0.42,
+        FontSize.large => 0.5,
+      };
 
   double _getTextSize() {
     switch (fontSize) {

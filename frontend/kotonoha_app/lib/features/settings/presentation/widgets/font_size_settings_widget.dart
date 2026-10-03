@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/font_size.dart';
 import '../../providers/settings_provider.dart';
+import 'settings_choice_group.dart';
 
 /// フォントサイズ設定ウィジェット
 /// フォントサイズを3段階（小/中/大）から選択するUI。
@@ -25,32 +26,12 @@ class FontSizeSettingsWidget extends ConsumerWidget {
       data: (settings) {
         final currentFontSize = settings.fontSize;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('フォントサイズ'),
-            const SizedBox(height: 8),
-            SegmentedButton<FontSize>(
-              // AA対応: デフォルト高さ約40pxを44px以上に拡張（タップターゲット要件）。
-              style: SegmentedButton.styleFrom(
-                minimumSize: const Size(0, 44),
-              ),
-              segments: FontSize.values.map((size) {
-                return ButtonSegment<FontSize>(
-                  value: size,
-                  label: Text(size.displayName),
-                );
-              }).toList(),
-              selected: {currentFontSize},
-              onSelectionChanged: (Set<FontSize> newSelection) {
-                if (newSelection.isNotEmpty) {
-                  ref.read(settingsNotifierProvider.notifier).setFontSize(
-                        newSelection.first,
-                      );
-                }
-              },
-            ),
-          ],
+        return SettingsChoiceGroup<FontSize>(
+          title: 'フォントサイズ',
+          values: FontSize.values,
+          labelOf: (size) => size.displayName,
+          selected: currentFontSize,
+          onSelected: ref.read(settingsNotifierProvider.notifier).setFontSize,
         );
       },
     );
