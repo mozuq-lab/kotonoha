@@ -11,7 +11,7 @@ import '../../providers/settings_provider.dart';
 
 /// シンプルモード設定ウィジェット
 /// 疲労時・症状進行時など、文字盤操作が難しい場面向けに
-/// クイック応答・状態ボタン・お気に入りのみの大ボタン画面へ
+/// クイック応答・お気に入りのみの大ボタン画面へ
 /// 切り替えるための設定スイッチ。
 class SimpleModeSettingsWidget extends ConsumerWidget {
   /// コンストラクタ
@@ -31,7 +31,7 @@ class SimpleModeSettingsWidget extends ConsumerWidget {
             contentPadding: EdgeInsets.zero,
             title: const Text('シンプルモード'),
             subtitle: const Text(
-              '文字盤を使わず、クイック応答・状態ボタン・お気に入りだけの'
+              '文字盤を使わず、クイック応答とお気に入りだけの'
               '大ボタン画面に切り替えます。疲れているときにおすすめです。',
             ),
             value: settings.simpleMode,

@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/help/providers/tutorial_provider.dart';
+import 'package:kotonoha_app/features/settings/presentation/widgets/tts_speed_settings_widget.dart';
+import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import '../widgets/help_section_widget.dart';
 
 /// ヘルプ画面ウィジェット
@@ -119,21 +121,23 @@ class HelpScreen extends ConsumerWidget {
             ),
 
             // 設定セクション
-            const HelpSectionWidget(
+            HelpSectionWidget(
               title: '設定について',
               icon: CupertinoIcons.gear_alt,
               children: [
-                _HelpItem(
+                const _HelpItem(
                   title: '文字サイズ・テーマ',
                   description: '設定画面から文字サイズ（小/中/大）や'
                       'テーマ（ライト/ダーク/高コントラスト）を'
                       '変更できます。',
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 _HelpItem(
                   title: '読み上げ速度',
+                  // 設定画面の選択肢の名前から作り、段階を増やしてもずれないようにする
                   description: '読み上げの速さを'
-                      '「遅い」「普通」「速い」から選べます。',
+                      '${TTSSpeed.values.map((s) => '「${TTSSpeedSettingsWidget.label(s)}」').join()}'
+                      'から選べます。',
                 ),
               ],
             ),
