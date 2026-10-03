@@ -6,7 +6,7 @@
 
 ## 予定
 - [ ] L-25 `frontend/kotonoha_app/integration_test/device_test/`（実機QA手順、1,773行）が一度も実行されていない — ADR-007 条件 4（ストア提出前に必要）
-- [ ] L-51 サポート連絡先が `support@kotonoha-app.example.com` のまま（RFC 2606 の予約ドメイン） — docs/support.md, docs/privacy-policy.md。ADR-007 条件 4
+- [ ] L-51 サポート連絡先 `hello@mozuq-lab.com` に、2026-10-03 時点でメールが届かない（ドメインが登録事業者の保留 `clientHold` で、.com から NXDOMAIN） — docs/support.md, docs/privacy-policy.md。ADR-007 条件 4。人が保留を解き、ストア提出の前に届くことを確かめる
 - [ ] L-52 Android のアップロード鍵が無い。無いと release ビルドは debug 鍵で署名される（`frontend/kotonoha_app/android/app/build.gradle.kts:67-73`） — .github/workflows/release.yml。ADR-007 条件 4。開発者登録（L-84）の後
 - [ ] L-57 Android 12 以上と iOS の実機で、OS のバックアップから履歴・定型文・お気に入り・設定が復元されることを確認 — NFR-106（2026-09-12 に #99 の除外を撤回）
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
