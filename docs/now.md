@@ -13,13 +13,13 @@
 - リポジトリ変数 `API_BASE_URL` は公開先、シークレット `AI_API_KEY` は登録済み
 - backend 公開の 4 条件（L-58）は満たしたとする。AI Gateway は支出上限 1 ドル／月・回数制限 200 リクエスト／5 分。支出上限が Workers AI に効くことは未確認のまま進める（2026-10-03 の人の決定。ADR-002）
 - AI 変換の質は 24 件で確認済み（古風な「丁寧」は受け入れた限界 L-222）
-- プライバシーポリシーは GitHub Pages で配信中。ストア用のスクリーンショット（iPhone 6.9・iPad 13・Android 電話）は `fastlane/screenshots/ja-JP/` にあるが、2026-10-03 の画面変更（キーの大きさ・ボタンの配色）より前に撮ったもの
+- プライバシーポリシーは GitHub Pages で配信中。ストア用のスクリーンショット（iPhone 6.9・iPad 13・Android 電話）は 2026-10-03 に今の画面で撮り直し、`fastlane/screenshots/ja-JP/` にある
+- `integration_test/mvp_scenario_test.dart`（7 本）は 2026-10-03 に今の画面で、iPad シミュレータ（iPad (A16)）・Android エミュレータ（`Medium_Phone_API_36.1`）・Chromium（main の CI）で通過（ADR-007 条件 2）
 
 ## 最短経路（上から順に。終わった行は消す）
-1. `integration_test/mvp_scenario_test.dart` を今の画面で通し直す（iPad シミュレータ・Android エミュレータ・実 Chromium）。最後に通したのは 2026-09-26 で、その後に画面を変えている（ADR-007 条件 2 の再確認）。ストア用のスクリーンショットも撮り直す
-2. AI 変換の利用シナリオを iOS シミュレータ・Android エミュレータ・実 Chromium で通す（ADR-007 条件 5。`ai_conversion_e2e_test.dart` はモックサーバー相手）
-3. Play 用のアイコン 512 とフィーチャーグラフィック 1024×500（L-107。Android 公開の前まで）
-4. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする。最後に行う
+1. AI 変換の利用シナリオを iOS シミュレータ・Android エミュレータ・実 Chromium で通す（ADR-007 条件 5。`ai_conversion_e2e_test.dart` はモックサーバー相手）
+2. Play 用のアイコン 512 とフィーチャーグラフィック 1024×500（L-107。Android 公開の前まで）
+3. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする。最後に行う
 
 ## 人待ち
 - 開発者登録（L-84）: 審査と Play Console はここから始まる。コード作業と並行できる
