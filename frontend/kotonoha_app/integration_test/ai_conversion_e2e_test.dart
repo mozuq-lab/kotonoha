@@ -1,435 +1,298 @@
-/// AI変換E2Eテスト
-/// AI変換機能（入力→変換→結果表示→採用/再生成/元の文）と
-/// オフライン対応、パフォーマンス要件のE2Eテストを実施。
+/// AI 変換の利用シナリオの結合テスト（ADR-007 条件 5）
+///
+/// 本物のアプリで、利用者が AI 変換を使う流れを確かめる。初回の同意、
+/// 送る中身（入力した文と丁寧さ、再生成では前回の結果）、採用・再生成・
+/// 元の文を使う、上限に達したときの告知、押せないとき。
+/// iOS シミュレータ（iPad）と Android エミュレータで走らせる。
+///
+/// 偽物にするのはネットワークの境界（Dio）だけ。backend と同じ形の応答を返し、
+/// アプリが送った要求をすべて記録する（同意しなければ何も送らない、を見るため）。
+/// 実 backend との往復は、公開時に確かめた（台帳 L-58、ADR-002）。
 @Tags(['e2e'])
 library;
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart' show CupertinoIcons;
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/ai_conversion/data/api/ai_conversion_api_client.dart';
+import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/ai_conversion_button.dart';
 import 'package:kotonoha_app/features/ai_conversion/providers/ai_conversion_provider.dart';
-import 'package:kotonoha_app/features/network/domain/models/network_state.dart';
-import 'package:kotonoha_app/features/network/providers/network_provider.dart';
+import 'package:kotonoha_app/features/character_board/presentation/widgets/home_input_field.dart';
+import 'package:kotonoha_app/features/network/domain/services/connectivity_service.dart';
 
-import 'helpers/mock_api_server.dart';
 import 'helpers/test_helpers.dart';
 
-/// AI変換ボタンをタップするヘルパー
-Future<void> tapAIConversionButton(WidgetTester tester) async {
-  final aiButton = find.text('AI変換');
-  expect(aiButton, findsOneWidget, reason: 'AI変換ボタンが見つかりません');
-  await tester.tap(aiButton);
-  await tester.pumpAndSettle();
+/// backend の代わりに応答し、届いた要求を記録する。
+class _FakeBackend {
+  _FakeBackend({Response<dynamic> Function(RequestOptions)? respond})
+      : respond = respond ?? _converted;
+
+  final Response<dynamic> Function(RequestOptions) respond;
+  final requests = <RequestOptions>[];
+
+  /// backend の ConversionResponse と同じ形（`backend/app/schemas.py`）
+  static Response<dynamic> _converted(RequestOptions o) {
+    final body = o.data as Map<String, dynamic>;
+    final regenerating = o.path.endsWith('/regenerate');
+    return Response<dynamic>(
+      requestOptions: o,
+      statusCode: 200,
+      data: <String, dynamic>{
+        'converted_text': regenerating ? '心より感謝申し上げます' : 'ありがとうございます',
+        'original_text': body['input_text'],
+        'politeness_level': body['politeness_level'],
+        'processing_time_ms': 420,
+      },
+    );
+  }
+
+  Dio dio() {
+    final dio = Dio();
+    dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
+      requests.add(options);
+      final response = respond(options);
+      if ((response.statusCode ?? 500) >= 400) {
+        handler.reject(DioException.badResponse(
+          statusCode: response.statusCode!,
+          requestOptions: options,
+          response: response,
+        ));
+      } else {
+        handler.resolve(response);
+      }
+    }));
+    return dio;
+  }
+
+  /// 接続状態は SDK（connectivity_plus）の境界で偽物にする。アプリは起動時に
+  /// 接続を確かめ直すので、networkProvider を上書きしても実際の状態に戻される。
+  List<Override> overrides({bool online = true}) => [
+        aiConversionApiClientProvider
+            .overrideWithValue(AIConversionApiClient.withDio(dio())),
+        connectivityServiceProvider.overrideWithValue(ConnectivityService(
+            connectivity: _FakeConnectivity(
+                online ? ConnectivityResult.wifi : ConnectivityResult.none))),
+      ];
 }
 
-/// AI変換結果ダイアログが表示されるまで待機するヘルパー
-Future<void> waitForAIConversionDialog(WidgetTester tester) async {
-  await waitForWidget(
-    tester,
-    find.text('AI変換結果'),
-    timeout: const Duration(seconds: 10),
-  );
+class _FakeConnectivity implements Connectivity {
+  _FakeConnectivity(this.result);
+
+  final ConnectivityResult result;
+
+  @override
+  Future<List<ConnectivityResult>> checkConnectivity() async => [result];
+
+  @override
+  Stream<List<ConnectivityResult>> get onConnectivityChanged =>
+      const Stream.empty();
 }
 
-/// 履歴画面にナビゲートするヘルパー
-Future<void> navigateToHistory(WidgetTester tester) async {
-  final historyButton = find.byIcon(CupertinoIcons.clock);
-  expect(historyButton, findsOneWidget);
-  await tester.tap(historyButton);
-  await tester.pumpAndSettle();
+const _consentTitle = 'AI変換の利用確認';
+const _resultTitle = 'AI変換結果';
+
+/// AI 変換ボタンを押す。変換中はボタンのくるくるが回り続けて
+/// pumpAndSettle が終わらないので、時間を区切って描き直す。
+Future<void> _tapConvert(WidgetTester tester) async {
+  final button = find.text('AI変換');
+  expect(button, findsOneWidget, reason: 'AI変換ボタンが見つからない');
+  await tester.ensureVisible(button);
+  await tester.tap(button);
+  await tester.pump();
 }
 
-/// メイン画面に戻るヘルパー
-Future<void> navigateToHome(WidgetTester tester) async {
-  final backButton = find.byIcon(Icons.arrow_back);
-  if (backButton.evaluate().isNotEmpty) {
-    await tester.tap(backButton);
-    await tester.pumpAndSettle();
+/// [finder] が出るまで描き直す（最大 10 秒）
+Future<void> _waitFor(WidgetTester tester, Finder finder) =>
+    waitForWidget(tester, finder, timeout: const Duration(seconds: 10));
+
+/// ダイアログのボタンを押し、閉じる動きが終わるまで描き直す
+Future<void> _tapInDialog(WidgetTester tester, String label) async {
+  final target = find.text(label);
+  expect(target, findsOneWidget, reason: '「$label」が見つからない');
+  await tester.tap(target);
+  for (var i = 0; i < 10; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
   }
 }
 
-/// オフライン状態用のNetworkNotifierサブクラス
-class _OfflineNetworkNotifier extends NetworkNotifier {
-  @override
-  NetworkState build() => NetworkState.offline;
-}
+/// 入力欄に [text] が入っている
+Finder _inputShowing(String text) => find.descendant(
+      of: find.byType(HomeInputField),
+      matching: find.text(text),
+    );
 
-/// オンライン状態用のNetworkNotifierサブクラス
-class _OnlineNetworkNotifier extends NetworkNotifier {
-  @override
-  NetworkState build() => NetworkState.online;
-}
-
-/// AI変換APIをモックに差し替えるオーバーライド
-/// なぜ必要か: このテストは `helpers/mock_api_server.dart` を import して
-/// いたが**一度も使っていなかった**ため、実際には本物のAI変換APIへ通信しようと
-/// していた。CI が「AI変換APIとAPIキーが必要」として恒久除外していたのは
-/// そのためである。`aiConversionApiClientProvider` を差し替えて実通信を断つ。
-/// 戻り値の型を書いていない理由: `Override` は `riverpod` パッケージ側の型で
-/// `flutter_riverpod` からは公開されていない。このファイルの既存2関数
-/// （createOfflineOverrides / createOnlineOverrides）も同じ理由で推論に任せている。
-mockAIConversionOverride() {
-  final dio = Dio();
-  MockApiServer.createMockAdapter(dio);
-  return aiConversionApiClientProvider
-      .overrideWithValue(AIConversionApiClient.withDio(dio));
-}
-
-/// オフライン状態をシミュレートするためのProviderオーバーライド
-createOfflineOverrides() {
-  return [
-    networkProvider.overrideWith(() => _OfflineNetworkNotifier()),
-    mockAIConversionOverride(),
-  ];
-}
-
-/// オンライン状態をシミュレートするためのProviderオーバーライド
-createOnlineOverrides() {
-  return [
-    networkProvider.overrideWith(() => _OnlineNetworkNotifier()),
-    mockAIConversionOverride(),
-  ];
+ElevatedButton _convertButton(WidgetTester tester) {
+  final button = find.descendant(
+    of: find.byType(AIConversionButton),
+    matching: find.byType(ElevatedButton),
+  );
+  expect(button, findsOneWidget, reason: 'AI変換ボタンの本体が見つからない');
+  return tester.widget<ElevatedButton>(button);
 }
 
 void main() {
   initializeE2ETestBinding();
 
-  // 1. 正常系テストケース（AI変換基本フロー）
-  group('正常系テスト（AI変換基本フロー）', () {
-    testWidgets(
-      'TC-E2E-086-001: AI変換ボタンが表示される',
+  testWidgets('1. 初回は同意を求め、同意すると入力した文と丁寧さだけを送り、採用した結果を読み上げて履歴に残す',
       (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
+    final backend = _FakeBackend();
+    await pumpApp(tester, overrides: backend.overrides());
 
-        // 結果検証: AI変換ボタンが存在する
-        expect(find.text('AI変換'), findsOneWidget);
-      },
-    );
+    await typeOnCharacterBoard(tester, 'ありがとう');
+    await _tapConvert(tester);
+    await _waitFor(tester, find.text(_consentTitle));
+    expect(backend.requests, isEmpty, reason: '同意する前に送ってはいけない');
 
-    testWidgets(
-      'TC-E2E-086-002: 入力 → AI変換 → 結果表示 → 採用フロー',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
+    await _tapInDialog(tester, '同意して利用');
+    await _waitFor(tester, find.text(_resultTitle));
 
-        // 実際の処理実行: 文字盤で「ありがとう」を入力
-        await typeOnCharacterBoard(tester, 'ありがとう');
+    expect(backend.requests, hasLength(1));
+    final sent = backend.requests.single;
+    expect(sent.path, '/api/v1/ai/convert');
+    expect(sent.data, {'input_text': 'ありがとう', 'politeness_level': 'normal'},
+        reason: '送るのは入力した文と丁寧さだけ');
+    expect(find.text('ありがとうございます'), findsOneWidget);
 
-        // 実際の処理実行: AI変換ボタンをタップ
-        await tapAIConversionButton(tester);
+    await _tapInDialog(tester, '採用');
+    expect(find.text(_resultTitle), findsNothing);
+    expect(_inputShowing('ありがとうございます'), findsOneWidget,
+        reason: '採用した結果が入力欄に入る');
 
-        // 実際の処理実行: AI変換結果ダイアログを待機
-        await waitForAIConversionDialog(tester);
+    await tapAndExpectSpeech(tester, find.text('読み上げ'));
+    await stopSpeechIfSpeaking(tester);
 
-        // 結果検証: ダイアログが表示される
-        expect(find.text('AI変換結果'), findsOneWidget);
-        expect(find.text('元の文'), findsOneWidget);
-        expect(find.text('変換結果'), findsOneWidget);
-
-        // 実際の処理実行: 「採用」ボタンをタップ
-        await tapButton(tester, '採用');
-
-        // 結果検証: ダイアログが閉じる
-        expect(find.text('AI変換結果'), findsNothing);
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-086-003: AI変換 → 再生成フロー',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
-
-        // 実際の処理実行: 文字盤で「ありがとう」を入力
-        await typeOnCharacterBoard(tester, 'ありがとう');
-
-        // 実際の処理実行: AI変換ボタンをタップ
-        await tapAIConversionButton(tester);
-
-        // 実際の処理実行: AI変換結果ダイアログを待機
-        await waitForAIConversionDialog(tester);
-
-        // 結果検証: 再生成ボタンが表示される
-        expect(find.text('再生成'), findsOneWidget);
-
-        // 実際の処理実行: 「再生成」ボタンをタップ
-        await tapButton(tester, '再生成');
-
-        // 結果検証: 再生成が実行される（ダイアログが閉じてから再表示される可能性）
-        // Note: 実際の実装によってはダイアログ内で更新される場合もある
-        await tester.pumpAndSettle(const Duration(seconds: 3));
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-086-004: AI変換 → 元の文を使うフロー',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
-
-        // 実際の処理実行: 文字盤で「ありがとう」を入力
-        await typeOnCharacterBoard(tester, 'ありがとう');
-
-        // 実際の処理実行: AI変換ボタンをタップ
-        await tapAIConversionButton(tester);
-
-        // 実際の処理実行: AI変換結果ダイアログを待機
-        await waitForAIConversionDialog(tester);
-
-        // 結果検証: 「元の文を使う」ボタンが表示される
-        expect(find.text('元の文を使う'), findsOneWidget);
-
-        // 実際の処理実行: 「元の文を使う」ボタンをタップ
-        await tapButton(tester, '元の文を使う');
-
-        // 結果検証: ダイアログが閉じる
-        expect(find.text('AI変換結果'), findsNothing);
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-086-008: AI変換 → 採用 → 読み上げフロー',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
-
-        // 実際の処理実行: 文字盤で「ありがとう」を入力
-        await typeOnCharacterBoard(tester, 'ありがとう');
-
-        // 実際の処理実行: AI変換ボタンをタップ
-        await tapAIConversionButton(tester);
-
-        // 実際の処理実行: AI変換結果ダイアログを待機
-        await waitForAIConversionDialog(tester);
-
-        // 実際の処理実行: 「採用」ボタンをタップ
-        await tapButton(tester, '採用');
-
-        // 実際の処理実行: 読み上げボタンをタップ
-        await tapButton(tester, '読み上げ');
-
-        // 結果検証: TTS読み上げが開始される（停止ボタン表示で確認）
-        await waitForWidget(tester, find.text('停止'));
-        expect(find.text('停止'), findsOneWidget);
-      },
-    );
+    await tester.tap(find.byTooltip('履歴'));
+    await tester.pumpAndSettle();
+    expect(find.text('ありがとうございます'), findsOneWidget, reason: '読み上げた変換結果が履歴に残る');
   });
 
-  // 2. 異常系テストケース（エラーハンドリング）
-  group('異常系テスト（エラーハンドリング）', () {
-    testWidgets(
-      'TC-E2E-086-009: 入力が2文字未満の場合AI変換ボタンが無効化',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
+  testWidgets('2. 同意しないと何も送らず入力はそのまま。一度同意すれば次からは聞かない', (tester) async {
+    final backend = _FakeBackend();
+    await pumpApp(tester, overrides: backend.overrides());
 
-        // 実際の処理実行: 文字盤で「あ」（1文字）を入力
-        await typeOnCharacterBoard(tester, 'あ');
+    await typeOnCharacterBoard(tester, 'ありがとう');
+    await _tapConvert(tester);
+    await _waitFor(tester, find.text(_consentTitle));
+    await _tapInDialog(tester, '同意しない');
 
-        // 結果検証: AI変換ボタンが存在するが無効化されている
-        final aiButton = find.text('AI変換');
-        expect(aiButton, findsOneWidget);
+    expect(find.text(_consentTitle), findsNothing);
+    expect(find.text(_resultTitle), findsNothing);
+    expect(backend.requests, isEmpty, reason: '同意しなければ送らない');
+    expect(_inputShowing('ありがとう'), findsOneWidget);
+    expect(_convertButton(tester).onPressed, isNotNull,
+        reason: '断った後もボタンは押せる（くるくるのまま固まらない）');
 
-        // ElevatedButtonを取得して無効状態を確認
-        final elevatedButton = find.ancestor(
-          of: aiButton,
-          matching: find.byType(ElevatedButton),
-        );
+    // 断った後に押すと、もう一度聞く
+    await _tapConvert(tester);
+    await _waitFor(tester, find.text(_consentTitle));
+    await _tapInDialog(tester, '同意して利用');
+    await _waitFor(tester, find.text(_resultTitle));
+    await _tapInDialog(tester, '元の文を使う');
+    expect(backend.requests, hasLength(1));
 
-        if (elevatedButton.evaluate().isNotEmpty) {
-          final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNull, reason: '1文字入力時はAI変換ボタンが無効であるべき');
-        }
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-086-010: オフライン時のAI変換ボタン無効化',
-      (tester) async {
-        // テストデータ準備: オフライン状態でアプリを初期化
-        await pumpApp(tester, overrides: createOfflineOverrides());
-
-        // 実際の処理実行: 文字盤で「ありがとう」を入力
-        await typeOnCharacterBoard(tester, 'ありがとう');
-
-        // 結果検証: AI変換ボタンが無効化されている
-        final aiButton = find.text('AI変換');
-        expect(aiButton, findsOneWidget);
-
-        final elevatedButton = find.ancestor(
-          of: aiButton,
-          matching: find.byType(ElevatedButton),
-        );
-
-        if (elevatedButton.evaluate().isNotEmpty) {
-          final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNull, reason: 'オフライン時はAI変換ボタンが無効であるべき');
-        }
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-086-013: 結果ダイアログ外タップで閉じない',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
-
-        // 実際の処理実行: 文字盤で「ありがとう」を入力
-        await typeOnCharacterBoard(tester, 'ありがとう');
-
-        // 実際の処理実行: AI変換ボタンをタップ
-        await tapAIConversionButton(tester);
-
-        // 実際の処理実行: AI変換結果ダイアログを待機
-        await waitForAIConversionDialog(tester);
-
-        // 前提条件確認: ダイアログが表示されていることを確認
-        expect(find.text('AI変換結果'), findsOneWidget);
-
-        // 実際の処理実行: ダイアログ外（画面の端）をタップ
-        await tester.tapAt(const Offset(10, 10));
-        await tester.pumpAndSettle();
-
-        // 結果検証: ダイアログが閉じていない
-        expect(find.text('AI変換結果'), findsOneWidget);
-      },
-    );
+    // 同意した後は聞かずに変換する
+    await _tapConvert(tester);
+    await _waitFor(tester, find.text(_resultTitle));
+    expect(find.text(_consentTitle), findsNothing);
+    expect(backend.requests, hasLength(2));
   });
 
-  // 3. 境界値テストケース
-  group('境界値テスト', () {
-    testWidgets(
-      'TC-E2E-086-014: 入力2文字（最小値）でAI変換が有効',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
+  testWidgets('3. 再生成は前回の結果を添えて送り、新しい結果を採用できる', (tester) async {
+    final backend = _FakeBackend();
+    await pumpApp(tester, overrides: backend.overrides());
 
-        // 実際の処理実行: 文字盤で「あい」（2文字）を入力
-        await typeOnCharacterBoard(tester, 'あい');
+    await typeOnCharacterBoard(tester, 'ありがとう');
+    await _tapConvert(tester);
+    await _waitFor(tester, find.text(_consentTitle));
+    await _tapInDialog(tester, '同意して利用');
+    await _waitFor(tester, find.text(_resultTitle));
 
-        // 結果検証: AI変換ボタンが有効化されている
-        final aiButton = find.text('AI変換');
-        expect(aiButton, findsOneWidget);
+    await _tapInDialog(tester, '再生成');
+    await _waitFor(tester, find.text('心より感謝申し上げます'));
 
-        final elevatedButton = find.ancestor(
-          of: aiButton,
-          matching: find.byType(ElevatedButton),
-        );
+    expect(backend.requests, hasLength(2));
+    final sent = backend.requests.last;
+    expect(sent.path, '/api/v1/ai/regenerate');
+    expect(sent.data, {
+      'input_text': 'ありがとう',
+      'politeness_level': 'normal',
+      'previous_result': 'ありがとうございます',
+    });
 
-        if (elevatedButton.evaluate().isNotEmpty) {
-          final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNotNull, reason: '2文字入力時はAI変換ボタンが有効であるべき');
-        }
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-086-015: 入力1文字（最小値-1）でAI変換が無効',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
-
-        // 実際の処理実行: 文字盤で「あ」（1文字）を入力
-        await typeOnCharacterBoard(tester, 'あ');
-
-        // 結果検証: AI変換ボタンが無効化されている
-        final aiButton = find.text('AI変換');
-        expect(aiButton, findsOneWidget);
-
-        final elevatedButton = find.ancestor(
-          of: aiButton,
-          matching: find.byType(ElevatedButton),
-        );
-
-        if (elevatedButton.evaluate().isNotEmpty) {
-          final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNull, reason: '1文字入力時はAI変換ボタンが無効であるべき');
-        }
-      },
-    );
-
-    testWidgets(
-      'TC-E2E-086-016: 入力0文字（空）でAI変換が無効',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
-
-        // 実際の処理実行: 何も入力しない
-
-        // 結果検証: AI変換ボタンが無効化されている
-        final aiButton = find.text('AI変換');
-        expect(aiButton, findsOneWidget);
-
-        final elevatedButton = find.ancestor(
-          of: aiButton,
-          matching: find.byType(ElevatedButton),
-        );
-
-        if (elevatedButton.evaluate().isNotEmpty) {
-          final button = tester.widget<ElevatedButton>(elevatedButton.first);
-          expect(button.onPressed, isNull, reason: '空入力時はAI変換ボタンが無効であるべき');
-        }
-      },
-    );
+    await _tapInDialog(tester, '採用');
+    expect(_inputShowing('心より感謝申し上げます'), findsOneWidget);
   });
 
-  // 4. パフォーマンステストケース
-  group('パフォーマンステスト', () {
-    testWidgets(
-      'TC-E2E-086-017: AI変換応答時間が3秒以内',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
+  testWidgets('4. 「元の文を使う」と入力は元のまま', (tester) async {
+    final backend = _FakeBackend();
+    await pumpApp(tester, overrides: backend.overrides());
 
-        // 実際の処理実行: 文字盤で「ありがとう」を入力
-        await typeOnCharacterBoard(tester, 'ありがとう');
+    await typeOnCharacterBoard(tester, 'ありがとう');
+    await _tapConvert(tester);
+    await _waitFor(tester, find.text(_consentTitle));
+    await _tapInDialog(tester, '同意して利用');
+    await _waitFor(tester, find.text(_resultTitle));
 
-        // パフォーマンス計測: AI変換ボタンタップから結果表示まで
-        await measurePerformance(
-          'AI変換応答時間',
-          maxMilliseconds: PerformanceThresholds.aiConversion,
-          action: () async {
-            await tapAIConversionButton(tester);
-            await waitForAIConversionDialog(tester);
+    await _tapInDialog(tester, '元の文を使う');
+    expect(find.text(_resultTitle), findsNothing);
+    expect(_inputShowing('ありがとう'), findsOneWidget);
+    expect(find.text('ありがとうございます'), findsNothing);
+  });
+
+  testWidgets('5. 上限に達したら backend の文言で告げ、入力を残す', (tester) async {
+    // backend の AI_RATE_LIMIT と同じ形（`backend/app/main.py` の _error_body）
+    const message = 'いまAI変換を使えません。混み合っているか、利用の上限に達しています。'
+        '時間をおいて試すか、元の文をお使いください。';
+    final backend = _FakeBackend(
+      respond: (o) => Response<dynamic>(
+        requestOptions: o,
+        statusCode: 429,
+        data: <String, dynamic>{
+          'success': false,
+          'data': null,
+          'error': {
+            'code': 'AI_RATE_LIMIT',
+            'message': message,
+            'status_code': 429,
           },
-        );
-      },
+        },
+      ),
     );
+    await pumpApp(tester, overrides: backend.overrides());
+
+    await typeOnCharacterBoard(tester, 'ありがとう');
+    await _tapConvert(tester);
+    await _waitFor(tester, find.text(_consentTitle));
+    await _tapInDialog(tester, '同意して利用');
+    await _waitFor(tester, find.text(message));
+
+    expect(backend.requests, hasLength(1));
+    expect(find.text(_resultTitle), findsNothing);
+    expect(_inputShowing('ありがとう'), findsOneWidget, reason: '失敗しても入力を消さない');
+    expect(_convertButton(tester).onPressed, isNotNull);
   });
 
-  // 5. 統合テストケース
-  group('統合テスト', () {
-    testWidgets(
-      'TC-E2E-086-019: AI変換 → 採用 → 履歴保存の一連フロー',
-      (tester) async {
-        // テストデータ準備: アプリを初期化
-        await pumpApp(tester, overrides: [mockAIConversionOverride()]);
+  testWidgets('6. 1 文字以下とオフラインではボタンが押せず、何も送らない', (tester) async {
+    final backend = _FakeBackend();
+    await pumpApp(tester, overrides: backend.overrides());
+    expect(_convertButton(tester).onPressed, isNull, reason: '空では押せない');
 
-        // ステップ1: 文字盤で入力
-        await typeOnCharacterBoard(tester, 'ありがとう');
+    await typeOnCharacterBoard(tester, 'あ');
+    expect(_convertButton(tester).onPressed, isNull, reason: '1 文字では押せない');
 
-        // ステップ2: AI変換を実行
-        await tapAIConversionButton(tester);
-        await waitForAIConversionDialog(tester);
+    await typeOnCharacterBoard(tester, 'い');
+    expect(_convertButton(tester).onPressed, isNotNull, reason: '2 文字から押せる');
 
-        // ステップ3: 「採用」をタップ
-        await tapButton(tester, '採用');
-
-        // ステップ4: 読み上げを実行（履歴に保存される）
-        await tapButton(tester, '読み上げ');
-        await waitForWidget(tester, find.text('停止'));
-        await tapButton(tester, '停止');
-
-        // ステップ5: 履歴画面で確認
-        await navigateToHistory(tester);
-        expect(find.text('履歴'), findsOneWidget);
-
-        // Note: 実際の変換結果はモックAPIの応答に依存するため
-        // 変換結果の具体的な内容ではなく、履歴に何かが保存されていることを確認
-      },
-    );
+    final offline = _FakeBackend();
+    await restartApp(tester, overrides: offline.overrides(online: false));
+    await typeOnCharacterBoard(tester, 'ありがとう');
+    expect(_convertButton(tester).onPressed, isNull, reason: 'オフラインでは押せない');
+    await tester.tap(find.text('AI変換'), warnIfMissed: false);
+    await tester.pump();
+    expect(find.text(_consentTitle), findsNothing);
+    expect(backend.requests, isEmpty);
+    expect(offline.requests, isEmpty);
   });
 }
