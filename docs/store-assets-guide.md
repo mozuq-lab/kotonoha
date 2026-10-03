@@ -97,6 +97,8 @@ iPhone と iPad の両方に対応している（`TARGETED_DEVICE_FAMILY = "1,2"
 |--------|------|
 | 1024 x 500 | フィーチャーグラフィック（必須） |
 
+作ったものは `frontend/kotonoha_app/fastlane/play/` にある（アイコン `icon_512.png`、フィーチャーグラフィック `feature_graphic_1024x500.png`。2026-10-03）。fastlane は画像を上げない設定（`skip_upload_images: true`）なので、Play Console で手で上げる。文字は Zen Maru Gothic（SIL OFL 1.1）。
+
 ### デザイン要件
 - アプリの主要機能を視覚的に表現
 - テキストは最小限に
