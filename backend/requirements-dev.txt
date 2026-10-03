@@ -5,7 +5,7 @@ pytest-cov==7.0.0
 pytest-randomly==5.0.0
 respx==0.23.1
 ruff==0.14.7
-black==26.1.0
+black==26.5.1
 mypy==2.3.1
 import-linter==2.14
 pre-commit==4.6.2
