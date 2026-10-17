@@ -57,11 +57,13 @@ void main() {
   /// 本番と同じ router でアプリを起動する
   /// [storageReady]: 保存できる状態にして、保存できない帯を出さない
   /// （テストの環境には Hive が無いので、既定では保存できない帯が出る）
+  /// [tutorial]: 初回起動のチュートリアルを出す
   Future<ProviderContainer> startApp(
     WidgetTester tester, {
     bool storageReady = true,
+    bool tutorial = false,
   }) async {
-    SharedPreferences.setMockInitialValues({'tutorial_completed': true});
+    SharedPreferences.setMockInitialValues({'tutorial_completed': !tutorial});
     final container = ProviderContainer(overrides: [
       ttsProvider.overrideWith(
           () => TTSNotifier(serviceOverride: TTSService(tts: tts))),
@@ -159,6 +161,25 @@ void main() {
     await tester.pumpAndSettle();
 
     expectReadable(tester, 'オフライン状態です。基本機能のみ利用可能です。');
+    handle.dispose();
+  });
+
+  testWidgets('チュートリアルを閉じても、帯と画面は作り直されず（親が変わらず）、帯は読めるまま', (tester) async {
+    // 閉じるたびに帯と画面を別の親へ移していたときは、Web のエンジンが移した
+    // semantics を扱えずに例外を出し、読み上げ用の tree が壊れた（実 Chromium で確認）。
+    // その例外は Dart のテストでは出ないので、移していないこと（同じ Element のまま）を見る
+    final handle = tester.ensureSemantics();
+    await startApp(tester, storageReady: false, tutorial: true);
+    expect(find.text('スキップ'), findsOneWidget);
+    final bannerBefore = tester.element(find.byType(PersistenceBanner));
+
+    await tester.tap(find.text('スキップ'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('スキップ'), findsNothing);
+    expect(tester.element(find.byType(PersistenceBanner)), same(bannerBefore),
+        reason: 'チュートリアルを閉じたときに、帯と画面を別の親へ移して作り直した');
+    expectReadable(tester, 'kotonoha');
     handle.dispose();
   });
 

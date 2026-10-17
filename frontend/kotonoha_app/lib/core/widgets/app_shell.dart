@@ -88,14 +88,22 @@ class _AppShellState extends ConsumerState<AppShell> {
       ),
     );
 
-    return tutorialState.shouldShowTutorial
-        ? TutorialOverlay(
+    // チュートリアルは画面の上に重ねるだけにし、画面の位置（親）を変えない。
+    // 出し入れのたびに画面を別の親へ移すと、Web のエンジンが移した semantics を
+    // 扱えずに例外を出し、読み上げ用の tree が壊れた（チュートリアルを閉じたとき）
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        screenContent,
+        if (tutorialState.shouldShowTutorial)
+          TutorialOverlay(
             onComplete: () {
               ref.read(tutorialProvider.notifier).completeTutorial();
             },
-            child: screenContent,
-          )
-        : screenContent;
+            child: const SizedBox.shrink(),
+          ),
+      ],
+    );
   }
 }
 
