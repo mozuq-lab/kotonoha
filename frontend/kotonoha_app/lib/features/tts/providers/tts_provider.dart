@@ -19,6 +19,7 @@ class TTSServiceState {
     required this.state,
     required this.currentSpeed,
     this.errorMessage,
+    this.failedAtStartup = false,
   });
 
   /// 読み上げ状態
@@ -29,6 +30,11 @@ class TTSServiceState {
 
   /// エラーメッセージ
   final String? errorMessage;
+
+  /// 起動時の準備（初期化）に失敗したエラーか
+  /// まだ何も押していないので、告知の文言を「押したが失敗した」と分ける。
+  /// エラーでないときは常に false（押して読み上げれば、その結果で上書きする）。
+  final bool failedAtStartup;
 
   /// 初期状態を作成
   /// 状態: idle
@@ -51,12 +57,14 @@ class TTSServiceState {
     TTSSpeed? currentSpeed,
     String? errorMessage,
     bool clearErrorMessage = false,
+    bool? failedAtStartup,
   }) {
     return TTSServiceState(
       state: state ?? this.state,
       currentSpeed: currentSpeed ?? this.currentSpeed,
       errorMessage:
           clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      failedAtStartup: failedAtStartup ?? this.failedAtStartup,
     );
   }
 }
@@ -111,7 +119,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
       final success = await _service.initialize();
       await _applyPersistedSpeedIfAvailable();
       if (!success && ref.mounted) {
-        _syncStateFromService();
+        _syncStateFromService(atStartup: true);
       }
       return success;
     });
@@ -184,12 +192,14 @@ class TTSNotifier extends Notifier<TTSServiceState> {
   /// 基準にし、エラーでなければ`clearErrorMessage`で明示的に消す。
   /// これにより、一度失敗した後に成功しても古いエラーメッセージが
   /// 残り続ける問題を防ぐ。
-  void _syncStateFromService() {
+  /// [atStartup]: 起動時の準備の結果か（押した結果なら false）
+  void _syncStateFromService({bool atStartup = false}) {
     final hasError = _service.state == TTSState.error;
     state = state.copyWith(
       state: _service.state,
       errorMessage: hasError ? _service.errorMessage : null,
       clearErrorMessage: !hasError,
+      failedAtStartup: hasError && atStartup,
     );
   }
 
@@ -208,6 +218,7 @@ class TTSNotifier extends Notifier<TTSServiceState> {
       state = state.copyWith(
         state: TTSState.error,
         errorMessage: _service.errorMessage,
+        failedAtStartup: true,
       );
     }
   }

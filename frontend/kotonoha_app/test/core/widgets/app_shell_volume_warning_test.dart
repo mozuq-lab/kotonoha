@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/app.dart';
+import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:kotonoha_app/features/history/domain/models/history_type.dart';
 import 'package:kotonoha_app/features/history/providers/history_provider.dart';
@@ -227,9 +228,12 @@ void main() {
 
     final warning = tester.getRect(find.byType(VolumeWarningWidget));
     final appBar = tester.getRect(find.byType(AppBar));
-    expect(warning.top, greaterThanOrEqualTo(24), reason: '帯がステータスバーに重なる');
+    // ステータスバーの分の余白はシェルが 1 回だけ取る（重ならず、二重にも取らない）
+    expect(warning.top, 24 + AppSizes.paddingSmall,
+        reason: '帯がステータスバーに重なる、または余白を二重に取っている');
     expect(appBar.top, greaterThanOrEqualTo(warning.bottom));
-    expect(appBar.height, appBarWithoutWarning.height - 24,
+    expect(appBar.height, kToolbarHeight,
         reason: '帯の下の AppBar がステータスバーの分の空きを残している');
+    expect(appBar.height, appBarWithoutWarning.height);
   });
 }

@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/shared/widgets/debounced_taps.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
@@ -106,26 +107,30 @@ class TTSButton extends ConsumerWidget {
             minWidth: _effectiveWidth,
             minHeight: _effectiveHeight,
           ),
-          child: ElevatedButton.icon(
-            onPressed: () => _handleTap(ref, isSpeaking),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: backgroundColor,
-              foregroundColor: foregroundColor,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.paddingSmall,
-                vertical: AppSizes.paddingXSmall,
+          // 300ms 以内の連続タップは無視する。押すとすぐ「停止」に変わるので、
+          // 二度押しの 2 回目で読み上げが黙っていた（大ボタン・定型文と同じ扱い）
+          child: DebouncedTaps(
+            builder: (context, debounced) => ElevatedButton.icon(
+              onPressed: debounced(() => _handleTap(ref, isSpeaking)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: backgroundColor,
+                foregroundColor: foregroundColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.paddingSmall,
+                  vertical: AppSizes.paddingXSmall,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(AppSizes.borderRadiusMedium),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(AppSizes.borderRadiusMedium),
-              ),
-            ),
-            icon: Icon(icon),
-            label: Text(
-              label,
-              style: TextStyle(
-                fontSize: labelFontSize,
-                fontWeight: FontWeight.bold,
+              icon: Icon(icon),
+              label: Text(
+                label,
+                style: TextStyle(
+                  fontSize: labelFontSize,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

@@ -18,19 +18,13 @@ import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_wi
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
 
-/// 画面の上に音量 0 の警告の帯を置く
+/// 音量 0 の警告の帯。警告が要らないときは高さ 0
 ///
-/// 帯は画面の一番上（ステータスバーの下）に出す。出ている間は、下の画面から
-/// 上の余白（ステータスバーの分）を外す。外さないと、帯がステータスバーに
-/// 重なり、帯と AppBar の間に同じ高さの空きができる。
-/// 帯の有無で [child] の位置（ウィジェットの木）を変えない（中の Navigator を
-/// 動かさない）。
+/// ほかの帯と同じく `AppShell` の帯の列に置く。ステータスバーの分の余白は
+/// シェル（`_StatusBarArea`）が引き受けるので、この帯では持たない。
 class VolumeWarningBanner extends ConsumerWidget {
-  /// 帯の下に置く画面
-  final Widget child;
-
   /// 帯を作る
-  const VolumeWarningBanner({super.key, required this.child});
+  const VolumeWarningBanner({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,39 +38,20 @@ class VolumeWarningBanner extends ConsumerWidget {
       }
     });
     final showWarning = ref.watch(volumeWarningProvider).showWarning;
-    final topInset = MediaQuery.paddingOf(context).top;
+    if (!showWarning) return const SizedBox.shrink();
 
-    return Column(
-      children: [
-        if (!showWarning)
-          const SizedBox.shrink()
-        else
-          // Material で包む理由は OfflineBanner と同じ（各画面の Scaffold より外に
-          // 置くので、無いと Text が既定の下線付きの書式になり、InkWell も描けない）。
-          Material(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSizes.paddingSmall,
-                AppSizes.paddingSmall + topInset,
-                AppSizes.paddingSmall,
-                AppSizes.paddingSmall,
-              ),
-              child: VolumeWarningWidget(
-                isVisible: true,
-                onDismiss: () =>
-                    ref.read(volumeWarningProvider.notifier).dismissWarning(),
-              ),
-            ),
-          ),
-        Expanded(
-          child: MediaQuery.removePadding(
-            context: context,
-            removeTop: showWarning,
-            child: child,
-          ),
+    // Material で包む理由は OfflineBanner と同じ（各画面の Scaffold より外に
+    // 置くので、無いと Text が既定の下線付きの書式になり、InkWell も描けない）。
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.paddingSmall),
+        child: VolumeWarningWidget(
+          isVisible: true,
+          onDismiss: () =>
+              ref.read(volumeWarningProvider.notifier).dismissWarning(),
         ),
-      ],
+      ),
     );
   }
 }
