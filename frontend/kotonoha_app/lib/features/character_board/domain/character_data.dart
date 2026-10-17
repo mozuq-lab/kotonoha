@@ -213,10 +213,18 @@ class CharacterData {
   /// アクセシビリティ用のSemanticsラベルを取得する
   /// スクリーンリーダーで読み上げても意味が伝わるよう
   /// 特殊キーには専用ラベルを設定する。
+  /// 「ー」「、」「。」は VoiceOver が既定の句読点設定で読まず、触れても無音になる
+  /// （物理 iPad、2026-10-17）。iOS の VoiceOver が句読点を読むときの語に合わせる。
+  /// 「？」「！」は VoiceOver が読むので、そのまま返す。
   static String getAccessibilityLabel(String character) {
     if (isDakutenKey(character)) return '濁点';
     if (isHandakutenKey(character)) return '半濁点';
     if (isSpaceKey(character)) return '空白';
-    return character;
+    return switch (character) {
+      'ー' => '長音',
+      '、' => '読点',
+      '。' => '句点',
+      _ => character,
+    };
   }
 }
