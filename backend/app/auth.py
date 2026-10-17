@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 import hmac
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Sequence
 
-from fastapi import Security
 from fastapi.security import APIKeyHeader
 
 from app.errors import ErrorCode, SafeError
 
 API_KEY_HEADER_NAME = "X-API-Key"
 
-# OpenAPI の securitySchemes に載せる宣言。資源は作らない
+# OpenAPI の securitySchemes に載せる宣言だけ。確かめは require_api_key が行う。資源は作らない
 api_key_header = APIKeyHeader(name=API_KEY_HEADER_NAME, auto_error=False)
-
-ApiKeyDependency = Callable[..., Awaitable[None]]
 
 
 def is_valid_api_key(candidate: str | None, allowed: Sequence[bytes]) -> bool:
@@ -36,13 +33,12 @@ def is_valid_api_key(candidate: str | None, allowed: Sequence[bytes]) -> bool:
     return matched
 
 
-def build_require_api_key(allowed: tuple[bytes, ...]) -> ApiKeyDependency:
-    """空タプルなら認証を省略する。省略してよいかの判定（config.auth_optional）は main が行う。"""
+def require_api_key(candidate: str | None, allowed: tuple[bytes, ...]) -> None:
+    """一致しなければ ``AUTHENTICATION_ERROR``。
 
-    async def require_api_key(api_key: str | None = Security(api_key_header)) -> None:
-        if not allowed:
-            return
-        if not is_valid_api_key(api_key, allowed):
-            raise SafeError(ErrorCode.AUTHENTICATION_ERROR)
-
-    return require_api_key
+    空タプルなら認証を省略する。省略してよいかの判定（config.auth_optional）は main が行う。
+    呼ぶのは本文を読む前（routes の ``GuardedRoute``）。FastAPI の依存は本文の解析より後に
+    解決されるので、依存にはしない。
+    """
+    if allowed and not is_valid_api_key(candidate, allowed):
+        raise SafeError(ErrorCode.AUTHENTICATION_ERROR)

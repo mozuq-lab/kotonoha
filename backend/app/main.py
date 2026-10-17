@@ -18,7 +18,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.ai.providers import Provider, build_provider
 from app.ai.service import ConversionService
-from app.auth import API_KEY_HEADER_NAME, build_require_api_key
+from app.auth import API_KEY_HEADER_NAME
 from app.config import API_PREFIX, RuntimeConfig, load_config
 from app.errors import (
     HTTP_STATUS,
@@ -200,9 +200,7 @@ def create_app(
         trusted_proxy_count=cfg.TRUSTED_PROXY_COUNT,
     )
     app.include_router(
-        build_router(
-            version=cfg.VERSION, require_api_key=build_require_api_key(api_keys), limiter=limiter
-        ),
+        build_router(version=cfg.VERSION, api_keys=api_keys, limiter=limiter),
         prefix=API_PREFIX,
     )
     return app

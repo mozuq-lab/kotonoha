@@ -17,6 +17,7 @@ class ErrorCode(StrEnum):
 
     VALIDATION_ERROR = "VALIDATION_ERROR"
     AUTHENTICATION_ERROR = "AUTHENTICATION_ERROR"
+    PAYLOAD_TOO_LARGE = "PAYLOAD_TOO_LARGE"
     RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
     AI_API_TIMEOUT = "AI_API_TIMEOUT"
     AI_PROVIDER_ERROR = "AI_PROVIDER_ERROR"
@@ -32,6 +33,7 @@ HTTP_STATUS: Final[Mapping[ErrorCode, int]] = MappingProxyType(
     {
         ErrorCode.VALIDATION_ERROR: 422,
         ErrorCode.AUTHENTICATION_ERROR: 401,
+        ErrorCode.PAYLOAD_TOO_LARGE: 413,
         ErrorCode.RATE_LIMIT_EXCEEDED: 429,
         ErrorCode.AI_API_TIMEOUT: 504,
         ErrorCode.AI_PROVIDER_ERROR: 503,
@@ -49,6 +51,8 @@ USER_MESSAGE: Final[Mapping[ErrorCode, str]] = MappingProxyType(
     {
         ErrorCode.VALIDATION_ERROR: "入力データが不正です",
         ErrorCode.AUTHENTICATION_ERROR: "Invalid or missing API key.",
+        # アプリは入力の上限（500 文字）で止めるので、ここに来るのはアプリ以外からの送信だけ
+        ErrorCode.PAYLOAD_TOO_LARGE: "送る内容が大きすぎます。",
         ErrorCode.RATE_LIMIT_EXCEEDED: (
             "リクエスト数が上限に達しました。しばらく待ってから再試行してください。"
         ),
