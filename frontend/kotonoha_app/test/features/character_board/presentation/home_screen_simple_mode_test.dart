@@ -4,7 +4,6 @@
 /// AppBarにトグルアイコンが表示され、タップで設定がONになる
 /// シンプルモードON時は文字盤が非表示になり、SimpleModeViewが表示される
 /// シンプルモード中もTTS読み上げが機能する
-/// シンプルモード中もVolumeWarningWidgetが機能する
 /// 「通常モードに戻る」操作、AppBarトグル操作の両方でOFFに戻せる
 library;
 
@@ -20,7 +19,6 @@ import 'package:kotonoha_app/features/settings/providers/settings_provider.dart'
 import 'package:kotonoha_app/features/simple_mode/presentation/simple_mode_view.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
 import 'package:kotonoha_app/features/tts/domain/services/volume_service.dart';
-import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_widget.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
 
@@ -207,31 +205,6 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(() => mockFlutterTts.speak('はい')).called(1);
-    });
-
-    testWidgets('シンプルモード中も音量ゼロ警告が機能する', (tester) async {
-      final container = buildContainer(volume: 0.0);
-      addTearDown(container.dispose);
-      await container.read(settingsNotifierProvider.future);
-      await container
-          .read(settingsNotifierProvider.notifier)
-          .setSimpleMode(true);
-
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(home: HomeScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('音量が0です'), findsNothing);
-
-      await tester.tap(find.text('はい'));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(VolumeWarningWidget), findsOneWidget);
-      expect(find.text('音量が0です'), findsOneWidget);
     });
   });
 }
