@@ -64,6 +64,13 @@ class Validators {
     return sanitized.length >= minAiConversionLength;
   }
 
+  /// 読み上げ・履歴の対象になる中身があるか
+  /// 空文字と、空白（全角を含む）・タブ・改行だけの文は対象にしない。
+  /// 読み上げ（`TTSService.speak`）と履歴（`HistoryNotifier.addHistory`）の
+  /// 入口はこの 1 つの判定だけを使い、画面ごとに判定を持たない。
+  /// 文そのものは変えない（前後の空白を落とした形で読み上げ・保存はしない）。
+  static bool hasSpeakableText(String? text) => sanitize(text).isNotEmpty;
+
   /// Sanitizes input text by removing leading/trailing whitespace
   /// Removes: half-width space, full-width space, tabs, newlines
   /// Preserves: whitespace in the middle of text
