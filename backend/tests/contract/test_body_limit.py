@@ -152,6 +152,28 @@ async def test_undeclared_oversized_body_stops_reading_at_the_limit(
     assert received <= BODY_LIMIT // chunk + 1
 
 
+async def test_client_gone_mid_body_is_400_not_500(
+    app: FastAPI, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """送信の途中で切れた（端末の通信の瞬断）。修正前と同じ 400 で、ERROR のログを出さない。"""
+    messages: list[Message] = [
+        {"type": "http.request", "body": b'{"input_text":', "more_body": True},
+        {"type": "http.disconnect"},
+    ]
+
+    async def receive() -> Message:
+        return messages.pop(0) if messages else {"type": "http.disconnect"}
+
+    status, _ = await _asgi_post(
+        app,
+        CONVERT,
+        [(b"content-type", b"application/json"), (b"x-api-key", b"contract-key-A")],
+        receive,
+    )
+    assert status == 400
+    assert '"level": "ERROR"' not in capsys.readouterr().out
+
+
 @pytest.mark.parametrize("route", ROUTES)
 def test_authenticated_oversized_body_is_413(
     client: TestClient, headers: dict[str, str], route: str

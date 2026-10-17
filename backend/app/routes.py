@@ -10,6 +10,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Request, Response, Security
 from fastapi.routing import APIRoute
+from starlette.requests import ClientDisconnect
 from starlette.types import Message, Receive
 
 from app.ai.service import ConversionService
@@ -73,7 +74,13 @@ def guarded_route_class(api_keys: tuple[bytes, ...]) -> type[APIRoute]:
 
             async def guarded(request: Request) -> Response:
                 require_api_key(request.headers.get(API_KEY_HEADER_NAME), api_keys)
-                body = await _read_body_within(request, REQUEST_BODY_MAX_BYTES)
+                body: bytes | None = None
+                try:
+                    body = await _read_body_within(request, REQUEST_BODY_MAX_BYTES)
+                except ClientDisconnect:  # 送信の途中で切れた（通信の瞬断）。相手はもう居ない
+                    pass
+                if body is None:
+                    return Response(status_code=400)  # FastAPI が読んでいたときと同じ 400
                 return await handler(Request(request.scope, _replay(body, request.receive)))
 
             return guarded
