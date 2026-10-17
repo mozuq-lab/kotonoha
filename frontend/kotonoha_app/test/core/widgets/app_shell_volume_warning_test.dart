@@ -202,7 +202,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // ホームへ戻っても、音量は 0 のままかもしれないので消さない
-    await tester.pageBack();
+    // tester.pageBack() は英語の tooltip（'Back'）で探すので、日本語のアプリでは使えない
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text(_warning), findsOneWidget);
 
