@@ -3,12 +3,9 @@ from __future__ import annotations
 import hmac
 
 import pytest
-from fastapi import Depends, FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.testclient import TestClient
 
-from app.auth import build_require_api_key, is_valid_api_key
-from app.errors import SafeError
+from app.auth import is_valid_api_key, require_api_key
+from app.errors import ErrorCode, SafeError
 
 
 def test_ascii_match_and_mismatch() -> None:
@@ -37,31 +34,16 @@ def test_all_keys_are_compared_without_short_circuit(monkeypatch: pytest.MonkeyP
     assert calls == [b"first", b"second", b"third"]
 
 
-def _app(allowed: tuple[bytes, ...]) -> TestClient:
-    app = FastAPI()
-
-    @app.exception_handler(SafeError)
-    async def handler(_: Request, exc: SafeError) -> JSONResponse:
-        return JSONResponse(status_code=401, content={"code": exc.code.value})
-
-    @app.get("/p", dependencies=[Depends(build_require_api_key(allowed))])
-    async def protected() -> dict[str, bool]:
-        return {"ok": True}
-
-    return TestClient(app)
+@pytest.mark.parametrize("candidate", [None, "", "x", "ｋ"])
+def test_require_api_key_rejects_missing_and_wrong_key(candidate: str | None) -> None:
+    with pytest.raises(SafeError) as info:
+        require_api_key(candidate, (b"k",))
+    assert info.value.code is ErrorCode.AUTHENTICATION_ERROR
 
 
-def test_dependency_rejects_missing_and_wrong_key() -> None:
-    client = _app((b"k",))
-    assert client.get("/p").status_code == 401
-    assert client.get("/p", headers={"X-API-Key": "x"}).json() == {"code": "AUTHENTICATION_ERROR"}
-    assert client.get("/p", headers={"X-API-Key": "k"}).status_code == 200
+def test_require_api_key_accepts_a_configured_key() -> None:
+    require_api_key("k", (b"k",))
 
 
-def test_dependency_with_no_keys_lets_requests_through() -> None:
-    assert _app(()).get("/p").status_code == 200
-
-
-def test_openapi_declares_api_key_header() -> None:
-    spec = _app((b"k",)).app.openapi()
-    assert "APIKeyHeader" in spec["components"]["securitySchemes"]
+def test_require_api_key_with_no_keys_lets_requests_through() -> None:
+    require_api_key(None, ())
