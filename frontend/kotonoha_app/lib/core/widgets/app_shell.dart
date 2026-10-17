@@ -75,20 +75,35 @@ class _AppShellState extends ConsumerState<AppShell> {
             const PersistenceBanner(),
             const TtsFailureBanner(),
             const OfflineBanner(),
-            Expanded(child: widget.child),
+            // 画面（入れ子の Navigator）を semantics の区切りにする。Navigator の
+            // 各ページの後ろの ModalBarrier は BlockSemantics を持ち、同じ区切りの
+            // 中で先に描かれたものを semantics tree から外す。区切りが無いと、
+            // 上の帯がすべて外れ、VoiceOver / TalkBack で読めなかった
+            // （物理 iPad、2026-10-17。台帳 L-173・L-178）
+            Expanded(
+              child: Semantics(container: true, child: widget.child),
+            ),
           ],
         ),
       ),
     );
 
-    return tutorialState.shouldShowTutorial
-        ? TutorialOverlay(
+    // チュートリアルは画面の上に重ねるだけにし、画面の位置（親）を変えない。
+    // 出し入れのたびに画面を別の親へ移すと、Web のエンジンが移した semantics を
+    // 扱えずに例外を出し、読み上げ用の tree が壊れた（チュートリアルを閉じたとき）
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        screenContent,
+        if (tutorialState.shouldShowTutorial)
+          TutorialOverlay(
             onComplete: () {
               ref.read(tutorialProvider.notifier).completeTutorial();
             },
-            child: screenContent,
-          )
-        : screenContent;
+            child: const SizedBox.shrink(),
+          ),
+      ],
+    );
   }
 }
 
