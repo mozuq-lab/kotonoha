@@ -291,10 +291,9 @@ class HomeScreen extends ConsumerWidget {
         ref.read(ttsProvider.notifier).speak(text);
       },
       onFavoriteTap: (favorite) {
-        // 既存挙動に合わせる: FavoritesScreenのお気に入りタップと同様
-        // 読み上げのみ行い、履歴への再保存は行わない。
-        if (favorite.content.isEmpty) return;
+        // ホームのお気に入りボタンと同じく、読み上げて履歴に残す（REQ-601）
         ref.read(ttsProvider.notifier).speak(favorite.content);
+        _saveToHistory(ref, favorite.content, HistoryType.quickButton);
       },
       onExitSimpleMode: () {
         ref.read(settingsNotifierProvider.notifier).setSimpleMode(false);
@@ -794,11 +793,8 @@ class HomeScreen extends ConsumerWidget {
       height: height,
       labelFontSize: labelSize,
       speakButtonColor: scheme.primary,
-      onSpeak: () {
-        if (inputBuffer.isNotEmpty) {
-          _saveToHistory(ref, inputBuffer, HistoryType.manualInput);
-        }
-      },
+      // 空文字・空白だけの文は、履歴の側で除く
+      onSpeak: () => _saveToHistory(ref, inputBuffer, HistoryType.manualInput),
     );
     Widget row(List<Widget> buttons) => Row(children: [
           for (var i = 0; i < buttons.length; i++) ...[

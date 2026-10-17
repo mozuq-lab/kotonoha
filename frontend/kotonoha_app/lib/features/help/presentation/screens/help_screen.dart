@@ -88,7 +88,8 @@ class HelpScreen extends ConsumerWidget {
                 SizedBox(height: 16),
                 _HelpItem(
                   title: '履歴とお気に入り',
-                  description: '読み上げた文は履歴に保存されます。'
+                  description: '読み上げた文は履歴に保存されます'
+                      '（履歴から読み直した文は、新しくは増えません）。'
                       'よく使う文はお気に入りに登録し、色や並び順を変えられます。'
                       '先頭の8件はホーム画面にも表示されます。',
                 ),

@@ -6,6 +6,8 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../favorite/providers/favorite_provider.dart';
 import '../../favorite/domain/models/favorite.dart';
+import '../../history/domain/models/history_type.dart';
+import '../../history/providers/history_provider.dart';
 import '../../tts/providers/tts_provider.dart';
 import '../../tts/domain/models/tts_state.dart';
 import 'widgets/favorite_item_card.dart';
@@ -262,16 +264,14 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   }
 
   /// お気に入り項目タップ時の処理
-  /// お気に入り項目をタップすると再読み上げを実行
-  /// 空文字列の読み上げを防止
+  /// 読み上げ、ホームのお気に入りボタンと同じく履歴に残す（REQ-601）。
+  /// 空文字・空白だけの文は、読み上げと履歴の側で除く。
   void _onFavoriteTap(String content) {
-    // 空文字列の場合は読み上げを実行しない
-    if (content.isEmpty) {
-      return;
-    }
-
-    final ttsNotifier = ref.read(ttsProvider.notifier);
-    ttsNotifier.speak(content);
+    ref.read(ttsProvider.notifier).speak(content);
+    ref.read(historyProvider.notifier).addHistory(
+          content,
+          HistoryType.quickButton,
+        );
   }
 
   /// 個別削除確認ダイアログを表示

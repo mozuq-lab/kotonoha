@@ -12,6 +12,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:kotonoha_app/core/utils/validators.dart';
 import '../models/tts_speed.dart';
 import '../models/tts_state.dart';
 
@@ -222,8 +223,8 @@ class TTSService {
   /// 読み上げ開始まで1秒以内を目標
   /// [text] 読み上げるテキスト（空文字列の場合は何もしない）
   Future<void> speak(String text) async {
-    // 入力検証: 空文字列チェック（: 空文字列の読み上げ試行）
-    if (text.isEmpty) return;
+    // 入力検証: 空文字と、空白・改行だけの文は読み上げない
+    if (!Validators.hasSpeakableText(text)) return;
 
     // 自動初期化: 未初期化の場合は自動的に初期化を実行
     if (!_isInitialized) {

@@ -154,6 +154,27 @@ void main() {
         expect(state.histories.length, 0);
       });
 
+      test('空白・改行だけの文は履歴に追加されない', () async {
+        final notifier = container.read(historyProvider.notifier);
+
+        for (final blank in [' ', '\u3000\u3000', '\n', ' \t\n\u3000']) {
+          await notifier.addHistory(blank, HistoryType.manualInput);
+        }
+
+        expect(container.read(historyProvider).histories, isEmpty);
+      });
+
+      test('前後に空白がある文は、そのままの形で履歴に残る', () async {
+        final notifier = container.read(historyProvider.notifier);
+
+        await notifier.addHistory('\u3000こんにちは ', HistoryType.manualInput);
+
+        expect(
+          container.read(historyProvider).histories.single.content,
+          '\u3000こんにちは ',
+        );
+      });
+
       test('TC-057-010: 存在しないIDの削除は無視される', () async {
         // Arrange
         final notifier = container.read(historyProvider.notifier);

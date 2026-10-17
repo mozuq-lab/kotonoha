@@ -3,6 +3,7 @@
 // 設計根拠: , , , （履歴機能）
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/core/utils/validators.dart';
 import 'package:kotonoha_app/shared/models/history_item.dart';
 import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:uuid/uuid.dart';
@@ -88,8 +89,8 @@ class HistoryNotifier extends Notifier<HistoryState> {
   /// メソッド定義: 履歴を追加する
   /// 実装内容: テキストと種類を受け取り、新しい履歴を追加
   Future<void> addHistory(String content, HistoryType type) async {
-    // 空文字は追加しない
-    if (content.isEmpty) return;
+    // 空文字と、空白・改行だけの文は追加しない（読み上げもしない文）
+    if (!Validators.hasSpeakableText(content)) return;
 
     final now = DateTime.now();
     final newHistory = History(
