@@ -14,6 +14,7 @@ import 'package:kotonoha_app/features/network/presentation/widgets/offline_banne
 import 'package:kotonoha_app/features/network/presentation/widgets/online_recovery_notification.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_failure_banner.dart';
+import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_banner.dart';
 
 /// 全画面共通シェルウィジェット。
 /// ShellRouteのbuilderから生成される。
@@ -68,6 +69,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       child: OnlineRecoveryNotification(
         child: Column(
           children: [
+            // 音量 0 の警告は一番上に置く。ステータスバーの分の余白は
+            // _StatusBarArea が引き受けるので、帯の側では持たない
+            const VolumeWarningBanner(),
             const PersistenceBanner(),
             const TtsFailureBanner(),
             const OfflineBanner(),
@@ -90,7 +94,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
 /// ステータスバーの分の余白を、シェルが引き受ける
 ///
-/// 帯（保存できない・読み上げ失敗・オフライン・オンライン復帰）は各画面の
+/// 帯（音量 0・保存できない・読み上げ失敗・オフライン・オンライン復帰）は各画面の
 /// Scaffold より外に置くので、そのままでは画面の一番上、OS のステータスバーの
 /// 裏に描かれ、文頭が時計・日付と重なって読めなかった（iPad で確かめた）。
 /// シェルの一番上にステータスバーの高さの帯を画面の背景色で敷き、その下に

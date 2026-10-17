@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from pydantic import BaseModel, Field, field_validator
 
 from app.ai.prompts import PolitenessLevel
@@ -9,6 +11,11 @@ from app.ai.prompts import PolitenessLevel
 INPUT_TEXT_MIN_LENGTH = 2
 INPUT_TEXT_MAX_LENGTH = 500
 PREVIOUS_RESULT_MAX_LENGTH = 1000
+
+# 本文の上限（バイト）。超えたら読むのをやめて 413。正当な最大は再変換の
+# (500 + 1000) 文字 × 最悪の符号化 12 バイト（サロゲート対の \u エスケープ）＋ キー名など ≒ 18 KB。
+# アプリ（Dart の jsonEncode）は UTF-8 のまま送るので実際は 6 KB 前後。その 3 倍超の余裕を持たせる
+REQUEST_BODY_MAX_BYTES: Final = 64 * 1024
 
 
 def _required_trimmed(value: object, *, required: str, empty: str) -> str:

@@ -65,6 +65,16 @@ def test_different_sources_are_independent(
     assert client.post(CONVERT, json=BODY, headers=_headers(fresh_ip())).status_code == 200
 
 
+def test_addresses_in_one_ipv6_slash64_share_one_counter(
+    client: TestClient, provider_http: respx.MockRouter
+) -> None:
+    """IPv6 は /64（1 回線）ごとに数える。アドレスを変えても枠は増えない。"""
+    first = client.post(CONVERT, json=BODY, headers=_headers("2001:db8:c0de:1::1"))
+    second = client.post(CONVERT, json=BODY, headers=_headers("2001:db8:c0de:1::2"))
+    other = client.post(CONVERT, json=BODY, headers=_headers("2001:db8:c0de:2::1"))
+    assert (first.status_code, second.status_code, other.status_code) == (200, 429, 200)
+
+
 def test_rightmost_trusted_hop_is_used_not_leftmost(
     client: TestClient, provider_http: respx.MockRouter
 ) -> None:

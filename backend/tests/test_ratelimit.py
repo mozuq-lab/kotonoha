@@ -34,6 +34,31 @@ def test_client_identifier(xff: str | None, host: str | None, count: int, expect
     )
 
 
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        # IPv6 は /64（1 回線）を 1 つの送信元として数える。アドレスを変えても同じ枠
+        ("2001:db8:1:2::1", "2001:db8:1:2::/64"),
+        ("2001:db8:1:2:ffff:ffff:ffff:ffff", "2001:db8:1:2::/64"),
+        ("2001:DB8:1:2:0:0:0:9", "2001:db8:1:2::/64"),  # 表記の揺れも同じ枠
+        ("2001:db8:1:3::1", "2001:db8:1:3::/64"),  # 隣の /64 は別の枠
+        # IPv4 と、IPv4 射影の IPv6 は IPv4 のまま
+        ("203.0.113.7", "203.0.113.7"),
+        ("::ffff:203.0.113.7", "203.0.113.7"),
+        # アドレスとして読めない値は、今までどおり文字列のまま使う
+        ("spoof", "spoof"),
+        ("203.0.113.7:443", "203.0.113.7:443"),
+        ("[2001:db8::1]:443", "[2001:db8::1]:443"),
+    ],
+)
+def test_client_identifier_groups_ipv6_by_64(source: str, expected: str) -> None:
+    from_xff = client_identifier(
+        forwarded_for=source, client_host="10.0.0.1", trusted_proxy_count=1
+    )
+    from_peer = client_identifier(forwarded_for=None, client_host=source, trusted_proxy_count=0)
+    assert (from_xff, from_peer) == (expected, expected)
+
+
 def _client(limiter: RateLimiter) -> TestClient:
     app = FastAPI()
 
@@ -82,6 +107,25 @@ def test_times_greater_than_one() -> None:
     client = _client(RateLimiter(times=2, seconds=5, trusted_proxy_count=1))
     headers = {"X-Forwarded-For": "8.8.8.8"}
     assert [client.get("/a", headers=headers).status_code for _ in range(3)] == [200, 200, 429]
+
+
+def test_addresses_in_one_ipv6_slash64_share_one_limit() -> None:
+    """1 回線（/64）の持ち主がアドレスを変えるだけで枠を増やせないこと。"""
+    client = _client(RateLimiter(times=1, seconds=60, trusted_proxy_count=1))
+    statuses = [
+        client.get("/a", headers={"X-Forwarded-For": ip}).status_code
+        for ip in ("2001:db8:a:c::1", "2001:db8:a:c::2", "2001:db8:a:c:1234:5678:9abc:def0")
+    ]
+    other_network = client.get("/a", headers={"X-Forwarded-For": "2001:db8:a:d::1"})
+    assert statuses == [200, 429, 429]
+    assert other_network.status_code == 200
+
+
+def test_ipv4_mapped_ipv6_shares_the_ipv4_limit() -> None:
+    client = _client(RateLimiter(times=1, seconds=60, trusted_proxy_count=1))
+    first = client.get("/a", headers={"X-Forwarded-For": "198.51.100.9"})
+    second = client.get("/a", headers={"X-Forwarded-For": "::ffff:198.51.100.9"})
+    assert [first.status_code, second.status_code] == [200, 429]
 
 
 def test_multiple_xff_header_lines_do_not_bypass_rate_limit() -> None:
