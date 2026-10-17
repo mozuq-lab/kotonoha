@@ -8,4 +8,4 @@ app_identifier("com.mozuq-lab.kotonoha")
 # team_id("ABCD1234XY") # Developer Portal Team ID
 
 # For Google Play, create a separate Appfile in android/fastlane/
-# package_name("com.kotonoha.kotonoha_app")
+# package_name("com.mozuq_lab.kotonoha")

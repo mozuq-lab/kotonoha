@@ -1,4 +1,4 @@
-package com.kotonoha.kotonoha_app
+package com.mozuq_lab.kotonoha
 
 import io.flutter.embedding.android.FlutterActivity
 
