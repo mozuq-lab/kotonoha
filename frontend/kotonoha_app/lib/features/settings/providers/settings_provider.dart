@@ -184,17 +184,20 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
     state = AsyncValue.data(currentSettings.copyWith(ttsSpeed: speed));
 
-    try {
-      final ttsNotifier = ref.read(ttsProvider.notifier);
-      await ttsNotifier.setSpeed(speed);
-    } catch (e) {
-      // TTS反映に失敗しても、設定状態と保存処理は継続する。
-    }
-
+    // 保存はエンジンへの反映より先に行い、反映を待たない。Android でエンジンの
+    // 初期化の知らせが来ない端末では反映（setSpeechRate）が返らず、待つと保存に
+    // 届かないまま、失敗も告げずに速さが失われる（守る約束 ①、ADR-005）。
     await _persist(
       'tts_speed',
       (prefs) => prefs.setString('tts_speed', speed.name),
     );
+
+    if (!ref.mounted) return;
+    try {
+      await ref.read(ttsProvider.notifier).setSpeed(speed);
+    } catch (e) {
+      // TTS反映に失敗しても、設定状態と保存は保つ。
+    }
   }
 
   Future<void> setAIPoliteness(PolitenessLevel level) async {
