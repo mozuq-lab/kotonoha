@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kotonoha_app/core/widgets/persistence_banner.dart';
@@ -63,14 +64,16 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final tutorialState = ref.watch(tutorialProvider);
-    final screenContent = OnlineRecoveryNotification(
-      child: Column(
-        children: [
-          const PersistenceBanner(),
-          const TtsFailureBanner(),
-          const OfflineBanner(),
-          Expanded(child: widget.child),
-        ],
+    final screenContent = _StatusBarArea(
+      child: OnlineRecoveryNotification(
+        child: Column(
+          children: [
+            const PersistenceBanner(),
+            const TtsFailureBanner(),
+            const OfflineBanner(),
+            Expanded(child: widget.child),
+          ],
+        ),
       ),
     );
 
@@ -82,5 +85,55 @@ class _AppShellState extends ConsumerState<AppShell> {
             child: screenContent,
           )
         : screenContent;
+  }
+}
+
+/// ステータスバーの分の余白を、シェルが引き受ける
+///
+/// 帯（保存できない・読み上げ失敗・オフライン・オンライン復帰）は各画面の
+/// Scaffold より外に置くので、そのままでは画面の一番上、OS のステータスバーの
+/// 裏に描かれ、文頭が時計・日付と重なって読めなかった（iPad で確かめた）。
+/// シェルの一番上にステータスバーの高さの帯を画面の背景色で敷き、その下に
+/// 帯と画面を置く。画面からは上の余白を外すので、AppBar の位置は今までと同じ
+/// （全テーマで AppBar の背景色は画面の背景色と同じ。`app_visual_theme.dart`）。
+/// ステータスバーの文字色は、今まで AppBar が決めていたのと同じく背景の明るさで決める。
+class _StatusBarArea extends StatelessWidget {
+  const _StatusBarArea({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final background = Theme.of(context).scaffoldBackgroundColor;
+    final dark =
+        ThemeData.estimateBrightnessForColor(background) == Brightness.dark;
+    return Column(
+      children: [
+        AnnotatedRegion<SystemUiOverlayStyle>(
+          // ステータスバーの項目だけを決める。SystemUiOverlayStyle.light / .dark を
+          // そのまま使うと、Android のナビゲーションバーまで黒にする（AppBar も
+          // ナビゲーションバーの項目には触れない）
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+            statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+          ),
+          child: ColoredBox(
+            color: background,
+            child: SizedBox(
+              width: double.infinity,
+              height: MediaQuery.paddingOf(context).top,
+            ),
+          ),
+        ),
+        Expanded(
+          child: MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            child: child,
+          ),
+        ),
+      ],
+    );
   }
 }

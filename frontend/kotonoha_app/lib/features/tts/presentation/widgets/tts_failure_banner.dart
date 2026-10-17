@@ -17,21 +17,28 @@ class TtsFailureBanner extends ConsumerWidget {
   /// 帯を作る
   const TtsFailureBanner({super.key});
 
-  /// 帯の文言
+  /// 帯の文言（押して読み上げられなかったとき）
   static const message = '読み上げできませんでした。もう一度押すか、端末の読み上げの設定を確かめてください';
+
+  /// 帯の文言（起動時に読み上げを準備できなかったとき。まだ押していない）
+  /// 続きの案内は `docs/user-guide/troubleshooting.md` の「TTS（音声合成）が
+  /// 正しく設定されていない」に合わせる。押せば準備をやり直すので、押す案内は書かない。
+  static const startupMessage =
+      '読み上げを準備できませんでした。端末の読み上げの設定で、日本語の声が使えるか確かめてください';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final failed =
-        ref.watch(ttsProvider.select((s) => s.state)) == TTSState.error;
+    final (failed, atStartup) = ref.watch(ttsProvider
+        .select((s) => (s.state == TTSState.error, s.failedAtStartup)));
     if (!failed) return const SizedBox.shrink();
+    final text = atStartup ? startupMessage : message;
 
     // 配色は保存の一部失敗の帯と同じ（コントラスト比は検証済み）
     final colors = recoverableBannerColors();
     // liveRegion: 出た時点で支援技術に読み上げさせる。
     // Material で包む理由は OfflineBanner と同じ（Scaffold の外に置くため）。
     return Semantics(
-      label: message,
+      label: text,
       liveRegion: true,
       container: true,
       excludeSemantics: true,
@@ -47,7 +54,7 @@ class TtsFailureBanner extends ConsumerWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  message,
+                  text,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: colors.foreground, fontSize: 14),
                 ),

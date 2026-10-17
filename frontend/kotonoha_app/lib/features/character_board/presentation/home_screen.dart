@@ -42,6 +42,7 @@ import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
 import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
+import 'package:kotonoha_app/shared/widgets/debounced_taps.dart';
 
 /// コンパクト2ペインの幅の配分（左: 操作UI 2 / 右: 文字盤 3）
 /// 2ペインにできるかの判定と実際のレイアウトで同じ値を使う。
@@ -532,108 +533,114 @@ class HomeScreen extends ConsumerWidget {
     if (shortcuts.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: gutter),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final count = shortcuts.length;
-          final textSize = switch (fontSize) {
-            FontSize.small => AppSizes.fontSizeSmall,
-            FontSize.medium => AppSizes.fontSizeMedium,
-            FontSize.large => AppSizes.fontSizeLarge,
-          };
-          final textScaler = MediaQuery.textScalerOf(context);
-          final scaledText = textScaler.scale(textSize);
-          final minWidth = (scaledText * (scaledText > 26 ? 3 : 2.4) + 8)
-              .clamp(AppSizes.minTapTarget, double.infinity);
-          bool fits(int columns, double minWidth) =>
-              constraints.maxWidth >= columns * minWidth + (columns - 1) * gap;
-          // ボタンの文字と同じ形（字間なし・太字）で測る
-          final labelStyle =
-              TextStyle(fontSize: textSize, fontWeight: FontWeight.bold);
-          double oneLineWidth(String content) {
-            final painter = TextPainter(
-              text: TextSpan(text: content, style: labelStyle),
-              textDirection: TextDirection.ltr,
-              textScaler: textScaler,
-              maxLines: 1,
-            )..layout();
-            // ボタンの左右の余白（4 ずつ）と、端数の分の余裕
-            final width = painter.width + 8 + 1;
-            painter.dispose();
-            return width;
-          }
+      // 大ボタン・定型文と同じく、300ms 以内の連続タップは誤操作として無視する
+      // （二度押しで履歴が 2 件でき、読み上げが頭からやり直しになっていた）
+      child: DebouncedTaps(
+        builder: (context, debounced) => LayoutBuilder(
+          builder: (context, constraints) {
+            final count = shortcuts.length;
+            final textSize = switch (fontSize) {
+              FontSize.small => AppSizes.fontSizeSmall,
+              FontSize.medium => AppSizes.fontSizeMedium,
+              FontSize.large => AppSizes.fontSizeLarge,
+            };
+            final textScaler = MediaQuery.textScalerOf(context);
+            final scaledText = textScaler.scale(textSize);
+            final minWidth = (scaledText * (scaledText > 26 ? 3 : 2.4) + 8)
+                .clamp(AppSizes.minTapTarget, double.infinity);
+            bool fits(int columns, double minWidth) =>
+                constraints.maxWidth >=
+                columns * minWidth + (columns - 1) * gap;
+            // ボタンの文字と同じ形（字間なし・太字）で測る
+            final labelStyle =
+                TextStyle(fontSize: textSize, fontWeight: FontWeight.bold);
+            double oneLineWidth(String content) {
+              final painter = TextPainter(
+                text: TextSpan(text: content, style: labelStyle),
+                textDirection: TextDirection.ltr,
+                textScaler: textScaler,
+                maxLines: 1,
+              )..layout();
+              // ボタンの左右の余白（4 ずつ）と、端数の分の余裕
+              final width = painter.width + 8 + 1;
+              painter.dispose();
+              return width;
+            }
 
-          // 3 文字までの名前は 1 行で見せたい。2 行に折ると「トイ／レ」の
-          // ように語の途中で切れて読みにくい。
-          final shortWidth = shortcuts
-              .where((favorite) => favorite.content.characters.length <= 3)
-              .map((favorite) => oneLineWidth(favorite.content))
-              .fold(0.0, (a, b) => a > b ? a : b);
-          double buttonWidth(int columns) =>
-              (constraints.maxWidth - (columns - 1) * gap) / columns;
-          // 2ペインの狭い左ペインでも1個44px以上を保つよう、列を減らす。
-          // 短い名前が 1 行に収まる列数を優先し、無ければ 2 行にする。
-          final candidates = [
-            count,
-            if (count > 4) 4,
-            if (count > 2) 2,
-            1,
-          ];
-          final columns = candidates.firstWhere(
-            (c) => fits(c, minWidth) && shortWidth <= buttonWidth(c),
-            orElse: () => candidates.firstWhere(
-              (c) => fits(c, minWidth),
-              orElse: () => 1,
-            ),
-          );
-          final needsTwoLines = scaledText > 26 ||
-              shortcuts.any((favorite) =>
-                  favorite.content.characters.length > 3 ||
-                  oneLineWidth(favorite.content) > buttonWidth(columns));
-          final height = (scaledText * (needsTwoLines ? 2.4 : 1.4) + 12).clamp(
-              compact ? 48.0 : AppSizes.recommendedTapTarget, double.infinity);
-          Widget button(Favorite favorite) => Expanded(
-                child: FavoriteShortcutButton(
-                  favorite: favorite,
-                  height: height,
-                  fontSize: fontSize,
-                  onPressed: () {
-                    ref.read(ttsProvider.notifier).speak(favorite.content);
-                    _saveToHistory(
-                      ref,
-                      favorite.content,
-                      HistoryType.quickButton,
-                    );
-                  },
-                ),
-              );
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.only(bottom: AppSizes.paddingXSmall),
-                  child: Text('お気に入り',
-                      style: Theme.of(context).textTheme.labelLarge),
-                ),
+            // 3 文字までの名前は 1 行で見せたい。2 行に折ると「トイ／レ」の
+            // ように語の途中で切れて読みにくい。
+            final shortWidth = shortcuts
+                .where((favorite) => favorite.content.characters.length <= 3)
+                .map((favorite) => oneLineWidth(favorite.content))
+                .fold(0.0, (a, b) => a > b ? a : b);
+            double buttonWidth(int columns) =>
+                (constraints.maxWidth - (columns - 1) * gap) / columns;
+            // 2ペインの狭い左ペインでも1個44px以上を保つよう、列を減らす。
+            // 短い名前が 1 行に収まる列数を優先し、無ければ 2 行にする。
+            final candidates = [
+              count,
+              if (count > 4) 4,
+              if (count > 2) 2,
+              1,
+            ];
+            final columns = candidates.firstWhere(
+              (c) => fits(c, minWidth) && shortWidth <= buttonWidth(c),
+              orElse: () => candidates.firstWhere(
+                (c) => fits(c, minWidth),
+                orElse: () => 1,
               ),
-              for (var start = 0; start < count; start += columns) ...[
-                if (start > 0) const SizedBox(height: gap),
-                Row(
-                  children: [
-                    for (var i = start;
-                        i < start + columns && i < count;
-                        i++) ...[
-                      if (i > start) const SizedBox(width: gap),
-                      button(shortcuts[i]),
-                    ],
-                  ],
+            );
+            final needsTwoLines = scaledText > 26 ||
+                shortcuts.any((favorite) =>
+                    favorite.content.characters.length > 3 ||
+                    oneLineWidth(favorite.content) > buttonWidth(columns));
+            final height = (scaledText * (needsTwoLines ? 2.4 : 1.4) + 12)
+                .clamp(compact ? 48.0 : AppSizes.recommendedTapTarget,
+                    double.infinity);
+            Widget button(Favorite favorite) => Expanded(
+                  child: FavoriteShortcutButton(
+                    favorite: favorite,
+                    height: height,
+                    fontSize: fontSize,
+                    onPressed: debounced(() {
+                      ref.read(ttsProvider.notifier).speak(favorite.content);
+                      _saveToHistory(
+                        ref,
+                        favorite.content,
+                        HistoryType.quickButton,
+                      );
+                    }),
+                  ),
+                );
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.only(bottom: AppSizes.paddingXSmall),
+                    child: Text('お気に入り',
+                        style: Theme.of(context).textTheme.labelLarge),
+                  ),
                 ),
+                for (var start = 0; start < count; start += columns) ...[
+                  if (start > 0) const SizedBox(height: gap),
+                  Row(
+                    children: [
+                      for (var i = start;
+                          i < start + columns && i < count;
+                          i++) ...[
+                        if (i > start) const SizedBox(width: gap),
+                        button(shortcuts[i]),
+                      ],
+                    ],
+                  ),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
