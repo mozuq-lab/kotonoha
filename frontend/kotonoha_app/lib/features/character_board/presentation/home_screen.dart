@@ -35,11 +35,8 @@ import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/features/simple_mode/presentation/simple_mode_view.dart';
-import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
-import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_widget.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
-import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
 import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
 
@@ -102,18 +99,7 @@ class HomeScreen extends ConsumerWidget {
     final aiPoliteness = settings?.aiPoliteness ?? PolitenessLevel.normal;
     final simpleMode = settings?.simpleMode ?? false;
 
-    // 音量ゼロ警告の配線: tts_button.dart自体は変更せず
-    // グローバルなttsProviderの状態遷移(非speaking -> speaking)を横断的に
-    // 監視することで、どのボタン（クイック応答・状態ボタン・読み上げボタン等）
-    // から読み上げが開始されても音量チェックが行われるようにする。
-    ref.listen<TTSServiceState>(ttsProvider, (previous, next) {
-      final wasSpeaking = previous?.state == TTSState.speaking;
-      final isSpeaking = next.state == TTSState.speaking;
-      if (!wasSpeaking && isSpeaking) {
-        ref.read(volumeWarningProvider.notifier).checkVolumeBeforeSpeak();
-      }
-    });
-    final showVolumeWarning = ref.watch(volumeWarningProvider).showWarning;
+    // 音量 0 の警告は AppShell の VolumeWarningBanner が全画面で出す（EDGE-202）
     final showAppName =
         MediaQuery.sizeOf(context).width >= AppSizes.phoneMaxWidth;
     // キーボードが出て本文から減った高さ。Scaffold の本文の中ではキーボードが
@@ -197,14 +183,6 @@ class HomeScreen extends ConsumerWidget {
                 body: SafeArea(
                   child: Column(
                     children: [
-                      // 音量0警告: 警告不要時はSizedBox.shrinkで高さ0のため
-                      // 既存レイアウトへの影響はない。シンプルモード中も表示する。
-                      VolumeWarningWidget(
-                        isVisible: showVolumeWarning,
-                        onDismiss: () => ref
-                            .read(volumeWarningProvider.notifier)
-                            .dismissWarning(),
-                      ),
                       Expanded(
                         child: simpleMode
                             ? _buildSimpleModeContent(ref, fontSize: fontSize)

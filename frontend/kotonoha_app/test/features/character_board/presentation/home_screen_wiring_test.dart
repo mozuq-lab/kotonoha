@@ -22,7 +22,6 @@ import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart'
 import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
 import 'package:kotonoha_app/features/tts/domain/services/volume_service.dart';
-import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_widget.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
 
@@ -246,72 +245,6 @@ void main() {
         reason: 'クイック応答由来の履歴は「文字盤入力」ではなくHistoryType.quickButton'
             '（大ボタン）である必要がある',
       );
-    });
-  });
-
-  group('音量ゼロ警告のTTS側配線', () {
-    testWidgets('音量が0の状態で読み上げを実行すると警告が表示される', (tester) async {
-      final container = await buildContainer(volume: 0.0);
-      addTearDown(container.dispose);
-
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(home: HomeScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // 警告はまだ表示されていない
-      expect(find.text('音量が0です'), findsNothing);
-
-      // クイック応答ボタンをタップして読み上げを実行する
-      await tester.tap(find.text('はい'));
-      await tester.pumpAndSettle();
-
-      // 音量0のため警告が表示される
-      expect(find.byType(VolumeWarningWidget), findsOneWidget);
-      expect(find.text('音量が0です'), findsOneWidget);
-    });
-
-    testWidgets('音量が正常な場合は読み上げを実行しても警告が表示されない', (tester) async {
-      final container = await buildContainer(volume: 0.5);
-      addTearDown(container.dispose);
-
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(home: HomeScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('はい'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('音量が0です'), findsNothing);
-    });
-
-    testWidgets('警告表示中に閉じるボタンをタップすると警告が消える', (tester) async {
-      final container = await buildContainer(volume: 0.0);
-      addTearDown(container.dispose);
-
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(home: HomeScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('はい'));
-      await tester.pumpAndSettle();
-      expect(find.text('音量が0です'), findsOneWidget);
-
-      await tester.tap(find.byIcon(Icons.close));
-      await tester.pumpAndSettle();
-
-      expect(find.text('音量が0です'), findsNothing);
     });
   });
 

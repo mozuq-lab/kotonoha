@@ -13,6 +13,7 @@ import 'package:kotonoha_app/features/network/presentation/widgets/offline_banne
 import 'package:kotonoha_app/features/network/presentation/widgets/online_recovery_notification.dart';
 import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_failure_banner.dart';
+import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_banner.dart';
 
 /// 全画面共通シェルウィジェット。
 /// ShellRouteのbuilderから生成される。
@@ -64,13 +65,16 @@ class _AppShellState extends ConsumerState<AppShell> {
   Widget build(BuildContext context) {
     final tutorialState = ref.watch(tutorialProvider);
     final screenContent = OnlineRecoveryNotification(
-      child: Column(
-        children: [
-          const PersistenceBanner(),
-          const TtsFailureBanner(),
-          const OfflineBanner(),
-          Expanded(child: widget.child),
-        ],
+      // 音量 0 の警告は一番上に置き、出ている間はステータスバーの分の余白を引き受ける
+      child: VolumeWarningBanner(
+        child: Column(
+          children: [
+            const PersistenceBanner(),
+            const TtsFailureBanner(),
+            const OfflineBanner(),
+            Expanded(child: widget.child),
+          ],
+        ),
       ),
     );
 
