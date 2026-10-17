@@ -39,7 +39,7 @@ uvicorn は `--no-proxy-headers` で起動し、XFF の解釈は `backend/app/ra
 ## 限界
 
 同一コンテナ内の worker>1 は起動ガードで落ちるが、**replica は検出できない**（single-worker × 2 replica は素通し）。
-アプリに埋め込んだ共通キーは取り出され得て、取り出した第三者は多数の IP から AI Gateway 全体の上限を使い切り、全利用者の AI 変換を止められる。これを受け入れる（2026-10-17、mozuq が決定。費用は支出上限で頭打ちになり、止まるのは AI 変換だけでオフラインの機能には及ばない。IP ごとの制限は総量を縛らない。WAF は `workers.dev` に付けられず、Worker の Rate Limiting バインディングは拠点ごとで IP をキーにすることを勧めていないので採らない）。
+アプリに埋め込んだ共通キーは取り出され得て、取り出した第三者は多数の IP から AI Gateway 全体の上限を使い切り、全利用者の AI 変換を止められる。これを受け入れる（2026-10-17、mozuq が決定。費用は支出上限で頭打ちになり、止まるのは AI 変換だけでオフラインの機能には及ばない。IP ごとの制限は総量を縛らない。WAF はゾーン単位の設定で `workers.dev` には付けられないと見込み（公式文書に明記は無い）、Worker の Rate Limiting バインディングは拠点ごとで IP をキーにすることを勧めていないので採らない）。
 `TRUSTED_PROXY_COUNT` の過大設定はフェイルクローズにならず、クライアントが `X-Forwarded-For` に値を詰めて自分の識別子を選べる（`.env.example` 参照）。
 守りはデプロイ側の契約——インスタンスを 1 つに固定し、上流で受信 XFF を上書きする——で、backend のコードでは守れない。Cloudflare Containers では `deploy/cloudflare/wrangler.jsonc` の `max_instances: 1` と名前で 1 つに固定する Worker、Worker が受信 XFF を捨てて `CF-Connecting-IP` で上書きし `TRUSTED_PROXY_COUNT=1` を渡す処理（`deploy/cloudflare/src/index.ts`）が担う。
 
