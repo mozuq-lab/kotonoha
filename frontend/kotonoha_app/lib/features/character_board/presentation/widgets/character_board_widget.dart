@@ -354,7 +354,11 @@ class CharacterButton extends StatelessWidget {
                   // 大きくして中央へ寄せる
                   final isMark = CharacterData.isDakutenKey(character) ||
                       CharacterData.isHandakutenKey(character);
-                  final label = Text(
+                  // 読み上げは外側の Semantics の名前だけにする。描いた文字も
+                  // 読ませると名前に合流し「あ、あ、ボタン」と 2 回読まれる
+                  // （物理 iPad の VoiceOver、2026-10-17）
+                  final label = ExcludeSemantics(
+                      child: Text(
                     displayLabel ?? character,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontSize: isMark ? size * 1.5 : size,
@@ -362,7 +366,7 @@ class CharacterButton extends StatelessWidget {
                           ? theme.colorScheme.onSurface
                           : theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
-                  );
+                  ));
                   return FittedBox(
                     fit: BoxFit.scaleDown,
                     child: isMark

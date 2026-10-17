@@ -185,64 +185,60 @@ class _QuickResponseButtonState extends State<QuickResponseButton>
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: _label,
-      button: true,
-      child: SizedBox(
-        width: widget.width != null ? _effectiveWidth : null,
-        height: _effectiveHeight,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: _effectiveWidth,
-            minHeight: _effectiveHeight,
+    // 読み上げの名前は中の文字（_label）から付く。外にも Semantics を重ねると、
+    // ボタン自身の項目と別に同じ名前の項目ができ、2 回読まれる
+    return SizedBox(
+      width: widget.width != null ? _effectiveWidth : null,
+      height: _effectiveHeight,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: _effectiveWidth,
+          minHeight: _effectiveHeight,
+        ),
+        child: ElevatedButton(
+          onPressed: widget.onPressed != null ? _handleTap : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _backgroundColor,
+            foregroundColor: _textColor,
+            side: widget.borderColor == null
+                ? null
+                : BorderSide(color: widget.borderColor!),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.paddingMedium,
+              vertical: AppSizes.paddingSmall,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+            ),
           ),
-          child: ElevatedButton(
-            onPressed: widget.onPressed != null ? _handleTap : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _backgroundColor,
-              foregroundColor: _textColor,
-              side: widget.borderColor == null
-                  ? null
-                  : BorderSide(color: widget.borderColor!),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.paddingMedium,
-                vertical: AppSizes.paddingSmall,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(AppSizes.borderRadiusMedium),
-              ),
-            ),
-            // スマホ幅対応: 「わからない」等ラベルが長い場合、狭い幅
-            // （スマホ幅でExpanded/Padding経由で圧縮される）で折り返し
-            // クリップが発生しないよう、FittedBox(scaleDown)+maxLines:1で
-            // 縮小表示する。status_button.dartの対策と同方式。
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (widget.showIcon) ...[
-                  Icon(
-                      switch (widget.responseType) {
-                        QuickResponseType.yes =>
-                          CupertinoIcons.checkmark_circle,
-                        QuickResponseType.no => CupertinoIcons.xmark,
-                        QuickResponseType.unknown =>
-                          CupertinoIcons.question_circle,
-                      },
-                      size: _labelSize),
-                  const SizedBox(width: 8),
-                ],
-                Text(
-                  _label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: _labelSize,
-                    fontWeight: FontWeight.bold,
-                  ),
+          // スマホ幅対応: 「わからない」等ラベルが長い場合、狭い幅
+          // （スマホ幅でExpanded/Padding経由で圧縮される）で折り返し
+          // クリップが発生しないよう、FittedBox(scaleDown)+maxLines:1で
+          // 縮小表示する。status_button.dartの対策と同方式。
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              if (widget.showIcon) ...[
+                Icon(
+                    switch (widget.responseType) {
+                      QuickResponseType.yes => CupertinoIcons.checkmark_circle,
+                      QuickResponseType.no => CupertinoIcons.xmark,
+                      QuickResponseType.unknown =>
+                        CupertinoIcons.question_circle,
+                    },
+                    size: _labelSize),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                _label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: _labelSize,
+                  fontWeight: FontWeight.bold,
                 ),
-              ]),
-            ),
+              ),
+            ]),
           ),
         ),
       ),

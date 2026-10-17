@@ -116,20 +116,18 @@ class SimpleModeView extends StatelessWidget {
     );
   }
 
+  // 読み上げの名前は中の文字から付く。外にも Semantics を重ねると、
+  // ボタン自身の項目と別に同じ名前の項目ができ、2 回読まれる
   Widget _buildExitButton() {
-    return Semantics(
-      button: true,
-      label: '通常モードに戻る',
-      child: SizedBox(
-        height: AppSizes.recommendedTapTarget,
-        child: ElevatedButton.icon(
-          key: const Key('exit_simple_mode_button'),
-          onPressed: onExitSimpleMode,
-          icon: const Icon(CupertinoIcons.keyboard),
-          label: const Text(
-            '通常モードに戻る',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+    return SizedBox(
+      height: AppSizes.recommendedTapTarget,
+      child: ElevatedButton.icon(
+        key: const Key('exit_simple_mode_button'),
+        onPressed: onExitSimpleMode,
+        icon: const Icon(CupertinoIcons.keyboard),
+        label: const Text(
+          '通常モードに戻る',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -190,34 +188,30 @@ class _FavoriteGridButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: favorite.content,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              favoriteBackground(favorite, Theme.of(context).colorScheme),
-          foregroundColor:
-              favoriteForeground(favorite, Theme.of(context).colorScheme),
-          side: favoriteBorder(favorite, Theme.of(context).colorScheme),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-          ),
+    // 読み上げの名前は中の文字から付く（外に Semantics を重ねると 2 回読まれる）
+    return ElevatedButton(
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor:
+            favoriteBackground(favorite, Theme.of(context).colorScheme),
+        foregroundColor:
+            favoriteForeground(favorite, Theme.of(context).colorScheme),
+        side: favoriteBorder(favorite, Theme.of(context).colorScheme),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
         ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            favorite.content,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            // 文字はボタンの高さに合わせて大きくする（設定の大きさが下限）
-            style: TextStyle(
-              fontSize: height * 0.26 > _fontSizeValue
-                  ? height * 0.26
-                  : _fontSizeValue,
-            ),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          favorite.content,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          // 文字はボタンの高さに合わせて大きくする（設定の大きさが下限）
+          style: TextStyle(
+            fontSize:
+                height * 0.26 > _fontSizeValue ? height * 0.26 : _fontSizeValue,
           ),
         ),
       ),

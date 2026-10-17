@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/utils/spoken_label.dart';
 import '../../../network/domain/models/network_state.dart';
 import '../../../network/providers/network_provider.dart';
 import '../../domain/models/politeness_level.dart';
@@ -166,27 +167,27 @@ class _AIConversionButtonState extends ConsumerState<AIConversionButton> {
     // UI構築: AI変換ボタン
     // 無効な理由（オフライン）は、並びを崩さないよう呼び出し側が
     // [OfflineIndicator] を別の行に置く。
-    return Semantics(
-      // アクセシビリティ: スクリーンリーダー用ラベル
-      label: _isLoading ? 'AI変換中' : 'AI変換ボタン',
-      button: true,
-      enabled: isEnabled,
-      child: SizedBox(
-        // アクセシビリティ対応: 最小タップターゲットサイズを保証
-        height: widget.height < kMinTapTargetSize
-            ? kMinTapTargetSize
-            : widget.height,
-        child: ElevatedButton(
-          // タップ処理: 有効時のみ変換を実行
-          onPressed: isEnabled ? _executeConversion : null,
-          // 隣に並ぶ削除・読み上げボタンと同じ角丸・配色にそろえる。
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            foregroundColor: Theme.of(context).colorScheme.primary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-            ),
+    return SizedBox(
+      // アクセシビリティ対応: 最小タップターゲットサイズを保証
+      height:
+          widget.height < kMinTapTargetSize ? kMinTapTargetSize : widget.height,
+      child: ElevatedButton(
+        // タップ処理: 有効時のみ変換を実行
+        onPressed: isEnabled ? _executeConversion : null,
+        // 隣に並ぶ削除・読み上げボタンと同じ角丸・配色にそろえる。
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          foregroundColor: Theme.of(context).colorScheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           ),
+        ),
+        // 読み上げの名前はボタンの中で付け、中の文字は読ませない。外に Semantics を
+        // 重ねると、ボタン自身の項目と別に同じ名前の項目ができ、2 回読まれる。
+        // 名前に「ボタン」を含めない（VoiceOver が「…ボタン、ボタン」と読む）
+        child: Semantics(
+          label: spokenLabel(_isLoading ? 'AI変換中' : 'AI変換'),
+          excludeSemantics: true,
           child: _isLoading
               // ローディング表示: 変換中はインジケーターを表示
               ? const SizedBox(
@@ -231,7 +232,9 @@ class OfflineIndicator extends ConsumerWidget {
     // UI構築: オフライン状態表示
     return Semantics(
       // アクセシビリティ: スクリーンリーダー用ラベル
-      label: 'オフライン状態です。AI変換機能は利用できません。',
+      label: spokenLabel('オフライン状態です。AI変換機能は利用できません。'),
+      // 中の「オフライン」も読ませると、名前に続けて読まれる
+      excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(

@@ -28,33 +28,31 @@ class FavoriteShortcutButton extends StatelessWidget {
       FontSize.large => AppSizes.fontSizeLarge,
     };
     final background = favoriteBackground(favorite, scheme);
+    // 読み上げの名前は中の文字から付く。外に Semantics やツールチップの読み上げを
+    // 重ねると、同じ文が 2 回読まれる（ツールチップは長押しで全文を見せるためだけ）
     return Tooltip(
       message: favorite.content,
-      child: Semantics(
-        button: true,
-        label: favorite.content,
-        child: SizedBox(
-          height: height,
-          child: ElevatedButton(
-            key: Key('home_favorite_${favorite.id}'),
-            onPressed: onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: background,
-              foregroundColor: favoriteForeground(favorite, scheme),
-              side: favoriteBorder(favorite, scheme),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(AppSizes.borderRadiusMedium),
-              ),
+      excludeFromSemantics: true,
+      child: SizedBox(
+        height: height,
+        child: ElevatedButton(
+          key: Key('home_favorite_${favorite.id}'),
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: background,
+            foregroundColor: favoriteForeground(favorite, scheme),
+            side: favoriteBorder(favorite, scheme),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
             ),
-            child: Text(
-              favorite.content,
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: textSize, fontWeight: FontWeight.bold),
-            ),
+          ),
+          child: Text(
+            favorite.content,
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: textSize, fontWeight: FontWeight.bold),
           ),
         ),
       ),

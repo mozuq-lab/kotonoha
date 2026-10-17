@@ -58,11 +58,14 @@ class PhraseListItem extends StatelessWidget {
     final theme = Theme.of(context);
 
     // Semantics設定: スクリーンリーダー対応
-    return Semantics(
-      label: phrase.content,
-      button: true,
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      // 名前は Card の中で付ける。Card は自分で項目を作るので、外に Semantics を
+      // 重ねると名前の項目と押せる項目が別々にでき、文が 2 回読まれる。
+      // 中の文字は名前に含めたので読ませない
+      child: Semantics(
+        label: phrase.content,
+        button: true,
         child: InkWell(
           onTap: onTap,
           child: Container(
@@ -78,12 +81,14 @@ class PhraseListItem extends StatelessWidget {
               children: [
                 // メインコンテンツ: 定型文テキスト
                 Expanded(
-                  child: Text(
-                    phrase.content,
-                    style: theme.textTheme.bodyLarge,
-                    // テキストオーバーフロー: 長いテキストは省略
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      phrase.content,
+                      style: theme.textTheme.bodyLarge,
+                      // テキストオーバーフロー: 長いテキストは省略
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    ),
                   ),
                 ),
                 // お気に入りアイコン: お気に入り状態を表示・切り替え

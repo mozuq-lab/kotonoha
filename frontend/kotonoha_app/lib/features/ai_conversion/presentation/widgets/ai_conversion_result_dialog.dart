@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 import 'package:kotonoha_app/core/constants/app_text_styles.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/exceptions/ai_conversion_exception.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
@@ -249,10 +250,11 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
     final secondaryTextColor = bestContrastingTextColor(secondaryButtonColor);
 
     return Semantics(
-      label: 'AI変換結果ダイアログ',
+      label: spokenLabel('AI変換結果ダイアログ'),
       child: AlertDialog(
         title: Text(
           'AI変換結果',
+          semanticsLabel: spokenLabel('AI変換結果'),
           style: AppTextStyles.headingMedium,
         ),
         content: ConstrainedBox(
@@ -371,6 +373,7 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
             padding: const EdgeInsets.only(top: AppSizes.paddingXSmall),
             child: Text(
               _levelChangeError!,
+              semanticsLabel: spokenLabel(_levelChangeError!),
               style: AppTextStyles.bodySmall.copyWith(
                 color: theme.colorScheme.error,
               ),

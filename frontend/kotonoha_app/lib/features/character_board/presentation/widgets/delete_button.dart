@@ -37,26 +37,27 @@ class DeleteButton extends StatelessWidget {
     final theme = Theme.of(context);
     final side = size < AppSizes.minTapTarget ? AppSizes.minTapTarget : size;
 
-    return Semantics(
-      label: '削除',
-      button: true,
-      enabled: enabled,
-      child: ElevatedButton(
-        onPressed: enabled ? onPressed : null,
-        style: ElevatedButton.styleFrom(
-          minimumSize: Size.square(side),
-          fixedSize: showLabel ? Size.fromHeight(side) : Size.square(side),
-          padding: showLabel
-              ? const EdgeInsets.symmetric(horizontal: 4)
-              : EdgeInsets.zero,
-          backgroundColor: theme.colorScheme.surface,
-          foregroundColor: theme.colorScheme.onSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-          ),
-          disabledBackgroundColor: theme.disabledColor.withValues(alpha: 0.12),
-          disabledForegroundColor: theme.disabledColor.withValues(alpha: 0.38),
+    return ElevatedButton(
+      onPressed: enabled ? onPressed : null,
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size.square(side),
+        fixedSize: showLabel ? Size.fromHeight(side) : Size.square(side),
+        padding: showLabel
+            ? const EdgeInsets.symmetric(horizontal: 4)
+            : EdgeInsets.zero,
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
         ),
+        disabledBackgroundColor: theme.disabledColor.withValues(alpha: 0.12),
+        disabledForegroundColor: theme.disabledColor.withValues(alpha: 0.38),
+      ),
+      // 読み上げの名前はボタンの中で付け、中の文字は読ませない。外に Semantics を
+      // 重ねると、ボタン自身の項目と別に同じ名前の項目ができ、2 回読まれる
+      child: Semantics(
+        label: '削除',
+        excludeSemantics: true,
         child: showLabel
             ? const Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(CupertinoIcons.delete_left, size: AppSizes.iconSizeMedium),

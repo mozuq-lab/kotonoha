@@ -64,11 +64,15 @@ class SendToInputButton extends ConsumerWidget {
                 children: [
                   Icon(CupertinoIcons.arrow_right_square,
                       size: AppSizes.iconSizeSmall, color: color),
-                  Text(
-                    '入力欄へ',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 10,
-                      color: color,
+                  // 名前は外側の Semantics で付けた。中の文字も読ませると
+                  // 名前に合流し「入力欄へ、入力欄へ」と 2 回読まれる
+                  ExcludeSemantics(
+                    child: Text(
+                      '入力欄へ',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                        color: color,
+                      ),
                     ),
                   ),
                 ],

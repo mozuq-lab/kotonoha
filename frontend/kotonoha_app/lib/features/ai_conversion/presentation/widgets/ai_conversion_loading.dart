@@ -5,6 +5,7 @@ library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 
 /// ウィジェット定義: AI変換ローディング表示
 /// 3秒超過時にローディングメッセージを表示
@@ -75,7 +76,9 @@ class _AIConversionLoadingState extends State<AIConversionLoading> {
     // 実装内容: CircularProgressIndicatorと、3秒後に「AI変換中...」を表示
     return Semantics(
       // アクセシビリティ: スクリーンリーダー用ラベル
-      label: _showMessage ? 'AI変換処理中。しばらくお待ちください。' : 'AI変換処理中',
+      label: spokenLabel(_showMessage ? 'AI変換処理中。しばらくお待ちください。' : 'AI変換処理中'),
+      // 中の「AI変換中...」も読ませると、名前に続けて読まれる
+      excludeSemantics: true,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,

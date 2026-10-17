@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 
 /// 設定セクションウィジェット
 /// セクションヘッダーと子ウィジェットをまとめて表示する。
@@ -34,6 +35,7 @@ class SettingsSectionWidget extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 8.0),
           child: Text(
             title,
+            semanticsLabel: spokenLabel(title),
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.primary,
