@@ -48,38 +48,39 @@ class ClearAllButton extends StatelessWidget {
     final theme = Theme.of(context);
     final side = size < AppSizes.minTapTarget ? AppSizes.minTapTarget : size;
 
-    return Semantics(
-      label: clearAllButtonSemanticsLabel,
-      button: true,
-      enabled: enabled,
-      child: ElevatedButton(
-        onPressed: enabled ? () => _showConfirmationDialog(context) : null,
-        style: ElevatedButton.styleFrom(
-          minimumSize: Size.square(side),
-          fixedSize: showLabel ? Size.fromHeight(side) : Size.square(side),
-          padding: showLabel
-              ? const EdgeInsets.symmetric(horizontal: 4)
-              : EdgeInsets.zero,
-          backgroundColor: WidgetStateColor.resolveWith(
-            (states) {
-              if (states.contains(WidgetState.disabled)) {
-                return theme.disabledColor.withValues(alpha: 0.12);
-              }
-              return theme.colorScheme.surface;
-            },
-          ),
-          foregroundColor: WidgetStateColor.resolveWith(
-            (states) {
-              if (states.contains(WidgetState.disabled)) {
-                return theme.disabledColor.withValues(alpha: 0.38);
-              }
-              return theme.colorScheme.onSurface;
-            },
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-          ),
+    return ElevatedButton(
+      onPressed: enabled ? () => _showConfirmationDialog(context) : null,
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size.square(side),
+        fixedSize: showLabel ? Size.fromHeight(side) : Size.square(side),
+        padding: showLabel
+            ? const EdgeInsets.symmetric(horizontal: 4)
+            : EdgeInsets.zero,
+        backgroundColor: WidgetStateColor.resolveWith(
+          (states) {
+            if (states.contains(WidgetState.disabled)) {
+              return theme.disabledColor.withValues(alpha: 0.12);
+            }
+            return theme.colorScheme.surface;
+          },
         ),
+        foregroundColor: WidgetStateColor.resolveWith(
+          (states) {
+            if (states.contains(WidgetState.disabled)) {
+              return theme.disabledColor.withValues(alpha: 0.38);
+            }
+            return theme.colorScheme.onSurface;
+          },
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+        ),
+      ),
+      // 読み上げの名前はボタンの中で付け、中の文字は読ませない。外に Semantics を
+      // 重ねると、ボタン自身の項目と別に同じ名前の項目ができ、2 回読まれる
+      child: Semantics(
+        label: clearAllButtonSemanticsLabel,
+        excludeSemantics: true,
         child: showLabel
             ? const Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(CupertinoIcons.trash, size: AppSizes.iconSizeMedium),

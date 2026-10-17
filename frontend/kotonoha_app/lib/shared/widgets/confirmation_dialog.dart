@@ -17,6 +17,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 
 /// ダイアログの並び（間隔とスクロール）
 ///
@@ -162,8 +163,8 @@ class ConfirmationDialog extends StatelessWidget {
     };
 
     return ConfirmationDialogLayout.build(
-      title: Text(title),
-      content: Text(message),
+      title: Text(title, semanticsLabel: spokenLabel(title)),
+      content: Text(message, semanticsLabel: spokenLabel(message)),
       actions: [
         TextButton(
           onPressed: onCancel,

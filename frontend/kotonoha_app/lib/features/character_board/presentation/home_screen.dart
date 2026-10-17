@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/router/app_router.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_theme.dart';
 import 'package:kotonoha_app/features/settings/models/app_theme.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/exceptions/ai_conversion_exception.dart';
@@ -1098,7 +1099,7 @@ class HomeScreen extends ConsumerWidget {
         ? error.message
         : 'AI変換に失敗しました。しばらく待ってから再度お試しください。';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(content: Text(message, semanticsLabel: spokenLabel(message))),
     );
   }
 }

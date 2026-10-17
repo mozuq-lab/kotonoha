@@ -231,8 +231,13 @@ void main() {
         // Then: 結果検証: Semanticsが設定されていることを確認
         // アクセシビリティ対応
         // 品質保証: スクリーンリーダーが適切に読み上げられること
-        final semantics = tester.getSemantics(find.byType(TTSButton));
-        expect(semantics.label, isNotEmpty);
+        // 読み上げの項目はボタン自身の 1 つだけで、名前を 1 回だけ持つ
+        final semantics = tester.getSemantics(find.descendant(
+          of: find.byType(TTSButton),
+          // ElevatedButton.icon は ElevatedButton の派生型を作る
+          matching: find.bySubtype<ElevatedButton>(),
+        ));
+        expect(semantics.label, '読み上げ');
 
         container.dispose();
       });

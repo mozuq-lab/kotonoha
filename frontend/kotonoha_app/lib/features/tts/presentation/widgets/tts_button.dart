@@ -96,41 +96,39 @@ class TTSButton extends ConsumerWidget {
     final icon =
         isSpeaking ? CupertinoIcons.stop_fill : CupertinoIcons.speaker_2;
 
-    return Semantics(
-      label: label,
-      button: true,
-      child: SizedBox(
-        width: width != null ? _effectiveWidth : null,
-        height: _effectiveHeight,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: _effectiveWidth,
-            minHeight: _effectiveHeight,
-          ),
-          // 300ms 以内の連続タップは無視する。押すとすぐ「停止」に変わるので、
-          // 二度押しの 2 回目で読み上げが黙っていた（大ボタン・定型文と同じ扱い）
-          child: DebouncedTaps(
-            builder: (context, debounced) => ElevatedButton.icon(
-              onPressed: debounced(() => _handleTap(ref, isSpeaking)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: backgroundColor,
-                foregroundColor: foregroundColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.paddingSmall,
-                  vertical: AppSizes.paddingXSmall,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppSizes.borderRadiusMedium),
-                ),
+    // 読み上げの名前は中の文字（label）から付く。外にも Semantics を重ねると、
+    // ボタン自身の項目と別に同じ名前の項目ができ、2 回読まれる
+    return SizedBox(
+      width: width != null ? _effectiveWidth : null,
+      height: _effectiveHeight,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: _effectiveWidth,
+          minHeight: _effectiveHeight,
+        ),
+        // 300ms 以内の連続タップは無視する。押すとすぐ「停止」に変わるので、
+        // 二度押しの 2 回目で読み上げが黙っていた（大ボタン・定型文と同じ扱い）
+        child: DebouncedTaps(
+          builder: (context, debounced) => ElevatedButton.icon(
+            onPressed: debounced(() => _handleTap(ref, isSpeaking)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: backgroundColor,
+              foregroundColor: foregroundColor,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.paddingSmall,
+                vertical: AppSizes.paddingXSmall,
               ),
-              icon: Icon(icon),
-              label: Text(
-                label,
-                style: TextStyle(
-                  fontSize: labelFontSize,
-                  fontWeight: FontWeight.bold,
-                ),
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(AppSizes.borderRadiusMedium),
+              ),
+            ),
+            icon: Icon(icon),
+            label: Text(
+              label,
+              style: TextStyle(
+                fontSize: labelFontSize,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),

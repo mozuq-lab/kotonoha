@@ -589,8 +589,12 @@ void main() {
         );
 
         // Assert - Semanticsウィジェットが存在し、適切なラベルを持つ
-        final semantics = tester.getSemantics(find.byType(QuickResponseButton));
-        expect(semantics.label, contains('はい'));
+        // 読み上げの項目はボタン自身の 1 つだけで、名前を 1 回だけ持つ
+        final semantics = tester.getSemantics(find.descendant(
+          of: find.byType(QuickResponseButton),
+          matching: find.byType(ElevatedButton),
+        ));
+        expect(semantics.label, 'はい');
       });
 
       /// TC-A11Y-002: 各ボタンがボタンセマンティクスを持つ

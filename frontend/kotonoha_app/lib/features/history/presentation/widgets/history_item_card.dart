@@ -8,6 +8,7 @@ import '../../domain/models/history_type.dart';
 import 'package:intl/intl.dart';
 import '../constants/history_ui_constants.dart';
 import 'package:kotonoha_app/shared/widgets/send_to_input_button.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 
 /// 履歴項目カードウィジェット
 /// 各履歴項目を表示するカード形式のウィジェット。
@@ -69,15 +70,18 @@ class HistoryItemCard extends StatelessWidget {
     final typeLabel = _getTypeLabel(history.type);
     final formattedDate = _formatDateTime(history.createdAt);
 
-    return Semantics(
-      label: '$typeLabel、${history.content}、$formattedDate',
-      hint: 'タップして再読み上げ',
-      button: true,
-      child: Card(
-        margin: const EdgeInsets.symmetric(
-          horizontal: HistoryUIConstants.cardHorizontalMargin,
-          vertical: HistoryUIConstants.cardVerticalMargin,
-        ),
+    return Card(
+      margin: const EdgeInsets.symmetric(
+        horizontal: HistoryUIConstants.cardHorizontalMargin,
+        vertical: HistoryUIConstants.cardVerticalMargin,
+      ),
+      // 名前は Card の中で付ける。Card は自分で項目を作るので、外に Semantics を
+      // 重ねると名前の項目と押せる項目が別々にでき、文が 2 回読まれる。
+      // 中の文字は名前に含めたので読ませない
+      child: Semantics(
+        label: '${spokenLabel(typeLabel)}、${history.content}、$formattedDate',
+        hint: 'タップして再読み上げ',
+        button: true,
         child: InkWell(
           onTap: onTap,
           onLongPress: onLongPress,
@@ -98,7 +102,8 @@ class HistoryItemCard extends StatelessWidget {
                 const SizedBox(width: HistoryUIConstants.iconTextSpacing),
                 // テキストと日時
                 Expanded(
-                  child: Column(
+                  child: ExcludeSemantics(
+                      child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 履歴テキスト
@@ -123,7 +128,7 @@ class HistoryItemCard extends StatelessWidget {
                             ),
                       ),
                     ],
-                  ),
+                  )),
                 ),
                 // 星ボタン: 長押し不要でお気に入り追加できるタップ代替
                 if (onFavoriteTap != null)

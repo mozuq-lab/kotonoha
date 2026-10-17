@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 import 'package:kotonoha_app/features/help/providers/tutorial_provider.dart';
 import 'package:kotonoha_app/features/settings/presentation/widgets/tts_speed_settings_widget.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
@@ -206,6 +207,7 @@ class _HelpItem extends StatelessWidget {
       children: [
         Text(
           title,
+          semanticsLabel: spokenLabel(title),
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -213,6 +215,7 @@ class _HelpItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           description,
+          semanticsLabel: spokenLabel(description),
           style: theme.textTheme.bodyMedium,
         ),
       ],
