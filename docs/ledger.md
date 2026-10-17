@@ -6,11 +6,10 @@
 
 ## 予定
 - [ ] L-25 `frontend/kotonoha_app/integration_test/device_test/`（実機QA手順、1,773行）が一度も実行されていない — ADR-007 条件 4（ストア提出前に必要）
-- [ ] L-51 サポート連絡先 `hello@mozuq-lab.com` に、2026-10-03 時点でメールが届かない（ドメインが登録事業者の保留 `clientHold` で、.com から NXDOMAIN） — docs/support.md, docs/privacy-policy.md。ADR-007 条件 4。人が保留を解き、ストア提出の前に届くことを確かめる
 - [ ] L-52 Android のアップロード鍵が無い。無いと release ビルドは debug 鍵で署名される（`frontend/kotonoha_app/android/app/build.gradle.kts:67-73`） — .github/workflows/release.yml。ADR-007 条件 4。開発者登録（L-84）の後
 - [ ] L-57 Android 12 以上と iOS の実機で、OS のバックアップから履歴・定型文・お気に入り・設定が復元されることを確認 — NFR-106（2026-09-12 に #99 の除外を撤回）
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
-- [ ] L-84 開発者登録（Apple Developer Program / Google Play）。アプリが形になってから行う（2026-09-24 決定。`docs/now.md`） — ADR-007 条件 4（人が動かす。旧 remaining-work.md から移記）
+- [ ] L-84 Google Play の開発者登録（Apple Developer Program は 2026-10-17 に登録済み）。Android は iOS の本公開の後（2026-10-17 の人の決定） — ADR-007 条件 4（人が動かす）
 - [ ] L-87 dependabot の PR が滞留していた — .github/dependabot.yml。決定（2026-09-27）: actions 5 本（#66〜#70）は `@dependabot recreate` で今の main の上に作り直させ、CI が緑で中身を確かめたものからマージする。backend 5 本（#55〜#59）は閉じた（`sqlalchemy` は ignore）。frontend 5 本（#60・#62〜#65）は、画面や読み上げに影響しうるので本公開の後にまとめて見る
 - [ ] L-91 コードや CI が守っているのに ADR に無い決定（`/health` の無認証・無レート制限、環境名による認証省略と `/docs` 公開、CORS の形、`patch('app.` 禁止、lint の設定値） — backend/app/{routes,config,main}.py、backend/scripts/gates.sh、backend/pyproject.toml。決定（2026-09-20）: 次の監査で ADR にするか決める（未卒業 ADR は上限の 5 本）
 - [ ] L-98 ストア提出の前に独立監査（ADR-010 の監査、監査スキルの付録）を 1 回行う（結果は PR の `<details>`。直すものは仕分けに通す）。条件 4 の充足判定の前 — ADR-010、ADR-007 条件 4
