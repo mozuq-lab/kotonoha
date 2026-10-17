@@ -10,6 +10,8 @@
 /// 見た目は変えず、読み上げ用の名前だけを直したことを semantics tree で見る。
 library;
 
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -274,9 +276,13 @@ void main() {
           onTap: () {},
           onDelete: () {},
           onFavoriteTap: () {},
+          onLongPress: () {},
         ),
       );
-      expectSingleButton('エーアイ変換、こんにちは、10/01 09:30');
+      final node = expectSingleButton('エーアイ変換、こんにちは、10/01 09:30');
+      expect(
+          node.getSemanticsData().hasAction(SemanticsAction.longPress), isTrue,
+          reason: '長押しでお気に入りに追加するメニューが、支援技術から開けない');
       expect(readingProblems(tester), isEmpty);
       handle.dispose();
     });
@@ -308,9 +314,22 @@ void main() {
           fontSize: FontSize.medium,
         ),
       );
-      final node = expectSingleButton('みず');
-      expect(node.getSemanticsData().tooltip, isEmpty,
-          reason: 'ツールチップも同じ文なので、VoiceOver が続けて読む');
+      expectSingleButton('みず');
+      // ツールチップも同じ文なので、読ませるとボタンの外に「みず」の項目がもう 1 つできる
+      final mentions = <String>[];
+      void walk(SemanticsNode node) {
+        final data = node.getSemanticsData();
+        if (data.label.contains('みず') || data.tooltip.contains('みず')) {
+          mentions.add('label=${data.label} tooltip=${data.tooltip}');
+        }
+        node.visitChildren((child) {
+          walk(child);
+          return true;
+        });
+      }
+
+      walk(tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode!);
+      expect(mentions, hasLength(1), reason: '$mentions');
       expect(readingProblems(tester), isEmpty);
       handle.dispose();
     });
@@ -431,6 +450,11 @@ void main() {
       await tester.tap(find.text('丁寧'));
       await tester.pumpAndSettle();
       expect(find.textContaining('AI変換に失敗しました'), findsOneWidget);
+      // 丁寧さのボタンも 1 回だけ読み、選んだものは選択中と分かる
+      final selected = expectSingleButton('普通、選択中');
+      expect(selected.getSemanticsData().flagsCollection.isSelected,
+          Tristate.isTrue);
+      expectSingleButton('丁寧');
       expect(readingProblems(tester), isEmpty);
       handle.dispose();
     });
