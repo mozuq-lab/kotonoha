@@ -28,7 +28,7 @@ export 'package:flutter/material.dart' show Icons;
 /// 電話幅のアイコンとタブレット幅の文字タイトルのどちらかを確認する。
 void expectHomeBrand() {
   expect(
-    find.text('kotonoha').evaluate().isNotEmpty ||
+    find.text('ことのは').evaluate().isNotEmpty ||
         find.byKey(const Key('home_app_icon')).evaluate().isNotEmpty,
     isTrue,
   );

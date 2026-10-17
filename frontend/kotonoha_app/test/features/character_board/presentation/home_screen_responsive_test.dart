@@ -45,7 +45,7 @@ void main() {
         // スマホではアプリ名の代わりにアイコンが描画される。
         final icon = find.byKey(const Key('home_app_icon'));
         expect(icon, findsOneWidget);
-        expect(find.text('kotonoha'), findsNothing);
+        expect(find.text('ことのは'), findsNothing);
         await tester.runAsync(() => precacheImage(
               const AssetImage('assets/images/kotonoha_icon.png'),
               tester.element(icon),
@@ -130,7 +130,7 @@ void main() {
         );
         expect(paintedIcon.image, isNotNull);
         final iconRect = tester.getRect(icon);
-        final nameRect = tester.getRect(find.text('kotonoha'));
+        final nameRect = tester.getRect(find.text('ことのは'));
         expect(iconRect.width, greaterThan(0));
         expect(iconRect.right, lessThan(nameRect.left));
         final appBar = tester.widget<AppBar>(find.byType(AppBar));

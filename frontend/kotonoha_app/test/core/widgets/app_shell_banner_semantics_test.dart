@@ -179,7 +179,7 @@ void main() {
     expect(find.text('スキップ'), findsNothing);
     expect(tester.element(find.byType(PersistenceBanner)), same(bannerBefore),
         reason: 'チュートリアルを閉じたときに、帯と画面を別の親へ移して作り直した');
-    expectReadable(tester, 'kotonoha');
+    expectReadable(tester, 'ことのは');
     handle.dispose();
   });
 
@@ -188,7 +188,7 @@ void main() {
     await startApp(tester, storageReady: false);
 
     // ホームの AppBar の題（画面の名前として読まれる）
-    expectReadable(tester, 'kotonoha');
+    expectReadable(tester, 'ことのは');
     handle.dispose();
   });
 }

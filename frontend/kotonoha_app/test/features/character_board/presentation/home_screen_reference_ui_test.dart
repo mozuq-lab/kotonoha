@@ -117,7 +117,7 @@ void main() {
   for (final size in const [Size(1032, 1376), Size(390, 844)]) {
     testWidgets('$size: ホームのロゴは左端にある', (tester) async {
       await pumpHome(tester, size);
-      final logo = tester.getTopLeft(find.bySemanticsLabel('kotonoha'));
+      final logo = tester.getTopLeft(find.bySemanticsLabel('ことのは'));
       expect(logo.dx, lessThan(32));
     });
   }

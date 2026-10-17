@@ -54,7 +54,7 @@ void main() {
 
         // Then: 結果検証: HomeScreenが表示されている
         expect(find.byType(HomeScreen), findsOneWidget);
-        expect(find.text('kotonoha'), findsOneWidget);
+        expect(find.text('ことのは'), findsOneWidget);
 
         container.dispose();
       });
@@ -87,7 +87,7 @@ void main() {
 
         // Then: 結果検証: HomeScreenが表示されている
         expect(find.byType(HomeScreen), findsOneWidget);
-        expect(find.text('kotonoha'), findsOneWidget);
+        expect(find.text('ことのは'), findsOneWidget);
 
         container.dispose();
       });
@@ -120,7 +120,7 @@ void main() {
 
         // Then: 結果検証: HomeScreenが表示されている
         expect(find.byType(HomeScreen), findsOneWidget);
-        expect(find.text('kotonoha'), findsOneWidget);
+        expect(find.text('ことのは'), findsOneWidget);
 
         container.dispose();
       });
@@ -184,7 +184,7 @@ void main() {
 
         // Then: 結果検証: HomeScreenが表示されている
         expect(find.byType(HomeScreen), findsOneWidget);
-        expect(find.text('kotonoha'), findsOneWidget);
+        expect(find.text('ことのは'), findsOneWidget);
       });
     });
 
