@@ -19,7 +19,7 @@
 ## 最短経路（上から順に。終わった行は消す）
 1. #272・#273 のマージ（人）。どちらも `home_screen.dart` を触るので、先の 1 本をマージしたら、もう 1 本は main を取り込んで CI を通し直す
 2. backend の本番反映（人）: #269・#271 は main に入ったが、`deploy/cloudflare` で `wrangler deploy` するまで本番は古いまま。反映後、`/api/v1/health` と、キー無しの変換が 401 を返すことを確かめる
-3. 物理実機での QA（L-25。人）: 手順は `integration_test/device_test/`。L-173・L-178（読み上げ用ラベル）の判断もこれで行う
+3. 物理実機での QA（L-25。人）: 手順は `integration_test/device_test/`。VoiceOver の読み上げ（日本語の声・帯のラベル。2026-10-17 に直した）が実機で効いたかもここで見る
 4. App Store Connect の準備（人）: アプリの登録、App のプライバシー表示（AI 変換で入力文を送ること）、メタデータとスクリーンショット（`fastlane/`）
 5. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする
 6. 審査提出（人）
