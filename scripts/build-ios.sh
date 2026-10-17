@@ -31,16 +31,16 @@ BUILD_NUMBER="${1:-}"
 [ -f "$CONFIG" ] ||
   fail "$CONFIG が無い。ios-release.example.json を写して、AI_API_KEY に端末キーを入れてください"
 
-# JSON の値を読む（macOS の plutil は JSON も読める）。無い・読めないときは空
+# JSON の文字列の値を読む（macOS の plutil は JSON も読める）。無い・読めない・文字列でないときは空
 json_value() {
-  plutil -extract "$1" raw -o - "$CONFIG" 2>/dev/null || true
+  plutil -extract "$1" raw -expect string -o - "$CONFIG" 2>/dev/null || true
 }
 
 API_BASE_URL="$(json_value API_BASE_URL)"
 AI_API_KEY="$(json_value AI_API_KEY)"
 url_lower="$(printf '%s' "$API_BASE_URL" | tr '[:upper:]' '[:lower:]')"
 
-[ -n "$API_BASE_URL" ] || fail "API_BASE_URL が空か、$CONFIG を JSON として読めない"
+[ -n "$API_BASE_URL" ] || fail "API_BASE_URL が空か文字列でない、または $CONFIG を JSON として読めない"
 case "$url_lower" in
   https://*) ;;
   *) fail "API_BASE_URL は https:// で始めてください（今: ${API_BASE_URL}）" ;;
@@ -48,7 +48,7 @@ esac
 case "$url_lower" in
   *localhost* | *127.0.0.1*) fail "API_BASE_URL が手元のサーバーを指している（今: ${API_BASE_URL}）" ;;
 esac
-[ -n "$(printf '%s' "$AI_API_KEY" | tr -d '[:space:]')" ] || fail "AI_API_KEY が空"
+[ -n "$(printf '%s' "$AI_API_KEY" | tr -d '[:space:]')" ] || fail "AI_API_KEY が空か文字列でない"
 unset AI_API_KEY
 
 command -v fvm >/dev/null 2>&1 || fail "fvm が無い（README の「前提」）"
