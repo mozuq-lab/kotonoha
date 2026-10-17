@@ -196,6 +196,21 @@ curl -s https://<Worker の URL>/api/v1/health   # 応答が無くなったこ�
 作り直すときは、上の「デプロイ」の手順で secret を 4 つとも登録し直す（Worker と一緒に消えている）。
 `name` が同じなら URL も同じになり、端末キーを変えなければ GitHub の設定はそのまま使える。
 
+## iOS の配布用ビルド（TestFlight・App Store）
+
+手元の Mac で作り、Transporter か Xcode で上げる（`release.yml` の iOS は署名しないので配布に使えない）。
+前提: Xcode に Team `G2S4UD6529` の Apple ID でサインイン済み、App Store Connect に Bundle ID
+`com.mozuq-lab.kotonoha` のアプリが登録済み。
+
+```bash
+cp frontend/kotonoha_app/ios-release.example.json frontend/kotonoha_app/ios-release.json
+# エディタで AI_API_KEY に端末キー（backend の API_KEYS の値）を入れる。git には入らない
+scripts/build-ios.sh 2   # 引数はビルド番号。App Store Connect に上げた最後の番号より大きくする
+```
+
+接続先が空・`http://`・`localhost` のとき、キーが空のとき、ファイルが無いときはビルドせずに止まる。
+出来た .ipa の場所とアップロードの手順はスクリプトが表示する。
+
 ## CI（`.github/workflows/`）
 
 - `python.yml` — backend の lint・型・層契約・ゲート・テストを `main` / `develop` への push・PR で実行

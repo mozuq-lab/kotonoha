@@ -45,3 +45,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# iOS の配布用ビルドに渡す AI 変換の接続先とキー（scripts/build-ios.sh）。見本は ios-release.example.json
+/ios-release.json

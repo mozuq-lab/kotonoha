@@ -1,145 +1,84 @@
-#!/bin/bash
-# kotonoha iOS Build Script
+#!/usr/bin/env bash
+# TestFlight / App Store に上げる iOS の版（.ipa）を、この Mac で作る。アップロードはしない。
 #
-# Usage:
-#   ./scripts/build-ios.sh [debug|release|profile] [--archive] [--testflight]
+# 使い方: scripts/build-ios.sh <ビルド番号>
+#   ビルド番号は App Store Connect に上げた最後の番号より大きい整数（CFBundleVersion になる）。
+#   表示上の版（1.0.0 など）は pubspec.yaml の version の「+」より前。
 #
-# Examples:
-#   ./scripts/build-ios.sh debug           # デバッグビルド
-#   ./scripts/build-ios.sh release         # リリースビルド（IPA生成）
-#   ./scripts/build-ios.sh --archive       # アーカイブ生成（App Store用）
-#   ./scripts/build-ios.sh --testflight    # TestFlight配布用
+# AI 変換の接続先とキーは frontend/kotonoha_app/ios-release.json（git に入らない）から渡す。
+# 見本は ios-release.example.json。キーをコマンドラインに書かないので、シェルの履歴に残らない
+# （ビルド中だけ、Flutter が内部で起こす flutter assemble の引数に base64 で現れる）。
+# 署名は Xcode の自動署名（Team は project.pbxproj に設定済み）。
+set -euo pipefail
 
-set -e
+APP_DIR="$(cd "$(dirname "$0")/../frontend/kotonoha_app" && pwd)"
+CONFIG="$APP_DIR/ios-release.json"
 
-# プロジェクトルートに移動
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-cd "$PROJECT_ROOT/frontend/kotonoha_app"
-
-# デフォルト設定
-BUILD_MODE="release"
-ARCHIVE=false
-TESTFLIGHT=false
-API_BASE_URL="${API_BASE_URL:-http://localhost:8000}"
-AI_API_KEY="${AI_API_KEY:-}"
-
-dart_define_flags() {
-    local flags="--dart-define=API_BASE_URL=$API_BASE_URL"
-
-    if [ -n "$AI_API_KEY" ]; then
-        flags="$flags --dart-define=AI_API_KEY=$AI_API_KEY"
-    fi
-
-    echo "$flags"
+fail() {
+  printf '止めました: %s\n' "$1" >&2
+  exit 1
 }
 
-# 引数解析
-for arg in "$@"; do
-    case $arg in
-        debug|release|profile)
-            BUILD_MODE=$arg
-            ;;
-        --archive)
-            ARCHIVE=true
-            ;;
-        --testflight)
-            TESTFLIGHT=true
-            ARCHIVE=true
-            ;;
-        --help|-h)
-            echo "Usage: $0 [debug|release|profile] [--archive] [--testflight]"
-            echo ""
-            echo "Options:"
-            echo "  debug       デバッグビルド"
-            echo "  release     リリースビルド（デフォルト）"
-            echo "  profile     プロファイルビルド"
-            echo "  --archive   Xcodeアーカイブを生成"
-            echo "  --testflight TestFlight配布用ビルド"
-            exit 0
-            ;;
-    esac
-done
-
-echo "================================================"
-echo "kotonoha iOS Build"
-echo "================================================"
-echo "Mode: $BUILD_MODE"
-echo "Archive: $ARCHIVE"
-echo "TestFlight: $TESTFLIGHT"
-echo "API Base URL: $API_BASE_URL"
-if [ -n "$AI_API_KEY" ]; then
-    echo "AI API Key: configured"
-else
-    echo "AI API Key: not configured"
-fi
-echo "================================================"
-
-# Flutter依存関係の更新
-echo ">>> Updating Flutter dependencies..."
-flutter pub get
-
-# iOSプロジェクトのクリーン（オプション）
-if [ "$BUILD_MODE" = "release" ]; then
-    echo ">>> Cleaning iOS build..."
-    flutter clean
-    flutter pub get
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+  exit 0
 fi
 
-# CocoaPodsの更新
-echo ">>> Installing CocoaPods dependencies..."
-cd ios
-pod install --repo-update
-cd ..
+BUILD_NUMBER="${1:-}"
+[[ "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]] ||
+  fail "ビルド番号を 1 以上の整数で渡してください（例: scripts/build-ios.sh 2）"
 
-if [ "$ARCHIVE" = true ]; then
-    echo ">>> Building iOS Archive..."
+[ -f "$CONFIG" ] ||
+  fail "$CONFIG が無い。ios-release.example.json を写して、AI_API_KEY に端末キーを入れてください"
 
-    # Xcodeアーカイブのビルド
-    flutter build ipa --release \
-        --export-options-plist=ios/ExportOptions.plist \
-        --obfuscate \
-        --split-debug-info=build/ios/symbols \
-        $(dart_define_flags)
+# JSON の値を読む（macOS の plutil は JSON も読める）。無い・読めないときは空
+json_value() {
+  plutil -extract "$1" raw -o - "$CONFIG" 2>/dev/null || true
+}
 
-    # ビルド成果物の確認
-    IPA_PATH="build/ios/ipa/*.ipa"
-    if ls $IPA_PATH 1> /dev/null 2>&1; then
-        echo "================================================"
-        echo "SUCCESS: IPA file created!"
-        echo "Location: $IPA_PATH"
-        echo "================================================"
+API_BASE_URL="$(json_value API_BASE_URL)"
+AI_API_KEY="$(json_value AI_API_KEY)"
+url_lower="$(printf '%s' "$API_BASE_URL" | tr '[:upper:]' '[:lower:]')"
 
-        if [ "$TESTFLIGHT" = true ]; then
-            echo ""
-            echo "To upload to TestFlight, run:"
-            echo "  xcrun altool --upload-app -f $IPA_PATH -t ios -u \$APPLE_ID -p \$APP_SPECIFIC_PASSWORD"
-            echo ""
-            echo "Or use Transporter app from Mac App Store."
-        fi
-    else
-        echo "ERROR: IPA file not found!"
-        exit 1
-    fi
-else
-    echo ">>> Building iOS app for $BUILD_MODE..."
+[ -n "$API_BASE_URL" ] || fail "API_BASE_URL が空か、$CONFIG を JSON として読めない"
+case "$url_lower" in
+  https://*) ;;
+  *) fail "API_BASE_URL は https:// で始めてください（今: ${API_BASE_URL}）" ;;
+esac
+case "$url_lower" in
+  *localhost* | *127.0.0.1*) fail "API_BASE_URL が手元のサーバーを指している（今: ${API_BASE_URL}）" ;;
+esac
+[ -n "$(printf '%s' "$AI_API_KEY" | tr -d '[:space:]')" ] || fail "AI_API_KEY が空"
+unset AI_API_KEY
 
-    case $BUILD_MODE in
-        debug)
-            flutter build ios --debug --no-codesign $(dart_define_flags)
-            ;;
-        release)
-            flutter build ios --release $(dart_define_flags)
-            ;;
-        profile)
-            flutter build ios --profile $(dart_define_flags)
-            ;;
-    esac
+command -v fvm >/dev/null 2>&1 || fail "fvm が無い（README の「前提」）"
 
-    echo "================================================"
-    echo "SUCCESS: iOS build completed!"
-    echo "================================================"
-fi
+VERSION_NAME="$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' "$APP_DIR/pubspec.yaml")"
+COMMIT="$(git -C "$APP_DIR" describe --always --dirty 2>/dev/null || echo '不明')"
+printf '版 %s（ビルド %s）、コミット %s、AI 変換の接続先 %s、キーは設定済み\n' \
+  "$VERSION_NAME" "$BUILD_NUMBER" "$COMMIT" "$API_BASE_URL"
 
-echo ""
-echo "Build completed at: $(date)"
+cd "$APP_DIR"
+IPA_DIR="$APP_DIR/build/ios/ipa"
+started="$(mktemp)"
+trap 'rm -f "$started"' EXIT
+
+# 書き出しに失敗したとき、前回の .ipa を今回の版と取り違えないよう、始めた時刻より新しいものだけを見る
+fvm flutter build ipa --release --export-method app-store \
+  --build-number "$BUILD_NUMBER" --dart-define-from-file "$CONFIG"
+
+IPA="$(find "$IPA_DIR" -maxdepth 1 -name '*.ipa' -newer "$started" 2>/dev/null | head -n 1 || true)"
+[ -n "$IPA" ] || fail "ビルドは終わったが、新しい .ipa が $IPA_DIR に無い（上のエラーを見てください）"
+
+cat <<EOF
+
+出来た .ipa: $IPA
+（版 ${VERSION_NAME}、ビルド ${BUILD_NUMBER}）
+
+アップロード（どちらか 1 つ）:
+  - Transporter（Mac App Store の無料アプリ）: Apple ID でサインイン → .ipa をドラッグ → 「配信」
+  - Xcode: open "$APP_DIR/build/ios/archive/Runner.xcarchive" → Organizer で
+    「Distribute App」→「App Store Connect」→「Upload」
+処理が終わると App Store Connect の TestFlight にビルド $BUILD_NUMBER が出る（数分〜数十分）。
+次に上げるときは、ビルド番号を $((BUILD_NUMBER + 1)) 以上にする。
+EOF
