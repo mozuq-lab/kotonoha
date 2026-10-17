@@ -139,7 +139,7 @@ void main() {
     await tapButton(tester, 'はじめる');
     expect(find.text('準備完了'), findsNothing, reason: '「はじめる」でチュートリアルが閉じない');
     expect(
-      find.text('kotonoha').evaluate().isNotEmpty ||
+      find.text('ことのは').evaluate().isNotEmpty ||
           find.byKey(const Key('home_app_icon')).evaluate().isNotEmpty,
       isTrue,
     );
@@ -182,7 +182,7 @@ void main() {
     await _expectSpoke(tester, again, 'お気に入りのタップ');
     await _back(tester);
     expect(
-      find.text('kotonoha').evaluate().isNotEmpty ||
+      find.text('ことのは').evaluate().isNotEmpty ||
           find.byKey(const Key('home_app_icon')).evaluate().isNotEmpty,
       isTrue,
     );

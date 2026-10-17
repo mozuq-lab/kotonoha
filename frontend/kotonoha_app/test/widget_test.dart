@@ -22,7 +22,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify that the home screen is displayed with the app title
-    expect(find.text('kotonoha'), findsOneWidget);
+    expect(find.text('ことのは'), findsOneWidget);
     expect(find.text('入力してください...'), findsOneWidget);
   });
 }

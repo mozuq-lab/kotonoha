@@ -132,14 +132,14 @@ class HomeScreen extends ConsumerWidget {
                           key: const Key('home_app_icon'),
                           width: AppSizes.iconSizeLarge,
                           height: AppSizes.iconSizeLarge,
-                          semanticLabel: 'kotonoha',
+                          semanticLabel: 'ことのは',
                           excludeFromSemantics: showAppName,
                         ),
                       ),
                       if (showAppName) ...[
                         const SizedBox(width: AppSizes.paddingSmall),
                         const Flexible(
-                          child: Text('kotonoha',
+                          child: Text('ことのは',
                               maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
                       ],
