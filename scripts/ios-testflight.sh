@@ -32,11 +32,11 @@ die() {
 [ -f "${DEFINES}" ] || die "${DEFINES} がありません（先頭の説明を参照）"
 [ -f "${ASC_ENV}" ] || die "${ASC_ENV} がありません（先頭の説明を参照）"
 
-# plutil は JSON も読める
-API_BASE_URL="$(plutil -extract API_BASE_URL raw -o - "${DEFINES}" 2>/dev/null)" ||
-    die "${DEFINES} に API_BASE_URL がありません"
-AI_API_KEY="$(plutil -extract AI_API_KEY raw -o - "${DEFINES}" 2>/dev/null)" ||
-    die "${DEFINES} に AI_API_KEY がありません"
+# plutil は JSON も読める。-expect string が無いと、辞書ならキー名、配列なら要素数を返す
+API_BASE_URL="$(plutil -extract API_BASE_URL raw -expect string -o - "${DEFINES}" 2>/dev/null)" ||
+    die "${DEFINES} に API_BASE_URL（文字列）がありません"
+AI_API_KEY="$(plutil -extract AI_API_KEY raw -expect string -o - "${DEFINES}" 2>/dev/null)" ||
+    die "${DEFINES} に AI_API_KEY（文字列）がありません"
 case "${API_BASE_URL}" in
     https://*) ;;
     *) die "API_BASE_URL は https:// で始めてください（今: ${API_BASE_URL}）" ;;
