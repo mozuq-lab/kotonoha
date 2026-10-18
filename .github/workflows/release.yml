@@ -106,14 +106,14 @@ jobs:
           mv build/app/outputs/bundle/productionRelease/app-production-release.aab build/app/outputs/bundle/productionRelease/kotonoha-${{ needs.validate-tag.outputs.version }}.aab
 
       - name: Upload APK
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-apk-release
           path: frontend/kotonoha_app/build/app/outputs/flutter-apk/kotonoha-${{ needs.validate-tag.outputs.version }}.apk
           retention-days: 90
 
       - name: Upload App Bundle
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-aab-release
           path: frontend/kotonoha_app/build/app/outputs/bundle/productionRelease/kotonoha-${{ needs.validate-tag.outputs.version }}.aab
@@ -183,7 +183,7 @@ jobs:
           zip -r ../../../kotonoha-ios-${{ needs.validate-tag.outputs.version }}.ipa Payload
 
       - name: Upload iOS build
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ios-release
           path: frontend/kotonoha_app/kotonoha-ios-${{ needs.validate-tag.outputs.version }}.ipa
