@@ -8,6 +8,7 @@ import 'package:hive/hive.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/favorite/data/favorite_repository.dart';
+import 'package:kotonoha_app/features/favorite/presentation/constants/favorite_colors.dart';
 import 'package:kotonoha_app/features/favorite/presentation/favorites_screen.dart';
 import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
@@ -91,7 +92,7 @@ void main() {
   });
 
   test('初回だけ必須8件を作り、削除後の再起動では復活しない', () async {
-    const expected = ['トイレ', '暑い', '寒い', '水', '眠い', '助けて', '待って', '痛い'];
+    const expected = ['ありがとう', '暑い', '寒い', '眠い', '待って', '水ほしい', '痛い', 'トイレ'];
     var repository = FavoriteRepository(box: box);
     await repository.ensureInitialFavorites();
     expect(
@@ -103,8 +104,24 @@ void main() {
     repository = FavoriteRepository(box: box);
     expect(
         repository.loadAllSortedSync().map((item) => item.content), expected);
-    expect(repository.loadAllSortedSync().first.colorValue, 0xFF2196F3);
-    expect(repository.loadAllSortedSync().last.colorValue, 0xFFFF9800);
+    // 色は利用者が選べる色（favoriteColorChoices）から: 緑・オレンジ・青・紫・灰
+    expect(repository.loadAllSortedSync().map((item) => item.colorValue), [
+      0xFF4CAF50,
+      0xFFFF9800,
+      0xFF2196F3,
+      0xFFB39DDB,
+      0xFFB0BEC5,
+      0xFF2196F3,
+      0xFFFF9800,
+      0xFFB39DDB,
+    ]);
+    // 色の選択画面で、今の色が選ばれた状態で出る
+    final choices = favoriteColorChoices.map((choice) => choice.$2).toSet();
+    expect(
+        repository
+            .loadAllSortedSync()
+            .every((item) => choices.contains(item.colorValue)),
+        isTrue);
 
     await repository.deleteAll();
     await box.close();
@@ -129,7 +146,7 @@ void main() {
     final reopened = FavoriteRepository(box: box);
     await reopened.ensureInitialFavorites();
     expect(reopened.loadAllSortedSync().map((item) => item.content),
-        isNot(contains('痛い')));
+        isNot(contains('ありがとう')));
   });
 
   test('色と並び順を保存し、box の開き直し後も維持する', () async {
@@ -152,7 +169,7 @@ void main() {
       await FavoriteRepository(box: box).ensureInitialFavorites();
       var container = ProviderContainer();
       final notifier = container.read(favoriteProvider.notifier);
-      await notifier.deleteFavorite('initial-favorite-1');
+      await notifier.deleteFavorite('initial-favorite-0');
       switch (source) {
         case 'input':
           await notifier.addFavorite('最後に追加');
@@ -161,7 +178,7 @@ void main() {
         case 'preset_phrase':
           await notifier.addFavoriteFromPresetPhrase('最後に追加', 'preset-id');
       }
-      const expected = ['暑い', '寒い', '水', '眠い', '助けて', '待って', '痛い', '最後に追加'];
+      const expected = ['暑い', '寒い', '眠い', '待って', '水ほしい', '痛い', 'トイレ', '最後に追加'];
       expect(container.read(favoriteProvider).favorites.map((f) => f.content),
           expected);
       container.dispose();
@@ -189,7 +206,7 @@ void main() {
       child: const MaterialApp(home: FavoritesScreen()),
     ));
     await tester.pumpAndSettle();
-    final up = find.byKey(const Key('move_up_initial-favorite-3'));
+    final up = find.byKey(const Key('move_up_initial-favorite-2'));
     await tester.tap(find.byTooltip('並び替え'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(up);
@@ -304,15 +321,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byKey(const Key('home_input_field')), 'ありがとう');
+    await tester.enterText(find.byKey(const Key('home_input_field')), 'こんにちは');
     await tester.pump();
-    expect(container.read(inputBufferProvider), 'ありがとう');
+    expect(container.read(inputBufferProvider), 'こんにちは');
     await tester.runAsync(() async {
       await tester.tap(find.byKey(const Key('favorite_current_input')));
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pump();
-    expect(box.values.where((item) => item.content == 'ありがとう'), hasLength(1));
+    expect(box.values.where((item) => item.content == 'こんにちは'), hasLength(1));
 
     final favorite = container.read(favoriteProvider).favorites.last;
     await tester.runAsync(() => container
@@ -323,9 +340,9 @@ void main() {
         .widgetList<FavoriteShortcutButton>(find.byType(FavoriteShortcutButton))
         .toList();
     expect(shortcuts, hasLength(8));
-    expect(shortcuts.first.favorite.content, 'ありがとう');
+    expect(shortcuts.first.favorite.content, 'こんにちは');
     expect(shortcuts.map((button) => button.favorite.content),
-        isNot(contains('痛い')));
+        isNot(contains('トイレ')));
   });
 
   testWidgets('お気に入り box への保存失敗を登録成功と表示しない', (tester) async {
