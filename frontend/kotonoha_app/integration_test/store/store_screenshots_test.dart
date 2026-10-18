@@ -84,7 +84,7 @@ void main() {
     await _back(tester);
 
     // ホーム: 文字盤で打った文
-    await typeOnCharacterBoard(tester, 'すこしやすみたい');
+    await typeOnCharacterBoard(tester, 'いつもありがとう');
     await tapAndExpectSpeech(tester, find.text('読み上げ'));
     await _waitQuiet(tester);
     await shoot('01_home');
