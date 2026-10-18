@@ -13,10 +13,12 @@ class HomeInputField extends ConsumerStatefulWidget {
     required this.onFavoritePressed,
     this.fontSize = FontSize.medium,
     this.maxLines = 3,
+    this.showFavoriteButton = true,
   });
 
   final VoidCallback? onFavoritePressed;
   final FontSize fontSize;
+  final bool showFavoriteButton;
 
   /// 入力が伸びるときの最大の行数。高さの上限はこれで守り、欄そのものを
   /// 押しつぶさない（押しつぶすとラベルと文字が重なる）。2 未満は 2 として扱う。
@@ -87,12 +89,15 @@ class _HomeInputFieldState extends ConsumerState<HomeInputField> {
           floatingLabelBehavior: FloatingLabelBehavior.always,
           contentPadding:
               const EdgeInsets.symmetric(vertical: AppSizes.paddingSmall),
-          suffixIcon: IconButton(
-            key: const Key('favorite_current_input'),
-            tooltip: '入力中の文をお気に入りに登録',
-            onPressed: buffer.trim().isEmpty ? null : widget.onFavoritePressed,
-            icon: const Icon(CupertinoIcons.heart),
-          ),
+          suffixIcon: widget.showFavoriteButton
+              ? IconButton(
+                  key: const Key('favorite_current_input'),
+                  tooltip: '入力中の文をお気に入りに登録',
+                  onPressed:
+                      buffer.trim().isEmpty ? null : widget.onFavoritePressed,
+                  icon: const Icon(CupertinoIcons.heart),
+                )
+              : null,
         ),
       ),
     );
