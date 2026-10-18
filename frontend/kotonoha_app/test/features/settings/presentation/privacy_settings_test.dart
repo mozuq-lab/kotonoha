@@ -81,7 +81,14 @@ void main() {
       await tester.tap(tile);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining(privacyPolicyUrl), findsWidgets);
+      // 知らせ（SnackBar）の中に URL を出す（タイルの下の URL とは別に）
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.textContaining(privacyPolicyUrl),
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('開けませんでした'), findsOneWidget);
     });
   });
