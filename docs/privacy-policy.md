@@ -1,7 +1,7 @@
 # プライバシーポリシー / Privacy Policy
 
-最終更新日: 2026年10月3日
-Last Updated: October 3, 2026
+最終更新日: 2026年10月18日
+Last Updated: October 18, 2026
 
 ---
 
@@ -102,7 +102,7 @@ AI変換機能を使うと、「AI変換機能使用時」に記載したデー�
 - **提供先が講じている措置**: 同社は公式の文書で次のことを示しています。送られた内容を、AI モデルの学習や同社・第三者のサービスの改善に使わず、他の顧客に見せないこと（ https://developers.cloudflare.com/workers-ai/platform/privacy/ ）。データ処理契約（DPA）で、顧客の指示の範囲でだけ処理すること、守秘、暗号化などの安全管理、漏えいの通知、政府からの開示要求への対応を定めていること（ https://www.cloudflare.com/cloudflare-customer-dpa/ ）。ISO/IEC 27001・27018・27701 の認証（ https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ）と、Global CBPR・Global PRP の認証（ https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ ）を受けていること。ことのはは、同社の AI Gateway に内容の記録を残さない設定で送信しています
 - **講じられていない措置**: 同社の措置は概ね OECD プライバシーガイドラインの8原則に対応すると考えられますが、同社の契約（DPA）が名前を挙げている法令は EU・EEA・スイス・英国・米国の州法で、日本の個人情報保護法の名前は無く、同法に基づく保護や本人の請求への協力は明記されていません
 
-同意しない場合、AI変換は使えませんが、ほかの機能はすべて使えます。
+同意しない場合、AI変換は使えませんが、ほかの機能はすべて使えます。同意は、アプリの「設定」→「AI設定」からいつでも取り消せます。取り消すと、次にAI変換を使うときに、もう一度確認します。
 
 ### お子様のプライバシー
 
@@ -218,7 +218,7 @@ When you use AI conversion, the data described under "When Using AI Conversion" 
 - **Measures taken by the recipient**: Cloudflare states that it does not use the content to train AI models or improve its or third parties' services and does not show it to other customers ( https://developers.cloudflare.com/workers-ai/platform/privacy/ ). Its Data Processing Addendum provides for processing only on the customer's instructions, confidentiality, security measures such as encryption, breach notification, and handling of government requests ( https://www.cloudflare.com/cloudflare-customer-dpa/ ). It holds ISO/IEC 27001, 27018, and 27701 certifications ( https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ) and Global CBPR and Global PRP certifications ( https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ ). Kotonoha sends requests with logging of content in Cloudflare AI Gateway turned off
 - **Measures not taken**: We consider that Cloudflare's measures broadly correspond to the eight principles of the OECD Privacy Guidelines. However, the laws its DPA names are those of the EU, the EEA, Switzerland, the UK, and US states; it does not name Japan's Act on the Protection of Personal Information and does not expressly provide protection or cooperation with individuals' requests under that Act
 
-If you do not consent, AI conversion is unavailable, but all other features remain available.
+If you do not consent, AI conversion is unavailable, but all other features remain available. You can withdraw your consent at any time in the App under 設定 (Settings) > AI設定 (AI Settings). After you withdraw it, the App asks again the next time you use AI conversion.
 
 ### Children's Privacy
 

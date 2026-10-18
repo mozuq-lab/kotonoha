@@ -48,6 +48,7 @@ dependencies:
 
   # UI
   cupertino_icons: ^1.0.8
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +56,9 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   # 設定保存の失敗注入（テストだけ）。外部 SDK の境界でのモック（AGENTS.md 規律 5、ADR-005 検査）
   shared_preferences_platform_interface: ^2.4.1
+  # ブラウザで開く操作をテストで受け止める（外部 SDK の境界）
+  url_launcher_platform_interface: ^2.3.2
+  plugin_platform_interface: ^2.1.8
 
   # E2E/統合テスト
   integration_test:
