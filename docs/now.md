@@ -14,12 +14,12 @@
 - 人の決定（2026-10-17）を反映した: 読み上げた文はどの入口からでも履歴に残す・空白だけの文は読まず残さない（#272）、お気に入りと「読み上げ」の 300ms 以内の連続タップを無視・起動時の読み上げ失敗は専用の文言・帯がステータスバーに重ならない（#273）
 - 物理 iPad（iPad 第 8 世代・iPadOS 18.7.8）での QA を 2026-10-18 に終えた（L-25）: `integration_test/device_test/` の自動テストが通り、読み上げの音・音量 0 の帯・消音モードでも聞こえること・VoiceOver（日本語の声・帯・二重読み・記号・「AI」の読み。#278・#279）を人が確かめた。AI 変換の実機での往復は、ローカルの接続先では確かめられないので TestFlight の版で見る
 - Apple Developer Program は登録済み。サポート連絡先 `hello@mozuq-lab.com` は届く（いずれも 2026-10-17 に人が確認）
-- プライバシーポリシーは GitHub Pages で配信中。ストア用のスクリーンショットは 2026-10-03 に撮ったもので、`fastlane/screenshots/ja-JP/` にある（#270・#273 で帯の位置が変わったが、帯の出ていない画面なので撮り直しは不要と見ている）。ホームのロゴの文字を「kotonoha」から「ことのは」に変えたので、ホームの画面（`01_home.png` など）は撮り直す
+- プライバシーポリシーは GitHub Pages で配信中。ストア用のスクリーンショットは、ロゴの文字を「ことのは」にした後の 2026-10-18 に 3 機種（iPad 13・iPhone 6.9・Android 電話）とも撮り直し、`fastlane/screenshots/ja-JP/` にある
 - `integration_test/mvp_scenario_test.dart`（7 本）は、#273 の時点で iPad シミュレータ・Android エミュレータ・ヘッドレス Chrome で通過（ADR-007 条件 2）。`integration_test/ai_conversion_e2e_test.dart` は 2026-10-03 に 3 環境で通過（ADR-007 条件 5）
 
 ## 最短経路（上から順に。終わった行は消す）
 1. TestFlight へ上げる経路を作る（エージェント）: 署名チーム（手元の `project.pbxproj`・`Info.plist` の未コミットの変更をここでコミットする）と、`flutter build ipa` に `API_BASE_URL`・`AI_API_KEY` を渡すこと。今の fastlane の beta レーンは define を渡さず、CI は `--no-codesign` でしか作らない。キーはシェルの履歴に残さない渡し方にする
-2. App Store Connect の準備（人）: アプリの登録（Bundle ID `com.mozuq-lab.kotonoha`）、App のプライバシー表示（AI 変換で入力文を送ること）、アップロード用の API キー、メタデータとスクリーンショット（`fastlane/`。ホームの画面は撮り直す）
+2. App Store Connect の準備（人）: アプリの登録（Bundle ID `com.mozuq-lab.kotonoha`）、App のプライバシー表示（AI 変換で入力文を送ること）、アップロード用の API キー、メタデータとスクリーンショット（`fastlane/`）
 3. TestFlight の版を iPad に入れ、本番の backend で AI 変換が往復することを確かめる（人）
 4. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする
 5. 審査提出（人）

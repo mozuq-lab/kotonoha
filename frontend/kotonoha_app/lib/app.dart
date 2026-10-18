@@ -37,7 +37,7 @@ class KotonohaApp extends ConsumerWidget {
     final theme = ref.watch(currentThemeProvider);
 
     return MaterialApp.router(
-      title: 'kotonoha',
+      title: 'ことのは',
       theme: theme,
       // アプリの言語は端末の言語に依らず日本語（文言はすべて日本語）。
       // Flutter はこの言語を OS に伝え（`setApplicationLocale`）、iOS の VoiceOver は
