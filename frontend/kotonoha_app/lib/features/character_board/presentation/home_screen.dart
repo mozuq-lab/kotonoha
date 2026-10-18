@@ -1077,9 +1077,6 @@ class HomeScreen extends ConsumerWidget {
           }
         });
       },
-      onUseOriginal: (original) {
-        ref.read(inputBufferProvider.notifier).setText(original);
-      },
       onLevelChanged: (level) {
         // 選び直した丁寧さを次回の既定にし、その丁寧さで変換し直す。
         // 結果はダイアログ内で差し替わる（ダイアログは閉じない）。

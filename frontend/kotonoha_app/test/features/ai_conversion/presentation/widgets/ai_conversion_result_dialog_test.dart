@@ -23,7 +23,6 @@ void main() {
       required PolitenessLevel politenessLevel,
       required void Function(String) onAdopt,
       required VoidCallback onRegenerate,
-      required void Function(String) onUseOriginal,
       ThemeData? theme,
     }) {
       return MaterialApp(
@@ -39,7 +38,6 @@ void main() {
                   politenessLevel: politenessLevel,
                   onAdopt: onAdopt,
                   onRegenerate: onRegenerate,
-                  onUseOriginal: onUseOriginal,
                   onLevelChanged: (_) async => convertedText,
                 );
               },
@@ -68,7 +66,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -93,7 +90,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -119,7 +115,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -149,7 +144,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -177,7 +171,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -201,7 +194,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -225,7 +217,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -239,8 +230,8 @@ void main() {
         );
       });
 
-      /// 「元の文を使う」ボタンが表示される
-      testWidgets('TC-069-008: 「元の文を使う」ボタンが表示される', (tester) async {
+      /// 「キャンセル」ボタンが表示される
+      testWidgets('TC-069-008: 「キャンセル」ボタンが表示される', (tester) async {
         // Given: テストデータ準備: ダイアログ表示用のウィジェットを構築
         await tester.pumpWidget(
           buildTestWidget(
@@ -249,16 +240,15 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
         // When: ユーザー操作実行: ダイアログを開く
         await openDialog(tester);
 
-        // Then: 結果検証: 「元の文を使う」ボタンが表示されていることを確認
+        // Then: 結果検証: 「キャンセル」ボタンが表示されていることを確認
         expect(
-          find.text('元の文を使う'),
+          find.text('キャンセル'),
           findsOneWidget,
         );
       });
@@ -278,7 +268,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (text) => adoptedText = text,
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -307,7 +296,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () => regenerateCalled = true,
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -324,34 +312,29 @@ void main() {
         );
       });
 
-      /// 「元の文を使う」ボタンタップでコールバックが呼ばれる
-      testWidgets('TC-069-011: 「元の文を使う」ボタンタップでコールバックが呼ばれる', (tester) async {
-        // Given: テストデータ準備: コールバック確認用の変数を準備
-        String? usedOriginalText;
-        const testOriginalText = '水 ぬるく';
+      /// 「キャンセル」は入力に触れず、ダイアログを閉じるだけ
+      testWidgets('TC-069-011: 「キャンセル」は何も呼ばずにダイアログを閉じる', (tester) async {
+        var adopted = 0;
+        var regenerated = 0;
 
         await tester.pumpWidget(
           buildTestWidget(
-            originalText: testOriginalText,
+            originalText: '水 ぬるく',
             convertedText: 'お水をぬるめでお願いします',
             politenessLevel: PolitenessLevel.polite,
-            onAdopt: (_) {},
-            onRegenerate: () {},
-            onUseOriginal: (text) => usedOriginalText = text,
+            onAdopt: (_) => adopted++,
+            onRegenerate: () => regenerated++,
           ),
         );
 
         await openDialog(tester);
 
-        // When: ユーザー操作実行: 「元の文を使う」ボタンをタップ
-        await tester.tap(find.text('元の文を使う'));
+        await tester.tap(find.text('キャンセル'));
         await tester.pumpAndSettle();
 
-        // Then: 結果検証: コールバックが正しいテキストで呼ばれたことを確認
-        expect(
-          usedOriginalText,
-          equals(testOriginalText),
-        );
+        expect(find.byType(AIConversionResultDialog), findsNothing);
+        expect(adopted, 0);
+        expect(regenerated, 0);
       });
 
       /// casualレベルが正しく表示される
@@ -364,7 +347,6 @@ void main() {
             politenessLevel: PolitenessLevel.casual,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -387,7 +369,6 @@ void main() {
             politenessLevel: PolitenessLevel.normal,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -412,7 +393,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -444,7 +424,7 @@ void main() {
                 politenessLevel: PolitenessLevel.polite,
                 onAdopt: (_) => callCount++,
                 onRegenerate: () {},
-                onUseOriginal: (_) {},
+                onCancel: () {},
                 onLevelChanged: (_) async => '',
               ),
             ),
@@ -486,7 +466,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -513,7 +492,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -538,7 +516,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -567,7 +544,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -587,7 +563,7 @@ void main() {
         );
 
         // 再生成ボタン
-        final regenerateButton = find.widgetWithText(ElevatedButton, '再生成');
+        final regenerateButton = find.widgetWithText(OutlinedButton, '再生成');
         final regenerateSize = tester.getSize(regenerateButton);
         expect(
           regenerateSize.width,
@@ -598,8 +574,8 @@ void main() {
           greaterThanOrEqualTo(AppSizes.minTapTarget),
         );
 
-        // 元の文を使うボタン
-        final useOriginalButton = find.widgetWithText(OutlinedButton, '元の文を使う');
+        // キャンセルボタン
+        final useOriginalButton = find.widgetWithText(OutlinedButton, 'キャンセル');
         final useOriginalSize = tester.getSize(useOriginalButton);
         expect(
           useOriginalSize.width,
@@ -621,7 +597,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
           ),
         );
 
@@ -649,7 +624,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
             theme: lightTheme,
           ),
         );
@@ -673,7 +647,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
             theme: darkTheme,
           ),
         );
@@ -697,7 +670,6 @@ void main() {
             politenessLevel: PolitenessLevel.polite,
             onAdopt: (_) {},
             onRegenerate: () {},
-            onUseOriginal: (_) {},
             theme: highContrastTheme,
           ),
         );
@@ -739,7 +711,6 @@ void main() {
               politenessLevel: PolitenessLevel.polite,
               onAdopt: (_) {},
               onRegenerate: () {},
-              onUseOriginal: (_) {},
               theme: theme,
             ),
           );
@@ -770,7 +741,6 @@ void main() {
               politenessLevel: PolitenessLevel.polite,
               onAdopt: (_) {},
               onRegenerate: () {},
-              onUseOriginal: (_) {},
               theme: theme,
             ),
           );

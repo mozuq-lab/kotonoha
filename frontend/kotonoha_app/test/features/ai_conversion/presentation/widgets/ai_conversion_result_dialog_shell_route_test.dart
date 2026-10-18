@@ -23,9 +23,7 @@ void main() {
     late GoRouter router;
     late int adoptCallCount;
     late int regenerateCallCount;
-    late int useOriginalCallCount;
     late String? adoptedText;
-    late String? usedOriginalText;
 
     /// 実機と同じ「単一ShellRoute配下にGoRoute」の構造を構築する。
     /// branch Navigator上のページに配置したボタンから
@@ -41,7 +39,7 @@ void main() {
 
     /// ダイアログのアクションボタンをAlertDialog配下に限定して検索する
     /// （branchページ側にも同名テキストが存在しうるため）。
-    /// 「採用」「再生成」はElevatedButton、「元の文を使う」はOutlinedButton。
+    /// 「採用」はElevatedButton、「再生成」「キャンセル」はOutlinedButton。
     Finder actionButton(String label) => find.descendant(
           of: find.byType(AlertDialog),
           matching: find.text(label),
@@ -50,9 +48,7 @@ void main() {
     setUp(() {
       adoptCallCount = 0;
       regenerateCallCount = 0;
-      useOriginalCallCount = 0;
       adoptedText = null;
-      usedOriginalText = null;
 
       router = GoRouter(
         initialLocation: '/',
@@ -78,10 +74,6 @@ void main() {
                               adoptedText = result;
                             },
                             onRegenerate: () => regenerateCallCount++,
-                            onUseOriginal: (original) {
-                              useOriginalCallCount++;
-                              usedOriginalText = original;
-                            },
                             onLevelChanged: (_) async => '',
                           );
                         },
@@ -124,7 +116,6 @@ void main() {
       );
       expect(adoptCallCount, 1);
       expect(regenerateCallCount, 0);
-      expect(useOriginalCallCount, 0);
       expect(adoptedText, 'お水をぬるめでお願いします');
     });
 
@@ -139,21 +130,19 @@ void main() {
       expect(find.text('Home'), findsOneWidget);
       expect(regenerateCallCount, 1);
       expect(adoptCallCount, 0);
-      expect(useOriginalCallCount, 0);
     });
 
-    testWidgets('元の文を使うタップでダイアログのみ閉じ、背後ページは維持される', (tester) async {
+    testWidgets('キャンセルタップでダイアログのみ閉じ、背後ページは維持される', (tester) async {
       await tester.pumpWidget(buildTestApp());
       await openDialog(tester);
 
-      await tester.tap(actionButton('元の文を使う'));
+      await tester.tap(actionButton('キャンセル'));
       await tester.pumpAndSettle();
 
       expect(find.byType(AIConversionResultDialog), findsNothing);
       expect(find.text('Home'), findsOneWidget);
-      expect(useOriginalCallCount, 1);
       expect(adoptCallCount, 0);
-      expect(usedOriginalText, '水 ぬるく');
+      expect(regenerateCallCount, 0);
     });
   });
 }

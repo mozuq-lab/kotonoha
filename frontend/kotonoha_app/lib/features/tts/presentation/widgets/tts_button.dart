@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kotonoha_app/shared/widgets/debounced_taps.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/themes/app_visual_theme.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
@@ -93,6 +94,9 @@ class TTSButton extends ConsumerWidget {
         : (speakButtonColor ??
             Color.lerp(colorScheme.surface, colorScheme.primary, 0.18)!);
     final foregroundColor = bestContrastingTextColor(backgroundColor);
+    // 色で塗るのは呼び出し側が色を渡したときだけ。淡い色は灰色の枠で背景と分ける
+    final filled =
+        isSpeaking ? stopButtonColor != null : speakButtonColor != null;
     final icon =
         isSpeaking ? CupertinoIcons.stop_fill : CupertinoIcons.speaker_2;
 
@@ -122,6 +126,10 @@ class TTSButton extends ConsumerWidget {
                 borderRadius:
                     BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
+            ).copyWith(
+              side: filled
+                  ? filledButtonSide(backgroundColor, colorScheme)
+                  : null,
             ),
             icon: Icon(icon),
             label: Text(

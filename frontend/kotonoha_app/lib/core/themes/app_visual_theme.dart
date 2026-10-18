@@ -2,6 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 
+/// 色で塗ったボタンの枠。テーマ既定の枠（[ColorScheme.outline] の灰色）は
+/// 白いボタンと背景の境目のためのもので、色で塗ったボタンに付くと灰色の縁に
+/// 見える（iPad、2026-10-18）。塗りと同じ色にする。押せないときは塗りが
+/// 灰色になるので、既定と同じ薄い灰色にする。
+WidgetStateProperty<BorderSide?> filledButtonSide(
+  Color background,
+  ColorScheme scheme,
+) =>
+    WidgetStateProperty.resolveWith(
+      (states) => BorderSide(
+        color: states.contains(WidgetState.disabled)
+            ? scheme.outline.withValues(alpha: 0.38)
+            : background,
+      ),
+    );
+
 /// ホームと各画面で共通の配色・輪郭。文字サイズとタップ領域は base を保つ。
 ThemeData appVisualTheme(ThemeData base, {required bool highContrast}) {
   highContrast = highContrast || base.colorScheme.primary == Colors.black;

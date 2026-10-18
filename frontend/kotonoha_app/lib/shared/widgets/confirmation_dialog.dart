@@ -16,6 +16,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/themes/app_visual_theme.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/core/utils/spoken_label.dart';
 
@@ -175,7 +176,7 @@ class ConfirmationDialog extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: confirmBackground,
             foregroundColor: bestContrastingTextColor(confirmBackground),
-          ),
+          ).copyWith(side: filledButtonSide(confirmBackground, colorScheme)),
           child: Text(confirmLabel),
         ),
       ],
