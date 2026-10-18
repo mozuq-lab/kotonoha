@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/character_board/domain/character_data.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
@@ -103,6 +104,14 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
   /// キーの高さの上限（幅に対する倍率）。これより縦長にはしない
   static const double _maxCellHeightRatio = 1.75;
 
+  /// 10 列のとき、5 列ずつの間に置く隙間。iPad では 1 列に 2 行分（あいうえお｜
+  /// かきくけこ）が並び、行の区切りがわかりにくかった（人の依頼、2026-10-18）
+  static const double _rowGroupGap = 24;
+
+  /// 5 列のとき、行ごとに交互に混ぜる基本色の割合。iPhone では 1 列＝1 行なので、
+  /// どの列が何行目かを目で追えるよう、ごく淡い縞にする（人の依頼、2026-10-18）
+  static const double _rowStripe = 0.06;
+
   /// 文字種の切り替え（基本・濁音・半濁音・小文字・記号）
   /// 横スクロールにすると狭い画面で右端のラベルが切れて見えるため、
   /// 5つを等幅の1行に並べる。長いラベルは折り返さずに縮めて1行に保つ。
@@ -194,8 +203,9 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
         ].reduce((a, b) => a > b ? a : b);
 
         final contentWidth = availableWidth - gridPadding * 2;
+        final groupGap = columns == 10 ? _rowGroupGap : 0.0;
         final widthBasedCellSize = columns > 0
-            ? (contentWidth - spacing * (columns - 1)) / columns
+            ? (contentWidth - spacing * (columns - 1) - groupGap) / columns
             : buttonSize;
 
         double heightBasedCellSize = widthBasedCellSize;
@@ -220,10 +230,10 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
 
         return GridView.builder(
           padding: const EdgeInsets.all(AppSizes.paddingSmall),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: _GroupedGridDelegate(
             crossAxisCount: columns,
-            mainAxisSpacing: spacing,
-            crossAxisSpacing: spacing,
+            spacing: spacing,
+            groupGap: groupGap,
             childAspectRatio: childAspectRatio,
           ),
           itemCount: characters.length,
@@ -235,9 +245,19 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
             }
             // RepaintBoundaryで個別ボタンの再描画範囲を限定
             // タップ時に該当ボタンのみ再描画し、他のボタンへの影響を最小化
+            // 5 列のときは、行（あ行・か行…）ごとに淡い色と白を交互にする。
+            // 高コントラストは白黒の見やすさを優先して色を付けない
+            final scheme = Theme.of(context).colorScheme;
+            final stripe = columns == 5 &&
+                    (index ~/ 5).isEven &&
+                    scheme.primary != Colors.black
+                ? Color.lerp(
+                    scheme.surfaceContainerLow, scheme.primary, _rowStripe)
+                : null;
             return RepaintBoundary(
               child: CharacterButton(
                 key: ValueKey('character_button_$character'),
+                face: stripe,
                 character: character,
                 displayLabel: CharacterData.getDisplayLabel(character),
                 accessibilityLabel:
@@ -273,6 +293,7 @@ class CharacterButton extends StatelessWidget {
   /// [accessibilityLabel] - スクリーンリーダー用ラベル（省略時は[character]を使用）
   const CharacterButton({
     super.key,
+    this.face,
     required this.character,
     required this.onTap,
     this.size = 60.0,
@@ -305,6 +326,9 @@ class CharacterButton extends StatelessWidget {
   /// nullの場合は[character]をそのまま使用する。
   final String? accessibilityLabel;
 
+  /// キーの面の色。null ならいつもの面（[ColorScheme.surfaceContainerLow]）
+  final Color? face;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -324,7 +348,7 @@ class CharacterButton extends StatelessWidget {
         child: Material(
           // 背景より一段明るい面に置き、影は付けない（縁で境界を示す）
           color: isEnabled
-              ? theme.colorScheme.surfaceContainerLow
+              ? (face ?? theme.colorScheme.surfaceContainerLow)
               : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
           borderRadius: borderRadius,
           child: InkWell(
@@ -401,5 +425,69 @@ class CharacterButton extends StatelessWidget {
       case FontSize.large:
         return AppSizes.fontSizeLarge;
     }
+  }
+}
+
+/// 列数が決まったグリッドで、10 列のときだけ 5 列ずつの間に [groupGap] の隙間を置く。
+/// キーの幅は隙間の分だけ全員を等しく狭くする（隙間に接するキーだけ細くしない）。
+class _GroupedGridDelegate extends SliverGridDelegateWithFixedCrossAxisCount {
+  const _GroupedGridDelegate({
+    required super.crossAxisCount,
+    required double spacing,
+    required this.groupGap,
+    required super.childAspectRatio,
+  }) : super(mainAxisSpacing: spacing, crossAxisSpacing: spacing);
+
+  final double groupGap;
+
+  @override
+  SliverGridLayout getLayout(SliverConstraints constraints) {
+    final usable = constraints.crossAxisExtent -
+        crossAxisSpacing * (crossAxisCount - 1) -
+        groupGap;
+    final width = usable > 0 ? usable / crossAxisCount : 0.0;
+    final height = width / childAspectRatio;
+    return _GroupedGridLayout(
+      crossAxisCount: crossAxisCount,
+      mainAxisStride: height + mainAxisSpacing,
+      crossAxisStride: width + crossAxisSpacing,
+      childMainAxisExtent: height,
+      childCrossAxisExtent: width,
+      reverseCrossAxis: axisDirectionIsReversed(constraints.crossAxisDirection),
+      groupGap: groupGap,
+    );
+  }
+
+  @override
+  bool shouldRelayout(_GroupedGridDelegate oldDelegate) =>
+      super.shouldRelayout(oldDelegate) || oldDelegate.groupGap != groupGap;
+}
+
+class _GroupedGridLayout extends SliverGridRegularTileLayout {
+  const _GroupedGridLayout({
+    required super.crossAxisCount,
+    required super.mainAxisStride,
+    required super.crossAxisStride,
+    required super.childMainAxisExtent,
+    required super.childCrossAxisExtent,
+    required super.reverseCrossAxis,
+    required this.groupGap,
+  });
+
+  final double groupGap;
+
+  @override
+  SliverGridGeometry getGeometryForChildIndex(int index) {
+    final geometry = super.getGeometryForChildIndex(index);
+    if (groupGap == 0 || index % crossAxisCount < crossAxisCount ~/ 2) {
+      return geometry;
+    }
+    return SliverGridGeometry(
+      scrollOffset: geometry.scrollOffset,
+      crossAxisOffset:
+          geometry.crossAxisOffset + (reverseCrossAxis ? -groupGap : groupGap),
+      mainAxisExtent: geometry.mainAxisExtent,
+      crossAxisExtent: geometry.crossAxisExtent,
+    );
   }
 }
