@@ -324,12 +324,6 @@ void main() {
       final confirm = renderedButtonColor(tester, 'はい');
       final cancel = renderedButtonColor(tester, 'いいえ');
       final side = paintedButtonSide(tester, 'はい');
-      final widget = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, 'はい'),
-      );
-      final themeSide = theme.elevatedButtonTheme.style?.side?.resolve(
-        const <WidgetState>{},
-      );
 
       // 取り消せない実行はテーマの error 色。`kind` の既定が変わるとここが落ちる
       expect(confirm, theme.colorScheme.error,
@@ -337,13 +331,12 @@ void main() {
       // 取り消しと同じ見た目では、そもそも見分けがつかない
       expect(cancel, isNot(confirm),
           reason: '$themeName: 取り消しと実行が同じ色（いいえ=$cancel はい=$confirm）');
-      expect(widget.style?.side, isNull,
-          reason: '$themeName: 全消去のボタンがテーマの枠線を上書きしている');
-      expect(side, themeSide, reason: '$themeName: 全消去の枠線がテーマから解決されていない');
       expect(side, isNotNull, reason: '$themeName: 全消去の枠線が描画されていない');
+      // 色で塗ったボタンの縁は塗りと同じ色（テーマ既定の灰色の縁にしない。iPad、2026-10-18）
+      expect(side!.color, confirm, reason: '$themeName: 全消去の縁が塗りと違う色');
       final surface = _dialogSurface(tester);
       final fillRatio = wcagContrastRatio(confirm!, surface);
-      final sideSurfaceRatio = wcagContrastRatio(side!.color, surface);
+      final sideSurfaceRatio = wcagContrastRatio(side.color, surface);
       final sideFillRatio = wcagContrastRatio(side.color, confirm);
       expect(
         fillRatio >= 3.0 || (sideSurfaceRatio >= 3.0 && sideFillRatio >= 3.0),
@@ -526,13 +519,7 @@ void main() {
       final confirm = renderedButtonColor(tester, '同意して利用');
       final cancel = renderedButtonColor(tester, '同意しない');
       final side = paintedButtonSide(tester, '同意して利用');
-      final widget = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, '同意して利用'),
-      );
       final dialogTheme = Theme.of(tester.element(find.text('同意して利用')));
-      final themeSide = dialogTheme.elevatedButtonTheme.style?.side?.resolve(
-        const <WidgetState>{},
-      );
 
       // データを消す操作ではないので error ではなく primary
       expect(confirm, dialogTheme.colorScheme.primary,
@@ -544,13 +531,12 @@ void main() {
       // destructive と同じ色では、重さの差が伝わらない
       expect(theme.colorScheme.primary, isNot(theme.colorScheme.error),
           reason: '$themeName: primary と error が同じ色');
-      expect(widget.style?.side, isNull,
-          reason: '$themeName: 同意ボタンがテーマの枠線を上書きしている');
-      expect(side, themeSide, reason: '$themeName: 同意ボタンの枠線がテーマから解決されていない');
       expect(side, isNotNull, reason: '$themeName: 同意ボタンの枠線が描画されていない');
+      // 色で塗ったボタンの縁は塗りと同じ色（テーマ既定の灰色の縁にしない。iPad、2026-10-18）
+      expect(side!.color, confirm, reason: '$themeName: 同意ボタンの縁が塗りと違う色');
       final surface = _dialogSurface(tester);
       final fillRatio = wcagContrastRatio(confirm!, surface);
-      final sideSurfaceRatio = wcagContrastRatio(side!.color, surface);
+      final sideSurfaceRatio = wcagContrastRatio(side.color, surface);
       final sideFillRatio = wcagContrastRatio(side.color, confirm);
       expect(
         fillRatio >= 3.0 || (sideSurfaceRatio >= 3.0 && sideFillRatio >= 3.0),

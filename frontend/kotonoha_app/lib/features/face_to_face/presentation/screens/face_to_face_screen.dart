@@ -75,6 +75,19 @@ class FaceToFaceScreen extends ConsumerWidget {
               right: 16,
               child: _buildBackButton(context),
             ),
+            // iPad を机に置いて向かい合うと、上の組は本人から遠く届きにくい
+            // （iPad、2026-10-18）。下にも同じ組を置く。VoiceOver では上の組と
+            // 同じ名前が 2 回読まれないよう、下の組は読ませない
+            const Positioned(
+              bottom: 16,
+              left: 16,
+              child: ExcludeSemantics(child: RotationToggleButton()),
+            ),
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: ExcludeSemantics(child: _buildBackButton(context)),
+            ),
           ],
         ),
       ),

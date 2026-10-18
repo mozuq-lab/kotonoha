@@ -432,7 +432,6 @@ void main() {
                   politenessLevel: PolitenessLevel.normal,
                   onAdopt: (_) {},
                   onRegenerate: () {},
-                  onUseOriginal: (_) {},
                   onLevelChanged: (_) async => throw Exception('失敗'),
                 ),
                 child: const Text('開く'),

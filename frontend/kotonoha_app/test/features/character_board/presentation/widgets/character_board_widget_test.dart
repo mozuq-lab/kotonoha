@@ -571,6 +571,49 @@ void main() {
 
         expect(tappedCharacter, equals(CharacterData.spaceKey));
       });
+
+      // 長音は記号タブにしか無く、「ラーメン」のような語のたびにタブを替えていた
+      for (final size in const [Size(1024, 1366), Size(390, 844)]) {
+        testWidgets('基本タブの「空白」の左隣に長音があり、押すと「ー」が入る（$size）', (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          String? tappedCharacter;
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: CharacterBoardWidget(
+                  onCharacterTap: (char) => tappedCharacter = char,
+                ),
+              ),
+            ),
+          );
+
+          final longVowel = find.text('ー');
+          expect(longVowel, findsOneWidget, reason: '基本タブに長音が無い');
+          final space = tester.getRect(find.text('空白'));
+          final vowel = tester.getRect(longVowel);
+          expect(vowel.center.dy, closeTo(space.center.dy, 1),
+              reason: '長音が空白と同じ行に無い');
+          expect(vowel.right, lessThan(space.left), reason: '長音が空白の左に無い');
+          // 間に別のキーが挟まっていない
+          final between = find.byWidgetPredicate((w) =>
+              w is Text &&
+              w.data != null &&
+              w.data!.isNotEmpty &&
+              () {
+                final r = tester.getRect(find.byWidget(w));
+                return (r.center.dy - space.center.dy).abs() < 1 &&
+                    r.left > vowel.right &&
+                    r.right < space.left;
+              }());
+          expect(between, findsNothing, reason: '長音と空白の間に別のキーがある');
+
+          await tester.tap(longVowel);
+          await tester.pump();
+          expect(tappedCharacter, 'ー');
+        });
+      }
     });
   });
 }

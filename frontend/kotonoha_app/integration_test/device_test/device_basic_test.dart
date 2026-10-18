@@ -461,7 +461,7 @@ void main() {
         );
 
         // 実際の処理実行: 180度回転ボタンをタップ
-        await tester.tap(find.byType(RotationToggleButton));
+        await tester.tap(find.byType(RotationToggleButton).first);
         await tester.pumpAndSettle();
 
         // 結果検証: 文が180度回転して表示される
@@ -472,7 +472,7 @@ void main() {
         await takeScreenshot(binding, 'RT-016_face_to_face_mode');
 
         // 実際の処理実行: 対面表示を閉じてホームに戻る
-        await tester.tap(find.byIcon(CupertinoIcons.xmark));
+        await tester.tap(find.byIcon(CupertinoIcons.xmark).first);
         await tester.pumpAndSettle();
         expectHomeBrand();
       },

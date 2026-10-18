@@ -1,14 +1,14 @@
 /// AI変換結果表示・選択ダイアログ ウィジェット
-/// AI変換の結果を表示し、ユーザーが「採用」「再生成」「元の文を使う」
+/// AI変換の結果を表示し、ユーザーが「採用」「再生成」「キャンセル」
 /// の選択ができるダイアログ。
 library;
 
 import 'package:flutter/material.dart';
 import 'package:kotonoha_app/core/constants/app_colors.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
-import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/core/utils/spoken_label.dart';
 import 'package:kotonoha_app/core/constants/app_text_styles.dart';
+import 'package:kotonoha_app/core/themes/app_visual_theme.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/exceptions/ai_conversion_exception.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/models/politeness_level.dart';
 import 'package:kotonoha_app/features/ai_conversion/presentation/widgets/politeness_level_selector.dart';
@@ -24,14 +24,14 @@ const double kResultAreaMaxHeight = 200.0;
 
 /// AI変換結果表示・選択ダイアログ
 /// AI変換結果を表示し、採用・却下を選択可能
-/// 再生成または元の文を使用できる機能を提供
+/// 再生成、またはキャンセルして入力をそのまま残せる
 /// デザイン仕様
 /// タイトル: 「AI変換結果」
 /// 元の文セクション: ラベル + 元のテキスト表示
 /// 変換結果セクション: ラベル + 変換後テキスト表示（強調）
 /// 丁寧さレベル表示: 使用したレベルを表示
-/// 「採用」ボタン: プライマリカラー、大きめサイズ
-/// 「再生成」「元の文を使う」ボタン: セカンダリカラー、横並び
+/// 「採用」ボタン: プライマリカラーの塗り、大きめサイズ
+/// 「再生成」ボタン: プライマリカラーの枠、「キャンセル」ボタン: 灰色の枠。横並び
 /// ダイアログ外タップでは閉じない（barrierDismissible: false）
 /// 連続タップ防止機能
 /// 使用例
@@ -46,9 +46,6 @@ const double kResultAreaMaxHeight = 200.0;
 /// }
 /// onRegenerate:  {
 /// startAIConversion;
-/// }
-/// onUseOriginal: (original) {
-/// inputController.text = original;
 /// }
 /// );
 /// ```
@@ -74,13 +71,13 @@ class AIConversionResultDialog extends StatefulWidget {
   /// 「再生成」タップ時コールバック
   final VoidCallback onRegenerate;
 
-  /// 「元の文を使う」タップ時コールバック
-  final void Function(String original) onUseOriginal;
+  /// 「キャンセル」タップ時コールバック。入力には触れず、閉じるだけ
+  final VoidCallback onCancel;
 
   /// 丁寧さを選び直したときの変換処理。
   /// 今と違う丁寧さを選ぶと呼ばれ、返った文でダイアログ内の変換結果を
   /// 差し替える（ダイアログは閉じない）。失敗は例外で返し、ダイアログ内に
-  /// 告げる。変換を待つ間も「採用」「元の文を使う」は押せる（閉じ込めない）。
+  /// 告げる。変換を待つ間も「採用」「キャンセル」は押せる（閉じ込めない）。
   final Future<String> Function(PolitenessLevel level) onLevelChanged;
 
   /// AIConversionResultDialogを作成する
@@ -89,7 +86,7 @@ class AIConversionResultDialog extends StatefulWidget {
   /// [politenessLevel] - 使用した丁寧さレベル（必須）
   /// [onAdopt] - 「採用」タップ時のコールバック（必須）
   /// [onRegenerate] - 「再生成」タップ時のコールバック（必須）
-  /// [onUseOriginal] - 「元の文を使う」タップ時のコールバック（必須）
+  /// [onCancel] - 「キャンセル」タップ時のコールバック（必須）
   const AIConversionResultDialog({
     super.key,
     required this.originalText,
@@ -97,7 +94,7 @@ class AIConversionResultDialog extends StatefulWidget {
     required this.politenessLevel,
     required this.onAdopt,
     required this.onRegenerate,
-    required this.onUseOriginal,
+    required this.onCancel,
     required this.onLevelChanged,
   });
 
@@ -114,7 +111,6 @@ class AIConversionResultDialog extends StatefulWidget {
     required PolitenessLevel politenessLevel,
     required void Function(String result) onAdopt,
     required VoidCallback onRegenerate,
-    required void Function(String original) onUseOriginal,
     required Future<String> Function(PolitenessLevel level) onLevelChanged,
   }) {
     return showDialog<void>(
@@ -132,10 +128,8 @@ class AIConversionResultDialog extends StatefulWidget {
           Navigator.of(dialogContext).pop();
           onRegenerate();
         },
-        onUseOriginal: (original) {
-          Navigator.of(dialogContext).pop();
-          onUseOriginal(original);
-        },
+        // キャンセルは入力に触れず、閉じるだけ
+        onCancel: () => Navigator.of(dialogContext).pop(),
         onLevelChanged: onLevelChanged,
       ),
     );
@@ -173,13 +167,6 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
     if (_isHighContrastMode(theme)) return AppColors.primaryHighContrast;
     if (_isDarkMode(theme)) return AppColors.primaryDark;
     return AppColors.primaryLight;
-  }
-
-  /// テーマに応じたセカンダリボタンの背景色を取得
-  Color _getSecondaryButtonColor(ThemeData theme) {
-    if (_isHighContrastMode(theme)) return AppColors.cancelButtonHighContrast;
-    if (_isDarkMode(theme)) return AppColors.cancelButtonDark;
-    return AppColors.cancelButtonLight;
   }
 
   /// テーマに応じた変換結果ボックスの背景色を取得
@@ -244,10 +231,6 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final secondaryButtonColor = _getSecondaryButtonColor(theme);
-    // AA対応: ボタン背景はテーマごとに変わるため文字色を固定せず
-    // 実際の背景色の輝度から黒・白のうちコントラスト比が高い方を選ぶ。
-    final secondaryTextColor = bestContrastingTextColor(secondaryButtonColor);
 
     return Semantics(
       label: spokenLabel('AI変換結果ダイアログ'),
@@ -284,14 +267,11 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: _buildRegenerateButton(
-                      secondaryButtonColor,
-                      secondaryTextColor,
-                    ),
+                    child: _buildRegenerateButton(theme),
                   ),
                   const SizedBox(width: AppSizes.paddingSmall),
                   Expanded(
-                    child: _buildUseOriginalButton(theme),
+                    child: _buildCancelButton(theme),
                   ),
                 ],
               ),
@@ -431,26 +411,40 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
             double.infinity,
             AppSizes.minTapTarget,
           ),
-        ),
+        ).copyWith(side: filledButtonSide(backgroundColor, theme.colorScheme)),
         child: Text('採用', style: AppTextStyles.buttonLarge),
       ),
     );
   }
 
   /// 「再生成」ボタンを構築
-  Widget _buildRegenerateButton(Color backgroundColor, Color textColor) {
+  /// 灰色の塗りでは押せないボタンやキャンセルに見えた（iPad、2026-10-18）。
+  /// 操作なので基本色の枠と文字にする。色は変換結果ボックスの枠と同じで、
+  /// ダイアログ背景に対して枠 3:1・文字 4.5:1 を満たす。枠は 2px にし、高コントラスト
+  /// （枠も文字も黒）で 1px の「キャンセル」と見分ける。押せないとき（丁寧さを選び直して
+  /// 待つ間）は、基本色の枠のままだと押せそうに見えるので、薄い灰色にする。
+  Widget _buildRegenerateButton(ThemeData theme) {
+    final color = _getResultOutlineColor(theme);
     return SizedBox(
       height: AppSizes.minTapTarget,
-      child: ElevatedButton(
+      child: OutlinedButton(
         onPressed: _isProcessing || _isChangingLevel
             ? null
             : () => _handleTap(widget.onRegenerate),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: textColor,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: color,
           minimumSize: const Size(
             AppSizes.dialogButtonMinWidth,
             AppSizes.minTapTarget,
+          ),
+        ).copyWith(
+          side: WidgetStateProperty.resolveWith(
+            (states) => BorderSide(
+              color: states.contains(WidgetState.disabled)
+                  ? theme.colorScheme.outline.withValues(alpha: 0.38)
+                  : color,
+              width: 2,
+            ),
           ),
         ),
         child: FittedBox(
@@ -461,29 +455,24 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
     );
   }
 
-  /// 「元の文を使う」ボタンを構築
-  /// AA対応: 枠線にテーマのプライマリ色をそのまま使っていたため
-  /// ライトテーマでダイアログ背景に対し 2.87:1 と非テキスト基準(3:1)未達
-  /// だった。結果ボックスと同じ枠線色を使う。
-  Widget _buildUseOriginalButton(ThemeData theme) {
+  /// 「キャンセル」ボタンを構築
+  /// 取りやめなので、操作（基本色）と見分けられる灰色の枠と本文の色の文字にする。
+  Widget _buildCancelButton(ThemeData theme) {
     return SizedBox(
       height: AppSizes.minTapTarget,
       child: OutlinedButton(
-        onPressed: _isProcessing
-            ? null
-            : () => _handleTap(() => widget.onUseOriginal(widget.originalText)),
+        onPressed: _isProcessing ? null : () => _handleTap(widget.onCancel),
         style: OutlinedButton.styleFrom(
+          foregroundColor: theme.colorScheme.onSurface,
           minimumSize: const Size(
             AppSizes.dialogButtonMinWidth,
             AppSizes.minTapTarget,
           ),
-          side: BorderSide(
-            color: _getResultOutlineColor(theme),
-          ),
+          side: BorderSide(color: theme.colorScheme.outline),
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text('元の文を使う', style: AppTextStyles.button),
+          child: Text('キャンセル', style: AppTextStyles.button),
         ),
       ),
     );

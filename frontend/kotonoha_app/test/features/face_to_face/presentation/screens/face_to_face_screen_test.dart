@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/features/face_to_face/presentation/screens/face_to_face_screen.dart';
+import 'package:kotonoha_app/features/face_to_face/providers/face_to_face_provider.dart';
 
 void main() {
   group('FaceToFaceScreenテスト', () {
@@ -121,9 +122,9 @@ void main() {
         final backButton = find.byIcon(Icons.arrow_back);
 
         if (closeButton.evaluate().isNotEmpty) {
-          await tester.tap(closeButton);
+          await tester.tap(closeButton.first);
         } else if (backButton.evaluate().isNotEmpty) {
-          await tester.tap(backButton);
+          await tester.tap(backButton.first);
         }
         await tester.pumpAndSettle();
 
@@ -245,6 +246,83 @@ void main() {
             );
           }
         }
+      });
+    });
+
+    // iPad を机に置いて向かい合うと、上のボタンは本人から遠く届きにくい
+    // （iPad、2026-10-18）。下にも同じ組を置く
+    group('上下のボタン', () {
+      Future<ProviderContainer> pump(WidgetTester tester,
+          {VoidCallback? onBack}) async {
+        tester.view.physicalSize = const Size(1024, 1366);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              home: FaceToFaceScreen(displayText: 'テスト', onBack: onBack),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        return container;
+      }
+
+      testWidgets('回転と閉じるが、上と下に1組ずつある', (tester) async {
+        await pump(tester);
+        for (final icon in [
+          CupertinoIcons.rotate_right,
+          CupertinoIcons.xmark,
+        ]) {
+          final found = find.byIcon(icon);
+          expect(found, findsNWidgets(2), reason: '$icon が上下にない');
+          final ys = [
+            for (var k = 0; k < 2; k++) tester.getCenter(found.at(k)).dy,
+          ]..sort();
+          expect(ys.first, lessThan(1366 / 4), reason: '$icon の上の組が上端に無い');
+          expect(ys.last, greaterThan(1366 * 3 / 4),
+              reason: '$icon の下の組が下端に無い');
+        }
+      });
+
+      testWidgets('下の「閉じる」で閉じ、下の「回転」で回転する', (tester) async {
+        var closed = false;
+        final container = await pump(tester, onBack: () => closed = true);
+
+        Finder bottom(IconData icon) {
+          final found = find.byIcon(icon);
+          final count = found.evaluate().length;
+          var finder = found.first;
+          for (var k = 1; k < count; k++) {
+            if (tester.getCenter(found.at(k)).dy >
+                tester.getCenter(finder).dy) {
+              finder = found.at(k);
+            }
+          }
+          expect(tester.getCenter(finder).dy, greaterThan(1366 * 3 / 4),
+              reason: '$icon の下の組が無い');
+          return finder;
+        }
+
+        await tester.tap(bottom(CupertinoIcons.rotate_right));
+        await tester.pumpAndSettle();
+        expect(container.read(faceToFaceProvider).isRotated180, isTrue);
+
+        await tester.tap(bottom(CupertinoIcons.xmark));
+        await tester.pumpAndSettle();
+        expect(closed, isTrue);
+      });
+
+      testWidgets('VoiceOver では回転と終了を1回ずつだけ読む', (tester) async {
+        final handle = tester.ensureSemantics();
+        await pump(tester);
+        // ボタンの名前には中のアイコンの名前（「閉じる」）も続くので、部分一致で数える
+        expect(find.bySemanticsLabel(RegExp('対面表示モードを終了')), findsOneWidget);
+        expect(find.bySemanticsLabel(RegExp('画面を180度回転')), findsOneWidget);
+        handle.dispose();
       });
     });
   });

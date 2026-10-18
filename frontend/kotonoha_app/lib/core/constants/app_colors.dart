@@ -108,15 +108,6 @@ class AppColors {
   /// 「塗り」と「文字」で別のトークンを参照する構造を3テーマで揃えるために定義する。
   static const Color primaryTextHighContrast = Color(0xFF000000);
 
-  /// キャンセルボタン用グレー（ライトモード）
-  static const Color cancelButtonLight = Color(0xFF757575);
-
-  /// キャンセルボタン用グレー（ダークモード - 明るいグレー）
-  static const Color cancelButtonDark = Color(0xFFBDBDBD);
-
-  /// キャンセルボタン用（高コントラストモード - 黒）
-  static const Color cancelButtonHighContrast = Color(0xFF000000);
-
   // 警告表示
   // 2系統ある。前者は自前の背景（コンテナ）を持つ表示、後者は背景を持たず
   // テーマの surface に直接載せる表示で、基準となる背景色が異なる。
@@ -154,12 +145,12 @@ class AppColors {
   /// AI変換結果ボックスの背景（高コントラスト）。
   static const Color aiResultContainerHighContrast = Color(0xFFFFF9C4);
 
-  /// AI変換結果ボックスと「元の文を使う」ボタンの枠線（ライト）。
+  /// AI変換結果ボックスと「再生成」ボタンの枠線（ライト）。
   static const Color aiResultOutlineLight = primaryTextLight;
 
-  /// AI変換結果ボックスと「元の文を使う」ボタンの枠線（ダーク）。
+  /// AI変換結果ボックスと「再生成」ボタンの枠線（ダーク）。
   static const Color aiResultOutlineDark = primaryTextDark;
 
-  /// AI変換結果ボックスと「元の文を使う」ボタンの枠線（高コントラスト）。
+  /// AI変換結果ボックスと「再生成」ボタンの枠線（高コントラスト）。
   static const Color aiResultOutlineHighContrast = Color(0xFF000000);
 }

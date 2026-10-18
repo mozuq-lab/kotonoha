@@ -253,12 +253,12 @@ void main() {
     }
 
     // 変換を待つ間もダイアログは1枚のまま進捗を出し、元の結果と
-    // 「採用」「元の文を使う」は押せる（閉じ込めない）。
+    // 「採用」「キャンセル」は押せる（閉じ込めない）。
     expect(requestedLevels, ['normal', 'polite']);
     expect(find.byType(AIConversionResultDialog), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     expect(find.text('変換:normal'), findsOneWidget);
-    for (final label in ['採用', '元の文を使う']) {
+    for (final label in ['採用', 'キャンセル']) {
       final button = find.ancestor(
         of: find.text(label),
         matching: find.bySubtype<ButtonStyleButton>(),
