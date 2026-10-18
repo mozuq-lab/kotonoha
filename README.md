@@ -116,12 +116,12 @@ Worker は利用者が送った `X-Forwarded-For` を捨て、`CF-Connecting-IP`
 前提: Workers Paid の契約、AI Gateway（支出上限・回数制限を設定済み）、Workers AI を呼べる API トークン、
 Docker（イメージを手元で作ってから送る）。
 
-端末キー（`API_KEYS`）は、推測されにくい値を自分で作る。同じ値を GitHub の Settings → Secrets and
-variables → Actions の **Secrets** に `AI_API_KEY` として登録すると、`release.yml` がアプリのビルドに渡す
-（Variables に置くとワークフローは読まず、空の鍵でビルドされる）。接続先は Variables の `API_BASE_URL` に置く。
+端末キー（`API_KEYS`）は、推測されにくい値を自分で作る。同じ値を、ストアに出す版を作る手元の
+`~/.config/kotonoha/ios-release.json` の `AI_API_KEY` に入れる（「iOS の版を TestFlight へ送る」）。
+CI（`flutter.yml`・`release.yml`）の成果物にはキーを入れない。公開リポジトリの成果物は誰でも取り出せるため。
 
 ```bash
-openssl rand -hex 32    # 16 進数 64 文字。表示された値を下の API_KEYS と GitHub の AI_API_KEY に使う
+openssl rand -hex 32    # 16 進数 64 文字。表示された値を下の API_KEYS と ios-release.json の AI_API_KEY に使う
 ```
 
 ```bash
@@ -191,7 +191,7 @@ curl -s https://<Worker の URL>/api/v1/health   # 応答が無くなったこ�
 | Workers AI の API トークン | My Profile → API Tokens | 当分使わないなら無効にする |
 | 前払いのクレジット | Billing | 残る |
 | Workers Paid の契約 | Workers & Pages → Plans | 月額が続く。止めるなら解約する |
-| `API_BASE_URL`（Variables）・`AI_API_KEY`（Secrets） | GitHub の Settings → Secrets and variables → Actions | 残したままだと、ビルドは消えた URL を指す |
+| `API_BASE_URL`（Variables） | GitHub の Settings → Secrets and variables → Actions | 残したままだと、CI のビルドは消えた URL を指す |
 
 作り直すときは、上の「デプロイ」の手順で secret を 4 つとも登録し直す（Worker と一緒に消えている）。
 `name` が同じなら URL も同じになり、端末キーを変えなければ GitHub の設定はそのまま使える。
@@ -212,7 +212,7 @@ scripts/ios-testflight.sh
 
 - `python.yml` — backend の lint・型・層契約・ゲート・テストを `main` / `develop` への push・PR で実行
 - `flutter.yml` — frontend の analyze・format・test・ビルドを `main` / `develop` への push・PR で実行
-- `release.yml` — タグ push でストア配布物（Android AAB 等）を作る
+- `release.yml` — タグ push で Android AAB 等を作る。端末キーを入れないので、そのままでは AI 変換が使えない（ストアに出す iOS の版は `scripts/ios-testflight.sh` で作る。Android の版の作り方は Play に出す前に決める）
 
 ## 規約
 
