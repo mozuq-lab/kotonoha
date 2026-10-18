@@ -44,12 +44,15 @@
 
 #### 必須サイズ
 
-| デバイス | サイズ（ポートレート） | 撮るシミュレータ |
-|----------|------------------------|------------------|
-| iPhone 6.9インチ | 1320 x 2868 | iPhone 17 Pro Max |
-| iPad 13インチ | 2064 x 2752 | iPad Pro 13-inch (M5) |
+| App Store Connect の区分 | サイズ（ポートレート） | 撮るシミュレータ | 置き場所 | 必須 |
+|----------|------------------------|------------------|----------|------|
+| Dynamic Island 搭載 iPhone（中型ディスプレイ） | 1206 x 2622 | iPhone 17 Pro | `iphone_6_3in/` | はい |
+| Dynamic Island 搭載 iPhone（大型ディスプレイ） | 1320 x 2868 | iPhone 17 Pro Max | `iphone_6_9in/` | いいえ |
+| iPad 13インチ | 2064 x 2752 | iPad Pro 13-inch (M5) | `ipad_13in/` | はい |
 
-iPhone と iPad の両方に対応している（`TARGETED_DEVICE_FAMILY = "1,2"`）ので、両方が要る。
+iPhone と iPad の両方に対応している（`TARGETED_DEVICE_FAMILY = "1,2"`）ので、iPhone と iPad の両方が要る。
+iPhone の必須は「中型ディスプレイ」（2026-10 時点。以前は 6.9 インチが必須だった）。区分と必須は
+Apple の Screenshot specifications（https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/）で確かめる。
 
 #### 枚数
 - 最小: 1枚
