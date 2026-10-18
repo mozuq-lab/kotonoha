@@ -14,9 +14,23 @@ import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/widgets/app_shell.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/favorite/data/favorite_repository.dart';
+import 'package:kotonoha_app/features/favorite/domain/models/favorite.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// Android 14 以降の OS の文字の拡大は比例しない（小さい文字ほど大きく拡大する）。
+/// 縮めた分ほど幅が減らないので、縮めた後も収まるかを確かめる必要がある
+class _NonLinearScaler extends TextScaler {
+  const _NonLinearScaler();
+
+  @override
+  double scale(double fontSize) => fontSize + 8;
+
+  @override
+  double get textScaleFactor => 1.4;
+}
 
 /// 縮めてよい下限（元の文字の大きさに対する割合）
 const _minScale = 0.75;
@@ -84,4 +98,36 @@ void main() {
       expect(label.wraps, isTrue);
     });
   }
+
+  testWidgets('OS の文字の拡大が比例しなくても、縮めた名前を「…」で切らない', (tester) async {
+    // 縮めれば 1 行に収まりそうに見えるが、比例しない拡大では収まらない幅
+    for (final width in [70.0, 80.0, 90.0, 100.0, 110.0]) {
+      await tester.pumpWidget(MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: _NonLinearScaler()),
+          child: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: width,
+                child: FavoriteShortcutButton(
+                  favorite: Favorite(
+                    id: 'f',
+                    content: '水ほしい',
+                    createdAt: DateTime(2026),
+                    displayOrder: 0,
+                  ),
+                  onPressed: () {},
+                  height: 120,
+                  fontSize: FontSize.medium,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+      final paragraph = tester.renderObject<RenderParagraph>(find.text('水ほしい'));
+      expect(paragraph.didExceedMaxLines, isFalse,
+          reason: '幅 $width で「水ほしい」が「…」で切れる');
+    }
+  });
 }
