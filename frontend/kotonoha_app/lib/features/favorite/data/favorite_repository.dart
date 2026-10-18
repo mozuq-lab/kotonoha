@@ -29,6 +29,11 @@ class FavoriteRepository {
     ('トイレ', 0xFFB39DDB), // 紫
   ];
 
+  /// 初回に作るお気に入りの文（この順）。画面の折り返しなどのテストが、
+  /// 手書きの一覧ではなく本番と同じ文で確かめるために使う。
+  static List<String> get initialContents =>
+      [for (final (content, _) in _initialFavorites) content];
+
   /// フィールド定義: Hive Box（お気に入り保存用）
   /// 実装内容: コンストラクタで注入されたBoxを保持
   final PersistedBox<FavoriteItem> _box;
