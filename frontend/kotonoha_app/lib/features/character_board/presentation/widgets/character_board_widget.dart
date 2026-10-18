@@ -479,13 +479,14 @@ class _GroupedGridLayout extends SliverGridRegularTileLayout {
   @override
   SliverGridGeometry getGeometryForChildIndex(int index) {
     final geometry = super.getGeometryForChildIndex(index);
-    if (groupGap == 0 || index % crossAxisCount < crossAxisCount ~/ 2) {
+    // 画面の右半分に来る列を右へずらす。右から並べるとき（RTL）は、先頭の列が右半分
+    final inFirstHalf = index % crossAxisCount < crossAxisCount ~/ 2;
+    if (groupGap == 0 || inFirstHalf != reverseCrossAxis) {
       return geometry;
     }
     return SliverGridGeometry(
       scrollOffset: geometry.scrollOffset,
-      crossAxisOffset:
-          geometry.crossAxisOffset + (reverseCrossAxis ? -groupGap : groupGap),
+      crossAxisOffset: geometry.crossAxisOffset + groupGap,
       mainAxisExtent: geometry.mainAxisExtent,
       crossAxisExtent: geometry.crossAxisExtent,
     );

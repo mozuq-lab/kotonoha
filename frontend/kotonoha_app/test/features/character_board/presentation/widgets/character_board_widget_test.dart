@@ -662,6 +662,27 @@ void main() {
       expect(row[9].right, lessThanOrEqualTo(1024), reason: '右端がはみ出す');
     });
 
+    testWidgets('右から並べるとき（RTL）も、隙間が真ん中にあり、はみ出さない', (tester) async {
+      tester.view.physicalSize = const Size(1024, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        theme: lightTheme,
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(body: CharacterBoardWidget(onCharacterTap: (_) {})),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      // 右から あ い う え お ｜ か き く け こ
+      final usual = key(tester, 'あ').left - key(tester, 'い').right;
+      final gap = key(tester, 'お').left - key(tester, 'か').right;
+      expect(gap, greaterThanOrEqualTo(usual * 3), reason: '隙間が真ん中に無い（$gap）');
+      expect(key(tester, 'こ').left, greaterThanOrEqualTo(0), reason: '左端がはみ出す');
+      expect(key(tester, 'あ').right, lessThanOrEqualTo(1024),
+          reason: '右端がはみ出す');
+    });
+
     testWidgets('iPad: 行ごとの色は付けない', (tester) async {
       await pump(tester, const Size(1024, 800));
       expect(face(tester, 'あ'), face(tester, 'か'));
