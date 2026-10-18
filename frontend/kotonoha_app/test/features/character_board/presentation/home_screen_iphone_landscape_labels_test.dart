@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kotonoha_app/features/favorite/data/favorite_repository.dart';
 import 'package:kotonoha_app/core/widgets/app_shell.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_screen.dart';
 import 'package:kotonoha_app/features/character_board/presentation/widgets/home_input_field.dart';
@@ -32,7 +33,7 @@ Future<ProviderContainer> _pump(WidgetTester tester, String fontSize) async {
   final container = ProviderContainer();
   addTearDown(container.dispose);
   // 初期のお気に入りと同じ 8 件（本番は Hive から作る）
-  for (final content in ['トイレ', '暑い', '寒い', '水', '眠い', '助けて', '待って', '痛い']) {
+  for (final content in FavoriteRepository.initialContents) {
     await container.read(favoriteProvider.notifier).addFavorite(content);
   }
   await tester.pumpWidget(UncontrolledProviderScope(

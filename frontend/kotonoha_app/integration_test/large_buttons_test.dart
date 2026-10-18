@@ -108,12 +108,12 @@ void main() {
         await revealFavoriteShortcut(tester, '暑い');
         // 検証項目: 「寒い」ボタンの存在確認
         await revealFavoriteShortcut(tester, '寒い');
-        // 検証項目: 「水」ボタンの存在確認
-        await revealFavoriteShortcut(tester, '水');
+        // 検証項目: 「水ほしい」ボタンの存在確認
+        await revealFavoriteShortcut(tester, '水ほしい');
         // 検証項目: 「眠い」ボタンの存在確認
         await revealFavoriteShortcut(tester, '眠い');
-        // 検証項目: 「助けて」ボタンの存在確認
-        await revealFavoriteShortcut(tester, '助けて');
+        // 検証項目: 「ありがとう」ボタンの存在確認
+        await revealFavoriteShortcut(tester, 'ありがとう');
         // 検証項目: 「待って」ボタンの存在確認
         await revealFavoriteShortcut(tester, '待って');
       },
@@ -153,9 +153,9 @@ void main() {
           'トイレ',
           '暑い',
           '寒い',
-          '水',
+          '水ほしい',
           '眠い',
-          '助けて',
+          'ありがとう',
           '待って',
         ];
 
