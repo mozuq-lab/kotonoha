@@ -420,7 +420,9 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
   /// 「再生成」ボタンを構築
   /// 灰色の塗りでは押せないボタンやキャンセルに見えた（iPad、2026-10-18）。
   /// 操作なので基本色の枠と文字にする。色は変換結果ボックスの枠と同じで、
-  /// ダイアログ背景に対して枠 3:1・文字 4.5:1 を満たす。
+  /// ダイアログ背景に対して枠 3:1・文字 4.5:1 を満たす。枠は 2px にし、高コントラスト
+  /// （枠も文字も黒）で 1px の「キャンセル」と見分ける。押せないとき（丁寧さを選び直して
+  /// 待つ間）は、基本色の枠のままだと押せそうに見えるので、薄い灰色にする。
   Widget _buildRegenerateButton(ThemeData theme) {
     final color = _getResultOutlineColor(theme);
     return SizedBox(
@@ -435,7 +437,15 @@ class _AIConversionResultDialogState extends State<AIConversionResultDialog> {
             AppSizes.dialogButtonMinWidth,
             AppSizes.minTapTarget,
           ),
-          side: BorderSide(color: color),
+        ).copyWith(
+          side: WidgetStateProperty.resolveWith(
+            (states) => BorderSide(
+              color: states.contains(WidgetState.disabled)
+                  ? theme.colorScheme.outline.withValues(alpha: 0.38)
+                  : color,
+              width: 2,
+            ),
+          ),
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,

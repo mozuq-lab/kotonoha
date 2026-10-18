@@ -184,14 +184,31 @@ void main() {
       }
 
       // 「再生成」を灰色の塗りにしていたため、押せないボタンやキャンセルに見えた
-      // （iPad、2026-10-18）。操作は基本色の枠、取りやめは灰色の枠で見分ける
-      if (entry.key != '高コントラスト') {
-        testWidgets('${entry.key}テーマで「再生成」と「キャンセル」の枠線の色が違う', (tester) async {
-          await _pumpDialog(tester, entry.value);
-          expect(_outlinedSide(tester, '再生成').color,
-              isNot(_outlinedSide(tester, 'キャンセル').color));
-        });
-      }
+      // （iPad、2026-10-18）。操作は基本色の太い枠、取りやめは灰色の細い枠で見分ける。
+      // 高コントラストは枠も文字も黒なので、太さで見分ける
+      testWidgets('${entry.key}テーマで「再生成」と「キャンセル」の枠が見分けられる', (tester) async {
+        await _pumpDialog(tester, entry.value);
+        final regenerate = _outlinedSide(tester, '再生成');
+        final cancel = _outlinedSide(tester, 'キャンセル');
+        expect(
+          regenerate.color != cancel.color ||
+              regenerate.width >= cancel.width * 2,
+          isTrue,
+          reason: '再生成=$regenerate キャンセル=$cancel',
+        );
+      });
+
+      // 押せないとき（丁寧さを選び直して待つ間）に基本色の枠のままだと、押せそうに見える
+      testWidgets('${entry.key}テーマで押せない「再生成」の枠は基本色でない', (tester) async {
+        await _pumpDialog(tester, entry.value);
+        final enabled = _outlinedSide(tester, '再生成');
+        final button = tester.widget<OutlinedButton>(
+          find.widgetWithText(OutlinedButton, '再生成'),
+        );
+        final disabled =
+            button.style!.side!.resolve(<WidgetState>{WidgetState.disabled})!;
+        expect(disabled.color, isNot(enabled.color));
+      });
 
       // テーマの既定の灰色の枠が、色で塗ったボタンにも付いていた（iPad、2026-10-18）
       testWidgets('${entry.key}テーマで「採用」の枠線は塗りと同じ色', (tester) async {
