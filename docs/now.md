@@ -13,14 +13,14 @@
 - 2026-10-08 のセキュリティ監査・バグ監査の指摘を仕分けて直した: 認証の前に本文を読まない・本文 64 KiB 上限（#269）、IPv6 は /64 で数える（#271）、読み上げ速度をエンジンを待たずに保存（#268）、音量 0 の警告を全画面に（#270）。共通キーを取り出されて AI 変換を止められる件は受け入れた（ADR-002 の限界）
 - 人の決定（2026-10-17）を反映した: 読み上げた文はどの入口からでも履歴に残す・空白だけの文は読まず残さない（#272）、お気に入りと「読み上げ」の 300ms 以内の連続タップを無視・起動時の読み上げ失敗は専用の文言・帯がステータスバーに重ならない（#273）
 - 物理 iPad（iPad 第 8 世代・iPadOS 18.7.8）での QA を 2026-10-18 に終えた（L-25）: `integration_test/device_test/` の自動テストが通り、読み上げの音・音量 0 の帯・消音モードでも聞こえること・VoiceOver（日本語の声・帯・二重読み・記号・「AI」の読み。#278・#279）を人が確かめた。AI 変換の実機での往復は、ローカルの接続先では確かめられないので TestFlight の版で見る
-- TestFlight へ 1.0.0（ビルド 1）を 2026-10-18 に送った（`scripts/ios-testflight.sh`。接続先 `https://kotonoha.mozuq-lab.com`、送る前に本番の backend でキーが通ることを確認）。App Store Connect のアプリ登録・Bundle ID・API キー（Admin）は人が用意した
+- TestFlight へ 1.0.0（ビルド 1）を 2026-10-18 に送った（`scripts/ios-testflight.sh`。接続先 `https://kotonoha.mozuq-lab.com`、送る前に本番の backend でキーが通ることを確認）。App Store Connect のアプリ登録・Bundle ID・API キー（Admin）は人が用意した。TestFlight の版を iPad に入れ、本番の backend で AI 変換が往復した（2026-10-18 に人が確認）
 - Apple Developer Program は登録済み。サポート連絡先 `hello@mozuq-lab.com` は届く（いずれも 2026-10-17 に人が確認）
 - プライバシーポリシーは GitHub Pages で配信中。ストア用のスクリーンショットは、ロゴの文字を「ことのは」にした後の 2026-10-18 に 3 機種（iPad 13・iPhone 6.9・Android 電話）とも撮り直し、`fastlane/screenshots/ja-JP/` にある
 - `integration_test/mvp_scenario_test.dart`（7 本）は、#273 の時点で iPad シミュレータ・Android エミュレータ・ヘッドレス Chrome で通過（ADR-007 条件 2）。`integration_test/ai_conversion_e2e_test.dart` は 2026-10-03 に 3 環境で通過（ADR-007 条件 5）
 
 ## 最短経路（上から順に。終わった行は消す）
-1. App Store Connect の準備（人）: App のプライバシー表示（AI 変換で入力文を送ること）、メタデータとスクリーンショット（`fastlane/`）
-2. TestFlight の版を iPad に入れ、本番の backend で AI 変換が往復することを確かめる（人）
+1. iPad で人が気づいた調整（長音キー・対面表示の下のボタン・AI 変換結果のキャンセルと再生成・色付きボタンの縁）を入れ、ストア用のスクリーンショットを撮り直す（エージェント）
+2. App Store Connect の準備（人）: メタデータとスクリーンショット（`fastlane/`）の入力。人が決めたこと（2026-10-18）: カテゴリはユーティリティ、年齢制限 4+、配信は日本だけ、著作権は「2026 mozuq-lab」（アプリ内もそろえる）、App のプライバシー表示は入力文を「その他のユーザコンテンツ」として申告（App の機能・ユーザに紐づけない・トラッキングなし）
 3. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする
 4. 審査提出（人）
 
