@@ -22,8 +22,8 @@ class FavoriteRepository {
     ('ありがとう', 0xFF4CAF50), // 緑
     ('暑い', 0xFFFF9800), // オレンジ
     ('寒い', 0xFF2196F3), // 青
-    ('眠い', 0xFFB39DDB), // 紫
-    ('待って', 0xFFB0BEC5), // 灰
+    ('眠い', 0xFFB0BEC5), // 灰
+    ('待って', 0xFFFFD54F), // 黄
     ('水ほしい', 0xFF2196F3), // 青
     ('痛い', 0xFFFF9800), // オレンジ
     ('トイレ', 0xFFB39DDB), // 紫

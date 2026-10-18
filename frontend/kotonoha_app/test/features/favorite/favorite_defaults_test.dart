@@ -104,16 +104,16 @@ void main() {
     repository = FavoriteRepository(box: box);
     expect(
         repository.loadAllSortedSync().map((item) => item.content), expected);
-    // 色は利用者が選べる色（favoriteColorChoices）から: 緑・オレンジ・青・紫・灰
+    // 色は利用者が選べる色（favoriteColorChoices）から
     expect(repository.loadAllSortedSync().map((item) => item.colorValue), [
-      0xFF4CAF50,
-      0xFFFF9800,
-      0xFF2196F3,
-      0xFFB39DDB,
-      0xFFB0BEC5,
-      0xFF2196F3,
-      0xFFFF9800,
-      0xFFB39DDB,
+      0xFF4CAF50, // ありがとう: 緑
+      0xFFFF9800, // 暑い: オレンジ
+      0xFF2196F3, // 寒い: 青
+      0xFFB0BEC5, // 眠い: 灰
+      0xFFFFD54F, // 待って: 黄
+      0xFF2196F3, // 水ほしい: 青
+      0xFFFF9800, // 痛い: オレンジ
+      0xFFB39DDB, // トイレ: 紫
     ]);
     // 色の選択画面で、今の色が選ばれた状態で出る
     final choices = favoriteColorChoices.map((choice) => choice.$2).toSet();
