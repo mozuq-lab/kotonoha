@@ -195,6 +195,18 @@ curl -s https://<Worker の URL>/api/v1/health   # 応答が無くなったこ�
 
 作り直すときは、上の「デプロイ」の手順で secret を 4 つとも登録し直す（Worker と一緒に消えている）。
 `name` が同じなら URL も同じになり、端末キーを変えなければ GitHub の設定はそのまま使える。
+独自ドメイン `kotonoha.mozuq-lab.com`（Worker の Custom Domain。`mozuq-lab.com` の DNS は Cloudflare）は、
+Worker を消すと外れるので、作り直したら Worker の Settings → Domains & Routes で付け直す。
+
+## iOS の版を TestFlight へ送る
+
+手元の Mac で `scripts/ios-testflight.sh` を動かす。接続先と端末キー、App Store Connect API キーは、
+リポジトリの外のファイルから読む（置き場所と書き方はスクリプトの先頭）。送る前に、埋め込む接続先と
+キーが本番の backend に受け入れられるかを確かめ、だめなら止まる。署名は自動署名で、Xcode へのログインは要らない。
+
+```bash
+scripts/ios-testflight.sh
+```
 
 ## CI（`.github/workflows/`）
 

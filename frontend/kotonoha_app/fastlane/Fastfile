@@ -1,45 +1,11 @@
 # Kotonoha Fastlane Configuration
 # https://docs.fastlane.tools
 
-default_platform(:ios)
+default_platform(:android)
 
-# iOS Configuration
-platform :ios do
-  desc "Push a new beta build to TestFlight"
-  lane :beta do
-    increment_build_number(xcodeproj: "ios/Runner.xcodeproj")
-
-    build_app(
-      workspace: "ios/Runner.xcworkspace",
-      scheme: "Runner",
-      export_method: "app-store"
-    )
-
-    upload_to_testflight(skip_waiting_for_build_processing: true)
-  end
-
-  desc "Deploy a new version to the App Store"
-  lane :release do
-    increment_build_number(xcodeproj: "ios/Runner.xcodeproj")
-
-    build_app(
-      workspace: "ios/Runner.xcworkspace",
-      scheme: "Runner",
-      export_method: "app-store"
-    )
-
-    upload_to_app_store(
-      skip_screenshots: true,
-      skip_metadata: false,
-      force: true
-    )
-  end
-
-  desc "Capture screenshots"
-  lane :screenshots do
-    capture_screenshots(scheme: "Runner")
-  end
-end
+# iOS の TestFlight への送信は scripts/ios-testflight.sh（fastlane を使わない）。
+# App Store のメタデータとスクリーンショットは fastlane/metadata・fastlane/screenshots にあり、
+# App Store Connect に手で入れる。
 
 # Android Configuration
 platform :android do
