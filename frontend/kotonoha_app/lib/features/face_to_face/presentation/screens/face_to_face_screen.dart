@@ -163,9 +163,12 @@ class _FaceToFaceScreenState extends ConsumerState<FaceToFaceScreen> {
               const SizedBox(width: 12),
               Expanded(
                   child: Center(
-                      child: FilledButton.icon(
+                      child: TextButton.icon(
                 onPressed: _toggleEditing,
-                style: FilledButton.styleFrom(minimumSize: const Size(48, 60)),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(48, 60),
+                  foregroundColor: theme.colorScheme.onSurfaceVariant,
+                ),
                 icon: Icon(_isEditing
                     ? CupertinoIcons.chevron_down
                     : CupertinoIcons.pencil),
