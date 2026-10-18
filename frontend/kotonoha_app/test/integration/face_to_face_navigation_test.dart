@@ -73,10 +73,11 @@ void main() {
       await tester.tap(find.byTooltip('対面表示'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(RotationToggleButton), findsOneWidget);
+      // 上と下に1つずつある（本人の手元にも置く）
+      expect(find.byType(RotationToggleButton), findsNWidgets(2));
       expect(container.read(faceToFaceProvider).isRotated180, isFalse);
 
-      await tester.tap(find.byType(RotationToggleButton));
+      await tester.tap(find.byType(RotationToggleButton).first);
       await tester.pumpAndSettle();
 
       expect(container.read(faceToFaceProvider).isRotated180, isTrue);
@@ -93,8 +94,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(FaceToFaceScreen), findsOneWidget);
 
-      await tester.tap(find.byWidgetPredicate(
-          (widget) => widget is Icon && widget.semanticLabel == '閉じる'));
+      await tester.tap(find
+          .byWidgetPredicate(
+              (widget) => widget is Icon && widget.semanticLabel == '閉じる')
+          .first);
       await tester.pumpAndSettle();
 
       expect(find.byType(FaceToFaceScreen), findsNothing);

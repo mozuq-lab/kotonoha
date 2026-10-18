@@ -91,8 +91,10 @@ void main() {
 
     await _open(tester, '対面表示');
     await shoot('02_face_to_face');
-    await tester.tap(find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.label == '対面表示モードを終了'));
+    await tester.tap(find
+        .byWidgetPredicate(
+            (w) => w is Semantics && w.properties.label == '対面表示モードを終了')
+        .first);
     await tester.pumpAndSettle();
 
     await _open(tester, '定型文');
