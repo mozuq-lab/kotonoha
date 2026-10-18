@@ -101,4 +101,37 @@ void main() {
       expect(displayed(tester), 'ありがとう');
     });
   }
+
+  testWidgets('高さ390pxでもスクロールせず編集を閉じられる', (tester) async {
+    await pump(tester, size: const Size(844, 390));
+    await tester.tap(find.text('編集'));
+    await tester.pumpAndSettle();
+    final closeEditor = find.text('編集を閉じる');
+    expect(tester.getRect(closeEditor).bottom, lessThanOrEqualTo(390));
+    await tester.tap(closeEditor);
+    await tester.pumpAndSettle();
+    expect(find.byType(CharacterBoardWidget), findsNothing);
+  });
+
+  testWidgets('OSキーボードと文字倍率2でも下部の操作を画面内に保つ', (tester) async {
+    await pump(tester, size: const Size(844, 390));
+    await tester.tap(find.text('編集'));
+    await tester.pumpAndSettle();
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 240);
+    await tester.pumpAndSettle();
+    for (final finder in [
+      find.text('編集を閉じる'),
+      find.byIcon(CupertinoIcons.rotate_right).last,
+      find.byIcon(CupertinoIcons.xmark).last,
+    ]) {
+      final rect = tester.getRect(finder);
+      expect(rect.top, greaterThanOrEqualTo(0));
+      expect(rect.bottom, lessThanOrEqualTo(150));
+    }
+    await tester.tap(find.text('編集を閉じる'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CharacterBoardWidget), findsNothing);
+  });
 }
