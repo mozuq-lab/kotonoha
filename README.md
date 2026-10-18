@@ -212,7 +212,7 @@ scripts/ios-testflight.sh
 
 - `python.yml` — backend の lint・型・層契約・ゲート・テストを `main` / `develop` への push・PR で実行
 - `flutter.yml` — frontend の analyze・format・test・ビルドを `main` / `develop` への push・PR で実行
-- `release.yml` — タグ push でストア配布物（Android AAB 等）を作る
+- `release.yml` — タグ push で Android AAB 等を作る。端末キーを入れないので、そのままでは AI 変換が使えない（ストアに出す iOS の版は `scripts/ios-testflight.sh` で作る。Android の版の作り方は Play に出す前に決める）
 
 ## 規約
 
