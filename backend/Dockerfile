@@ -17,4 +17,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')" || exit 1
 # worker は 1 つ（ADR-002）。--workers を足すと起動ガードで落ちる
 # --no-proxy-headers: XFF の解釈は app/ratelimit.py の1箇所に閉じる（I-2）
-CMD ["uvicorn", "app.main:create_app", "--factory", "--no-proxy-headers", "--host", "0.0.0.0", "--port", "8000"]
+# --no-access-log: 接続元のアドレスを標準出力に残さない（公開文「IP アドレスは記録・保存しない」）
+CMD ["uvicorn", "app.main:create_app", "--factory", "--no-proxy-headers", "--no-access-log", "--host", "0.0.0.0", "--port", "8000"]
