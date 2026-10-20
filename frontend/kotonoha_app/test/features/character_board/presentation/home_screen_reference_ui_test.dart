@@ -17,6 +17,7 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/delet
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
+import 'package:kotonoha_app/features/network/providers/network_provider.dart';
 import 'package:kotonoha_app/features/settings/models/app_theme.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
@@ -159,8 +160,13 @@ void main() {
       final tab = tester.getRect(tabs.at(1));
       expect(tab.height, 44);
       expect(tester.getRect(find.byType(GridView)).top - tab.bottom, 4);
-      expect(tester.getRect(find.byType(TTSButton)).bottom,
-          greaterThanOrEqualTo(tester.getRect(tabs.first).top - 8));
+      // オンライン（オフラインの表示が出ない）とき、読み上げとタブの間は 4
+      await container.read(networkProvider.notifier).setOnline();
+      await tester.pumpAndSettle();
+      expect(
+          tester.getRect(tabs.first).top -
+              tester.getRect(find.byType(TTSButton)).bottom,
+          4);
       // 見た目の縁の外でも、44 の範囲の端を押せば切り替わる
       await tester.tapAt(Offset(tab.center.dx, tab.top + 1));
       await tester.pumpAndSettle();

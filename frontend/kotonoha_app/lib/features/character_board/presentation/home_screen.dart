@@ -369,10 +369,9 @@ class HomeScreen extends ConsumerWidget {
           gutter: gutter,
           compact: compact,
         ),
-        // 電話では文字種のタブとの間を詰める（タブの押せる範囲の余白もある）
-        SizedBox(
-          height: compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall,
-        ),
+        // 電話では文字種のタブとの間を置かない（オフラインの表示の上の 4 と、
+        // タブの押せる範囲の余白が残る）
+        if (!compact) const SizedBox(height: AppSizes.paddingSmall),
       ],
     );
     // 文字盤に残す高さ（[_stackedBoardHeight]）を引いた残りを操作域へ渡し
