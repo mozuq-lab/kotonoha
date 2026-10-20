@@ -114,8 +114,10 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
   static const double _maxCellHeightRatio = 1.75;
 
   /// 10 列のとき、5 列ずつの間に置く隙間。iPad では 1 列に 2 行分（あいうえお｜
-  /// かきくけこ）が並び、行の区切りがわかりにくかった（人の依頼、2026-10-18）
-  static const double _rowGroupGap = 24;
+  /// かきくけこ）が並び、行の区切りがわかりにくかった（人の依頼、2026-10-18）。
+  /// 24 では広すぎたので、16 に狭めた分を 10 個のキーの幅へ等しく配る
+  /// （人の依頼、2026-10-20）
+  static const double _rowGroupGap = 16;
 
   /// 5 列のとき、行ごとに交互に混ぜる基本色の割合。iPhone では 1 列＝1 行なので、
   /// どの列が何行目かを目で追えるよう、ごく淡い縞にする（人の依頼、2026-10-18）
