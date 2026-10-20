@@ -12,12 +12,17 @@ class FavoriteShortcutButton extends StatelessWidget {
     required this.onPressed,
     required this.height,
     required this.fontSize,
+    this.singleLine = false,
   });
 
   final Favorite favorite;
   final VoidCallback onPressed;
   final double height;
   final FontSize fontSize;
+
+  /// 2 行に折らず、縮めても収まらない名前は「…」で切る。電話では文字盤の高さを
+  /// 優先するため（全文は長押しのツールチップで見られる）。
+  final bool singleLine;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +67,8 @@ class FavoriteShortcutButton extends StatelessWidget {
   /// 電話の幅では 5 文字の「ありがとう」が「ありが／とう」と語の途中で折り返して
   /// いた（iPhone 17 Pro、2026-10-18）。1 行に収まらないときは文字を縮めて 1 行に
   /// する。縮めすぎると読めないので、[_minScale] でも収まらない長い名前は元の
-  /// 大きさで 2 行にする。
+  /// 大きさで 2 行にする。[singleLine] のときは [_minScaleSingleLine] まで縮め、
+  /// それでも収まらなければ 1 行のまま「…」で切る。
   Widget _label(BuildContext context, TextStyle style, double maxWidth) {
     // ボタンが文字に付ける書式（字間など）も含めて、実際に描く書式で測る
     final effective = DefaultTextStyle.of(context).style.merge(style);
@@ -87,6 +93,18 @@ class FavoriteShortcutButton extends StatelessWidget {
     final shrunk = style.fontSize! * scale;
     // OS の文字の拡大は比例しないことがある（Android 14 以降）ので、縮めた大きさで
     // 測り直し、それでも収まらなければ「…」で切らずに元の大きさで 2 行にする
+    if (singleLine) {
+      final floor = scale < _minScaleSingleLine ? _minScaleSingleLine : scale;
+      return Text(
+        favorite.content,
+        maxLines: 1,
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+        style: floor < 1
+            ? style.copyWith(fontSize: style.fontSize! * floor)
+            : style,
+      );
+    }
     final oneLine =
         scale == 1 || (scale >= _minScale && widthAt(shrunk) <= maxWidth);
     return Text(
@@ -99,4 +117,7 @@ class FavoriteShortcutButton extends StatelessWidget {
   }
 
   static const _minScale = 0.75;
+
+  /// 文字「大」の電話で 5 文字の「ありがとう」が切れずに 1 行に入る下限
+  static const _minScaleSingleLine = 0.65;
 }

@@ -13,6 +13,7 @@ class HomeInputField extends ConsumerStatefulWidget {
     required this.onFavoritePressed,
     this.fontSize = FontSize.medium,
     this.maxLines = 3,
+    this.verticalPadding = AppSizes.paddingSmall,
   });
 
   final VoidCallback? onFavoritePressed;
@@ -21,6 +22,9 @@ class HomeInputField extends ConsumerStatefulWidget {
   /// 入力が伸びるときの最大の行数。高さの上限はこれで守り、欄そのものを
   /// 押しつぶさない（押しつぶすとラベルと文字が重なる）。2 未満は 2 として扱う。
   final int maxLines;
+
+  /// 入力の上下の余白。電話では詰める。
+  final double verticalPadding;
 
   @override
   ConsumerState<HomeInputField> createState() => _HomeInputFieldState();
@@ -86,7 +90,7 @@ class _HomeInputFieldState extends ConsumerState<HomeInputField> {
           floatingLabelStyle: const TextStyle(fontSize: 16),
           floatingLabelBehavior: FloatingLabelBehavior.always,
           contentPadding:
-              const EdgeInsets.symmetric(vertical: AppSizes.paddingSmall),
+              EdgeInsets.symmetric(vertical: widget.verticalPadding),
           suffixIcon: IconButton(
             key: const Key('favorite_current_input'),
             tooltip: '入力中の文をお気に入りに登録',

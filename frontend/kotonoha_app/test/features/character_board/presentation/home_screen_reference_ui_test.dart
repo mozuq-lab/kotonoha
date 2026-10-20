@@ -17,6 +17,8 @@ import 'package:kotonoha_app/features/character_board/presentation/widgets/delet
 import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
 import 'package:kotonoha_app/features/favorite/presentation/widgets/favorite_shortcut_button.dart';
 import 'package:kotonoha_app/features/favorite/providers/favorite_provider.dart';
+import 'package:kotonoha_app/features/network/providers/network_provider.dart';
+import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_response_button.dart';
 import 'package:kotonoha_app/features/settings/models/app_theme.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
@@ -122,7 +124,81 @@ void main() {
     });
   }
 
-  testWidgets('長いお気に入りは2行で表示し、全文をtooltipで確認できる', (tester) async {
+  // 電話では文字盤の高さを優先し、お気に入り・入力欄・操作ボタンを詰める
+  // （iPhone で文字盤が画面の半分を切って窮屈だった。2026-10-20 の人の依頼）。
+  // 文字「大」で名前が切れるのは受け入れる。
+  for (final font in [FontSize.medium, FontSize.large]) {
+    testWidgets('402x874・文字${font.name}: 電話ではお気に入りを1行・高さ48に詰める',
+        (tester) async {
+      await pumpHome(tester, const Size(402, 874), font: font, ai: true);
+      container.read(inputBufferProvider.notifier).setText('ありがとう');
+      await tester.pumpAndSettle();
+      final shortcuts = find.byType(FavoriteShortcutButton);
+      expect(shortcuts, findsNWidgets(8));
+      for (var i = 0; i < 8; i++) {
+        expect(tester.getRect(shortcuts.at(i)).height, 48, reason: 'お気に入り$i');
+        final paragraph = tester.renderObject<RenderParagraph>(
+            find.descendant(of: shortcuts.at(i), matching: find.byType(Text)));
+        expect(paragraph.maxLines, 1, reason: 'お気に入り$i');
+      }
+      final input = tester.getRect(find
+          .descendant(
+            of: find.byKey(const Key('home_input_area')),
+            matching: find.byType(DecoratedBox),
+          )
+          .first);
+      expect(
+          input.height, lessThanOrEqualTo(font == FontSize.medium ? 64 : 70));
+      for (final button in [
+        find.byType(DeleteButton),
+        find.byType(ClearAllButton),
+        find.byType(TTSButton),
+      ]) {
+        expect(tester.getRect(button).height, inInclusiveRange(44, 45));
+      }
+      // 文字種のタブは押せる範囲 44（REQ-5001 の下限）で、下の文字盤との間は 4
+      final tabs = find.byType(ChoiceChip);
+      final tab = tester.getRect(tabs.at(1));
+      expect(tab.height, 44);
+      expect(tester.getRect(find.byType(GridView)).top - tab.bottom, 4);
+      // オンライン（オフラインの表示が出ない）とき、読み上げとタブの間は 4
+      await container.read(networkProvider.notifier).setOnline();
+      await tester.pumpAndSettle();
+      expect(
+          tester.getRect(tabs.first).top -
+              tester.getRect(find.byType(TTSButton)).bottom,
+          4);
+      // 見た目の縁の外でも、44 の範囲の端を押せば切り替わる
+      await tester.tapAt(Offset(tab.center.dx, tab.top + 1));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('character_button_が')), findsOneWidget);
+      await capture(tester, 'phone-compact-${font.name}');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  // 横持ちの電話（2 ペイン）の左の列も詰める（2026-10-20 の人の依頼）
+  for (final font in [FontSize.medium, FontSize.large]) {
+    testWidgets('874x402・文字${font.name}: 横持ちの左の列のボタンを詰める', (tester) async {
+      await pumpHome(tester, const Size(874, 402), font: font, ai: true);
+      expect(find.byType(GridView), findsOneWidget);
+      expect(find.byType(QuickResponseButton), findsNWidgets(3));
+      for (final quick in find.byType(QuickResponseButton).evaluate()) {
+        expect(tester.getRect(find.byWidget(quick.widget)).height, 44);
+      }
+      final shortcuts = find.byType(FavoriteShortcutButton);
+      for (var i = 0; i < 8; i++) {
+        expect(tester.getRect(shortcuts.at(i)).height, 48, reason: 'お気に入り$i');
+        final paragraph = tester.renderObject<RenderParagraph>(
+            find.descendant(of: shortcuts.at(i), matching: find.byType(Text)));
+        expect(paragraph.maxLines, 1, reason: 'お気に入り$i');
+      }
+      await capture(tester, 'phone-landscape-${font.name}');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('電話では長いお気に入りを1行で省略し、全文をtooltipで確認できる', (tester) async {
     await pumpHome(tester, const Size(390, 844));
     const text = '体の向きを変えてください。右側を下にしてください。';
     final notifier = container.read(favoriteProvider.notifier);
@@ -133,10 +209,33 @@ void main() {
     });
     await tester.pumpAndSettle();
     final paragraph = tester.renderObject<RenderParagraph>(find.text(text));
-    expect(paragraph.maxLines, 2);
+    expect(paragraph.maxLines, 1);
+    expect(paragraph.didExceedMaxLines, isTrue, reason: '「…」で省略されていない');
     expect(paragraph.getTransformTo(null).storage[0], closeTo(1, 0.001));
     expect(find.byTooltip(text), findsOneWidget);
     await capture(tester, 'phone-long-favorite');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('タブレットでは文字種のタブを 48 のまま、文字盤との間を 8 に保つ', (tester) async {
+    await pumpHome(tester, const Size(820, 1180));
+    final tab = tester.getRect(find.byType(ChoiceChip).first);
+    expect(tab.height, 48);
+    expect(tester.getRect(find.byType(GridView)).top - tab.bottom, 8);
+  });
+
+  testWidgets('タブレットでは長いお気に入りを2行で表示する', (tester) async {
+    await pumpHome(tester, const Size(820, 1180));
+    const text = '体の向きを変えてください。右側を下にしてください。';
+    final notifier = container.read(favoriteProvider.notifier);
+    await tester.runAsync(() async {
+      await notifier.addFavorite(text);
+      final favorite = container.read(favoriteProvider).favorites.last;
+      await notifier.reorderFavorite(favorite.id, 0);
+    });
+    await tester.pumpAndSettle();
+    final paragraph = tester.renderObject<RenderParagraph>(find.text(text));
+    expect(paragraph.maxLines, 2);
     expect(tester.takeException(), isNull);
   });
 
@@ -150,7 +249,13 @@ void main() {
       final text =
           find.descendant(of: shortcuts.first, matching: find.byType(Text));
       final paragraph = tester.renderObject<RenderParagraph>(text);
-      expect(paragraph.didExceedMaxLines, isFalse);
+      if (size.width < size.height) {
+        expect(paragraph.didExceedMaxLines, isFalse);
+      } else {
+        // 横持ちの左の列は高さを優先して 1 行。文字「大」で切れるのは受け入れる
+        // （2026-10-20 の人の依頼）
+        expect(paragraph.maxLines, 1);
+      }
       final grid = find.byType(GridView);
       expect(tester.getRect(grid).height, greaterThanOrEqualTo(44));
       await tester.tap(find.byKey(const ValueKey('character_button_あ')));

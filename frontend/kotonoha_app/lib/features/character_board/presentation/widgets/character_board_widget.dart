@@ -28,6 +28,7 @@ class CharacterBoardWidget extends StatefulWidget {
     this.fontSize = FontSize.medium,
     this.isEnabled = true,
     this.initialCategory = CharacterCategory.basic,
+    this.compact = false,
   });
 
   /// 文字タップ時のコールバック
@@ -41,6 +42,10 @@ class CharacterBoardWidget extends StatefulWidget {
 
   /// 初期表示カテゴリ
   final CharacterCategory initialCategory;
+
+  /// 縦持ちの電話。文字種のタブの押せる範囲を 44（REQ-5001 の下限）にし、
+  /// タブと文字盤の間を詰めて、キーへ高さを回す
+  final bool compact;
 
   /// 五十音表の最低列数
   /// [CharacterData] の各カテゴリは5列の表で、や行・わ行の空きセルに
@@ -79,7 +84,10 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
       children: [
         // カテゴリタブ
         _buildCategoryTabs(context),
-        const SizedBox(height: AppSizes.paddingSmall),
+        SizedBox(
+          height:
+              widget.compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall,
+        ),
         // 文字グリッド
         Expanded(
           child: _buildCharacterGrid(context, characters, buttonSize),
@@ -99,6 +107,7 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
   }
 
   /// 文字種タブ（48）＋間（8）＋キー 1 行（44）。これより低いと組めない
+  /// （[CharacterBoardWidget.compact] ではタブ 44・間 4 なので余裕がある）
   static const double _minBoardHeight = 100;
 
   /// キーの高さの上限（幅に対する倍率）。これより縦長にはしない
@@ -127,6 +136,10 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
               horizontal: AppSizes.paddingXSmall,
             ),
             child: ChoiceChip(
+              // vertical: -1 で押せる範囲が 48 から 44 になる（範囲内の押下は
+              // Chip へ回るので、見た目の縁の外を押しても切り替わる）
+              visualDensity:
+                  widget.compact ? const VisualDensity(vertical: -1) : null,
               showCheckmark: false,
               selectedColor: scheme.primary,
               backgroundColor: scheme.surface,
