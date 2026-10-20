@@ -154,6 +154,17 @@ void main() {
       ]) {
         expect(tester.getRect(button).height, inInclusiveRange(44, 45));
       }
+      // 文字種のタブは押せる範囲 44（REQ-5001 の下限）で、下の文字盤との間は 4
+      final tabs = find.byType(ChoiceChip);
+      final tab = tester.getRect(tabs.at(1));
+      expect(tab.height, 44);
+      expect(tester.getRect(find.byType(GridView)).top - tab.bottom, 4);
+      expect(tester.getRect(find.byType(TTSButton)).bottom,
+          greaterThanOrEqualTo(tester.getRect(tabs.first).top - 8));
+      // 見た目の縁の外でも、44 の範囲の端を押せば切り替わる
+      await tester.tapAt(Offset(tab.center.dx, tab.top + 1));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('character_button_が')), findsOneWidget);
       await capture(tester, 'phone-compact-${font.name}');
       expect(tester.takeException(), isNull);
     });
@@ -176,6 +187,13 @@ void main() {
     expect(find.byTooltip(text), findsOneWidget);
     await capture(tester, 'phone-long-favorite');
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('タブレットでは文字種のタブを 48 のまま、文字盤との間を 8 に保つ', (tester) async {
+    await pumpHome(tester, const Size(820, 1180));
+    final tab = tester.getRect(find.byType(ChoiceChip).first);
+    expect(tab.height, 48);
+    expect(tester.getRect(find.byType(GridView)).top - tab.bottom, 8);
   });
 
   testWidgets('タブレットでは長いお気に入りを2行で表示する', (tester) async {

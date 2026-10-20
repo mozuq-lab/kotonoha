@@ -369,7 +369,10 @@ class HomeScreen extends ConsumerWidget {
           gutter: gutter,
           compact: compact,
         ),
-        const SizedBox(height: AppSizes.paddingSmall),
+        // 電話では文字種のタブとの間を詰める（タブの押せる範囲の余白もある）
+        SizedBox(
+          height: compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall,
+        ),
       ],
     );
     // 文字盤に残す高さ（[_stackedBoardHeight]）を引いた残りを操作域へ渡し
@@ -388,7 +391,10 @@ class HomeScreen extends ConsumerWidget {
           showEnd: typingOnPhone,
           child: controls,
         ),
-        Expanded(child: _buildCharacterBoard(ref, fontSize: fontSize)),
+        Expanded(
+          child:
+              _buildCharacterBoard(ref, fontSize: fontSize, compact: compact),
+        ),
       ],
     );
   }
@@ -462,7 +468,7 @@ class HomeScreen extends ConsumerWidget {
         // 右ペイン: 文字盤（主機能。残り全高さを使用する）
         Expanded(
           flex: _compactBoardFlex,
-          child: _buildCharacterBoard(ref, fontSize: fontSize),
+          child: _buildCharacterBoard(ref, fontSize: fontSize, compact: false),
         ),
       ],
     );
@@ -914,6 +920,7 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildCharacterBoard(
     WidgetRef ref, {
     required FontSize fontSize,
+    required bool compact,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -935,6 +942,7 @@ class HomeScreen extends ConsumerWidget {
           }
         },
         fontSize: fontSize,
+        compact: compact,
       ),
     );
   }
