@@ -122,7 +122,44 @@ void main() {
     });
   }
 
-  testWidgets('長いお気に入りは2行で表示し、全文をtooltipで確認できる', (tester) async {
+  // 電話では文字盤の高さを優先し、お気に入り・入力欄・操作ボタンを詰める
+  // （iPhone で文字盤が画面の半分を切って窮屈だった。2026-10-20 の人の依頼）。
+  // 文字「大」で名前が切れるのは受け入れる。
+  for (final font in [FontSize.medium, FontSize.large]) {
+    testWidgets('402x874・文字${font.name}: 電話ではお気に入りを1行・高さ48に詰める',
+        (tester) async {
+      await pumpHome(tester, const Size(402, 874), font: font, ai: true);
+      container.read(inputBufferProvider.notifier).setText('ありがとう');
+      await tester.pumpAndSettle();
+      final shortcuts = find.byType(FavoriteShortcutButton);
+      expect(shortcuts, findsNWidgets(8));
+      for (var i = 0; i < 8; i++) {
+        expect(tester.getRect(shortcuts.at(i)).height, 48, reason: 'お気に入り$i');
+        final paragraph = tester.renderObject<RenderParagraph>(
+            find.descendant(of: shortcuts.at(i), matching: find.byType(Text)));
+        expect(paragraph.maxLines, 1, reason: 'お気に入り$i');
+      }
+      final input = tester.getRect(find
+          .descendant(
+            of: find.byKey(const Key('home_input_area')),
+            matching: find.byType(DecoratedBox),
+          )
+          .first);
+      expect(
+          input.height, lessThanOrEqualTo(font == FontSize.medium ? 64 : 70));
+      for (final button in [
+        find.byType(DeleteButton),
+        find.byType(ClearAllButton),
+        find.byType(TTSButton),
+      ]) {
+        expect(tester.getRect(button).height, inInclusiveRange(44, 45));
+      }
+      await capture(tester, 'phone-compact-${font.name}');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('電話では長いお気に入りを1行で省略し、全文をtooltipで確認できる', (tester) async {
     await pumpHome(tester, const Size(390, 844));
     const text = '体の向きを変えてください。右側を下にしてください。';
     final notifier = container.read(favoriteProvider.notifier);
@@ -133,10 +170,26 @@ void main() {
     });
     await tester.pumpAndSettle();
     final paragraph = tester.renderObject<RenderParagraph>(find.text(text));
-    expect(paragraph.maxLines, 2);
+    expect(paragraph.maxLines, 1);
+    expect(paragraph.didExceedMaxLines, isTrue, reason: '「…」で省略されていない');
     expect(paragraph.getTransformTo(null).storage[0], closeTo(1, 0.001));
     expect(find.byTooltip(text), findsOneWidget);
     await capture(tester, 'phone-long-favorite');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('タブレットでは長いお気に入りを2行で表示する', (tester) async {
+    await pumpHome(tester, const Size(820, 1180));
+    const text = '体の向きを変えてください。右側を下にしてください。';
+    final notifier = container.read(favoriteProvider.notifier);
+    await tester.runAsync(() async {
+      await notifier.addFavorite(text);
+      final favorite = container.read(favoriteProvider).favorites.last;
+      await notifier.reorderFavorite(favorite.id, 0);
+    });
+    await tester.pumpAndSettle();
+    final paragraph = tester.renderObject<RenderParagraph>(find.text(text));
+    expect(paragraph.maxLines, 2);
     expect(tester.takeException(), isNull);
   });
 

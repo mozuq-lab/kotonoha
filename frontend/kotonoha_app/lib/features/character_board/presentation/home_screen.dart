@@ -348,6 +348,7 @@ class HomeScreen extends ConsumerWidget {
           fontSize: fontSize,
           gutter: gutter,
           compact: compact,
+          singleLine: compact,
         ),
         // 入力表示エリア
         _buildInputArea(
@@ -434,6 +435,7 @@ class HomeScreen extends ConsumerWidget {
                   fontSize: fontSize,
                   gutter: AppSizes.paddingSmall,
                   compact: true,
+                  singleLine: false,
                 ),
                 _buildInputArea(
                   context,
@@ -498,11 +500,14 @@ class HomeScreen extends ConsumerWidget {
   }
 
   /// 表示順上位8件のお気に入りを、スワイプなしで並べる。
+  /// [singleLine] は縦持ちの電話。文字盤の高さを優先して名前を 2 行に折らない
+  /// （2 ペインの左ペインはスクロールでき、文字盤の高さを奪わないので折る）。
   Widget _buildFavoriteShortcutsSection(
     WidgetRef ref, {
     required FontSize fontSize,
     required double gutter,
     required bool compact,
+    required bool singleLine,
   }) {
     const gap = AppSizes.paddingSmall;
     final favorites = List<Favorite>.from(ref.watch(favoriteProvider).favorites)
@@ -568,10 +573,11 @@ class HomeScreen extends ConsumerWidget {
                 orElse: () => 1,
               ),
             );
-            final needsTwoLines = scaledText > 26 ||
-                shortcuts.any((favorite) =>
-                    favorite.content.characters.length > 3 ||
-                    oneLineWidth(favorite.content) > buttonWidth(columns));
+            final needsTwoLines = !singleLine &&
+                (scaledText > 26 ||
+                    shortcuts.any((favorite) =>
+                        favorite.content.characters.length > 3 ||
+                        oneLineWidth(favorite.content) > buttonWidth(columns)));
             final height = (scaledText * (needsTwoLines ? 2.4 : 1.4) + 12)
                 .clamp(compact ? 48.0 : AppSizes.recommendedTapTarget,
                     double.infinity);
@@ -580,6 +586,7 @@ class HomeScreen extends ConsumerWidget {
                     favorite: favorite,
                     height: height,
                     fontSize: fontSize,
+                    singleLine: singleLine,
                     onPressed: debounced(() {
                       ref.read(ttsProvider.notifier).speak(favorite.content);
                       _saveToHistory(
@@ -645,10 +652,13 @@ class HomeScreen extends ConsumerWidget {
       FontSize.large => AppSizes.fontSizeLarge,
     };
     final textScaler = MediaQuery.textScalerOf(context);
+    // 電話では囲みと入力の上下の余白を半分にして、文字盤へ高さを回す。
+    final verticalPadding =
+        compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall;
     // 入力の1行・浮動ラベル・内外の余白を、横持ちでも確保する。
     final oneLineHeight = textScaler.scale(inputFontSize) * 1.5 +
         textScaler.scale(16) +
-        AppSizes.paddingSmall * 4 +
+        verticalPadding * 4 +
         2;
     final minHeight =
         oneLineHeight > baseMinHeight ? oneLineHeight : baseMinHeight;
@@ -679,7 +689,10 @@ class HomeScreen extends ConsumerWidget {
             horizontal: horizontalMargin,
             vertical: AppSizes.paddingSmall,
           ),
-          padding: const EdgeInsets.all(contentPadding),
+          padding: EdgeInsets.symmetric(
+            horizontal: contentPadding,
+            vertical: verticalPadding,
+          ),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerLow,
             border: Border.all(
@@ -691,6 +704,7 @@ class HomeScreen extends ConsumerWidget {
           child: HomeInputField(
             fontSize: fontSize,
             maxLines: maxLines,
+            verticalPadding: verticalPadding,
             onFavoritePressed: () =>
                 _addInputToFavorites(context, ref, inputBuffer),
           ),
@@ -763,8 +777,9 @@ class HomeScreen extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final labelSize = 16 * fontSize.scaleFactor;
     final scaledLabel = MediaQuery.textScalerOf(context).scale(labelSize);
-    final height = (scaledLabel * 1.5 + 16)
-        .clamp(compact ? 48.0 : AppSizes.recommendedTapTarget, double.infinity);
+    final height = (scaledLabel * 1.5 + 16).clamp(
+        compact ? AppSizes.minTapTarget : AppSizes.recommendedTapTarget,
+        double.infinity);
     final delete = DeleteButton(
       size: height,
       showLabel: true,
@@ -818,6 +833,12 @@ class HomeScreen extends ConsumerWidget {
             style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
                   textStyle: WidgetStatePropertyAll(TextStyle(
                       fontSize: labelSize, fontWeight: FontWeight.w600)),
+                  // 電話では押せる範囲を見た目の 44（REQ-5001 の下限）に合わせる。
+                  // padded のままだと見えない余白で 48 の場所を取り、詰めた分が
+                  // 消える。テーマ全体の materialTapTargetSize で変えると、
+                  // ここから開く全消去の確認の「いいえ」まで 44 に狭まる
+                  tapTargetSize:
+                      compact ? MaterialTapTargetSize.shrinkWrap : null,
                 ),
           ),
         ),

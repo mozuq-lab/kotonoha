@@ -2,8 +2,8 @@
 ///
 /// 電話の幅では 1 列に 4 つ並ぶので、5 文字の「ありがとう」が「ありが／とう」と
 /// 2 行に分かれていた（iPhone 17 Pro のシミュレータ、2026-10-18）。収まらないときは
-/// 文字を少し縮めて 1 行に収める。縮めすぎると読めないので、それでも収まらない
-/// 長い名前は元の大きさで 2 行にする。
+/// 文字を少し縮めて 1 行に収める。それでも収まらない長い名前は、文字盤の高さを
+/// 優先して 1 行のまま「…」で切る（2026-10-20 の人の依頼。全文は長押しで見られる）。
 library;
 
 import 'package:flutter/material.dart';
@@ -86,16 +86,20 @@ void main() {
       }
     });
 
-    testWidgets('$size: 縮めても収まらない長い名前は、元の大きさで 2 行にする', (tester) async {
+    testWidgets('$size: 縮めても収まらない長い名前は、1 行のまま「…」で切る', (tester) async {
       const long = 'くすりをのみたいです';
       // 8 件並べたときの幅で見る（1 件だけだとボタンが横に広がる）
       await _pump(
           tester, size, [long, ...FavoriteRepository.initialContents.skip(1)]);
 
       final label = _label(tester, long);
-      expect(label.fontSize, AppSizes.fontSizeMedium,
-          reason: '長い名前を小さく縮めて 1 行に詰め込んでいる');
-      expect(label.wraps, isTrue);
+      expect(label.fontSize,
+          greaterThanOrEqualTo(AppSizes.fontSizeMedium * 0.65 - 0.01),
+          reason: '長い名前を小さく縮めすぎている（${label.fontSize}）');
+      final paragraph = tester.renderObject<RenderParagraph>(find.text(long));
+      // 「…」で切ると描く幅が 1 行の幅より狭くなるので、折り返しは行数で見る
+      expect(paragraph.maxLines, 1, reason: '長い名前が 2 行に折り返す');
+      expect(paragraph.didExceedMaxLines, isTrue, reason: '「…」で切れていない');
     });
   }
 
