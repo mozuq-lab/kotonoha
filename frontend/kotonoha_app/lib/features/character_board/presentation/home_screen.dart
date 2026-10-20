@@ -341,7 +341,8 @@ class HomeScreen extends ConsumerWidget {
           ref,
           fontSize: fontSize,
           padding: EdgeInsets.all(gutter),
-          compact: compact,
+          buttonHeight:
+              compact ? AppSizes.quickResponseButtonHeightCompact : null,
         ),
         _buildFavoriteShortcutsSection(
           ref,
@@ -433,14 +434,15 @@ class HomeScreen extends ConsumerWidget {
                     horizontal: AppSizes.paddingSmall,
                     vertical: AppSizes.paddingXSmall,
                   ),
-                  compact: true,
+                  // 左の列は高さが乏しいので、押せる範囲の下限（REQ-5001）まで詰める
+                  buttonHeight: AppSizes.minTapTarget,
                 ),
                 _buildFavoriteShortcutsSection(
                   ref,
                   fontSize: fontSize,
                   gutter: AppSizes.paddingSmall,
                   compact: true,
-                  singleLine: false,
+                  singleLine: true,
                 ),
                 _buildInputArea(
                   context,
@@ -485,7 +487,7 @@ class HomeScreen extends ConsumerWidget {
     WidgetRef ref, {
     required FontSize fontSize,
     required EdgeInsets padding,
-    required bool compact,
+    required double? buttonHeight,
   }) {
     return Padding(
       padding: padding,
@@ -498,15 +500,14 @@ class HomeScreen extends ConsumerWidget {
           ref.read(ttsProvider.notifier).speak(text);
         },
         fontSize: fontSize,
-        buttonHeight:
-            compact ? AppSizes.quickResponseButtonHeightCompact : null,
+        buttonHeight: buttonHeight,
       ),
     );
   }
 
   /// 表示順上位8件のお気に入りを、スワイプなしで並べる。
-  /// [singleLine] は縦持ちの電話。文字盤の高さを優先して名前を 2 行に折らない
-  /// （2 ペインの左ペインはスクロールでき、文字盤の高さを奪わないので折る）。
+  /// [singleLine] は電話（縦持ちと横持ちの左の列）。高さを優先して名前を 2 行に
+  /// 折らない（全文は長押しのツールチップで見られる）。
   Widget _buildFavoriteShortcutsSection(
     WidgetRef ref, {
     required FontSize fontSize,
