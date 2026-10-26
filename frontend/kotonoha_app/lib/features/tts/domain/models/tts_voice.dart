@@ -6,9 +6,11 @@ library;
 enum TTSVoiceQuality { standard, enhanced, premium }
 
 /// 読み上げの声
-/// 作れるのは [TTSVoice.fromPlugin] だけで、端末の外で読み上げる声
-/// （Android の通信が要る声）と、使うとダウンロードが始まる声は作らない。
-/// 選択肢に出る声はどれも、読み上げる文を端末の外へ出さない（守る約束 ②）。
+/// 作れるのは [TTSVoice.fromPlugin] だけで、エンジンが通信を要すると申告する声
+/// （Android の `-network` の声）と、使うとダウンロードが始まる声は作らない
+/// （守る約束 ②）。Android の端末内の声も `networkTimeoutMs` を持つので、
+/// 判断は申告（`network_required`）だけで行う。「標準」の別名
+/// （`legacySetLanguageVoice`。`setLanguage` が選ぶ声）も、同じ声が 2 つ並ぶので作らない。
 class TTSVoice {
   const TTSVoice._({
     required this.name,
@@ -27,8 +29,12 @@ class TTSVoice {
     if (!locale.toLowerCase().startsWith('ja')) return null;
     if (raw['network_required'] == '1') return null;
     final features = raw['features'];
-    if (features is String && features.split('\t').contains('notInstalled')) {
-      return null;
+    if (features is String) {
+      final keys = features.split('\t');
+      if (keys.contains('notInstalled') ||
+          keys.contains('legacySetLanguageVoice')) {
+        return null;
+      }
     }
     final identifier = raw['identifier'];
     return TTSVoice._(

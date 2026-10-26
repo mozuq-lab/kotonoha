@@ -382,6 +382,8 @@ class TTSService {
     final voiceId = currentVoiceId;
     if (voiceId != null) {
       final voice = (await voices()).where((v) => v.id == voiceId).firstOrNull;
+      // 一覧を待つ間に別の声が選ばれていたら、後の選択に任せる
+      if (currentVoiceId != voiceId) return;
       if (voice != null) {
         try {
           if (await tts.setVoice(voice.pluginArguments) == 1) return;

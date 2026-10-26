@@ -7,6 +7,8 @@
 /// メモリ上の store を通す。
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -102,8 +104,11 @@ void main() {
       ]);
     });
 
-    test('端末の外で読み上げる声と、使うとダウンロードが始まる声は出さない', () async {
+    test('端末の外で読み上げる声・使うとダウンロードが始まる声・「標準」の別名は出さない', () async {
+      // 2026-10-26 に Android エミュレータ（Google の音声サービス）で見た一覧の形
       engineVoices = [
+        _android('ja-JP-language',
+            features: 'networkTimeoutMs\tlegacySetLanguageVoice'),
         _android('ja-jp-x-htm-local'),
         _android('ja-jp-x-htm-network', network: true),
         _android('ja-jp-x-jab-local',
@@ -246,6 +251,20 @@ void main() {
       expect(settings.ttsVoiceId, isNull);
       expect(settings.ttsSpeed.name, 'slow');
     });
+  });
+
+  test('声の一覧を待つ間に「標準」に戻したら、前に選んだ声をエンジンに渡さない', () async {
+    final listed = Completer<List<Object?>>();
+    when(() => tts.getVoices).thenAnswer((_) => listed.future);
+    final service = TTSService(tts: tts);
+
+    final choosing = service.setVoice(_kyokoEnhancedId);
+    await service.setVoice(null);
+    listed.complete(engineVoices);
+    await choosing;
+
+    verifyNever(() => tts.setVoice(any()));
+    verify(() => tts.setLanguage('ja-JP')).called(1);
   });
 
   test('初期化をやり直しても、選んだ声を言語の設定で上書きしない', () async {
