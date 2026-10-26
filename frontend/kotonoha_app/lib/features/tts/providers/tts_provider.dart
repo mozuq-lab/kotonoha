@@ -9,6 +9,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../domain/models/tts_speed.dart';
 import '../domain/models/tts_state.dart';
+import '../domain/models/tts_voice.dart';
 import '../domain/services/tts_service.dart';
 
 /// TTSサービスの状態
@@ -173,6 +174,10 @@ class TTSNotifier extends Notifier<TTSServiceState> {
       await _service.setSpeed(settings.ttsSpeed);
       if (!ref.mounted) return;
       state = state.copyWith(currentSpeed: settings.ttsSpeed);
+      // 標準の声のままなら、初期化で設定した言語をもう一度設定しない
+      if (settings.ttsVoiceId != null) {
+        await _service.setVoice(settings.ttsVoiceId);
+      }
     } catch (e) {
       // エラーハンドリング: 設定読み込み・TTS反映に失敗しても
       // TTS自体の初期化結果には影響を与えない
@@ -252,4 +257,25 @@ class TTSNotifier extends Notifier<TTSServiceState> {
     await _service.setSpeed(speed);
     state = state.copyWith(currentSpeed: speed);
   }
+
+  /// 読み上げの声を設定する（null は日本語の標準の声）
+  /// 速度と同じく、バックグラウンド初期化の言語設定に上書きされないよう
+  /// 初期化を待ってから渡す。
+  Future<void> setVoice(String? voiceId) async {
+    await _initFuture;
+    await _service.setVoice(voiceId);
+  }
+
+  /// 選べる声。Android はエンジンの準備ができるまで一覧を返さないので、
+  /// 初期化を待ってから聞く。
+  Future<List<TTSVoice>> voices() async {
+    await _initFuture;
+    return _service.voices();
+  }
 }
+
+/// 設定画面に出す、選べる声の一覧
+/// 画面を開くたび（autoDispose）と、端末の設定から戻ったときに聞き直す。
+final ttsVoicesProvider = FutureProvider.autoDispose<List<TTSVoice>>(
+  (ref) => ref.read(ttsProvider.notifier).voices(),
+);
