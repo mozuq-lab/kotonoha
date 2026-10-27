@@ -234,10 +234,10 @@ void main() {
         await service.speak('テスト');
 
         // Then: 結果検証: メソッドが正しい順序で呼ばれることを確認
-        // setLanguage → setSpeechRate → speak の順序
+        // setSpeechRate → setLanguage → speak の順序（言語はエンジンの準備後に設定する）
         verifyInOrder([
-          () => mockFlutterTts.setLanguage('ja-JP'),
           () => mockFlutterTts.setSpeechRate(0.5),
+          () => mockFlutterTts.setLanguage('ja-JP'),
           () => mockFlutterTts.speak('テスト'),
         ]);
       });

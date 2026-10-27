@@ -254,8 +254,9 @@ void main() {
           mockFlutterTts = MockFlutterTts();
           when(() => mockFlutterTts.setLanguage(any()))
               .thenAnswer((_) => engineInit.future);
+          // エンジンの準備ができるまで、どの呼び出しも返らない
           when(() => mockFlutterTts.setSpeechRate(any()))
-              .thenAnswer((_) async => 1);
+              .thenAnswer((_) => engineInit.future.then((_) => 1));
           when(() => mockFlutterTts.stop()).thenAnswer((_) async => 1);
         });
 
@@ -293,7 +294,7 @@ void main() {
         // 初期化の後に選んだ速さの反映は tts_speed_integration_test が見ている。
         test('初期化が遅れて終わると、選んだ速さがエンジンに反映される', () async {
           await chooseSpeedOnSettingsScreen(TTSSpeed.slow);
-          verifyNever(() => mockFlutterTts.setSpeechRate(any()));
+          verifyNever(() => mockFlutterTts.setSpeechRate(0.35));
 
           engineInit.complete(1);
           await Future<void>.delayed(const Duration(milliseconds: 100));

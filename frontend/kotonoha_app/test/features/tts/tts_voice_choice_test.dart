@@ -267,6 +267,46 @@ void main() {
     verify(() => tts.setLanguage('ja-JP')).called(1);
   });
 
+  test('Android でエンジンの準備前に初期化しても、標準の声は日本語で読む', () async {
+    // flutter_tts 4.2.5 の Android は、エンジンの準備前に届いた呼び出しを
+    // 準備ができた時点で流し、その直後に端末の既定の言語へ設定し直す
+    // （FlutterTtsPlugin.kt の onInitListenerWithoutCallback）。
+    // 2026-10-27 に既定が英語のエミュレータで、声を選ぶまで英語で読んでいた
+    var language = 'en-US';
+    var ready = false;
+    String? spokenIn;
+    void call(void Function() apply) {
+      apply();
+      if (!ready) {
+        ready = true;
+        language = 'en-US';
+      }
+    }
+
+    when(() => tts.setLanguage(any())).thenAnswer((i) async {
+      call(() => language = i.positionalArguments[0] as String);
+      return 1;
+    });
+    when(() => tts.setSpeechRate(any())).thenAnswer((_) async {
+      call(() {});
+      return 1;
+    });
+    void Function()? onStart;
+    when(() => tts.setStartHandler(any())).thenAnswer(
+        (i) => onStart = i.positionalArguments[0] as void Function());
+    when(() => tts.speak(any())).thenAnswer((_) async {
+      call(() => spokenIn = language);
+      onStart?.call();
+      return 1;
+    });
+    final service = TTSService(tts: tts);
+
+    await service.initialize();
+    await service.speak('こんにちは');
+
+    expect(spokenIn, 'ja-JP');
+  });
+
   test('初期化をやり直しても、選んだ声を言語の設定で上書きしない', () async {
     final service = TTSService(tts: tts);
     await service.setVoice(_kyokoEnhancedId);

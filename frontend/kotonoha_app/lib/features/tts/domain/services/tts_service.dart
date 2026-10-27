@@ -153,13 +153,16 @@ class TTSService {
         }
       }
 
+      // 速度設定: 現在保持している速度（デフォルトはnormal=1.0倍速）を設定。
+      // 言語より先に設定する。Android の flutter_tts は、エンジンの準備前に
+      // 届いた呼び出しを準備後に流し、その直後に言語を端末の既定へ戻す。
+      // この呼び出しが返れば準備は済んでいる
+      await tts.setSpeechRate(_pluginRate(currentSpeed));
+
       // 言語設定: 日本語（ja-JP）を設定
       await tts.setLanguage('ja-JP');
       // 言語の設定は声を標準に戻す。初期化をやり直しても選んだ声を保つ
       if (currentVoiceId != null) await _applyVoice();
-
-      // 速度設定: 現在保持している速度（デフォルトはnormal=1.0倍速）を設定
-      await tts.setSpeechRate(_pluginRate(currentSpeed));
 
       // 完了コールバック登録: 読み上げ完了時に状態をidleに戻す
       tts.setCompletionHandler(() {
