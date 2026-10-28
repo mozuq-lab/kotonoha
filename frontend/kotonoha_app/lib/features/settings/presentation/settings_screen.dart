@@ -16,6 +16,7 @@ import 'widgets/settings_section_widget.dart';
 import 'widgets/font_size_settings_widget.dart';
 import 'widgets/theme_settings_widget.dart';
 import 'widgets/tts_speed_settings_widget.dart';
+import 'widgets/tts_voice_settings_widget.dart';
 import 'widgets/ai_politeness_settings_widget.dart';
 import 'widgets/simple_mode_settings_widget.dart';
 
@@ -24,7 +25,7 @@ import 'widgets/simple_mode_settings_widget.dart';
 /// セクション分けされた設定項目を提供する。
 /// 実装機能
 /// 表示設定: フォントサイズ、テーマ
-/// 音声設定: TTS速度
+/// 音声設定: TTS速度、読み上げの声
 /// AI設定: 丁寧さレベル
 /// 実装要件
 /// ルートパス「/settings」でこの画面を表示
@@ -64,6 +65,8 @@ class SettingsScreen extends StatelessWidget {
               title: '音声設定',
               children: [
                 TTSSpeedSettingsWidget(),
+                SizedBox(height: 16),
+                TTSVoiceSettingsWidget(),
               ],
             ),
             // AI設定セクション
