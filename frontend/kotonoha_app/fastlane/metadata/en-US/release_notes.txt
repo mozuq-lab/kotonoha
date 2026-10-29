@@ -1,17 +1,6 @@
-Version 1.0.0 - Initial Release
+Version 1.1.0
 
 【New Features】
-- Japanese syllabary keyboard input
-- 80+ preset phrases
-- Quick response buttons (Yes/No)
-- Favorites (speak frequently used words such as Restroom and Pain with one tap)
-- AI text conversion (polite/formal)
-- Face-to-face display mode
-- Offline support (except AI conversion)
-
-【Accessibility】
-- Three font size options
-- Light/Dark/High Contrast themes
-- Adjustable speech rate
+- You can now choose the speech voice in Settings, from the Japanese voices installed on your device.
 
 Thank you for using Kotonoha!
