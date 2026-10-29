@@ -1,7 +1,7 @@
 # プライバシーポリシー / Privacy Policy
 
-最終更新日: 2026年10月18日
-Last Updated: October 18, 2026
+最終更新日: 2026年10月29日
+Last Updated: October 29, 2026
 
 ---
 
@@ -9,114 +9,104 @@ Last Updated: October 18, 2026
 
 ### はじめに
 
-本プライバシーポリシーは、「ことのは」（以下「本アプリ」）における個人情報の取り扱いについて説明します。本アプリをご利用いただく前に、本ポリシーをよくお読みください。
+このプライバシーポリシーは、アプリ「ことのは」（以下「本アプリ」）が利用者の情報をどう扱うかを説明します。ご利用の前にお読みください。要点は次の 3 つです。
 
-### 収集する情報
+- 入力した文・履歴・定型文・お気に入り・設定は、お使いの端末の中に保存します
+- 本アプリが端末の外へデータを送るのは、AI 変換を使うときだけです。初めて使う前に同意をいただきます
+- 本アプリが、クラッシュの情報を自分で送ることはありません
 
-#### 1. ローカルに保存されるデータ
+### 端末の中に保存するもの
 
-本アプリは、以下のデータをお使いの端末内に保存します。本アプリ自身がこれらのデータを外部サーバーへ送信することはありません。ただし、AI変換を実行したときは、次項に記載するデータがその経路で送信されます。
+本アプリは、次のデータをお使いの端末の中に保存します。本アプリがこれらを端末の外へ送るのは、AI 変換を使うときだけです（送るものは次の節に書きます）。
 
-- **入力履歴**: 文字盤やキーボードで入力し、読み上げた内容など（最大50件）
-- **入力中の文**: 文字盤やキーボードで入力している途中の内容。アプリが終了しても入力が消えないように保存します。入力欄を空にすると削除されます
-- **定型文**: ユーザーが追加したカスタム定型文
-- **お気に入り**: お気に入りに登録したフレーズ
-- **アプリ設定**: フォントサイズ、テーマ、音声速度などの設定
+- **入力履歴**: 文字盤やキーボードで入力して読み上げた文など（最大 50 件）
+- **入力中の文**: アプリが終了しても入力が消えないように保存します。入力欄を空にすると消えます
+- **定型文**: 利用者が追加した定型文
+- **お気に入り**: お気に入りに登録した文
+- **設定**: 文字の大きさ、テーマ、読み上げの速さと声など
 
-#### 2. AI変換機能使用時
+### AI 変換を使うときに送るもの
 
-AI変換機能（オプション）を使用すると、以下のデータが本アプリからことのは backend に送信されます。
+AI 変換は、使うかどうかを選べる機能です。使うと、本アプリは次のデータを、ことのはのサーバー（ことのは backend）へ送ります。
 
-- **入力テキスト**: AI変換を行うテキスト
-- **丁寧さレベル**: 選択した変換レベル（カジュアル/普通/丁寧）
-- **前回の変換結果**: 再変換を行う場合のみ
-- **接続元の IP アドレス**: 通信の仕組み上、送信のたびに届きます。ことのは backend は、短い時間に多くの変換が送られたときに制限するためだけに、この値をメモリ内で一時的に使います（1 分ごとに数え直します）。記録・保存はせず、外部 AI provider へも送りません
+- **入力した文**: 変換したい文
+- **丁寧さ**: 選んだ丁寧さ（カジュアル・普通・丁寧）
+- **前回の変換結果**: 再生成するときだけ
 
-ことのは backend は、入力テキスト（再変換時は前回の変換結果も含む）と、選択した丁寧さレベルに応じた指示を prompt に含め、外部 AI provider である Cloudflare, Inc.（米国）の AI サービス（Workers AI）へ送信します。処理する国・地域は同社の設備によって異なり、日本国外で処理されることがあります。provider が生成した変換結果は、ことのは backend を経由して本アプリへ返されます。提供先・米国の制度・提供先の措置は「外国にある第三者への提供について」に記載します。
+ことのは backend は、入力した文（再生成では前回の変換結果も）と、丁寧さに応じた指示を、Cloudflare, Inc.（米国）の AI サービス（Workers AI）へ送ります。変換の結果は、ことのは backend を通って本アプリへ戻ります。処理は日本の外で行われることがあります。提供先・米国の制度・提供先の措置は「外国にある第三者への提供について」に書きます。
 
-**重要**: AI変換機能の初回使用時に、データ送信についての同意確認を行います。
+**接続元の IP アドレス**は、通信の仕組み上、送るたびにことのは backend へ届きます。ことのは backend は、短い時間に多くの変換が送られたときに制限するためだけに、これをメモリの中で一時的に使います（1 分ごとに数え直します）。記録・保存はせず、Workers AI へのリクエストにも含めません。ただし、ことのは backend は Cloudflare, Inc. の設備の上で動いているため、通信の仕組み上、同社の設備は接続元の IP アドレスを受け取ります。
 
-#### 3. クラッシュ情報（診断データ）
+### クラッシュの情報
 
-**本アプリは、クラッシュ情報を、クラッシュ解析SDKなど本アプリ自身の仕組みで外部へ送信しません。**
-クラッシュ解析のためのSDK（Firebase Crashlytics、Sentry等）を一切組み込んでいません。
+本アプリには、クラッシュの情報を集めて送る仕組み（Firebase Crashlytics、Sentry などの SDK）を入れていません。
 
-ただし、お使いの端末のOSとアプリストアには、アプリが異常終了した際にその情報を
-開発者へ提供する仕組みがあります。**この提供は、お使いの端末のOS設定で
-あなたが許可した場合に限り行われます。**
+ただし、端末の OS とアプリストアには、アプリが異常終了したときの情報を開発者へ届ける仕組みがあります。届くのは、利用者が OS の設定で許可している場合だけです。
 
-- **iOS / iPadOS**: 「設定 > プライバシーとセキュリティ > 解析と改善」で
-  「iPhoneの解析を共有」および「App デベロッパと共有」を有効にしている場合に限り、
-  Apple 経由で開発者にクラッシュ情報が提供されます
-- **Android**: 端末の設定で「使用状況と診断情報」の自動共有を有効にしている場合に限り、
-  Google Play 経由で開発者にクラッシュ情報（Android vitals）が提供されます
+- **iOS / iPadOS**: 「設定 > プライバシーとセキュリティ > 解析と改善」で、「iPhoneの解析を共有」と「App デベロッパと共有」を有効にしている場合に、Apple を通して届きます
+- **Android**: 端末の設定で「使用状況と診断情報」の自動共有を有効にしている場合に、Google Play を通して届きます（Android vitals）
 
-本アプリには、文字盤で入力した内容・定型文・履歴・お気に入りをクラッシュ情報へ
-意図的に添付する実装はありません。ただし、OSとアプリストアが生成する診断データの
-内容は、その仕組みと設定によって決まります。提供されることがある情報には、アプリが
-停止した箇所を示す技術情報（スタックトレース）、端末の機種名、OSのバージョン、
-アプリのバージョンがあります。
+届くことがある情報には、アプリが止まった箇所を示す技術情報（スタックトレース）、端末の機種名、OS のバージョン、アプリのバージョンがあります。本アプリが、入力した文・定型文・履歴・お気に入りを意図してこの情報に添えることはありません。ただし、中身は OS とアプリストアの仕組みと設定で決まります。共有するかどうかは、OS の設定でいつでも変えられます。詳しくは Apple と Google のプライバシーの説明をご覧ください。
 
-共有するかどうかは、お使いの端末のOS設定でいつでも変更できます。
-これらの仕組みの詳細は Apple および Google のプライバシーに関する説明をご確認ください。
+### 使う目的
 
-### データの利用目的
+データは、本アプリの機能を提供するため（AI 変換の結果を作ることを含む）にだけ使います。
 
-収集したデータは、以下の目的でのみ使用されます。
+### 保管と削除
 
-- 本アプリの機能提供
-- AI変換結果の生成
-- ユーザー体験の向上
+- **端末の中のデータ**: 本アプリがクラウドへ同期することはありません。ただし、OS のバックアップ（iOS の iCloud バックアップやパソコンへのバックアップ、Android の自動バックアップなど）を有効にしていると、ほかのアプリのデータと同じようにバックアップされることがあります。機種変更のときのデータ移行や復元で、新しい端末に移ることもあります
+- **壊れたデータの写し**: iOS 版と Android 版は、保存したデータのファイルが壊れているのを起動時に見つけると、手を加える前に、その写しを端末の中に残します。写しには、それまでの入力履歴・定型文・お気に入りが含まれることがあり、アプリの中で個別に削除した項目が含まれることもあります。本アプリが写しを端末の外へ送ることはありません。OS のバックアップを有効にしている場合は、写しもバックアップの対象になります
+- **ことのは backend**: データベースを持たず、入力した文・前回の変換結果・変換の結果を、処理の後に保存しません
+- **Cloudflare, Inc.**: 同社は、送られた内容を AI の学習やサービスの改善に使わないとしています。同社での保存期間は、このポリシーでは保証しません。ことのはは、同社の AI Gateway に内容の記録を残さない設定で送っています
 
-### データの保管
+データは次の方法で削除できます。
 
-- **ローカルデータ**: お使いの端末内に保存されます。本アプリ自身がクラウドへ同期することはありません。端末の OS のバックアップ機能（Android の自動バックアップ、iOS の iCloud バックアップ）を有効にしている場合は、他のアプリのデータと同様に OS によってバックアップされ、機種変更時に復元されることがあります
-- **壊れたデータの写し**: iOS・Android 版では、端末に保存されたデータのファイルが壊れていることを起動時に見つけた場合、壊れたファイルに手を加える前に、その写しを端末内に残します。写しには、それまでに保存されていた入力履歴・定型文・お気に入りが含まれることがあります（アプリ内で個別に削除した項目が含まれることもあります）。本アプリが写しを外部へ送信することはありません。OS のバックアップ機能を有効にしている場合は、ほかのローカルデータと同様にバックアップの対象になります
-- **ことのは backend における AI 変換データ**: backend はデータベースを持たず、処理後に入力テキスト・前回の変換結果・変換結果を保存しません
-- **外部 AI provider における AI 変換データ**: 同社は、送られた内容を AI の学習やサービスの改善に使わないとしています（「外国にある第三者への提供について」）。同社での保存期間について、本ポリシーでは保証しません。ことのはは、同社の AI Gateway に内容の記録を残さない設定で送信しています
+- 履歴とお気に入りは、履歴の画面・お気に入りの画面から、1 件ずつ、またはすべて削除できます
+- 定型文は、定型文の画面から 1 件ずつ削除できます
+- アプリをアンインストールすると、端末の中のデータはすべて消えます
 
-### データの削除
+次の 2 つは、アプリの中で削除しても消えません。
 
-ユーザーは以下の方法でデータを削除できます。
-
-- アプリ内の履歴画面・お気に入り画面から、履歴とお気に入りを個別または全件削除
-- アプリ内の定型文画面から、定型文を個別に削除
-- アプリをアンインストールすることで、すべてのローカルデータが削除されます
-
-アプリ内で削除したデータが、すでに取られた OS のバックアップに含まれている場合、その削除はバックアップには及びません。端末の復元や再インストールで戻ることがあります。
-
-「データの保管」に記載した壊れたデータの写しは、アプリ内の削除の操作では消えません。同じ種類のデータで次に破損が見つかったときに新しい写しで置き換えられることがあり、アプリをアンインストールすると端末からは削除されます。OS のバックアップに含まれた写しは、OS 側でそのバックアップが削除されるまで残り、端末の復元や再インストールの際に戻ることがあります。
+- **すでに取られた OS のバックアップ**: 削除したデータが入っていると、端末の復元や再インストールで戻ることがあります
+- **壊れたデータの写し**: 同じ種類のデータで次に壊れたファイルが見つかると、新しい写しに置き換わることがあります。アンインストールすると端末からは消えます。OS のバックアップに入った写しは、そのバックアップが消されるまで残り、端末の復元や再インストールで戻ることがあります
 
 ### 第三者への提供
 
-「AI変換機能使用時」に記載した外部 AI provider への送信を除き、本アプリは、法令に基づく場合を除いてユーザーの個人情報を第三者に提供しません。
+AI 変換で Cloudflare, Inc. へ送ることを除き、法令に基づく場合のほかは、利用者の個人情報を第三者に提供しません。
 
 ### 外国にある第三者への提供について
 
-AI変換機能を使うと、「AI変換機能使用時」に記載したデータが、外国にある第三者へ提供されます。本アプリは、初回のAI変換の前に以下の要点を示し、同意を得てから送信します（個人情報保護法第28条）。
+AI 変換を使うと、「AI 変換を使うときに送るもの」に書いたデータが、外国にある第三者へ提供されます。本アプリは、初めて AI 変換を使う前に次の要点を示し、同意をいただいてから送ります（個人情報保護法第 28 条）。
 
 - **提供先**: Cloudflare, Inc.（米国カリフォルニア州）。ことのは backend も同社の設備（Cloudflare Containers）の上で動いています
-- **提供する情報と目的**: 入力テキスト・丁寧さレベル・前回の変換結果（再変換時のみ）を、AI変換のためだけに送信します。入力テキストに氏名や体調など個人に関する情報を書いた場合は、それも送信されます
-- **処理する国**: 同社の世界各地の設備で処理され、日本国外になることがあります。どの国の設備で処理されるかは要求ごとに同社の設備の状況で決まるため、前もって特定できません
-- **米国の個人情報保護の制度**: 個人情報保護委員会の調査（2021年10月時点）によると、米国には連邦レベルの包括的な個人情報保護法は無く、通信・金融・医療など分野ごとの法律があります。米国は APEC の越境プライバシールール（CBPR）システムに参加しています。この制度は、参加国の事業者の個人情報の扱いを、国際的な基準に沿って第三者機関が認証する仕組みです。同社の本社があるカリフォルニア州には包括的な消費者プライバシー法（CCPA）があり、OECD プライバシーガイドラインの8原則のうち「責任の原則」に当たる規定は見当たらないとされています。事業者に政府の情報収集への協力を義務づける制度や、データを国内に保存する義務のうち、本人の権利利益に重大な影響を及ぼす可能性のあるものは、同調査では挙げられていません。調査時点より後の法改正は反映されていません（出典: 個人情報保護委員会「外国制度（アメリカ合衆国）」 https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ ）
-- **提供先が講じている措置**: 同社は公式の文書で次のことを示しています。送られた内容を、AI モデルの学習や同社・第三者のサービスの改善に使わず、他の顧客に見せないこと（ https://developers.cloudflare.com/workers-ai/platform/privacy/ ）。データ処理契約（DPA）で、顧客の指示の範囲でだけ処理すること、守秘、暗号化などの安全管理、漏えいの通知、政府からの開示要求への対応を定めていること（ https://www.cloudflare.com/cloudflare-customer-dpa/ ）。ISO/IEC 27001・27018・27701 の認証（ https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ）と、Global CBPR・Global PRP の認証（ https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ ）を受けていること。ことのはは、同社の AI Gateway に内容の記録を残さない設定で送信しています
-- **講じられていない措置**: 同社の措置は概ね OECD プライバシーガイドラインの8原則に対応すると考えられますが、同社の契約（DPA）が名前を挙げている法令は EU・EEA・スイス・英国・米国の州法で、日本の個人情報保護法の名前は無く、同法に基づく保護や本人の請求への協力は明記されていません
+- **提供する情報と目的**: 入力した文・丁寧さ・前回の変換結果（再生成のときだけ）を、AI 変換のためだけに送ります。入力した文に名前や体調など個人に関する情報を書いた場合は、それも送られます
+- **処理する国**: 同社の世界各地の設備で処理され、日本の外になることがあります。どの国の設備で処理するかはリクエストごとに同社の設備の状況で決まるため、前もって特定できません
+- **米国の個人情報保護の制度**: 個人情報保護委員会の調査（2021 年 10 月時点）によると、次のとおりです。調査より後の法改正は反映していません（出典: 個人情報保護委員会「外国制度（アメリカ合衆国）」 https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ ）
+  - 連邦レベルの包括的な個人情報保護法は無く、通信・金融・医療など分野ごとの法律があります
+  - APEC の越境プライバシールール（CBPR）システムに参加しています。参加国の事業者の個人情報の扱いを、国際的な基準に沿って第三者機関が認証する仕組みです
+  - 同社の本社があるカリフォルニア州には、包括的な消費者プライバシー法（CCPA）があります。OECD プライバシーガイドラインの 8 原則のうち「責任の原則」に当たる規定は見当たらないとされています
+  - 事業者に政府の情報収集への協力を義務づける制度や、データを国内に保存する義務のうち、本人の権利利益に重大な影響を及ぼす可能性のあるものは、同調査では挙げられていません
+- **提供先が講じている措置**: 同社は公式の文書で次のことを示しています。このほか、ことのはは、同社の AI Gateway に内容の記録を残さない設定で送っています
+  - 送られた内容を、AI モデルの学習や同社・第三者のサービスの改善に使わず、ほかの顧客に見せない（ https://developers.cloudflare.com/workers-ai/platform/privacy/ ）
+  - データ処理契約（DPA）で、顧客の指示の範囲でだけ処理すること、守秘、暗号化などの安全管理、漏えいの通知、政府からの開示要求への対応を定めている（ https://www.cloudflare.com/cloudflare-customer-dpa/ ）
+  - ISO/IEC 27001・27018・27701 の認証（ https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ）と、Global CBPR・Global PRP の認証（ https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ ）を受けている
+- **講じられていない措置**: 同社の措置は、OECD プライバシーガイドラインの 8 原則におおむね対応すると考えます。ただし、同社の DPA が名前を挙げている法令は EU・EEA・スイス・英国・米国の州法で、日本の個人情報保護法は挙がっていません。同法に基づく保護や、本人の請求への協力も明記されていません
 
-同意しない場合、AI変換は使えませんが、ほかの機能はすべて使えます。同意は、アプリの「設定」→「AI設定」からいつでも取り消せます。取り消すと、次にAI変換を使うときに、もう一度確認します。
+同意しない場合、AI 変換は使えませんが、ほかの機能はすべて使えます。同意は、アプリの「設定」→「AI設定」からいつでも取り消せます。取り消すと、次に AI 変換を使うときにもう一度確認します。
 
 ### お子様のプライバシー
 
-本アプリは、13歳未満のお子様から意図的に個人情報を収集しません。
+本アプリは、13 歳未満のお子様から意図して個人情報を集めることはしません。
 
-### プライバシーポリシーの変更
+### このポリシーの変更
 
-本ポリシーを変更する場合は、本ページの内容と最終更新日を改めてお知らせします。重要な変更がある場合は、アプリの更新時にストアに載せる更新内容でもお知らせします。
+このポリシーを変えるときは、このページの内容と最終更新日を書き換えてお知らせします。大きな変更は、アプリの更新時にストアに載せる更新内容でもお知らせします。
 
 ### お問い合わせ
 
-プライバシーに関するご質問は、以下までお問い合わせください。
+プライバシーについてのご質問は、次までお寄せください。
 
-- サポートURL: https://github.com/mozuq-lab/kotonoha/issues
+- サポート: https://github.com/mozuq-lab/kotonoha/issues
 - メール: hello@mozuq-lab.com
 
 ---
@@ -125,112 +115,102 @@ AI変換機能を使うと、「AI変換機能使用時」に記載したデー�
 
 ### Introduction
 
-This Privacy Policy explains how "Kotonoha" (hereinafter "the App") handles personal information. Please read this policy carefully before using the App.
+This Privacy Policy explains how the app "Kotonoha" (the "App") handles your information. Please read it before using the App. In short:
 
-### Information We Collect
+- The text you enter, your history, preset phrases, favorites, and settings are stored on your device
+- The App sends data off your device only when you use AI conversion, and asks for your consent before the first use
+- The App never sends crash information by itself
 
-#### 1. Data Stored Locally
+### What Is Stored on Your Device
 
-The App stores the following data on your device. The App itself does not send this data to external servers, except for the data and transmission described in the next section when you choose to use AI conversion.
+The App stores the following data on your device. The App sends this data off your device only when you use AI conversion (what is sent is described in the next section).
 
-- **Input History**: Content entered via the character board or keyboard and spoken, among other entries (up to 50 entries)
-- **Text Being Entered**: The text you are currently typing. It is saved so that it is not lost if the App closes, and it is deleted when you clear the input field
-- **Preset Phrases**: Custom phrases added by the user
-- **Favorites**: Phrases registered as favorites
-- **App Settings**: Settings such as font size, theme, and speech rate
+- **Input History**: Text you entered on the character board or keyboard and had read aloud, among others (up to 50 entries)
+- **Text Being Entered**: Saved so that it is not lost if the App closes. It is deleted when you clear the input field
+- **Preset Phrases**: Phrases you added
+- **Favorites**: Phrases you added to favorites
+- **Settings**: Font size, theme, speech rate and voice, and other settings
 
-#### 2. When Using AI Conversion
+### What Is Sent When You Use AI Conversion
 
-When you use the optional AI conversion feature, the following data is sent from the App to the Kotonoha backend:
+AI conversion is optional. When you use it, the App sends the following data to the Kotonoha server (the "Kotonoha backend"):
 
-- **Input Text**: Text to be converted by AI
-- **Politeness Level**: Selected conversion level (Casual/Normal/Polite)
+- **Input Text**: The text you want to convert
+- **Politeness Level**: The level you chose (Casual, Normal, or Polite)
 - **Previous Conversion Result**: Only when regenerating
-- **Source IP Address**: Received with every request as part of how network communication works. The Kotonoha backend uses it only temporarily in memory to limit requests when many conversions are sent in a short time (the count resets every minute). It is not logged or stored, and it is not sent to the external AI provider.
 
-The Kotonoha backend includes the Input Text (and the Previous Conversion Result when regenerating) and instructions based on the selected Politeness Level in a prompt sent to the AI service (Workers AI) of the external AI provider, Cloudflare, Inc. (United States). The country or region where processing takes place depends on Cloudflare's infrastructure and may be outside Japan. The provider's Conversion Result is returned to the App through the Kotonoha backend. The recipient, the US system, and the recipient's measures are described under "Transfer to Third Parties Outside Japan."
+The Kotonoha backend sends the Input Text (and the Previous Conversion Result when regenerating), with instructions based on the Politeness Level, to the AI service (Workers AI) of Cloudflare, Inc. (United States). The result returns to the App through the Kotonoha backend. Processing may take place outside Japan. The recipient, the US system, and the recipient's measures are described under "Transfer to Third Parties Outside Japan."
 
-**Important**: We will ask for your consent about data transmission when you first use the AI conversion feature.
+Your **source IP address** reaches the Kotonoha backend with every request as part of how network communication works. The Kotonoha backend uses it only temporarily in memory to limit requests when many conversions are sent in a short time (the count resets every minute). It does not log or store it, and does not include it in requests to Workers AI. However, because the Kotonoha backend runs on Cloudflare, Inc.'s infrastructure, Cloudflare's infrastructure receives your source IP address as part of how network communication works.
 
-#### 3. Crash Information (Diagnostic Data)
+### Crash Information
 
-**The App does not transmit crash information through any crash-reporting mechanism of its
-own.** No crash reporting SDK (such as Firebase Crashlytics or Sentry) is embedded in the App.
+The App contains no mechanism for collecting and sending crash information (no SDK such as Firebase Crashlytics or Sentry).
 
-However, your device's operating system and app store provide a mechanism that shares
-information with developers when an app terminates unexpectedly. **This sharing occurs only
-if you have enabled it in your device's OS settings.**
+However, your device's operating system and app store can share information with developers when an app terminates unexpectedly. This happens only if you allow it in your OS settings.
 
-- **iOS / iPadOS**: Crash information is provided to the developer through Apple only if
-  "Share iPhone Analytics" and "Share With App Developers" are enabled under
-  Settings > Privacy & Security > Analytics & Improvements
-- **Android**: Crash information (Android vitals) is provided to the developer through
-  Google Play only if you have opted in to automatically share usage and diagnostics data
+- **iOS / iPadOS**: Provided through Apple only if "Share iPhone Analytics" and "Share With App Developers" are enabled under Settings > Privacy & Security > Analytics & Improvements
+- **Android**: Provided through Google Play (Android vitals) only if you have turned on automatic sharing of usage and diagnostics data
 
-The App does not intentionally attach text entered on the character board, preset phrases,
-history, or favorites to crash information. However, the contents of diagnostic data generated
-by the OS and app store depend on their mechanisms and settings. Information that may be
-provided includes technical information indicating where the App stopped (a stack trace),
-the device model, the OS version, and the App version.
-
-You can change whether to share this at any time in your device's OS settings. For details,
-please refer to Apple's and Google's respective privacy documentation.
+This information may include where the App stopped (a stack trace), the device model, the OS version, and the App version. The App does not intentionally attach text you entered, preset phrases, history, or favorites to it. However, its contents are determined by the OS and app store mechanisms and settings. You can change whether to share it at any time in your OS settings. For details, see Apple's and Google's privacy documentation.
 
 ### How We Use Your Data
 
-The collected data is used only for the following purposes:
+Your data is used only to provide the App's features (including generating AI conversion results).
 
-- Providing the App's functionality
-- Generating AI conversion results
-- Improving user experience
+### Storage and Deletion
 
-### Data Storage
+- **Data on your device**: The App does not sync it to any cloud. However, if you have enabled OS backup (such as iCloud Backup or a computer backup on iOS, or Auto Backup on Android), it may be backed up like other apps' data. It may also move to a new device when you transfer data or restore when changing devices
+- **Copies of damaged data**: On iOS and Android, if the App finds at startup that a saved data file is damaged, it keeps a copy of that file on your device before changing it. The copy may contain input history, preset phrases, and favorites saved up to that point, including items you had deleted individually in the App. The App never sends the copy off your device. If you have enabled OS backup, copies may be backed up as well
+- **Kotonoha backend**: It has no database and does not store the Input Text, the Previous Conversion Result, or the Conversion Result after processing
+- **Cloudflare, Inc.**: Cloudflare states that it does not use the content to train AI models or improve its services. This policy does not guarantee how long Cloudflare keeps it. Kotonoha sends requests with content logging in Cloudflare AI Gateway turned off
 
-- **Local Data**: Stored on your device. The App itself does not synchronize it to any cloud. If you have enabled your device's OS backup (Android Auto Backup or iCloud Backup), the OS may back it up and restore it on a new device, as it does for other apps
-- **Copies of Damaged Data**: On iOS and Android, if the App finds at startup that a data file stored on your device is damaged, it keeps a copy of the damaged file on your device before modifying it. The copy may contain input history, preset phrases, and favorites saved up to that point, including items you had deleted individually within the App. The App never sends the copy off your device. If you have enabled your device's OS backup, the copy may be backed up in the same way as other local data
-- **AI Conversion Data on the Kotonoha Backend**: The backend has no database and does not store Input Text, the Previous Conversion Result, or the Conversion Result after processing
-- **AI Conversion Data at the External AI Provider**: Cloudflare states that it does not use the content to train AI models or improve its services (see "Transfer to Third Parties Outside Japan"). This policy does not guarantee Cloudflare's retention period. Kotonoha sends requests with logging of content in Cloudflare AI Gateway turned off
+You can delete data as follows:
 
-### Data Deletion
+- History and favorites: one by one or all at once, from the History and Favorites screens
+- Preset phrases: one by one, from the Preset Phrases screen
+- Uninstalling the App deletes all data on your device
 
-Users can delete data in the following ways:
+The following are not removed by deleting data in the App:
 
-- Delete history and favorites individually or entirely, from the History and Favorites screens in the App
-- Delete preset phrases individually, from the Preset Phrases screen in the App
-- Uninstalling the app deletes all local data
-
-If data you delete within the App is already included in an OS backup, deleting it in the App does not remove it from that backup. It may come back when you restore your device or reinstall the App.
-
-The copies of damaged data described under "Data Storage" are not removed by deleting data within the App. A copy may be replaced by a newer one the next time damage is found in the same kind of data, and it is deleted from your device when you uninstall the App. A copy included in an OS backup remains until that backup is deleted, and may come back when you restore your device or reinstall the App.
+- **OS backups already taken**: Deleted data in them may come back when you restore your device or reinstall the App
+- **Copies of damaged data**: A copy may be replaced by a newer one the next time a damaged file of the same kind is found. It is deleted from your device when you uninstall the App. A copy in an OS backup remains until that backup is deleted, and may come back when you restore your device or reinstall the App
 
 ### Sharing with Third Parties
 
-Except for transmission to the external AI provider described under "When Using AI Conversion," the App does not share users' personal information with third parties unless required by law.
+Except for sending data to Cloudflare, Inc. for AI conversion, the App does not provide your personal information to third parties unless required by law.
 
 ### Transfer to Third Parties Outside Japan
 
-When you use AI conversion, the data described under "When Using AI Conversion" is provided to a third party outside Japan. Before the first AI conversion, the App shows the key points below and sends data only after you consent (Article 28 of Japan's Act on the Protection of Personal Information).
+When you use AI conversion, the data described under "What Is Sent When You Use AI Conversion" is provided to a third party outside Japan. Before the first AI conversion, the App shows the key points below and sends data only after you consent (Article 28 of Japan's Act on the Protection of Personal Information).
 
 - **Recipient**: Cloudflare, Inc. (California, United States). The Kotonoha backend also runs on Cloudflare's infrastructure (Cloudflare Containers)
 - **Data and purpose**: The Input Text, the Politeness Level, and the Previous Conversion Result (only when regenerating) are sent solely for AI conversion. If you type personal information such as a name or a health condition, it is sent as well
-- **Country of processing**: Processing takes place in Cloudflare facilities around the world and may be outside Japan. The country cannot be identified in advance because it is determined per request by Cloudflare's infrastructure
-- **Personal information protection system in the United States**: According to a survey by Japan's Personal Information Protection Commission (as of October 2021), the United States has no comprehensive federal privacy law and instead has sector-specific laws. The United States participates in the APEC Cross-Border Privacy Rules (CBPR) system, in which third-party bodies certify businesses' handling of personal information against an international standard. California, where Cloudflare is headquartered, has the CCPA, which reportedly has no provision corresponding to the Accountability Principle of the OECD Privacy Guidelines. The survey lists no obligation for businesses to cooperate with government information collection, and no data localization requirement, that may significantly affect individuals' rights and interests. Later legal changes are not reflected (source: https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ )
-- **Measures taken by the recipient**: Cloudflare states that it does not use the content to train AI models or improve its or third parties' services and does not show it to other customers ( https://developers.cloudflare.com/workers-ai/platform/privacy/ ). Its Data Processing Addendum provides for processing only on the customer's instructions, confidentiality, security measures such as encryption, breach notification, and handling of government requests ( https://www.cloudflare.com/cloudflare-customer-dpa/ ). It holds ISO/IEC 27001, 27018, and 27701 certifications ( https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ) and Global CBPR and Global PRP certifications ( https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ ). Kotonoha sends requests with logging of content in Cloudflare AI Gateway turned off
-- **Measures not taken**: We consider that Cloudflare's measures broadly correspond to the eight principles of the OECD Privacy Guidelines. However, the laws its DPA names are those of the EU, the EEA, Switzerland, the UK, and US states; it does not name Japan's Act on the Protection of Personal Information and does not expressly provide protection or cooperation with individuals' requests under that Act
+- **Country of processing**: Processing takes place in Cloudflare facilities around the world and may be outside Japan. The country cannot be identified in advance because Cloudflare's infrastructure decides it for each request
+- **Personal information protection system in the United States**: The following is based on a survey by Japan's Personal Information Protection Commission (as of October 2021). Later legal changes are not reflected (source: https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ )
+  - There is no comprehensive federal privacy law; instead there are sector-specific laws for areas such as telecommunications, finance, and healthcare
+  - The United States participates in the APEC Cross-Border Privacy Rules (CBPR) system, in which third-party bodies certify businesses' handling of personal information against an international standard
+  - California, where Cloudflare is headquartered, has a comprehensive consumer privacy law (the CCPA), which reportedly has no provision corresponding to the Accountability Principle of the eight OECD Privacy Guidelines principles
+  - The survey lists no obligation for businesses to cooperate with government information collection, and no data localization requirement, that may significantly affect individuals' rights and interests
+- **Measures taken by the recipient**: Cloudflare states the following in its official documents. In addition, Kotonoha sends requests with content logging in Cloudflare AI Gateway turned off
+  - It does not use the content to train AI models or improve its or third parties' services, and does not show it to other customers ( https://developers.cloudflare.com/workers-ai/platform/privacy/ )
+  - Its Data Processing Addendum (DPA) provides for processing only on the customer's instructions, confidentiality, security measures such as encryption, breach notification, and handling of government requests ( https://www.cloudflare.com/cloudflare-customer-dpa/ )
+  - It holds ISO/IEC 27001, 27018, and 27701 certifications ( https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ) and Global CBPR and Global PRP certifications ( https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ )
+- **Measures not taken**: We consider that Cloudflare's measures broadly correspond to the eight OECD Privacy Guidelines principles. However, the laws its DPA names are those of the EU, the EEA, Switzerland, the UK, and US states. It does not name Japan's Act on the Protection of Personal Information, and does not expressly provide protection or cooperation with individuals' requests under that Act
 
 If you do not consent, AI conversion is unavailable, but all other features remain available. You can withdraw your consent at any time in the App under 設定 (Settings) > AI設定 (AI Settings). After you withdraw it, the App asks again the next time you use AI conversion.
 
 ### Children's Privacy
 
-The App does not intentionally collect personal information from children under 13 years of age.
+The App does not intentionally collect personal information from children under 13.
 
 ### Changes to This Policy
 
-If we make changes to this policy, we will post the revised policy and its Last Updated date on this page. For significant changes, we will also announce them in the release notes shown in the app store when the App is updated.
+When we change this policy, we will update this page and its Last Updated date. For significant changes, we will also announce them in the release notes shown in the app store when the App is updated.
 
 ### Contact Us
 
-For privacy-related questions, please contact us:
+For privacy questions, please contact us:
 
-- Support URL: https://github.com/mozuq-lab/kotonoha/issues
+- Support: https://github.com/mozuq-lab/kotonoha/issues
 - Email: hello@mozuq-lab.com
