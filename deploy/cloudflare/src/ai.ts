@@ -30,7 +30,10 @@ export async function complete(input: ConversionInput, env: Env): Promise<string
       }
       let result: Completion;
       try { result = await response.json<Completion>(); }
-      catch { throw new ApiError('AI_API_ERROR'); }
+      catch (error) {
+        if (error instanceof SyntaxError) throw new ApiError('AI_API_ERROR');
+        throw error; // 本文の受信中の切断も、外側の通信失敗の再試行へ渡す。
+      }
       const choice = result?.choices?.[0];
       const text = typeof choice?.message?.content === 'string' ? choice.message.content.trim() : '';
       if (!text || choice?.finish_reason === 'length') throw new ApiError('AI_API_ERROR');

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { request as httpRequest } from 'node:http';
 import { after, afterEach, before, test } from 'node:test';
 import { build } from 'esbuild';
 import { unstable_readConfig } from 'wrangler';
@@ -38,9 +39,15 @@ before(async () => {
         assert.ok(reply, 'unexpected upstream request');
         reply.inspect?.({ body, headers: request.headers });
         if (reply.error) { request.socket.destroy(); return; }
+        if (reply.partial) {
+          response.writeHead(200, { 'content-type': 'application/json' });
+          response.write('{"choices":[');
+          setTimeout(() => response.destroy(), 20);
+          return;
+        }
         const send = () => {
           response.writeHead(reply.status, { 'content-type': 'application/json' });
-          response.end(JSON.stringify(reply.body));
+          response.end(reply.raw ?? JSON.stringify(reply.body));
         };
         if (reply.delay) setTimeout(send, reply.delay); else send();
       });
@@ -84,6 +91,32 @@ test('health is a real unauthenticated HTTP response', async () => {
   assert.equal(body.ai_provider, 'workers_ai');
   assert.equal(body.version, '1.0.0');
   assert.match(body.timestamp, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
+});
+
+// 本文を送信し終える前に応答が来ることを実 socket で見る。全部読んでから断る実装は赤になる。
+async function unfinishedRequest(headers, firstChunk) {
+  const url = new URL(convert, await worker.ready);
+  return new Promise((resolve, reject) => {
+    const request = httpRequest(url, { method: 'POST', headers }, response => {
+      resolve(response.statusCode);
+      response.resume();
+      request.destroy();
+    });
+    request.on('error', reject);
+    request.setTimeout(2000, () => request.destroy(new Error('server waited for the whole body')));
+    request.flushHeaders();
+    if (firstChunk) request.write(firstChunk);
+  });
+}
+test('unauthenticated HTTP upload is rejected before the client sends its body', async () => {
+  assert.equal(await unfinishedRequest({ 'X-API-Key': 'bad', 'Content-Length': '1048576' }), 401);
+});
+test('declared oversized HTTP upload is rejected without receiving its body', async () => {
+  assert.equal(await unfinishedRequest({ 'X-API-Key': 'contract-key-A', 'Content-Length': '65537' }), 413);
+});
+test('chunked HTTP upload is stopped once its bytes exceed the limit, before upload completes', async () => {
+  assert.equal(await unfinishedRequest({ 'X-API-Key': 'contract-key-A', 'Transfer-Encoding': 'chunked' },
+    '0'.repeat(65537)), 413);
 });
 
 for (const path of [convert, regenerate]) {
@@ -238,6 +271,19 @@ test('network errors retry once and can recover', async () => {
   pending.push({ error: new Error('CANARY-NETWORK-SECRET') });
   provider();
   assert.equal((await post()).status, 200);
+});
+test('network disconnect while reading the AI response body retries once and can recover', async () => {
+  pending.push({ partial: true });
+  provider();
+  assert.equal((await post()).status, 200);
+});
+test('complete malformed AI JSON is rejected without retrying or exposing its text', async () => {
+  pending.push({ status: 200, raw: '{CANARY-PROVIDER-SECRET' });
+  const response = await post();
+  assert.equal(response.status, 500);
+  const body = await response.text();
+  assert.ok(body.includes('AI_API_ERROR'));
+  assert.ok(!body.includes('CANARY-PROVIDER-SECRET'));
 });
 test('upstream 500 is not retried and is sanitized', async () => {
   provider({ error: 'CANARY-PROVIDER-SECRET' }, 500);
