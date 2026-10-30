@@ -1,7 +1,7 @@
 # プライバシーポリシー / Privacy Policy
 
-最終更新日: 2026年10月29日
-Last Updated: October 29, 2026
+最終更新日: 2026年10月31日
+Last Updated: October 31, 2026
 
 ---
 
@@ -35,7 +35,7 @@ AI 変換は、使うかどうかを選べる機能です。使うと、本ア�
 
 ことのは backend は、入力した文（再生成では前回の変換結果も）と、丁寧さに応じた指示を、Cloudflare, Inc.（米国）の AI サービス（Workers AI）へ送ります。変換の結果は、ことのは backend を通って本アプリへ戻ります。処理は日本の外で行われることがあります。提供先・米国の制度・提供先の措置は「外国にある第三者への提供について」に書きます。
 
-**接続元の IP アドレス**は、通信の仕組み上、送るたびにことのは backend へ届きます。ことのは backend は、短い時間に多くの変換が送られたときに制限するためだけに、これをメモリの中で一時的に使います（1 分ごとに数え直します）。記録・保存はせず、Workers AI へのリクエストにも含めません。ただし、ことのは backend は Cloudflare, Inc. の設備の上で動いているため、通信の仕組み上、同社の設備は接続元の IP アドレスを受け取ります。
+**接続元の IP アドレス**は、通信の仕組み上、送るたびにことのは backend へ届きます。ことのは backend は、短い時間に多くの変換が送られたときに制限するためだけに、IP アドレスをメモリの中で使い、そこから作った識別子を Cloudflare のアクセス回数を制限する機能へ渡します。識別子は 1 分ごとに切り替えます。ことのは backend は、IP アドレスや識別子を独自のログやデータベースに記録・保存せず、Workers AI へのリクエストにも含めません。Cloudflare の制限機能で識別子が削除される時刻は、このポリシーでは保証しません。ことのは backend は Cloudflare, Inc. の設備の上で動いているため、通信の仕組み上、同社の設備は接続元の IP アドレスを受け取ります。
 
 ### クラッシュの情報
 
@@ -78,7 +78,7 @@ AI 変換で Cloudflare, Inc. へ送ることを除き、法令に基づく場�
 
 AI 変換を使うと、「AI 変換を使うときに送るもの」に書いたデータが、外国にある第三者へ提供されます。本アプリは、初めて AI 変換を使う前に次の要点を示し、同意をいただいてから送ります（個人情報保護法第 28 条）。
 
-- **提供先**: Cloudflare, Inc.（米国カリフォルニア州）。ことのは backend も同社の設備（Cloudflare Containers）の上で動いています
+- **提供先**: Cloudflare, Inc.（米国カリフォルニア州）。ことのは backend も同社の設備（Cloudflare Workers）の上で動いています
 - **提供する情報と目的**: 入力した文・丁寧さ・前回の変換結果（再生成のときだけ）を、AI 変換のためだけに送ります。入力した文に名前や体調など個人に関する情報を書いた場合は、それも送られます
 - **処理する国**: 同社の世界各地の設備で処理され、日本の外になることがあります。どの国の設備で処理するかはリクエストごとに同社の設備の状況で決まるため、前もって特定できません
 - **米国の個人情報保護の制度**: 個人情報保護委員会の調査（2021 年 10 月時点）によると、次のとおりです。調査より後の法改正は反映していません（出典: 個人情報保護委員会「外国制度（アメリカ合衆国）」 https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ ）
@@ -141,7 +141,7 @@ AI conversion is optional. When you use it, the App sends the following data to 
 
 The Kotonoha backend sends the Input Text (and the Previous Conversion Result when regenerating), with instructions based on the Politeness Level, to the AI service (Workers AI) of Cloudflare, Inc. (United States). The result returns to the App through the Kotonoha backend. Processing may take place outside Japan. The recipient, the US system, and the recipient's measures are described under "Transfer to Third Parties Outside Japan."
 
-Your **source IP address** reaches the Kotonoha backend with every request as part of how network communication works. The Kotonoha backend uses it only temporarily in memory to limit requests when many conversions are sent in a short time (the count resets every minute). It does not log or store it, and does not include it in requests to Workers AI. However, because the Kotonoha backend runs on Cloudflare, Inc.'s infrastructure, Cloudflare's infrastructure receives your source IP address as part of how network communication works.
+Your **source IP address** reaches the Kotonoha backend with every request as part of how network communication works. The backend uses it in memory only to limit requests when many conversions are sent in a short time. It sends an identifier derived from the IP address to Cloudflare's rate limiting service. The identifier changes every minute. The Kotonoha backend does not record the IP address or identifier in its own logs or database, and does not include either in requests to Workers AI. This policy does not guarantee when identifiers are deleted from Cloudflare's rate limiting service. Because the Kotonoha backend runs on Cloudflare, Inc.'s infrastructure, Cloudflare's infrastructure receives your source IP address as part of how network communication works.
 
 ### Crash Information
 
@@ -184,7 +184,7 @@ Except for sending data to Cloudflare, Inc. for AI conversion, the App does not 
 
 When you use AI conversion, the data described under "What Is Sent When You Use AI Conversion" is provided to a third party outside Japan. Before the first AI conversion, the App shows the key points below and sends data only after you consent (Article 28 of Japan's Act on the Protection of Personal Information).
 
-- **Recipient**: Cloudflare, Inc. (California, United States). The Kotonoha backend also runs on Cloudflare's infrastructure (Cloudflare Containers)
+- **Recipient**: Cloudflare, Inc. (California, United States). The Kotonoha backend also runs on Cloudflare's infrastructure (Cloudflare Workers)
 - **Data and purpose**: The Input Text, the Politeness Level, and the Previous Conversion Result (only when regenerating) are sent solely for AI conversion. If you type personal information such as a name or a health condition, it is sent as well
 - **Country of processing**: Processing takes place in Cloudflare facilities around the world and may be outside Japan. The country cannot be identified in advance because Cloudflare's infrastructure decides it for each request
 - **Personal information protection system in the United States**: The following is based on a survey by Japan's Personal Information Protection Commission (as of October 2021). Later legal changes are not reflected (source: https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ )

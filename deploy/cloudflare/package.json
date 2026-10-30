@@ -8,7 +8,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cloudflare/containers": "0.3.7",
     "ipaddr.js": "2.5.0"
   },
   "devDependencies": {

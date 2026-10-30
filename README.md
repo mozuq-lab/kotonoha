@@ -11,10 +11,13 @@ TTS読み上げ）はすべてオフラインで動作し、AI変換のみオン
 ## 前提
 
 - **Flutter 3.38.1**（fvm で管理。`frontend/kotonoha_app/.fvmrc` にピン留め済み。未取得なら `fvm install`）
+- **Node.js 24**（本番 Worker の開発・検証・デプロイ）
 - **Python 3.12**（`uv` 推奨。`uv venv --python 3.12 --seed` で取得できる）
 - **Docker**（backend の開発用コンテナ。**DB は無い** — ADR-001）
 
 ## セットアップ
+
+本番 Worker は `deploy/cloudflare` で `npm ci`。以下の backend 手順は従来の FastAPI 開発用。
 
 ```bash
 git clone https://github.com/mozuq-lab/kotonoha.git
@@ -106,97 +109,87 @@ fvm dart format --output=none --set-exit-if-changed .
 scripts/inventory.sh                                                    # 監査の計測。数えるだけ
 ```
 
-## デプロイ（Cloudflare Containers）
+## デプロイ（Cloudflare Workers）
 
-backend は Cloudflare Containers で動かす（`deploy/cloudflare/`）。前段の Worker がすべてのリクエストを
-1 つのコンテナへ渡す。インスタンスは 1 つに固定する（レート制限はプロセス内メモリ — ADR-002）。
-Worker は利用者が送った `X-Forwarded-For` を捨て、`CF-Connecting-IP` で上書きしてから渡す。backend は
-`TRUSTED_PROXY_COUNT=1` でその値だけを読む。上書きを外すと、利用者が値を変えるだけで制限を逃れられる。
+本番 API は `deploy/cloudflare/src/` の TypeScript Worker。DB・コンテナは使わない。
+`backend/` の FastAPI は従来のローカル開発・比較用として残している。
+URL・`X-API-Key`・変換と再生成の入出力は維持するので、公開済みアプリの更新は要らない。
 
-前提: Workers Paid の契約、AI Gateway（支出上限・回数制限を設定済み）、Workers AI を呼べる API トークン、
-Docker（イメージを手元で作ってから送る）。
-
-端末キー（`API_KEYS`）は、推測されにくい値を自分で作る。同じ値を、ストアに出す版を作る手元の
-`~/.config/kotonoha/ios-release.json` の `AI_API_KEY` に入れる（「iOS の版を TestFlight へ送る」）。
-CI（`flutter.yml`・`release.yml`）の成果物にはキーを入れない。公開リポジトリの成果物は誰でも取り出せるため。
-
-```bash
-openssl rand -hex 32    # 16 進数 64 文字。表示された値を下の API_KEYS と ios-release.json の AI_API_KEY に使う
-```
+前提は Node.js 24、既存の Workers Paid 契約、AI Gateway（全体の回数制限・支出制限、ログ収集オフ）、
+Workers AI の API トークン。Docker は不要。Paid の基本料と AI 推論等の従量料金は残る。
+Free への契約変更はこの移行に含めない。
 
 ```bash
 cd deploy/cloudflare
 npm ci
-npx wrangler login
-# 秘密は wrangler.jsonc に書かない。1 つずつ入力する
-npx wrangler secret put API_KEYS           # 端末キー（カンマ区切り）。アプリの AI_API_KEY に渡す値
-npx wrangler secret put WORKERS_AI_API_TOKEN    # Workers AI を呼べる API トークン
-npx wrangler secret put WORKERS_AI_ACCOUNT_ID   # 32 桁の 16 進数
-npx wrangler secret put WORKERS_AI_GATEWAY_ID   # 無いと本番ゲートで起動しない（支出上限が効かないため）
-npx wrangler deploy
-curl -s https://<Worker の URL>/api/v1/health
+npm run typecheck
+npm test
+npx wrangler deploy --dry-run --outdir /tmp/kotonoha-worker-build
 ```
 
-上は初めて作るときの手順。`secret put` で入れた秘密は Worker に残るので、2 回目以降にコード（依存を含む）だけを
-変えたときは `npx wrangler deploy` だけでよい。イメージが変わるので、動いているコンテナが新しいものに入れ替わる:
+テストは本番の Wrangler 設定を読み、実 workerd・標準レート制限・HTTP で検証する。
+AI のネットワーク境界だけを偽物にし、実サービスへ利用者の文を送らない。
+手元の起動は `npx wrangler dev --env-file <リポジトリ外の設定ファイル>`。
+設定ファイルには次の 4 つを置く（値を git に入れない）。
+
+| 名前 | 用途 |
+| --- | --- |
+| `API_KEYS` | 端末キー。カンマ区切りで新旧のキーを併用できる |
+| `WORKERS_AI_API_TOKEN` | Workers AI を呼べるトークン |
+| `WORKERS_AI_ACCOUNT_ID` | 32 桁の 16 進数 |
+| `WORKERS_AI_GATEWAY_ID` | 既存 Gateway の ID。省略すると変換も health も失敗する |
+
+端末キーはストア向けの手元の `~/.config/kotonoha/ios-release.json` の `AI_API_KEY` と一致させる。
+CI の成果物には入れない。Flutter Web の確認は `--web-port=5173` を使う（CORS 許可元は
+`http://localhost:3000` と `http://localhost:5173`）。ローカルの Worker は既定で 8787 番。
+
+### レート制限とログ
+
+Cloudflare の `CF-Connecting-IP` だけを送信元に使う。受信した `X-Forwarded-For` は読まない。
+IPv4 射影を IPv4 へそろえ、IPv6 は /64 ごとに数える。標準 Rate Limiting binding に渡すのは、
+API・送信元・UTC の分から HMAC で作る識別子で、生の IP や入力文は渡さない。
+識別子は 1 分ごとに切り替え、独自のログ・DB には IP・識別子・入力文・結果を保存しない。
+Worker の observability はオフ。AI Gateway へは `cf-aig-collect-log: false` と
+`cf-aig-skip-cache: true` を明示する。
+
+各 API ごとに 12 回/60 秒を設定するが、拠点ごと・概算の制限で、12 回を超える場合がある。
+制限時は 429 と `Retry-After: 60`（binding は残り時間を返さないため最大の待ち時間を案内）。
+全体の回数と費用は AI Gateway 側でも制限する。支出制限も推計・結果整合で、厳密な請求上限ではない。
+既存の支出制限が Workers AI で実際に遮断するかは未検証で、本番切り替え時の確認事項。
+
+### Containers からの初回切り替え（人が行う）
+
+公開文の変更を承認してから行う。同じ `kotonoha-backend` を更新し、Worker 自体を消さない。
+既存の secret 4 つ・Custom Domain・旧 `workers.dev` の URL を維持できる。
+`CF_`・`CLOUDFLARE_` で始まる環境変数をシェルから外し、wrangler 自身の認証を確認してから進める。
 
 ```bash
 cd deploy/cloudflare
 npm ci
+npx wrangler whoami
+npx wrangler versions list                 # 戻す版の ID を控える
+npx wrangler containers list               # 旧 kotonoha-backend-backend の ID を控える
 npx wrangler deploy
-curl -s https://<Worker の URL>/api/v1/health
+curl -fsS https://kotonoha.mozuq-lab.com/api/v1/health
 ```
 
-`CF_`・`CLOUDFLARE_` で始まる環境変数（トークンやアカウント ID）をシェルに入れたまま wrangler を使わない。
-wrangler はこれらをログインより優先して自分の認証に使うので、Workers AI 用の狭い権限で認証してデプロイや
-削除が失敗する。backend の設定名はこれと重ならないよう `WORKERS_AI_…` にしている。
+次に、既存の端末キーで変換と再生成を行い、Gateway のログが空のまま・回数制限と支出制限が効くか確かめる。
+キー無しは 401、旧 `workers.dev` でも同じ API が応答することも確認する。
+秘密を差し替える必要はなく、今後の secret 更新はコンテナの再作成を伴わない。
 
-秘密はコンテナの起動時にしか渡らない。`npx wrangler deploy` はイメージ（backend のコード）が変わらないと
-動いているコンテナを入れ替えないので、`secret put` と `deploy` だけでは古い値のまま動き続ける（2026-09-27 に
-作り直したトークンが効かず、無効にした古いトークンのまま Workers AI に断られた）。秘密を差し替えたら、
-コンテナのアプリを消してからデプロイし、新しい値が効いているかを確かめる:
+**Worker の更新だけで旧コンテナの料金が止まったと見なさない。** 新 API の確認後、旧アプリの名前と ID を
+照合してから `npx wrangler containers delete <旧アプリのID>` で削除し、一覧と請求・使用量で稼働が止まったことを確かめる。
+削除は人が行う。利用者データは無いが、旧コンテナでの即時 rollback はできなくなる。
+既存 DO の `Backend` export と migration は互換用に残し、新 API では呼ばない。
+イメージの削除・未使用 secret/DO の掃除・Paid の契約変更は別の判断にする。
 
-```bash
-npx wrangler secret put <名前>
-npx wrangler containers list                 # kotonoha-backend-backend の ID を確かめる
-npx wrangler containers delete <ID>
-npx wrangler deploy
-```
+旧コンテナを消す前に戻す場合は `npx wrangler rollback <控えた旧バージョンID>`。
+削除後に戻す場合は、旧コミットを別 worktree へ取り出し、そちらの `deploy/cloudflare` から
+`npm ci` と `npx wrangler deploy` を行い、コンテナを再作成する（Docker が必要）。
 
-手元での確認は `npx wrangler dev --env-file <秘密を書いたファイル>`（Docker が要る）。
-`npx wrangler deploy --dry-run --outdir <任意のディレクトリ>` はイメージを作るだけで送らない。
-
-### Cloudflare の環境を消す
-
-取り消せない操作なので、消す前に何が残り何が消えるかを確かめる。先に `unset` して、wrangler が自分の
-ログイン（OAuth）で動くようにしておく。
-
-```bash
-cd deploy/cloudflare
-env | grep -E '^(CF_|CLOUDFLARE_)'          # 何も出ないことを確かめる。出たら unset する
-npx wrangler whoami                          # 自分のアカウントに OAuth でログインしていること
-npx wrangler delete                          # Worker（kotonoha-backend）・secret・Durable Object を消す
-npx wrangler containers list                 # コンテナのアプリが残っていれば
-npx wrangler containers delete <ID>          # その ID で消す
-npx wrangler containers images list          # 保存されたイメージ（任意）
-npx wrangler containers images delete <イメージ名:タグ>
-curl -s https://<Worker の URL>/api/v1/health   # 応答が無くなったことを確かめる
-```
-
-`wrangler delete` では、次のものは消えない。必要に応じてダッシュボードで片付ける。
-
-| 残るもの | 場所 | メモ |
-| --- | --- | --- |
-| AI Gateway と、その支出上限・回数制限の設定 | AI → AI Gateway | 作り直すなら残しておく方が楽 |
-| Workers AI の API トークン | My Profile → API Tokens | 当分使わないなら無効にする |
-| 前払いのクレジット | Billing | 残る |
-| Workers Paid の契約 | Workers & Pages → Plans | 月額が続く。止めるなら解約する |
-| `API_BASE_URL`（Variables） | GitHub の Settings → Secrets and variables → Actions | 残したままだと、CI のビルドは消えた URL を指す |
-
-作り直すときは、上の「デプロイ」の手順で secret を 4 つとも登録し直す（Worker と一緒に消えている）。
-`name` が同じなら URL も同じになり、端末キーを変えなければ GitHub の設定はそのまま使える。
-独自ドメイン `kotonoha.mozuq-lab.com`（Worker の Custom Domain。`mozuq-lab.com` の DNS は Cloudflare）は、
-Worker を消すと外れるので、作り直したら Worker の Settings → Domains & Routes で付け直す。
+2 回目以降の更新は `npm ci` → 検証 → `npx wrangler deploy`。新規に環境を作る場合だけ、
+上の 4 つをそれぞれ `npx wrangler secret put <名前>` で登録する。
+Worker の削除・請求設定の変更は人が決める。AI Gateway・トークン・Paid 契約は Worker の削除だけでは消えない。
 
 ## iOS の版を TestFlight へ送る
 
@@ -210,7 +203,8 @@ scripts/ios-testflight.sh
 
 ## CI（`.github/workflows/`）
 
-- `python.yml` — backend の lint・型・層契約・ゲート・テストを `main` / `develop` への push・PR で実行
+- `worker.yml` — 本番 Worker の型・実 workerd の HTTP テスト・deploy dry-run を PR/push で実行
+- `python.yml` — 従来の backend の lint・型・層契約・ゲート・テストを `main` / `develop` への push・PR で実行
 - `flutter.yml` — frontend の analyze・format・test・ビルドを `main` / `develop` への push・PR で実行
 - `release.yml` — タグ push で Android AAB 等を作る。端末キーを入れないので、そのままでは AI 変換が使えない（ストアに出す iOS の版は `scripts/ios-testflight.sh` で作る。Android の版の作り方は Play に出す前に決める）
 
@@ -235,10 +229,10 @@ scripts/ios-testflight.sh
 
 ## ディレクトリ
 
-- `backend/` — FastAPI バックエンド（ステートレス。DB 無し）
+- `backend/` — 従来の FastAPI（ローカル開発・比較用。DB 無し）
 - `frontend/kotonoha_app/` — Flutter アプリ
 - `docker/` — backend の開発用コンテナ設定
-- `deploy/cloudflare/` — backend の本番デプロイ（Cloudflare Containers と前段の Worker）
+- `deploy/cloudflare/` — 本番 API（TypeScript Worker、Containers は使わない）
 - `scripts/` — ビルド・棚卸し・ADR索引貼付などの補助スクリプト
 - `docs/` — 決定・仕様・計画・倉庫
 - `.github/workflows/` — CI
@@ -248,7 +242,7 @@ scripts/ios-testflight.sh
 - 核: `AGENTS.md`
 - 決定: `docs/adr/`（索引は `AGENTS.md`）
 - 仕様: `docs/spec/kotonoha-requirements.md`
-- API: `backend/tests/contract/openapi_baseline.json`
+- 本番 API の契約検証: `deploy/cloudflare/test/api.test.mjs`（旧 FastAPI の OpenAPI は `backend/tests/contract/openapi_baseline.json`）
 - 利用者向け: `docs/privacy-policy.md`・`docs/support.md`
 - 台帳: `docs/ledger.md`
 - 倉庫: `docs/archive/`（更新しない。現在の仕様として読まない）
