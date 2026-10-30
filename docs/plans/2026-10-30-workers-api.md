@@ -67,6 +67,6 @@
 **Interfaces:** Task 1/2 のローカル workerd HTTP と既存 Flutter API client / AI シナリオ。
 
 - [ ] ローカル HTTP で正常系・401・413・429 を確認。Flutter の既存 AI 結合テストを iPad シミュレータ・Android エミュレータ・実 Chromium で実行する。使えない環境は理由と未検証を明記。
-- [ ] backend の既存 pytest/check、frontend analyze/test/build（C の既存検証）を実行し、失敗を隠さない。
+- [x] backend の既存 pytest/check、frontend analyze/test/build（C の既存検証）を実行し、失敗を隠さない。
 - [x] 新しい文脈で whole-branch レビューと、別の文脈でコード→公開文の監査を依頼する。AGENTS.md の仕分けに従い、約束を破る証拠か数行の局所修正だけを採用する。
-- [ ] 検証結果と未検証を PR template に記し、draft PR を作る。main merge・本番 deploy・請求設定変更は行わない。
+- [x] 検証結果と未検証を PR template に記し、draft PR を作る。main merge・本番 deploy・請求設定変更は行わない。
