@@ -44,10 +44,10 @@
 
 **Interfaces:** `api.fetch(request: Request, env: Env): Promise<Response>`。Env は既存の API_KEYS / WORKERS_AI_* と RATE_LIMITER を持つ。旧 Backend クラスは export を維持。
 
-- [ ] Node test runner + Miniflare の HTTP 試験を先に書く。認証/64 KiB/検証/CORS/送信元・経路別の制限/プロンプト/否定/上流失敗/切れた出力を literal の期待値で検証。
-- [ ] `npm test` を実行し、旧 Worker が新 API を提供しない赤を見る。
-- [ ] 型と有限エラー、HTTP API、REST 境界を実装する。コードからの任意文字列のログを作らない。
-- [ ] `npm test` と `npm run typecheck` が通ることを確認してコミット。
+- [x] Node test runner + Miniflare の HTTP 試験を先に書く。認証/64 KiB/検証/CORS/送信元・経路別の制限/プロンプト/否定/上流失敗/切れた出力を literal の期待値で検証。
+- [x] `npm test` を実行し、旧 Worker が新 API を提供しない赤を見る。
+- [x] 型と有限エラー、HTTP API、REST 境界を実装する。コードからの任意文字列のログを作らない。
+- [x] `npm test` と `npm run typecheck` が通ることを確認してコミット。
 
 ### Task 2: 本番構成と切り替え手順
 
@@ -55,10 +55,10 @@
 
 **Interfaces:** Task 1 の Env の RATE_LIMITER を 12/60、既存 secret 4 つをそのまま供給。本番構成で実 API をテストする。
 
-- [ ] 本番の Wrangler 設定をテストハーネスが読む形で、レート制限の赤を見る。
-- [ ] containers の稼働設定を外し、標準 binding と Worker の CI を追加。旧 DO の破壊的 migration は含めない。
-- [ ] README のローカル起動・検証・deploy/rollback・旧コンテナ停止、ADR、公開文の差分を更新。
-- [ ] `npm test`、`npm run typecheck`、`npx wrangler deploy --dry-run` が通ることを確認してコミット。
+- [x] 本番の Wrangler 設定をテストハーネスが読む形で、レート制限の赤を見る。
+- [x] containers の稼働設定を外し、標準 binding と Worker の CI を追加。旧 DO の破壊的 migration は含めない。
+- [x] README のローカル起動・検証・deploy/rollback・旧コンテナ停止、ADR、公開文の差分を更新。
+- [x] `npm test`、`npm run typecheck`、`npx wrangler deploy --dry-run` が通ることを確認してコミット。
 
 ### Task 3: 実物、レビュー、監査、PR
 
@@ -68,5 +68,5 @@
 
 - [ ] ローカル HTTP で正常系・401・413・429 を確認。Flutter の既存 AI 結合テストを iPad シミュレータ・Android エミュレータ・実 Chromium で実行する。使えない環境は理由と未検証を明記。
 - [ ] backend の既存 pytest/check、frontend analyze/test/build（C の既存検証）を実行し、失敗を隠さない。
-- [ ] 新しい文脈で whole-branch レビューと、別の文脈でコード→公開文の監査を依頼する。AGENTS.md の仕分けに従い、約束を破る証拠か数行の局所修正だけを採用する。
+- [x] 新しい文脈で whole-branch レビューと、別の文脈でコード→公開文の監査を依頼する。AGENTS.md の仕分けに従い、約束を破る証拠か数行の局所修正だけを採用する。
 - [ ] 検証結果と未検証を PR template に記し、draft PR を作る。main merge・本番 deploy・請求設定変更は行わない。
