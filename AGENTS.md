@@ -5,7 +5,7 @@
 
 ## 目的と、守る約束
 
-**kotonoha（ことのは）** — 発話が困難な人（脳梗塞・ALS・筋疾患など）が、少ない操作で、適切な丁寧さで、安全に伝える文字盤アプリ（Flutter、タブレット向け）。**利用者は発話で訂正できず、データは端末内（Hive）にしか無い。** 文字盤・定型文・履歴・お気に入り・読み上げはオフラインで動き、AI 変換だけがオンライン（本番 backend は `backend/worker/` の TypeScript Worker。DB 無し。旧 FastAPI は開発・比較用）。仕様の正本は `docs/spec/kotonoha-requirements.md`。
+**kotonoha（ことのは）** — 発話が困難な人（脳梗塞・ALS・筋疾患など）が、少ない操作で、適切な丁寧さで、安全に伝える文字盤アプリ（Flutter、タブレット向け）。**利用者は発話で訂正できず、データは端末内（Hive）にしか無い。** 文字盤・定型文・履歴・お気に入り・読み上げはオフラインで動き、AI 変換だけがオンライン（本番 backend は `backend/worker/` の TypeScript Worker。DB 無し。旧 FastAPI はバックアップで、本番でも普段の開発でも使わない）。仕様の正本は `docs/spec/kotonoha-requirements.md`。
 目的はこのアプリを形にして届けること。「形」の定義と最短経路は `docs/now.md` にある。
 **守る約束**（製品の約束。変えるのは人）: ① データを黙って失わない（消えるのに残ると告げない） ② 端末の外へ出さない ③ 本人の意図どおりに伝える（言っていないことを言わない・読み上げが黙らない）。
 
@@ -47,11 +47,12 @@
 ## コマンド（リポジトリルートから。セットアップ・前提・トラブルシューティングは README）
 
 ```bash
-(cd backend/fastapi && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)   # 起動。--factory 必須。DB は無い
-(cd backend/fastapi && export PATH="$PWD/.venv/bin:$PATH" && pytest && make check)   # テスト（pytest-randomly）＋ ruff / black / mypy --strict / lint-imports / gates.sh
+(cd backend/worker && npx wrangler dev)                                      # 本番 API を手元で起動（8787 番）。初回は cp .dev.vars.example .dev.vars
 (cd backend/worker && npm run typecheck && npm test)                         # 本番 Worker の型と実 workerd の HTTP テスト
-(cd frontend/kotonoha_app && fvm flutter run -d chrome)                      # 接続先は --dart-define=API_BASE_URL=…（空文字は defaultValue を打ち消す）
+(cd frontend/kotonoha_app && fvm flutter run -d chrome --web-port=5173 --dart-define=API_BASE_URL=http://localhost:8787 --dart-define=AI_API_KEY=local-dev-key)   # 空文字の --dart-define は defaultValue を打ち消す
 (cd frontend/kotonoha_app && fvm flutter analyze --no-fatal-infos && fvm flutter test && fvm dart format --output=none --set-exit-if-changed .)
+(cd backend/fastapi && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)   # 旧 API（バックアップ）の起動。--factory 必須。DB は無い
+(cd backend/fastapi && export PATH="$PWD/.venv/bin:$PATH" && pytest && make check)   # 旧 API のテスト（pytest-randomly）＋ ruff / black / mypy --strict / lint-imports / gates.sh
 scripts/inventory.sh                                                         # 監査の計測。数えるだけ
 ```
 

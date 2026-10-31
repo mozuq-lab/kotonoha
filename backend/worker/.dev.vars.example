@@ -1,0 +1,10 @@
+# 手元の Worker の設定。cp .dev.vars.example .dev.vars して使う。.dev.vars は git に入らない。
+# このままの値で起動でき、health と認証の確認はできる。AI 変換は Workers AI に断られて失敗する。
+# 実物の AI を使うときだけ下の 3 つに本物の値を入れる。入れると入力文が Cloudflare へ送られる。
+
+# 端末キー。frontend の --dart-define=AI_API_KEY と同じ値にする。本番のキーは使わない。
+API_KEYS=local-dev-key
+
+WORKERS_AI_API_TOKEN=dummy-token
+WORKERS_AI_ACCOUNT_ID=00000000000000000000000000000000
+WORKERS_AI_GATEWAY_ID=dummy-gateway

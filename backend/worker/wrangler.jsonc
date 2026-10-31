@@ -1,4 +1,4 @@
-// 本番 API は Worker の中で処理する。秘密と本番切り替えの手順は README。
+// 本番 API は Worker の中で処理する。秘密の入れ方は README。
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "kotonoha-backend",

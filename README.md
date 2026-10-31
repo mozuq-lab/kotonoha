@@ -8,91 +8,111 @@ TTS読み上げ）はすべてオフラインで動作し、AI変換のみオン
 `docs/privacy-policy.md` と `docs/support.md`、エージェント（Claude Code / Codex 等）向けの核は
 `AGENTS.md` を参照してください。
 
-## 前提
+## 構成
 
-- **Flutter 3.38.1**（fvm で管理。`frontend/kotonoha_app/.fvmrc` にピン留め済み。未取得なら `fvm install`）
-- **Node.js 24**（本番 Worker の開発・検証・デプロイ）
-- **Python 3.12**（`uv` 推奨。`uv venv --python 3.12 --seed` で取得できる）
-- **Docker**（backend の開発用コンテナ。**DB は無い** — ADR-001）
+| 場所 | 役割 |
+| --- | --- |
+| `frontend/kotonoha_app/` | Flutter アプリ。AI 変換以外はこれだけで動く |
+| `backend/worker/` | **本番 API**（TypeScript Worker。DB・コンテナは使わない）。手元の開発もこれを使う |
+| `backend/fastapi/` | 以前使っていた API（DB 無し）のバックアップ。本番でも普段の開発でも使わない（[FastAPI](#fastapi旧-api)） |
+| `docker/` | FastAPI の開発用コンテナ設定 |
+| `scripts/` | ビルド・棚卸し・ADR索引貼付などの補助スクリプト |
+| `docs/` | 決定・仕様・計画・倉庫 |
+| `.github/workflows/` | CI |
 
-## セットアップ
+## ローカルで動かす
 
-本番 Worker は `backend/worker` で `npm ci`。以下の backend 手順は従来の FastAPI 開発用。
+必要なのは **Flutter 3.38.1**（fvm で管理。`frontend/kotonoha_app/.fvmrc` にピン留め済み）と
+**Node.js 24** だけ。Docker・Python・Cloudflare のアカウントは要らない。
 
 ```bash
 git clone https://github.com/mozuq-lab/kotonoha.git
 cd kotonoha
-cp backend/fastapi/.env.example backend/fastapi/.env   # backend のアプリ設定。キーの説明は .env.example に書いてある
 ```
 
-backend:
+コミットするなら git フックも入れる。フックを動かす `pre-commit` は `backend/fastapi/requirements-dev.txt` で
+入れるので、[FastAPI の準備](#準備)を行う（Python 3.12 が要る。FastAPI を起動する必要はない）。
 
-```bash
-cd backend/fastapi
-uv venv --python 3.12 --seed .venv          # --seed が無いと pip が入らない
-.venv/bin/pip install -r requirements-dev.txt
-(cd ../.. && backend/fastapi/.venv/bin/pre-commit install)   # git フックの登録
-```
+### 1. frontend を起動する
 
-frontend:
+AI 変換を使わないなら、ここまでで足りる。
 
 ```bash
 cd frontend/kotonoha_app
 fvm install         # .fvmrc の 3.38.1 を取得（未取得の場合のみ）
 fvm flutter pub get
-```
-
-## 起動
-
-backend（Application Factory なので `--factory` が必須 — ADR-004）:
-
-```bash
-(cd backend/fastapi && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)
-```
-
-frontend:
-
-```bash
-cd frontend/kotonoha_app
 fvm flutter run -d chrome
 ```
 
 AI変換ボタンは標準の起動・ビルドで表示されます（初回リリースから含める — ADR-007）。
 隠したい場合は `--dart-define=ENABLE_AI_CONVERSION=false` を付けます。
 
-ローカルの docker-compose 構成をそのまま使うなら、これだけで動きます（アプリ側のデフォルトが
-`API_BASE_URL=http://localhost:8000`、`AI_API_KEY` は空文字）。接続先を変える場合や
-`backend/fastapi/.env` の `API_KEYS` でAPIキー認証を有効にした場合は、値を `--dart-define` で渡します
-（Flutter は `.env` を読みません）:
+### 2. Worker を起動する
 
 ```bash
-fvm flutter run -d chrome \
-  --dart-define=API_BASE_URL=http://localhost:8000 \
-  --dart-define=AI_API_KEY=<backend/fastapi/.env の API_KEYS に含まれる値のいずれか>
+cd backend/worker
+npm ci
+cp .dev.vars.example .dev.vars   # 初回だけ。ダミー値のまま起動できる
+npx wrangler dev                 # http://localhost:8787
 ```
+
+動作確認:
+
+```bash
+curl -s 127.0.0.1:8787/api/v1/health
+```
+
+### 3. frontend を Worker につなぐ
+
+```bash
+cd frontend/kotonoha_app
+fvm flutter run -d chrome --web-port=5173 \
+  --dart-define=API_BASE_URL=http://localhost:8787 \
+  --dart-define=AI_API_KEY=local-dev-key
+```
+
+- `API_BASE_URL`: 既定値は FastAPI の `http://localhost:8000` なので、Worker には指定が要る。
+- `AI_API_KEY`: Worker は常に端末キーを求める。`.dev.vars` の `API_KEYS` と同じ値にする
+  （Flutter は `.dev.vars` を読まない）。
+- `--web-port=5173`: Worker の CORS 許可元は `http://localhost:3000` と `http://localhost:5173` だけ。
+  指定しないとポートが変わり、ブラウザが通信を止める。
 
 **空の `--dart-define` を渡さないこと。** `String.fromEnvironment` は「値が定義されたか」で判定するため、
 `--dart-define=API_BASE_URL=` のように空文字を渡すと `defaultValue` が無効になり、`baseUrl` が空文字の
 まま組み立てられてAI変換が失敗します（Dart 3.10.0 で実測確認）。
 
-動作確認:
+ダミー値のままだと、AI 変換は `AI_API_ERROR`（500）で失敗する。ただし `はい`・`いいえ`・`うん`・`ううん` は
+AI へ送らずに返すので、この 4 語なら画面の往復まで確かめられる。
 
-```bash
-curl -s 127.0.0.1:8000/api/v1/health
-```
+### 本物の AI を使う
 
-Swagger UI は http://localhost:8000/docs （development / test でのみ公開 — ADR-004）。
+`.dev.vars` の値を本物に置き換えて Worker を起動し直す。入力した文は本番と同じく Cloudflare へ送られ、
+指定した Gateway の回数と費用に数えられる。キーやトークンを git に入れないこと。`.dev.vars` は
+無視される設定だが、リポジトリの中に置きたくなければ、外のファイルを
+`npx wrangler dev --env-file <ファイル>` で渡す。
+
+| 名前 | 用途 |
+| --- | --- |
+| `API_KEYS` | 端末キー。カンマ区切りで新旧のキーを併用できる |
+| `WORKERS_AI_API_TOKEN` | Workers AI を呼べるトークン |
+| `WORKERS_AI_ACCOUNT_ID` | 32 桁の 16 進数 |
+| `WORKERS_AI_GATEWAY_ID` | 既存 Gateway の ID。省略すると変換も health も失敗する |
+
+本番用の値（`wrangler secret put` で入れるもの）も、この 4 つです。
 
 ## 検査
 
-backend:
+Worker:
 
 ```bash
-cd backend/fastapi
-PATH="$PWD/.venv/bin:$PATH" pytest         # pytest-randomly が順序をシャッフルする
-PATH="$PWD/.venv/bin:$PATH" make check     # ruff + black + mypy --strict + lint-imports + gates.sh
-PATH="$PWD/.venv/bin:$PATH" make mutation  # kill rate は docs/ledger.md の計測へ。CI には入れない（ADR-008）
+cd backend/worker
+npm run typecheck
+npm test
+npx wrangler deploy --dry-run --outdir /tmp/kotonoha-worker-build
 ```
+
+テストは本番の Wrangler 設定を読み、実 workerd・標準レート制限・HTTP で検証する。
+AI のネットワーク境界だけを偽物にし、実サービスへ利用者の文を送らない。
 
 frontend:
 
@@ -109,39 +129,26 @@ fvm dart format --output=none --set-exit-if-changed .
 scripts/inventory.sh                                                    # 監査の計測。数えるだけ
 ```
 
-## デプロイ（Cloudflare Workers）
+## 本番（Cloudflare Workers）
 
-本番 API は `backend/worker/src/` の TypeScript Worker。DB・コンテナは使わない。
-`backend/fastapi/` の FastAPI は従来のローカル開発・比較用として残している。
-URL・`X-API-Key`・変換と再生成の入出力は維持するので、公開済みアプリの更新は要らない。
+本番の接続先は `https://kotonoha.mozuq-lab.com`。
 
 前提は Node.js 24、既存の Workers Paid 契約、AI Gateway（全体の回数制限・支出制限、ログ収集オフ）、
 Workers AI の API トークン。Docker は不要。Paid の基本料と AI 推論等の従量料金は残る。
-Free への契約変更はこの移行に含めない。
+
+### 更新する
+
+[検査](#検査)を通してからデプロイする。`secret put` で入れた秘密は Worker に残るので、入れ直さなくてよい。
 
 ```bash
 cd backend/worker
 npm ci
-npm run typecheck
-npm test
-npx wrangler deploy --dry-run --outdir /tmp/kotonoha-worker-build
+npx wrangler deploy
+curl -fsS https://kotonoha.mozuq-lab.com/api/v1/health
 ```
 
-テストは本番の Wrangler 設定を読み、実 workerd・標準レート制限・HTTP で検証する。
-AI のネットワーク境界だけを偽物にし、実サービスへ利用者の文を送らない。
-手元の起動は `npx wrangler dev --env-file <リポジトリ外の設定ファイル>`。
-設定ファイルには次の 4 つを置く（値を git に入れない）。
-
-| 名前 | 用途 |
-| --- | --- |
-| `API_KEYS` | 端末キー。カンマ区切りで新旧のキーを併用できる |
-| `WORKERS_AI_API_TOKEN` | Workers AI を呼べるトークン |
-| `WORKERS_AI_ACCOUNT_ID` | 32 桁の 16 進数 |
-| `WORKERS_AI_GATEWAY_ID` | 既存 Gateway の ID。省略すると変換も health も失敗する |
-
 端末キーはストア向けの手元の `~/.config/kotonoha/ios-release.json` の `AI_API_KEY` と一致させる。
-CI の成果物には入れない。Flutter Web の確認は `--web-port=5173` を使う（CORS 許可元は
-`http://localhost:3000` と `http://localhost:5173`）。ローカルの Worker は既定で 8787 番。
+CI の成果物には入れない。
 
 ### レート制限とログ
 
@@ -159,7 +166,7 @@ Worker の observability はオフ。AI Gateway へは `cf-aig-collect-log: fals
 手元の workerd は正確に数えるので、確かめるときは本番で接続を維持して測る。
 制限時は 429 と `Retry-After: 60`（binding は残り時間を返さないため最大の待ち時間を案内）。
 全体の回数と費用は AI Gateway 側でも制限する。支出制限も推計・結果整合で、厳密な請求上限ではない。
-既存の支出制限が Workers AI で実際に遮断するかは未検証で、本番切り替え時の確認事項。
+既存の支出制限が Workers AI で実際に遮断するかは未検証（人待ち）。
 
 ### 新しい環境を作る
 
@@ -184,38 +191,8 @@ npx wrangler deploy
 curl -fsS https://<Worker の URL>/api/v1/health
 ```
 
-`secret put` で入れた秘密は Worker に残るので、2 回目以降の更新は `npm ci` → 検証 → `npx wrangler deploy` だけでよい。
 独自ドメイン `kotonoha.mozuq-lab.com`（Worker の Custom Domain。`mozuq-lab.com` の DNS は Cloudflare）は、
 Worker を作り直すと外れる。Worker の Settings → Domains & Routes で付け直す。
-
-### Containers からの初回切り替え（人が行う）
-
-公開文の変更を承認してから行う。同じ `kotonoha-backend` を更新し、Worker 自体を消さない。
-既存の secret 4 つ・Custom Domain・旧 `workers.dev` の URL を維持できる。
-`CF_`・`CLOUDFLARE_` で始まる環境変数をシェルから外し、wrangler 自身の認証を確認してから進める。
-
-```bash
-cd backend/worker
-npm ci
-npx wrangler whoami
-npx wrangler versions list                 # 戻す版の ID を控える
-npx wrangler containers list               # 旧 kotonoha-backend-backend の ID を控える
-npx wrangler deploy
-curl -fsS https://kotonoha.mozuq-lab.com/api/v1/health
-```
-
-次に、既存の端末キーで変換と再生成を行い、Gateway のログが空のまま・回数制限と支出制限が効くか確かめる。
-キー無しは 401、旧 `workers.dev` でも同じ API が応答することも確認する。
-秘密を差し替える必要はなく、今後の secret 更新はコンテナの再作成を伴わない。
-
-**Worker の更新だけで旧コンテナの料金が止まったと見なさない。** 新 API の確認後、旧アプリの名前と ID を
-照合してから `npx wrangler containers delete <旧アプリのID>` で削除し、一覧と請求・使用量で稼働が止まったことを確かめる。
-削除は人が行う。利用者データは無いが、旧コンテナでの即時 rollback はできなくなる。
-既存 DO の `Backend` export と migration は互換用に残し、新 API では呼ばない。
-イメージの削除・未使用 secret/DO の掃除・Paid の契約変更は別の判断にする。
-
-旧コンテナを消す前に戻す場合は `npx wrangler rollback <控えた旧バージョンID>`。
-削除後に戻す場合は、次の「旧構成（Containers）でデプロイする」の手順でコンテナを作り直す。
 
 ### 旧構成（Containers）でデプロイする
 
@@ -290,6 +267,63 @@ scripts/ios-testflight.sh
 - `flutter.yml` — frontend の analyze・format・test・ビルドを `main` / `develop` への push・PR で実行
 - `release.yml` — タグ push で Android AAB 等を作る。端末キーを入れないので、そのままでは AI 変換が使えない（ストアに出す iOS の版は `scripts/ios-testflight.sh` で作る。Android の版の作り方は Play に出す前に決める）
 
+## FastAPI（旧 API）
+
+以前使っていた API のバックアップ。本番でも普段の開発でも使わない。
+Python 3.12（`uv` 推奨）が要る。DB は無い（ADR-001）。
+
+### 準備
+
+```bash
+cp backend/fastapi/.env.example backend/fastapi/.env   # アプリ設定。キーの説明は .env.example に書いてある
+cd backend/fastapi
+uv venv --python 3.12 --seed .venv          # --seed が無いと pip が入らない
+.venv/bin/pip install -r requirements-dev.txt
+(cd ../.. && backend/fastapi/.venv/bin/pre-commit install)   # git フックの登録
+```
+
+### 起動
+
+Application Factory なので `--factory` が必須（ADR-004）。Docker で動かすならリポジトリのルートで
+`docker-compose up -d`（Docker が要る）。
+
+```bash
+(cd backend/fastapi && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)
+curl -s 127.0.0.1:8000/api/v1/health
+```
+
+Swagger UI は <http://localhost:8000/docs>（development / test でのみ公開 — ADR-004）。
+
+frontend の `API_BASE_URL` の既定値は FastAPI の 8000 番を指し、`API_KEYS` が空なら認証を省略するので、
+`--web-port` だけ指定すればよい。`backend/fastapi/.env` の `API_KEYS` で認証を有効にした場合は、その値の
+いずれかを `AI_API_KEY` で渡す。
+
+```bash
+cd frontend/kotonoha_app
+fvm flutter run -d chrome --web-port=5173
+```
+
+### FastAPI の検査
+
+```bash
+cd backend/fastapi
+PATH="$PWD/.venv/bin:$PATH" pytest         # pytest-randomly が順序をシャッフルする
+PATH="$PWD/.venv/bin:$PATH" make check     # ruff + black + mypy --strict + lint-imports + gates.sh
+PATH="$PWD/.venv/bin:$PATH" make mutation  # kill rate は docs/ledger.md の計測へ。CI には入れない（ADR-008）
+```
+
+### FastAPI のトラブルシューティング
+
+- **コンテナが起動しない** → `docker-compose logs -f` でログを確認し、
+  `docker-compose down && docker-compose build --no-cache && docker-compose up -d` で再ビルド
+- **ポート8000が使用中** → `lsof -i :8000` でプロセスを確認し `kill -9 <PID>`
+- **`make check` が `ruff: No such file or directory` 等で失敗する** → この Makefile は venv を自動で
+  有効化しない。`PATH="$PWD/.venv/bin:$PATH" make check` を使う
+- **`pip install` が失敗する / pip が無い** → `uv venv --python 3.12 --seed .venv` の `--seed` を忘れると
+  pip が入らない。venv を作り直す
+- **venv を作り直した後、pre-commit が動かない** → `.git/hooks/pre-commit` は作成時の venv の python を
+  指すため、`(cd ../.. && backend/fastapi/.venv/bin/pre-commit install)` で入れ直す
+
 ## 規約
 
 ### コーディング
@@ -309,16 +343,6 @@ scripts/ios-testflight.sh
 - **マージの引き金は完了条件であって「レビュー指摘ゼロ」ではない**
 - 等級・指摘の仕分け・人が決めることは `AGENTS.md`「判断の手順」が正。PR 本文は `.github/pull_request_template.md` の形
 
-## ディレクトリ
-
-- `backend/worker/` — 本番 API（TypeScript Worker、Containers は使わない）
-- `backend/fastapi/` — 従来の FastAPI（ローカル開発・比較用。DB 無し）
-- `frontend/kotonoha_app/` — Flutter アプリ
-- `docker/` — backend の開発用コンテナ設定
-- `scripts/` — ビルド・棚卸し・ADR索引貼付などの補助スクリプト
-- `docs/` — 決定・仕様・計画・倉庫
-- `.github/workflows/` — CI
-
 ## 文書の地図
 
 - 核: `AGENTS.md`
@@ -331,20 +355,10 @@ scripts/ios-testflight.sh
 
 ## トラブルシューティング
 
-### Docker
+### Worker
 
-- **コンテナが起動しない** → `docker-compose logs -f` でログを確認し、
-  `docker-compose down && docker-compose build --no-cache && docker-compose up -d` で再ビルド
-- **ポート8000が使用中** → `lsof -i :8000` でプロセスを確認し `kill -9 <PID>`
-
-### backend（Python）
-
-- **`make check` が `ruff: No such file or directory` 等で失敗する** → この Makefile は venv を自動で
-  有効化しない。`PATH="$PWD/.venv/bin:$PATH" make check` を使う
-- **`pip install` が失敗する / pip が無い** → `uv venv --python 3.12 --seed .venv` の `--seed` を忘れると
-  pip が入らない。venv を作り直す
-- **venv を作り直した後、pre-commit が動かない** → `.git/hooks/pre-commit` は作成時の venv の python を
-  指すため、`(cd ../.. && backend/fastapi/.venv/bin/pre-commit install)` で入れ直す
+- **AI 変換だけ失敗する（`AI_API_ERROR`）** → `.dev.vars` がダミー値のまま。[本物の AI を使う](#本物の-ai-を使う)
+- **Web で AI 変換が通信エラーになる** → `--web-port=5173` を付けて起動する
 
 ### frontend（Flutter）
 
