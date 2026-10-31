@@ -55,7 +55,7 @@ class HelpScreen extends ConsumerWidget {
                 _HelpItem(
                   title: '定型文を使う',
                   description: '「定型文」タブを選択すると、'
-                      'よく使う言葉をすばやく入力できます。'
+                      'よく使う言葉をタップするだけで読み上げられます。'
                       '自分で追加することもできます。',
                 ),
                 SizedBox(height: 16),
