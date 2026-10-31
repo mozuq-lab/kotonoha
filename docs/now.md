@@ -1,34 +1,37 @@
 # 現在地（上書きする 1 枚。日誌にしない。古くなった行は消す）
 
-更新: 2026-10-03
+更新: 2026-10-31
 
 ## 目的
-アプリを「形」にして、iOS から公式ストアで届ける（ADR-007）。
+アプリを「形」にして、iOS から公式ストアで届ける（ADR-007）。Android は iOS の本公開の後に続ける（2026-10-17 の人の決定）。
 
 ## 「形」の定義（エージェントの案。違えば人が直す）
 要件の MVP（文字盤・読み上げ・定型文・履歴・お気に入り・設定）を、初めて使う人が説明なしに一通り使え、その利用シナリオが iOS シミュレータ（iPad）と Android エミュレータで結合テスト（`integration_test/`）として通る状態。録画は人が見たいときに添える。AI 変換も初回に含める（2026-09-26 の人の決定。ADR-007 条件 5）。
 
-## 今ある状態（2026-10-03 に現物で確認）
-- backend は `https://kotonoha-backend.pepoq.workers.dev` で本番設定で動いている（`/api/v1/health` が `workers_ai` を返す、`/docs` は 404、キー無しの変換は 401）。本番の起動ガードを通っているので、端末キーと AI Gateway の ID は入っている
-- リポジトリ変数 `API_BASE_URL` は公開先、シークレット `AI_API_KEY` は登録済み
-- backend 公開の 4 条件（L-58）は満たしたとする。AI Gateway は支出上限 1 ドル／月・回数制限 200 リクエスト／5 分。支出上限が Workers AI に効くことは未確認のまま進める（2026-10-03 の人の決定。ADR-002）
-- AI 変換の質は 24 件で確認済み（古風な「丁寧」は受け入れた限界 L-222）
-- プライバシーポリシーは GitHub Pages で配信中。ストア用のスクリーンショット（iPhone 6.9・iPad 13・Android 電話）は 2026-10-03 に今の画面で撮り直し、`fastlane/screenshots/ja-JP/` にある
-- `integration_test/mvp_scenario_test.dart`（7 本）は 2026-10-03 に今の画面で、iPad シミュレータ（iPad (A16)）・Android エミュレータ（`Medium_Phone_API_36.1`）・Chromium（main の CI）で通過（ADR-007 条件 2）
-- `integration_test/ai_conversion_e2e_test.dart`（AI 変換の利用シナリオ 6 本。偽物はネットワークと接続状態の境界だけ）は 2026-10-03 に iPad シミュレータ・Android エミュレータ・ヘッドレス Chrome（手元）で通過（ADR-007 条件 5 のうち利用シナリオ）。CI の Web 実行では今も対象外（`.github/workflows/flutter.yml` の `EXCLUDED`）
+## 今ある状態
+- **iOS は 1.0.0 を 2026-10-22 に App Store（日本）で本公開した**（ADR-007 条件 4 の iOS 側を充足。日付は App Store の公開情報 `releaseDate` で確認）。公開ページ: https://apps.apple.com/jp/app/id6824146735
+- 公開の後、人の依頼で読み上げの声を端末の声から選べるようにした（#308）。これを 1.1.0 として出す（2026-10-29 の人の決定。版の番号は #312）
+- backend は `https://kotonoha.mozuq-lab.com` で本番設定で動いている（2026-10-18 に独自ドメインを付け、health 200・キー無しの変換 401 を確認。旧 `kotonoha-backend.pepoq.workers.dev` も動いている）。AI Gateway は支出上限 1 ドル／月・回数制限 200 リクエスト／5 分で、「ログを収集」はオフ・ログは空（2026-10-18 に人が確認）。支出上限が Workers AI に効くことは未確認のまま進める（ADR-002）。端末キーは 2026-10-18 に作り替えた（古いキーは 401、新しいキーは手元の `ios-release.json` にだけある）。backend のアクセスログは止めた（#297）
+- TestFlight の版は `scripts/ios-testflight.sh` で作って送る（接続先 `https://kotonoha.mozuq-lab.com`、送る前に本番の backend でキーが通ることを確認）。AI 変換が本番の backend と往復するかは、手元では確かめられないので TestFlight の版を iPad に入れて見る
+- ストア提出前の独立監査を 2026-10-29 に行った（1.1.0 の前）。データの流れはプライバシーポリシーと一致し、#308 は送信の経路を足していない。食い違いは利用者向けの FAQ・トラブルシューティング（声の選び方、AI 変換の古いボタン名）、要件（声の選択）、ストアの更新内容の文で、その場で直した
+- App Store Connect の入力（メタデータ・スクリーンショット・プライバシー表示・年齢制限 4+・カテゴリ ユーティリティ・日本だけ）は 1.0.0 で済ませ、次の版に引き継がれる。1.0.0 の審査機は iPad Air 11 インチ（M3）・iPadOS 27.0 だった
+- Apple Developer Program は登録済み。サポート連絡先 `hello@mozuq-lab.com` は届く（いずれも 2026-10-17 に人が確認）
+- プライバシーポリシーは GitHub Pages で配信中。ストア用のスクリーンショットは `fastlane/screenshots/ja-JP/` にある。Android 電話の画像は初期のお気に入りが古いまま（エミュレータの読み上げが始まらず撮れなかった）で、Google Play に出す前に撮り直す
+- `integration_test/mvp_scenario_test.dart`（7 本）は、#273 の時点で iPad シミュレータ・Android エミュレータ・ヘッドレス Chrome で通過（ADR-007 条件 2）。#303 の後に iOS 27.0・26.5 の iPad シミュレータでも通過（#304・#305・#301 の後は CI の結合テストだけ）。`integration_test/ai_conversion_e2e_test.dart` は 2026-10-03 に 3 環境で通過（ADR-007 条件 5）
 
 ## 最短経路（上から順に。終わった行は消す）
-1. ストア提出前の独立監査（L-98）。AI 変換の送信経路（端末 → backend → Cloudflare Workers AI）も対象にする。最後に行う
+1. Google Play の開発者登録（L-84。人）。ここから Android の行（下の「iOS の後」）が動き出す
 
 ## 人待ち
-- サポート連絡先（L-51）: 公開文は `hello@mozuq-lab.com` にしたが、ドメインが登録事業者の保留（`clientHold`）で届かない。保留を解き、届くことを確かめる
-- 開発者登録（L-84）: 審査と Play Console はここから始まる。コード作業と並行できる
-- AI 変換の公開文: 個人情報保護法 28 条の同意の要件を安全側に倒して満たす文面（同意ダイアログ・プライバシーポリシーの「外国にある第三者への提供について」・FAQ）を 2026-10-03 に用意した。マージで承認とする。28 条がそもそもかかるか、要配慮個人情報、Cloudflare の CBPR 認証で同意が要らなくなるか、利用者の判断能力と介助者の同意は、専門家に確かめていない（人の判断で先に進めた）。ストアのプライバシー表示とデータセーフティは開発者登録（L-84）の後
-- 物理実機での QA（L-25。ストア提出の前）: 手順は `integration_test/device_test/` にあるが未実行。L-173・L-178（読み上げ用ラベル）の判断もこれを待つ
-- dependabot の PR のマージ（L-87）: actions と backend の 10 本（#238〜#247）。frontend の 5 本（#60・#62〜#65）は本公開の後
+- AI API は 2026-10-31 に Containers から TypeScript Worker へ切り替え、旧コンテナを削除した（#315、人の作業）。否定が消える出力の対策も本番へ出した（#318）。AI 変換の結合テストは iOS シミュレータでも通った。請求で費用が止まったことと、AI Gateway の支出制限が実際に止まることの確認は人待ち
+- 1.1.0（#308 の声の選択）を出す: #312 のマージ、`scripts/ios-testflight.sh` で送る、TestFlight で声の選択と AI 変換の往復を見る、App Store Connect で 1.1.0 を作って「このバージョンの新機能」を書き、審査へ出す（人）
+- 本公開したので、サポート連絡先とストアレビューの月 1 の巡回が始まっている（ADR-007 条件 4。人）
+- GitHub の Variables の `API_BASE_URL` は、まだ旧 `workers.dev` を指している（CI と `release.yml` の版が使う。TestFlight の版は使わない）。新しいドメインに変えるかは人が決める
+- AI 変換の公開文: 個人情報保護法 28 条の同意の文面は 2026-10-03 に用意し、マージで承認とした。28 条がそもそもかかるか、要配慮個人情報、Cloudflare の CBPR 認証で同意が要らなくなるか、利用者の判断能力と介助者の同意は、専門家に確かめていない（人の判断で先に進めた）
+- dependabot の PR（L-87）: #260〜#267。#262（openai 2→3）と #264（anthropic 0.39→1.11）は CI が赤で、中身を見てから決める。frontend の 5 本（#60・#62〜#65）は本公開の後に見る（iOS は 2026-10-22 に本公開した）
 
 ## iOS の後（Android）
-Android のアップロード鍵（L-52）、Play Console のプライバシーポリシー URL（L-146）、クローズドテスト（12 人以上 × 14 日）と production access の申請（L-145）。いずれも開発者登録（L-84）の後で、人が動かす。
+Google Play の開発者登録（L-84）、Android のアップロード鍵（L-52）、Play Console のプライバシーポリシー URL（L-146）、クローズドテスト（12 人以上 × 14 日）と production access の申請（L-145）。いずれも人が動かす。
 
 ## 最短経路に無いもの
 台帳 `docs/ledger.md` の予定（L-57 など）は、最短経路に入れるまで着手しない。

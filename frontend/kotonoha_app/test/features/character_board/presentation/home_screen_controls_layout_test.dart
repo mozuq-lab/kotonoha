@@ -103,7 +103,7 @@ void main() {
       'ai': ai,
       'speak': speak,
     }.entries) {
-      expect(entry.value.height, 48, reason: entry.key);
+      expect(entry.value.height, 44, reason: entry.key);
       expect(entry.value.top,
           entry.key == 'ai' || entry.key == 'speak' ? ai.top : delete.top,
           reason: entry.key);
@@ -118,6 +118,16 @@ void main() {
     // 丁寧さの選択はホームに置かず、AI変換の結果画面で選ぶ。
     expect(find.byType(PolitenessLevelSelector), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('スマホで操作ボタンを詰めても、全消去の確認の押せる範囲は狭めない', (tester) async {
+    await _pumpHome(tester, const Size(390, 844));
+    await tester.tap(find.byType(ClearAllButton));
+    await tester.pumpAndSettle();
+    final no =
+        find.ancestor(of: find.text('いいえ'), matching: find.byType(TextButton));
+    expect(no, findsOneWidget);
+    expect(tester.getRect(no).height, greaterThanOrEqualTo(48));
   });
 
   testWidgets('入力が空から2文字になるまで、文字盤が指の下で動かない', (tester) async {
@@ -253,12 +263,12 @@ void main() {
     }
 
     // 変換を待つ間もダイアログは1枚のまま進捗を出し、元の結果と
-    // 「採用」「元の文を使う」は押せる（閉じ込めない）。
+    // 「採用」「キャンセル」は押せる（閉じ込めない）。
     expect(requestedLevels, ['normal', 'polite']);
     expect(find.byType(AIConversionResultDialog), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     expect(find.text('変換:normal'), findsOneWidget);
-    for (final label in ['採用', '元の文を使う']) {
+    for (final label in ['採用', 'キャンセル']) {
       final button = find.ancestor(
         of: find.text(label),
         matching: find.bySubtype<ButtonStyleButton>(),

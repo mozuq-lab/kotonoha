@@ -101,5 +101,18 @@ void main() {
     test('通常文字はそのまま返す', () {
       expect(CharacterData.getAccessibilityLabel('あ'), 'あ');
     });
+
+    // VoiceOver は既定の句読点設定で「ー」「、」「。」を読まず、触れても無音だった
+    // （物理 iPad、2026-10-17）。語は iOS の VoiceOver が句読点を読むときの語に合わせる
+    test('長音・読点・句点は語で返す', () {
+      expect(CharacterData.getAccessibilityLabel('ー'), '長音');
+      expect(CharacterData.getAccessibilityLabel('、'), '読点');
+      expect(CharacterData.getAccessibilityLabel('。'), '句点');
+    });
+
+    test('「？」「！」はそのまま返す（VoiceOver が読む）', () {
+      expect(CharacterData.getAccessibilityLabel('？'), '？');
+      expect(CharacterData.getAccessibilityLabel('！'), '！');
+    });
   });
 }

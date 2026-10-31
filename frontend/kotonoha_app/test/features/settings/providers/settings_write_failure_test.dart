@@ -63,7 +63,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  /// 6 つの設定すべてが同じ報告経路を通る
+  /// 7 つの設定すべてが同じ報告経路を通る
   final setters = <String, Future<void> Function(SettingsNotifier)>{
     'fontSize': (n) => n.setFontSize(FontSize.large),
     'theme': (n) => n.setTheme(AppTheme.dark),
@@ -71,6 +71,7 @@ void main() {
     'ai_politeness': (n) => n.setAIPoliteness(PolitenessLevel.polite),
     'ai_privacy_consent': (n) => n.setAIPrivacyConsent(true),
     'simple_mode': (n) => n.setSimpleMode(true),
+    'tts_voice': (n) => n.setTTSVoice('com.apple.voice.enhanced.ja-JP.Kyoko'),
   };
 
   group('設定の保存失敗の報告（例外）', () {

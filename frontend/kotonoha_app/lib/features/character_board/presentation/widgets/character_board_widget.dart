@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/character_board/domain/character_data.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
@@ -27,6 +28,7 @@ class CharacterBoardWidget extends StatefulWidget {
     this.fontSize = FontSize.medium,
     this.isEnabled = true,
     this.initialCategory = CharacterCategory.basic,
+    this.compact = false,
   });
 
   /// 文字タップ時のコールバック
@@ -40,6 +42,10 @@ class CharacterBoardWidget extends StatefulWidget {
 
   /// 初期表示カテゴリ
   final CharacterCategory initialCategory;
+
+  /// 縦持ちの電話。文字種のタブの押せる範囲を 44（REQ-5001 の下限）にし、
+  /// タブと文字盤の間を詰めて、キーへ高さを回す
+  final bool compact;
 
   /// 五十音表の最低列数
   /// [CharacterData] の各カテゴリは5列の表で、や行・わ行の空きセルに
@@ -78,7 +84,10 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
       children: [
         // カテゴリタブ
         _buildCategoryTabs(context),
-        const SizedBox(height: AppSizes.paddingSmall),
+        SizedBox(
+          height:
+              widget.compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall,
+        ),
         // 文字グリッド
         Expanded(
           child: _buildCharacterGrid(context, characters, buttonSize),
@@ -98,10 +107,21 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
   }
 
   /// 文字種タブ（48）＋間（8）＋キー 1 行（44）。これより低いと組めない
+  /// （[CharacterBoardWidget.compact] ではタブ 44・間 4 なので余裕がある）
   static const double _minBoardHeight = 100;
 
   /// キーの高さの上限（幅に対する倍率）。これより縦長にはしない
   static const double _maxCellHeightRatio = 1.75;
+
+  /// 10 列のとき、5 列ずつの間に置く隙間。iPad では 1 列に 2 行分（あいうえお｜
+  /// かきくけこ）が並び、行の区切りがわかりにくかった（人の依頼、2026-10-18）。
+  /// 24 では広すぎたので、16 に狭めた分を 10 個のキーの幅へ等しく配る
+  /// （人の依頼、2026-10-20）
+  static const double _rowGroupGap = 16;
+
+  /// 5 列のとき、行ごとに交互に混ぜる基本色の割合。iPhone では 1 列＝1 行なので、
+  /// どの列が何行目かを目で追えるよう、ごく淡い縞にする（人の依頼、2026-10-18）
+  static const double _rowStripe = 0.06;
 
   /// 文字種の切り替え（基本・濁音・半濁音・小文字・記号）
   /// 横スクロールにすると狭い画面で右端のラベルが切れて見えるため、
@@ -118,6 +138,10 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
               horizontal: AppSizes.paddingXSmall,
             ),
             child: ChoiceChip(
+              // vertical: -1 で押せる範囲が 48 から 44 になる（範囲内の押下は
+              // Chip へ回るので、見た目の縁の外を押しても切り替わる）
+              visualDensity:
+                  widget.compact ? const VisualDensity(vertical: -1) : null,
               showCheckmark: false,
               selectedColor: scheme.primary,
               backgroundColor: scheme.surface,
@@ -194,8 +218,9 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
         ].reduce((a, b) => a > b ? a : b);
 
         final contentWidth = availableWidth - gridPadding * 2;
+        final groupGap = columns == 10 ? _rowGroupGap : 0.0;
         final widthBasedCellSize = columns > 0
-            ? (contentWidth - spacing * (columns - 1)) / columns
+            ? (contentWidth - spacing * (columns - 1) - groupGap) / columns
             : buttonSize;
 
         double heightBasedCellSize = widthBasedCellSize;
@@ -220,10 +245,10 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
 
         return GridView.builder(
           padding: const EdgeInsets.all(AppSizes.paddingSmall),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: _GroupedGridDelegate(
             crossAxisCount: columns,
-            mainAxisSpacing: spacing,
-            crossAxisSpacing: spacing,
+            spacing: spacing,
+            groupGap: groupGap,
             childAspectRatio: childAspectRatio,
           ),
           itemCount: characters.length,
@@ -235,9 +260,19 @@ class _CharacterBoardWidgetState extends State<CharacterBoardWidget> {
             }
             // RepaintBoundaryで個別ボタンの再描画範囲を限定
             // タップ時に該当ボタンのみ再描画し、他のボタンへの影響を最小化
+            // 5 列のときは、行（あ行・か行…）ごとに淡い色と白を交互にする。
+            // 高コントラストは白黒の見やすさを優先して色を付けない
+            final scheme = Theme.of(context).colorScheme;
+            final stripe = columns == 5 &&
+                    (index ~/ 5).isEven &&
+                    scheme.primary != Colors.black
+                ? Color.lerp(
+                    scheme.surfaceContainerLow, scheme.primary, _rowStripe)
+                : null;
             return RepaintBoundary(
               child: CharacterButton(
                 key: ValueKey('character_button_$character'),
+                face: stripe,
                 character: character,
                 displayLabel: CharacterData.getDisplayLabel(character),
                 accessibilityLabel:
@@ -273,6 +308,7 @@ class CharacterButton extends StatelessWidget {
   /// [accessibilityLabel] - スクリーンリーダー用ラベル（省略時は[character]を使用）
   const CharacterButton({
     super.key,
+    this.face,
     required this.character,
     required this.onTap,
     this.size = 60.0,
@@ -305,6 +341,9 @@ class CharacterButton extends StatelessWidget {
   /// nullの場合は[character]をそのまま使用する。
   final String? accessibilityLabel;
 
+  /// キーの面の色。null ならいつもの面（[ColorScheme.surfaceContainerLow]）
+  final Color? face;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -324,7 +363,7 @@ class CharacterButton extends StatelessWidget {
         child: Material(
           // 背景より一段明るい面に置き、影は付けない（縁で境界を示す）
           color: isEnabled
-              ? theme.colorScheme.surfaceContainerLow
+              ? (face ?? theme.colorScheme.surfaceContainerLow)
               : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
           borderRadius: borderRadius,
           child: InkWell(
@@ -354,7 +393,11 @@ class CharacterButton extends StatelessWidget {
                   // 大きくして中央へ寄せる
                   final isMark = CharacterData.isDakutenKey(character) ||
                       CharacterData.isHandakutenKey(character);
-                  final label = Text(
+                  // 読み上げは外側の Semantics の名前だけにする。描いた文字も
+                  // 読ませると名前に合流し「あ、あ、ボタン」と 2 回読まれる
+                  // （物理 iPad の VoiceOver、2026-10-17）
+                  final label = ExcludeSemantics(
+                      child: Text(
                     displayLabel ?? character,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontSize: isMark ? size * 1.5 : size,
@@ -362,7 +405,7 @@ class CharacterButton extends StatelessWidget {
                           ? theme.colorScheme.onSurface
                           : theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
-                  );
+                  ));
                   return FittedBox(
                     fit: BoxFit.scaleDown,
                     child: isMark
@@ -397,5 +440,70 @@ class CharacterButton extends StatelessWidget {
       case FontSize.large:
         return AppSizes.fontSizeLarge;
     }
+  }
+}
+
+/// 列数が決まったグリッドで、10 列のときだけ 5 列ずつの間に [groupGap] の隙間を置く。
+/// キーの幅は隙間の分だけ全員を等しく狭くする（隙間に接するキーだけ細くしない）。
+class _GroupedGridDelegate extends SliverGridDelegateWithFixedCrossAxisCount {
+  const _GroupedGridDelegate({
+    required super.crossAxisCount,
+    required double spacing,
+    required this.groupGap,
+    required super.childAspectRatio,
+  }) : super(mainAxisSpacing: spacing, crossAxisSpacing: spacing);
+
+  final double groupGap;
+
+  @override
+  SliverGridLayout getLayout(SliverConstraints constraints) {
+    final usable = constraints.crossAxisExtent -
+        crossAxisSpacing * (crossAxisCount - 1) -
+        groupGap;
+    final width = usable > 0 ? usable / crossAxisCount : 0.0;
+    final height = width / childAspectRatio;
+    return _GroupedGridLayout(
+      crossAxisCount: crossAxisCount,
+      mainAxisStride: height + mainAxisSpacing,
+      crossAxisStride: width + crossAxisSpacing,
+      childMainAxisExtent: height,
+      childCrossAxisExtent: width,
+      reverseCrossAxis: axisDirectionIsReversed(constraints.crossAxisDirection),
+      groupGap: groupGap,
+    );
+  }
+
+  @override
+  bool shouldRelayout(_GroupedGridDelegate oldDelegate) =>
+      super.shouldRelayout(oldDelegate) || oldDelegate.groupGap != groupGap;
+}
+
+class _GroupedGridLayout extends SliverGridRegularTileLayout {
+  const _GroupedGridLayout({
+    required super.crossAxisCount,
+    required super.mainAxisStride,
+    required super.crossAxisStride,
+    required super.childMainAxisExtent,
+    required super.childCrossAxisExtent,
+    required super.reverseCrossAxis,
+    required this.groupGap,
+  });
+
+  final double groupGap;
+
+  @override
+  SliverGridGeometry getGeometryForChildIndex(int index) {
+    final geometry = super.getGeometryForChildIndex(index);
+    // 画面の右半分に来る列を右へずらす。右から並べるとき（RTL）は、先頭の列が右半分
+    final inFirstHalf = index % crossAxisCount < crossAxisCount ~/ 2;
+    if (groupGap == 0 || inFirstHalf != reverseCrossAxis) {
+      return geometry;
+    }
+    return SliverGridGeometry(
+      scrollOffset: geometry.scrollOffset,
+      crossAxisOffset: geometry.crossAxisOffset + groupGap,
+      mainAxisExtent: geometry.mainAxisExtent,
+      crossAxisExtent: geometry.crossAxisExtent,
+    );
   }
 }

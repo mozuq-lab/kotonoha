@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
 import 'package:kotonoha_app/core/router/app_router.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 import 'package:kotonoha_app/features/character_board/presentation/home_theme.dart';
 import 'package:kotonoha_app/features/settings/models/app_theme.dart';
 import 'package:kotonoha_app/features/ai_conversion/domain/exceptions/ai_conversion_exception.dart';
@@ -35,13 +36,11 @@ import 'package:kotonoha_app/features/quick_response/presentation/widgets/quick_
 import 'package:kotonoha_app/features/settings/models/font_size.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/features/simple_mode/presentation/simple_mode_view.dart';
-import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
 import 'package:kotonoha_app/features/tts/presentation/widgets/tts_button.dart';
-import 'package:kotonoha_app/features/tts/presentation/widgets/volume_warning_widget.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
-import 'package:kotonoha_app/features/tts/providers/volume_warning_provider.dart';
 import 'package:kotonoha_app/shared/providers/repository_providers.dart';
 import 'package:kotonoha_app/shared/widgets/confirmation_dialog.dart';
+import 'package:kotonoha_app/shared/widgets/debounced_taps.dart';
 
 /// コンパクト2ペインの幅の配分（左: 操作UI 2 / 右: 文字盤 3）
 /// 2ペインにできるかの判定と実際のレイアウトで同じ値を使う。
@@ -102,18 +101,7 @@ class HomeScreen extends ConsumerWidget {
     final aiPoliteness = settings?.aiPoliteness ?? PolitenessLevel.normal;
     final simpleMode = settings?.simpleMode ?? false;
 
-    // 音量ゼロ警告の配線: tts_button.dart自体は変更せず
-    // グローバルなttsProviderの状態遷移(非speaking -> speaking)を横断的に
-    // 監視することで、どのボタン（クイック応答・状態ボタン・読み上げボタン等）
-    // から読み上げが開始されても音量チェックが行われるようにする。
-    ref.listen<TTSServiceState>(ttsProvider, (previous, next) {
-      final wasSpeaking = previous?.state == TTSState.speaking;
-      final isSpeaking = next.state == TTSState.speaking;
-      if (!wasSpeaking && isSpeaking) {
-        ref.read(volumeWarningProvider.notifier).checkVolumeBeforeSpeak();
-      }
-    });
-    final showVolumeWarning = ref.watch(volumeWarningProvider).showWarning;
+    // 音量 0 の警告は AppShell の VolumeWarningBanner が全画面で出す（EDGE-202）
     final showAppName =
         MediaQuery.sizeOf(context).width >= AppSizes.phoneMaxWidth;
     // キーボードが出て本文から減った高さ。Scaffold の本文の中ではキーボードが
@@ -144,14 +132,14 @@ class HomeScreen extends ConsumerWidget {
                           key: const Key('home_app_icon'),
                           width: AppSizes.iconSizeLarge,
                           height: AppSizes.iconSizeLarge,
-                          semanticLabel: 'kotonoha',
+                          semanticLabel: 'ことのは',
                           excludeFromSemantics: showAppName,
                         ),
                       ),
                       if (showAppName) ...[
                         const SizedBox(width: AppSizes.paddingSmall),
                         const Flexible(
-                          child: Text('kotonoha',
+                          child: Text('ことのは',
                               maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
                       ],
@@ -197,14 +185,6 @@ class HomeScreen extends ConsumerWidget {
                 body: SafeArea(
                   child: Column(
                     children: [
-                      // 音量0警告: 警告不要時はSizedBox.shrinkで高さ0のため
-                      // 既存レイアウトへの影響はない。シンプルモード中も表示する。
-                      VolumeWarningWidget(
-                        isVisible: showVolumeWarning,
-                        onDismiss: () => ref
-                            .read(volumeWarningProvider.notifier)
-                            .dismissWarning(),
-                      ),
                       Expanded(
                         child: simpleMode
                             ? _buildSimpleModeContent(ref, fontSize: fontSize)
@@ -313,10 +293,9 @@ class HomeScreen extends ConsumerWidget {
         ref.read(ttsProvider.notifier).speak(text);
       },
       onFavoriteTap: (favorite) {
-        // 既存挙動に合わせる: FavoritesScreenのお気に入りタップと同様
-        // 読み上げのみ行い、履歴への再保存は行わない。
-        if (favorite.content.isEmpty) return;
+        // ホームのお気に入りボタンと同じく、読み上げて履歴に残す（REQ-601）
         ref.read(ttsProvider.notifier).speak(favorite.content);
+        _saveToHistory(ref, favorite.content, HistoryType.quickButton);
       },
       onExitSimpleMode: () {
         ref.read(settingsNotifierProvider.notifier).setSimpleMode(false);
@@ -362,13 +341,15 @@ class HomeScreen extends ConsumerWidget {
           ref,
           fontSize: fontSize,
           padding: EdgeInsets.all(gutter),
-          compact: compact,
+          buttonHeight:
+              compact ? AppSizes.quickResponseButtonHeightCompact : null,
         ),
         _buildFavoriteShortcutsSection(
           ref,
           fontSize: fontSize,
           gutter: gutter,
           compact: compact,
+          singleLine: compact,
         ),
         // 入力表示エリア
         _buildInputArea(
@@ -389,7 +370,9 @@ class HomeScreen extends ConsumerWidget {
           gutter: gutter,
           compact: compact,
         ),
-        const SizedBox(height: AppSizes.paddingSmall),
+        // 電話では文字種のタブとの間を置かない（オフラインの表示の上の 4 と、
+        // タブの押せる範囲の余白が残る）
+        if (!compact) const SizedBox(height: AppSizes.paddingSmall),
       ],
     );
     // 文字盤に残す高さ（[_stackedBoardHeight]）を引いた残りを操作域へ渡し
@@ -408,7 +391,10 @@ class HomeScreen extends ConsumerWidget {
           showEnd: typingOnPhone,
           child: controls,
         ),
-        Expanded(child: _buildCharacterBoard(ref, fontSize: fontSize)),
+        Expanded(
+          child:
+              _buildCharacterBoard(ref, fontSize: fontSize, compact: compact),
+        ),
       ],
     );
   }
@@ -448,13 +434,15 @@ class HomeScreen extends ConsumerWidget {
                     horizontal: AppSizes.paddingSmall,
                     vertical: AppSizes.paddingXSmall,
                   ),
-                  compact: true,
+                  // 左の列は高さが乏しいので、押せる範囲の下限（REQ-5001）まで詰める
+                  buttonHeight: AppSizes.minTapTarget,
                 ),
                 _buildFavoriteShortcutsSection(
                   ref,
                   fontSize: fontSize,
                   gutter: AppSizes.paddingSmall,
                   compact: true,
+                  singleLine: true,
                 ),
                 _buildInputArea(
                   context,
@@ -481,7 +469,7 @@ class HomeScreen extends ConsumerWidget {
         // 右ペイン: 文字盤（主機能。残り全高さを使用する）
         Expanded(
           flex: _compactBoardFlex,
-          child: _buildCharacterBoard(ref, fontSize: fontSize),
+          child: _buildCharacterBoard(ref, fontSize: fontSize, compact: false),
         ),
       ],
     );
@@ -499,7 +487,7 @@ class HomeScreen extends ConsumerWidget {
     WidgetRef ref, {
     required FontSize fontSize,
     required EdgeInsets padding,
-    required bool compact,
+    required double? buttonHeight,
   }) {
     return Padding(
       padding: padding,
@@ -512,18 +500,20 @@ class HomeScreen extends ConsumerWidget {
           ref.read(ttsProvider.notifier).speak(text);
         },
         fontSize: fontSize,
-        buttonHeight:
-            compact ? AppSizes.quickResponseButtonHeightCompact : null,
+        buttonHeight: buttonHeight,
       ),
     );
   }
 
   /// 表示順上位8件のお気に入りを、スワイプなしで並べる。
+  /// [singleLine] は電話（縦持ちと横持ちの左の列）。高さを優先して名前を 2 行に
+  /// 折らない（全文は長押しのツールチップで見られる）。
   Widget _buildFavoriteShortcutsSection(
     WidgetRef ref, {
     required FontSize fontSize,
     required double gutter,
     required bool compact,
+    required bool singleLine,
   }) {
     const gap = AppSizes.paddingSmall;
     final favorites = List<Favorite>.from(ref.watch(favoriteProvider).favorites)
@@ -532,108 +522,116 @@ class HomeScreen extends ConsumerWidget {
     if (shortcuts.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: gutter),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final count = shortcuts.length;
-          final textSize = switch (fontSize) {
-            FontSize.small => AppSizes.fontSizeSmall,
-            FontSize.medium => AppSizes.fontSizeMedium,
-            FontSize.large => AppSizes.fontSizeLarge,
-          };
-          final textScaler = MediaQuery.textScalerOf(context);
-          final scaledText = textScaler.scale(textSize);
-          final minWidth = (scaledText * (scaledText > 26 ? 3 : 2.4) + 8)
-              .clamp(AppSizes.minTapTarget, double.infinity);
-          bool fits(int columns, double minWidth) =>
-              constraints.maxWidth >= columns * minWidth + (columns - 1) * gap;
-          // ボタンの文字と同じ形（字間なし・太字）で測る
-          final labelStyle =
-              TextStyle(fontSize: textSize, fontWeight: FontWeight.bold);
-          double oneLineWidth(String content) {
-            final painter = TextPainter(
-              text: TextSpan(text: content, style: labelStyle),
-              textDirection: TextDirection.ltr,
-              textScaler: textScaler,
-              maxLines: 1,
-            )..layout();
-            // ボタンの左右の余白（4 ずつ）と、端数の分の余裕
-            final width = painter.width + 8 + 1;
-            painter.dispose();
-            return width;
-          }
+      // 大ボタン・定型文と同じく、300ms 以内の連続タップは誤操作として無視する
+      // （二度押しで履歴が 2 件でき、読み上げが頭からやり直しになっていた）
+      child: DebouncedTaps(
+        builder: (context, debounced) => LayoutBuilder(
+          builder: (context, constraints) {
+            final count = shortcuts.length;
+            final textSize = switch (fontSize) {
+              FontSize.small => AppSizes.fontSizeSmall,
+              FontSize.medium => AppSizes.fontSizeMedium,
+              FontSize.large => AppSizes.fontSizeLarge,
+            };
+            final textScaler = MediaQuery.textScalerOf(context);
+            final scaledText = textScaler.scale(textSize);
+            final minWidth = (scaledText * (scaledText > 26 ? 3 : 2.4) + 8)
+                .clamp(AppSizes.minTapTarget, double.infinity);
+            bool fits(int columns, double minWidth) =>
+                constraints.maxWidth >=
+                columns * minWidth + (columns - 1) * gap;
+            // ボタンの文字と同じ形（字間なし・太字）で測る
+            final labelStyle =
+                TextStyle(fontSize: textSize, fontWeight: FontWeight.bold);
+            double oneLineWidth(String content) {
+              final painter = TextPainter(
+                text: TextSpan(text: content, style: labelStyle),
+                textDirection: TextDirection.ltr,
+                textScaler: textScaler,
+                maxLines: 1,
+              )..layout();
+              // ボタンの左右の余白（4 ずつ）と、端数の分の余裕
+              final width = painter.width + 8 + 1;
+              painter.dispose();
+              return width;
+            }
 
-          // 3 文字までの名前は 1 行で見せたい。2 行に折ると「トイ／レ」の
-          // ように語の途中で切れて読みにくい。
-          final shortWidth = shortcuts
-              .where((favorite) => favorite.content.characters.length <= 3)
-              .map((favorite) => oneLineWidth(favorite.content))
-              .fold(0.0, (a, b) => a > b ? a : b);
-          double buttonWidth(int columns) =>
-              (constraints.maxWidth - (columns - 1) * gap) / columns;
-          // 2ペインの狭い左ペインでも1個44px以上を保つよう、列を減らす。
-          // 短い名前が 1 行に収まる列数を優先し、無ければ 2 行にする。
-          final candidates = [
-            count,
-            if (count > 4) 4,
-            if (count > 2) 2,
-            1,
-          ];
-          final columns = candidates.firstWhere(
-            (c) => fits(c, minWidth) && shortWidth <= buttonWidth(c),
-            orElse: () => candidates.firstWhere(
-              (c) => fits(c, minWidth),
-              orElse: () => 1,
-            ),
-          );
-          final needsTwoLines = scaledText > 26 ||
-              shortcuts.any((favorite) =>
-                  favorite.content.characters.length > 3 ||
-                  oneLineWidth(favorite.content) > buttonWidth(columns));
-          final height = (scaledText * (needsTwoLines ? 2.4 : 1.4) + 12).clamp(
-              compact ? 48.0 : AppSizes.recommendedTapTarget, double.infinity);
-          Widget button(Favorite favorite) => Expanded(
-                child: FavoriteShortcutButton(
-                  favorite: favorite,
-                  height: height,
-                  fontSize: fontSize,
-                  onPressed: () {
-                    ref.read(ttsProvider.notifier).speak(favorite.content);
-                    _saveToHistory(
-                      ref,
-                      favorite.content,
-                      HistoryType.quickButton,
-                    );
-                  },
-                ),
-              );
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.only(bottom: AppSizes.paddingXSmall),
-                  child: Text('お気に入り',
-                      style: Theme.of(context).textTheme.labelLarge),
-                ),
+            // 3 文字までの名前は 1 行で見せたい。2 行に折ると「トイ／レ」の
+            // ように語の途中で切れて読みにくい。
+            final shortWidth = shortcuts
+                .where((favorite) => favorite.content.characters.length <= 3)
+                .map((favorite) => oneLineWidth(favorite.content))
+                .fold(0.0, (a, b) => a > b ? a : b);
+            double buttonWidth(int columns) =>
+                (constraints.maxWidth - (columns - 1) * gap) / columns;
+            // 2ペインの狭い左ペインでも1個44px以上を保つよう、列を減らす。
+            // 短い名前が 1 行に収まる列数を優先し、無ければ 2 行にする。
+            final candidates = [
+              count,
+              if (count > 4) 4,
+              if (count > 2) 2,
+              1,
+            ];
+            final columns = candidates.firstWhere(
+              (c) => fits(c, minWidth) && shortWidth <= buttonWidth(c),
+              orElse: () => candidates.firstWhere(
+                (c) => fits(c, minWidth),
+                orElse: () => 1,
               ),
-              for (var start = 0; start < count; start += columns) ...[
-                if (start > 0) const SizedBox(height: gap),
-                Row(
-                  children: [
-                    for (var i = start;
-                        i < start + columns && i < count;
-                        i++) ...[
-                      if (i > start) const SizedBox(width: gap),
-                      button(shortcuts[i]),
-                    ],
-                  ],
+            );
+            final needsTwoLines = !singleLine &&
+                (scaledText > 26 ||
+                    shortcuts.any((favorite) =>
+                        favorite.content.characters.length > 3 ||
+                        oneLineWidth(favorite.content) > buttonWidth(columns)));
+            final height = (scaledText * (needsTwoLines ? 2.4 : 1.4) + 12)
+                .clamp(compact ? 48.0 : AppSizes.recommendedTapTarget,
+                    double.infinity);
+            Widget button(Favorite favorite) => Expanded(
+                  child: FavoriteShortcutButton(
+                    favorite: favorite,
+                    height: height,
+                    fontSize: fontSize,
+                    singleLine: singleLine,
+                    onPressed: debounced(() {
+                      ref.read(ttsProvider.notifier).speak(favorite.content);
+                      _saveToHistory(
+                        ref,
+                        favorite.content,
+                        HistoryType.quickButton,
+                      );
+                    }),
+                  ),
+                );
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.only(bottom: AppSizes.paddingXSmall),
+                    child: Text('お気に入り',
+                        style: Theme.of(context).textTheme.labelLarge),
+                  ),
                 ),
+                for (var start = 0; start < count; start += columns) ...[
+                  if (start > 0) const SizedBox(height: gap),
+                  Row(
+                    children: [
+                      for (var i = start;
+                          i < start + columns && i < count;
+                          i++) ...[
+                        if (i > start) const SizedBox(width: gap),
+                        button(shortcuts[i]),
+                      ],
+                    ],
+                  ),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -660,10 +658,13 @@ class HomeScreen extends ConsumerWidget {
       FontSize.large => AppSizes.fontSizeLarge,
     };
     final textScaler = MediaQuery.textScalerOf(context);
+    // 電話では囲みと入力の上下の余白を半分にして、文字盤へ高さを回す。
+    final verticalPadding =
+        compact ? AppSizes.paddingXSmall : AppSizes.paddingSmall;
     // 入力の1行・浮動ラベル・内外の余白を、横持ちでも確保する。
     final oneLineHeight = textScaler.scale(inputFontSize) * 1.5 +
         textScaler.scale(16) +
-        AppSizes.paddingSmall * 4 +
+        verticalPadding * 4 +
         2;
     final minHeight =
         oneLineHeight > baseMinHeight ? oneLineHeight : baseMinHeight;
@@ -694,7 +695,10 @@ class HomeScreen extends ConsumerWidget {
             horizontal: horizontalMargin,
             vertical: AppSizes.paddingSmall,
           ),
-          padding: const EdgeInsets.all(contentPadding),
+          padding: EdgeInsets.symmetric(
+            horizontal: contentPadding,
+            vertical: verticalPadding,
+          ),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerLow,
             border: Border.all(
@@ -706,6 +710,7 @@ class HomeScreen extends ConsumerWidget {
           child: HomeInputField(
             fontSize: fontSize,
             maxLines: maxLines,
+            verticalPadding: verticalPadding,
             onFavoritePressed: () =>
                 _addInputToFavorites(context, ref, inputBuffer),
           ),
@@ -778,8 +783,9 @@ class HomeScreen extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final labelSize = 16 * fontSize.scaleFactor;
     final scaledLabel = MediaQuery.textScalerOf(context).scale(labelSize);
-    final height = (scaledLabel * 1.5 + 16)
-        .clamp(compact ? 48.0 : AppSizes.recommendedTapTarget, double.infinity);
+    final height = (scaledLabel * 1.5 + 16).clamp(
+        compact ? AppSizes.minTapTarget : AppSizes.recommendedTapTarget,
+        double.infinity);
     final delete = DeleteButton(
       size: height,
       showLabel: true,
@@ -816,11 +822,8 @@ class HomeScreen extends ConsumerWidget {
       height: height,
       labelFontSize: labelSize,
       speakButtonColor: scheme.primary,
-      onSpeak: () {
-        if (inputBuffer.isNotEmpty) {
-          _saveToHistory(ref, inputBuffer, HistoryType.manualInput);
-        }
-      },
+      // 空文字・空白だけの文は、履歴の側で除く
+      onSpeak: () => _saveToHistory(ref, inputBuffer, HistoryType.manualInput),
     );
     Widget row(List<Widget> buttons) => Row(children: [
           for (var i = 0; i < buttons.length; i++) ...[
@@ -836,6 +839,12 @@ class HomeScreen extends ConsumerWidget {
             style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
                   textStyle: WidgetStatePropertyAll(TextStyle(
                       fontSize: labelSize, fontWeight: FontWeight.w600)),
+                  // 電話では押せる範囲を見た目の 44（REQ-5001 の下限）に合わせる。
+                  // padded のままだと見えない余白で 48 の場所を取り、詰めた分が
+                  // 消える。テーマ全体の materialTapTargetSize で変えると、
+                  // ここから開く全消去の確認の「いいえ」まで 44 に狭まる
+                  tapTargetSize:
+                      compact ? MaterialTapTargetSize.shrinkWrap : null,
                 ),
           ),
         ),
@@ -911,6 +920,7 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildCharacterBoard(
     WidgetRef ref, {
     required FontSize fontSize,
+    required bool compact,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -932,6 +942,7 @@ class HomeScreen extends ConsumerWidget {
           }
         },
         fontSize: fontSize,
+        compact: compact,
       ),
     );
   }
@@ -1095,9 +1106,6 @@ class HomeScreen extends ConsumerWidget {
           }
         });
       },
-      onUseOriginal: (original) {
-        ref.read(inputBufferProvider.notifier).setText(original);
-      },
       onLevelChanged: (level) {
         // 選び直した丁寧さを次回の既定にし、その丁寧さで変換し直す。
         // 結果はダイアログ内で差し替わる（ダイアログは閉じない）。
@@ -1117,7 +1125,7 @@ class HomeScreen extends ConsumerWidget {
         ? error.message
         : 'AI変換に失敗しました。しばらく待ってから再度お試しください。';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(content: Text(message, semanticsLabel: spokenLabel(message))),
     );
   }
 }

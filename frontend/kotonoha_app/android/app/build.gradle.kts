@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.kotonoha.kotonoha_app"
+    namespace = "com.mozuq_lab.kotonoha"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,7 +22,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.kotonoha.kotonoha_app"
+        applicationId = "com.mozuq_lab.kotonoha"
         // Android 10 以上に対応する。
         minSdk = 29
         targetSdk = flutter.targetSdkVersion

@@ -1,10 +1,13 @@
 /// SettingsProvider TTS速度設定テスト
 library;
 
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kotonoha_app/core/persistence/settings_write_failure_provider.dart';
 import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
@@ -239,6 +242,70 @@ void main() {
 
     // 異常系テストケース
     group('異常系テスト', () {
+      /// Android で読み上げエンジンの初期化の知らせ（onInit）が来ない端末では、
+      /// flutter_tts の呼び出しが返らない。それでも選んだ速さは黙って失われない
+      /// （守る約束 ①、ADR-005）。
+      group('読み上げエンジンの初期化が返らない端末', () {
+        late Completer<dynamic> engineInit;
+        late MockFlutterTts mockFlutterTts;
+
+        setUp(() {
+          engineInit = Completer<dynamic>();
+          mockFlutterTts = MockFlutterTts();
+          when(() => mockFlutterTts.setLanguage(any()))
+              .thenAnswer((_) => engineInit.future);
+          // エンジンの準備ができるまで、どの呼び出しも返らない
+          when(() => mockFlutterTts.setSpeechRate(any()))
+              .thenAnswer((_) => engineInit.future.then((_) => 1));
+          when(() => mockFlutterTts.stop()).thenAnswer((_) async => 1);
+        });
+
+        /// 設定を読み込み、ホームの読み上げボタンと同じく ttsProvider を作り
+        /// （起動時の初期化が走る）、設定画面で速さを選ぶ（onSelected と同じ呼び出し）
+        Future<void> chooseSpeedOnSettingsScreen(TTSSpeed speed) async {
+          container = ProviderContainer(
+            overrides: [
+              ttsProvider.overrideWith(() => TTSNotifier(
+                  serviceOverride: TTSService(tts: mockFlutterTts))),
+            ],
+          );
+          await container.read(settingsNotifierProvider.future);
+          container.read(ttsProvider);
+          unawaited(container
+              .read(settingsNotifierProvider.notifier)
+              .setTTSSpeed(speed));
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+
+        test('速さを選ぶと、エンジンが応答しなくてもすぐ保存される', () async {
+          await chooseSpeedOnSettingsScreen(TTSSpeed.slow);
+
+          expect(
+            container.read(settingsNotifierProvider).requireValue.ttsSpeed,
+            TTSSpeed.slow,
+          );
+          final prefs = await SharedPreferences.getInstance();
+          expect(prefs.getString('tts_speed'), 'slow',
+              reason: 'エンジンの応答を待たずに保存する（待つと、その間に終わったとき黙って失われる）');
+          expect(container.read(settingsWriteFailureProvider), isEmpty);
+        });
+
+        // 反映するのは起動時の経路（_applyPersistedSpeedIfAvailable が今の設定を読む）。
+        // 初期化の後に選んだ速さの反映は tts_speed_integration_test が見ている。
+        test('初期化が遅れて終わると、選んだ速さがエンジンに反映される', () async {
+          await chooseSpeedOnSettingsScreen(TTSSpeed.slow);
+          verifyNever(() => mockFlutterTts.setSpeechRate(0.35));
+
+          engineInit.complete(1);
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+
+          // 遅い（0.7倍）は flutter_tts の尺度で 0.35
+          verify(() => mockFlutterTts.setSpeechRate(0.35))
+              .called(greaterThanOrEqualTo(1));
+          expect(container.read(ttsProvider).currentSpeed, TTSSpeed.slow);
+        });
+      });
+
       /// shared_preferences保存失敗時もUI状態は更新される（楽観的更新）
       test(
           'TC-049-012: shared_preferences.setString()が失敗した場合でも、AppSettingsの状態は更新されることを確認',

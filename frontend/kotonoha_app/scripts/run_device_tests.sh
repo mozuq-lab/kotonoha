@@ -103,7 +103,7 @@ if [ -z "$DEVICE_ID" ]; then
     print_error "Device ID is required. Use -d or --device to specify."
     echo ""
     echo "Available devices:"
-    flutter devices
+    fvm flutter devices
     echo ""
     usage
 fi
@@ -122,16 +122,23 @@ echo ""
 
 # Check if device is connected
 print_info "Checking device connection..."
-if ! flutter devices | grep -q "$DEVICE_ID"; then
+DEVICE_LINE=$(fvm flutter devices | grep "$DEVICE_ID" || true)
+if [ -z "$DEVICE_LINE" ]; then
     print_error "Device $DEVICE_ID not found."
     echo ""
     echo "Available devices:"
-    flutter devices
+    fvm flutter devices
     exit 1
 fi
 
 print_success "Device found!"
 echo ""
+
+# Android は flavor を指定しないと apk を作れない
+EXTRA_ARGS=()
+if echo "$DEVICE_LINE" | grep -qi "android"; then
+    EXTRA_ARGS=(--flavor production)
+fi
 
 # Run tests
 run_test() {
@@ -142,7 +149,7 @@ run_test() {
     print_info "Running: $test_name"
     echo "----------------------------------------"
 
-    if flutter test "integration_test/device_test/$test_file" -d "$DEVICE_ID"; then
+    if fvm flutter test "integration_test/device_test/$test_file" -d "$DEVICE_ID" "${EXTRA_ARGS[@]}"; then
         print_success "$test_name completed successfully!"
     else
         print_error "$test_name failed!"
@@ -161,7 +168,7 @@ if [ "$RUN_ALL" = true ]; then
 
     for test_file in device_basic_test.dart orientation_test.dart tablet_layout_test.dart tts_device_test.dart; do
         if ! run_test "$test_file"; then
-            ((FAILED++))
+            FAILED=$((FAILED + 1))
         fi
     done
 
@@ -190,6 +197,6 @@ else
 fi
 
 echo ""
-print_info "Test report template: docs/implements/kotonoha/TASK-0095/test-report-template.md"
-print_info "Screenshots: build/app/outputs/integration_test_screenshots/"
+print_info "Test report template: docs/archive/implements/kotonoha/TASK-0095/test-report-template.md"
+print_info "Screenshots: flutter test では保存されない（integration_test/device_test/README.md を参照）"
 echo ""

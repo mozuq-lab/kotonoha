@@ -37,7 +37,7 @@ void main() {
 
     group('TC-104-003: CORSが正しく設定される', () {
       test('バックエンドCORS設定が存在する', () {
-        // CORS設定は backend/app/core/config.py で定義
+        // CORS設定は backend/fastapi/app/core/config.py で定義
         // CORS_ORIGINS環境変数で許可オリジンを指定
 
         // 設計検証: CORSが環境変数で設定されることを確認

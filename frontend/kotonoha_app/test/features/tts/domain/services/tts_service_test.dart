@@ -67,8 +67,8 @@ void main() {
                 const [],
                 IosTextToSpeechAudioMode.defaultMode,
               ),
-          () => mockFlutterTts.setLanguage('ja-JP'),
           () => mockFlutterTts.setSpeechRate(0.5),
+          () => mockFlutterTts.setLanguage('ja-JP'),
         ]);
       });
 
@@ -143,6 +143,18 @@ void main() {
         verifyNever(() => mockFlutterTts.speak(any()));
         expect(service.state, TTSState.idle);
       });
+
+      /// 空白や改行だけの文も、空文字と同じく読み上げない
+      for (final blank in [' ', '\u3000\u3000', '\n', ' \t\n\u3000']) {
+        test('空白・改行だけの文（${blank.codeUnits}）は読み上げない', () async {
+          await service.initialize();
+
+          await service.speak(blank);
+
+          verifyNever(() => mockFlutterTts.speak(any()));
+          expect(service.state, TTSState.idle);
+        });
+      }
 
       /// 読み上げ中にstopを呼ぶと停止する
       test('TC-048-004: 読み上げ中にstop()を呼ぶと停止する', () async {

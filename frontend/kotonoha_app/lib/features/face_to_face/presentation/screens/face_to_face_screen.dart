@@ -9,13 +9,19 @@
 /// （画面を180度回転させて相手に見せる）と実挙動を一致させる。
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/features/character_board/providers/input_buffer_provider.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 import '../../providers/face_to_face_provider.dart';
 import '../widgets/face_to_face_text_display.dart';
 import '../widgets/rotated_wrapper.dart';
 import '../widgets/rotation_toggle_button.dart';
+import '../widgets/face_to_face_editor.dart';
 
 /// 対面表示モード画面
 /// テキストを画面中央に大きく表示し、対面の相手が
@@ -24,7 +30,7 @@ import '../widgets/rotation_toggle_button.dart';
 /// 画面を180度回転できる機能（RotationToggleButtonで切替）
 /// シンプルな操作で切り替え
 /// 視認性が高く押しやすいボタン
-class FaceToFaceScreen extends ConsumerWidget {
+class FaceToFaceScreen extends ConsumerStatefulWidget {
   /// 表示するテキスト
   final String displayText;
 
@@ -42,41 +48,138 @@ class FaceToFaceScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FaceToFaceScreen> createState() => _FaceToFaceScreenState();
+}
+
+class _FaceToFaceScreenState extends ConsumerState<FaceToFaceScreen> {
+  bool _isEditing = false;
+  bool _hasStartedEditing = false;
+  final _contentScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _contentScrollController.dispose();
+    super.dispose();
+  }
+
+  void _toggleEditing() {
+    FocusScope.of(context).unfocus();
+    if (!_hasStartedEditing) {
+      // 入力が空で直近の履歴を表示した場合も、その文章から編集を始める。
+      ref.read(inputBufferProvider.notifier).setText(widget.displayText);
+    }
+    setState(() {
+      _hasStartedEditing = true;
+      _isEditing = !_isEditing;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     // 180度回転状態を監視し、テキスト表示に反映する。
     final isRotated = ref.watch(faceToFaceProvider).isRotated180;
+    final buffer = ref.watch(inputBufferProvider);
+    final text = _hasStartedEditing ? buffer : widget.displayText;
+    final fontSize =
+        ref.watch(settingsNotifierProvider).asData?.value.fontSize ??
+            FontSize.medium;
 
     return Scaffold(
       // シンプルな背景（から推測）
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Stack(
-          children: [
-            // テキスト表示（画面中央）。180度回転トグルがONの場合は
-            // RotatedWrapperで反転して表示する。
-            Center(
-              child: RotatedWrapper(
-                isRotated: isRotated,
-                child: FaceToFaceTextDisplay(
-                  text: displayText,
+        child: Column(children: [
+          Expanded(child: LayoutBuilder(builder: (context, constraints) {
+            final showTopControls = constraints.maxHeight >= 500;
+            final minHeight = _isEditing
+                ? 548 *
+                    MediaQuery.textScalerOf(context).scale(fontSize.scaleFactor)
+                : 220.0;
+            // 文字盤がホイール操作を受けても、右端のバーから本文をスクロールできる。
+            // 回転・終了・編集切替はこのスクロール領域の外に置く。
+            return Scrollbar(
+              controller: _contentScrollController,
+              thumbVisibility: minHeight > constraints.maxHeight,
+              child: SingleChildScrollView(
+                  controller: _contentScrollController,
+                  child: SizedBox(
+                    height: math.max(constraints.maxHeight, minHeight),
+                    child: Stack(
+                      children: [
+                        // テキスト表示（画面中央）。180度回転トグルがONの場合は
+                        // RotatedWrapperで反転して表示する。
+                        Column(children: [
+                          Expanded(
+                            flex: _isEditing ? 3 : 1,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                  top: _isEditing && showTopControls ? 88 : 0),
+                              child: RotatedWrapper(
+                                isRotated: isRotated,
+                                child: FaceToFaceTextDisplay(
+                                  text: text,
+                                  padding: _isEditing
+                                      ? const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 8)
+                                      : const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 88),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_isEditing)
+                            Expanded(
+                              flex: 7,
+                              child: FaceToFaceEditor(fontSize: fontSize),
+                            ),
+                        ]),
+                        // 180度回転切り替えボタン（左上に配置）
+                        if (showTopControls)
+                          const Positioned(
+                            top: 16,
+                            left: 16,
+                            child:
+                                ExcludeSemantics(child: RotationToggleButton()),
+                          ),
+                        // 戻るボタン（右上に配置）
+                        if (showTopControls)
+                          Positioned(
+                            top: 16,
+                            right: 16,
+                            child: ExcludeSemantics(
+                                child: _buildBackButton(context)),
+                          ),
+                      ],
+                    ),
+                  )),
+            );
+          })),
+          // 本人が届きやすい下端に、スクロール不要の操作を一組残す。
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              const RotationToggleButton(),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Center(
+                      child: TextButton.icon(
+                onPressed: _toggleEditing,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(48, 60),
+                  foregroundColor: theme.colorScheme.onSurfaceVariant,
                 ),
-              ),
-            ),
-            // 180度回転切り替えボタン（左上に配置）
-            const Positioned(
-              top: 16,
-              left: 16,
-              child: RotationToggleButton(),
-            ),
-            // 戻るボタン（右上に配置）
-            Positioned(
-              top: 16,
-              right: 16,
-              child: _buildBackButton(context),
-            ),
-          ],
-        ),
+                icon: Icon(_isEditing
+                    ? CupertinoIcons.chevron_down
+                    : CupertinoIcons.pencil),
+                label: Text(_isEditing ? '編集を閉じる' : '編集',
+                    textAlign: TextAlign.center),
+              ))),
+              const SizedBox(width: 12),
+              _buildBackButton(context),
+            ]),
+          ),
+        ]),
       ),
     );
   }
@@ -89,7 +192,7 @@ class FaceToFaceScreen extends ConsumerWidget {
       button: true,
       label: '対面表示モードを終了',
       child: InkWell(
-        onTap: onBack ?? () => Navigator.of(context).pop(),
+        onTap: widget.onBack ?? () => Navigator.of(context).pop(),
         borderRadius: BorderRadius.circular(8),
         child: Container(
           // 最小タップターゲット44px×44px

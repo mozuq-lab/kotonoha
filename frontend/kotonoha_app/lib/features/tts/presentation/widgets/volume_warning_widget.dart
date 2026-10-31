@@ -48,8 +48,12 @@ class VolumeWarningWidget extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    // 帯の文は根の 1 項目で読み、「閉じる」は別の項目にする。以前は子の Text と
+    // 閉じるボタンが根に合わさり、文を二度読んだうえ、帯に触れてダブルタップ
+    // すると帯が閉じた（`app_shell_banner_semantics_test.dart`）
     return Semantics(
       label: '警告: 音量が0です',
+      container: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -70,28 +74,37 @@ class VolumeWarningWidget extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             // 警告メッセージ
+            // 文は帯の label で読むので、ここでは読まない
             const Expanded(
-              child: Text(
-                '音量が0です',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.onWarningContainer,
+              child: ExcludeSemantics(
+                child: Text(
+                  '音量が0です',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.onWarningContainer,
+                  ),
                 ),
               ),
             ),
-            // 閉じるボタン（44x44以上のタップターゲット）
-            InkWell(
-              onTap: onDismiss,
-              borderRadius: BorderRadius.circular(22),
-              child: Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.close,
-                  color: AppColors.onWarningContainer,
-                  size: 24,
+            // 閉じるボタン（44x44以上のタップターゲット）。container で根に
+            // 合わさらないようにし、読み上げ用の名前を付ける
+            Semantics(
+              container: true,
+              button: true,
+              label: '閉じる',
+              child: InkWell(
+                onTap: onDismiss,
+                borderRadius: BorderRadius.circular(22),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.close,
+                    color: AppColors.onWarningContainer,
+                    size: 24,
+                  ),
                 ),
               ),
             ),

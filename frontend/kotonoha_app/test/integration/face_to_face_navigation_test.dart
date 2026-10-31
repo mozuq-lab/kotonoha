@@ -73,10 +73,10 @@ void main() {
       await tester.tap(find.byTooltip('対面表示'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(RotationToggleButton), findsOneWidget);
       expect(container.read(faceToFaceProvider).isRotated180, isFalse);
 
-      await tester.tap(find.byType(RotationToggleButton));
+      // 高さによって上側の複製を省く場合も、下端から回転を操作できる。
+      await tester.tap(find.byType(RotationToggleButton).last);
       await tester.pumpAndSettle();
 
       expect(container.read(faceToFaceProvider).isRotated180, isTrue);
@@ -93,8 +93,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(FaceToFaceScreen), findsOneWidget);
 
-      await tester.tap(find.byWidgetPredicate(
-          (widget) => widget is Icon && widget.semanticLabel == '閉じる'));
+      await tester.tap(find
+          .byWidgetPredicate(
+              (widget) => widget is Icon && widget.semanticLabel == '閉じる')
+          .first);
       await tester.pumpAndSettle();
 
       expect(find.byType(FaceToFaceScreen), findsNothing);

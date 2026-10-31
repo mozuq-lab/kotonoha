@@ -2,28 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- App Store / TestFlight配布用設定 -->
+	<!-- scripts/ios-testflight.sh が使う。書き出すと同時に App Store Connect へ送る -->
 	<key>method</key>
-	<string>app-store</string>
-
-	<!-- 証明書・プロビジョニングは自動管理 -->
+	<string>app-store-connect</string>
+	<key>destination</key>
+	<string>upload</string>
+	<key>teamID</key>
+	<string>G2S4UD6529</string>
+	<!-- 証明書とプロファイルは自動署名で、App Store Connect API キーを使って取る -->
 	<key>signingStyle</key>
 	<string>automatic</string>
-
-	<!-- チームIDはCI/CD環境変数から取得 -->
-	<!-- <key>teamID</key> -->
-	<!-- <string>${APPLE_TEAM_ID}</string> -->
-
-	<!-- ビットコード無効化（Flutter標準設定） -->
-	<key>uploadBitcode</key>
-	<false/>
-
-	<!-- シンボル自動アップロード（クラッシュレポート用） -->
+	<!-- ビルド番号が App Store Connect の最新以下なら、送るときに Xcode が上げる -->
+	<key>manageAppVersionAndBuildNumber</key>
+	<true/>
 	<key>uploadSymbols</key>
 	<true/>
-
-	<!-- アプリの削減（オンデマンドリソース） -->
-	<key>thinning</key>
-	<string>&lt;none&gt;</string>
 </dict>
 </plist>

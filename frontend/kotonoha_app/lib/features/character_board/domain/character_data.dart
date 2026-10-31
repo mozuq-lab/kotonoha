@@ -49,13 +49,14 @@ class CharacterData {
   /// InputBufferNotifier.addCharacterにそのまま渡せばよい。
   static const String spaceKey = '　';
 
-  /// 基本五十音（あ〜ん）46文字 + 特殊キー3種（濁点・半濁点・空白）
+  /// 基本五十音（あ〜ん）46文字 + 特殊キー4種（濁点・半濁点・長音・空白）
   /// 五十音表の配列順に並べる
   /// 空文字列は表示しないスペーサーとして使用
   /// 改善: 濁音・半濁音の入力に従来はタブ切替（基本→濁音/半濁音→基本の
   /// 3タップ）が必要だった。五十音表上もともと文字が存在しない
   /// スペーサー位置（や行・わ行の空きセル）を活用し、行数を増やさずに
-  /// 「゛」「゜」「空白」キーを配置する。
+  /// 「゛」「゜」「空白」キーを配置する。長音も記号タブへ替えずに打てるよう、
+  /// 最後の空きセルに置き、空白の左隣にする。
   static const List<String> basic = [
     'あ',
     'い',
@@ -105,8 +106,8 @@ class CharacterData {
     'わ',
     'を',
     'ん',
+    'ー',
     spaceKey,
-    '',
   ];
 
   /// 濁音（が〜ぼ）20文字
@@ -213,10 +214,18 @@ class CharacterData {
   /// アクセシビリティ用のSemanticsラベルを取得する
   /// スクリーンリーダーで読み上げても意味が伝わるよう
   /// 特殊キーには専用ラベルを設定する。
+  /// 「ー」「、」「。」は VoiceOver が既定の句読点設定で読まず、触れても無音になる
+  /// （物理 iPad、2026-10-17）。iOS の VoiceOver が句読点を読むときの語に合わせる。
+  /// 「？」「！」は VoiceOver が読むので、そのまま返す。
   static String getAccessibilityLabel(String character) {
     if (isDakutenKey(character)) return '濁点';
     if (isHandakutenKey(character)) return '半濁点';
     if (isSpaceKey(character)) return '空白';
-    return character;
+    return switch (character) {
+      'ー' => '長音',
+      '、' => '読点',
+      '。' => '句点',
+      _ => character,
+    };
   }
 }

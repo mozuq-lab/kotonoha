@@ -52,23 +52,25 @@ class FavoriteItemCard extends StatelessWidget {
     final background = favoriteBackground(favorite, scheme);
     final foreground = favoriteForeground(favorite, scheme);
 
-    return Semantics(
-      label: 'お気に入り、${favorite.content}、$formattedDate',
-      hint: 'タップして再読み上げ',
-      button: true,
-      child: Card(
-        color: background,
-        shape: favoriteBorder(favorite, scheme) == null
-            ? null
-            : RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(AppSizes.borderRadiusMedium),
-                side: favoriteBorder(favorite, scheme)!,
-              ),
-        margin: const EdgeInsets.symmetric(
-          horizontal: FavoriteUIConstants.cardHorizontalMargin,
-          vertical: FavoriteUIConstants.cardVerticalMargin,
-        ),
+    return Card(
+      color: background,
+      shape: favoriteBorder(favorite, scheme) == null
+          ? null
+          : RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+              side: favoriteBorder(favorite, scheme)!,
+            ),
+      margin: const EdgeInsets.symmetric(
+        horizontal: FavoriteUIConstants.cardHorizontalMargin,
+        vertical: FavoriteUIConstants.cardVerticalMargin,
+      ),
+      // 名前は Card の中で付ける。Card は自分で項目を作るので、外に Semantics を
+      // 重ねると名前の項目と押せる項目が別々にでき、文が 2 回読まれる。
+      // 中の文字は名前に含めたので読ませない
+      child: Semantics(
+        label: 'お気に入り、${favorite.content}、$formattedDate',
+        hint: 'タップして再読み上げ',
+        button: true,
         child: InkWell(
           onTap: onTap,
           child: Padding(
@@ -84,7 +86,8 @@ class FavoriteItemCard extends StatelessWidget {
                 const SizedBox(width: FavoriteUIConstants.iconTextSpacing),
                 // テキストと日時
                 Expanded(
-                  child: Column(
+                  child: ExcludeSemantics(
+                      child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // お気に入りテキスト
@@ -106,7 +109,7 @@ class FavoriteItemCard extends StatelessWidget {
                             ),
                       ),
                     ],
-                  ),
+                  )),
                 ),
                 // 入力欄へボタン: お気に入りの内容を入力欄に入れて編集する動線
                 SendToInputButton(

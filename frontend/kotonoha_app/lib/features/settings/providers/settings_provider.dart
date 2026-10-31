@@ -54,6 +54,10 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       // 永続化形式: bool値をそのまま保存（enum化不要のためマイグレーション対象外）
       final simpleMode = _prefs!.getBool('simple_mode') ?? false;
 
+      // getString は別の型の値で例外になり、ほかの設定まで既定値に戻すので get で読む
+      final savedVoice = _prefs!.get('tts_voice');
+      final ttsVoiceId = savedVoice is String ? savedVoice : null;
+
       // 保存済み速度はTTS側からSettingsの初期化完了後に取得する。
       // ここでTTSの初期化を待つと、TTSもsettingsNotifierProvider.futureを
       // 待つため循環待機になる。
@@ -64,6 +68,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
         aiPoliteness: aiPoliteness,
         hasAcceptedAIPrivacyPolicy: hasAcceptedAIPrivacyPolicy,
         simpleMode: simpleMode,
+        ttsVoiceId: ttsVoiceId,
       );
     } catch (e) {
       return const AppSettings();
@@ -184,17 +189,46 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
     state = AsyncValue.data(currentSettings.copyWith(ttsSpeed: speed));
 
-    try {
-      final ttsNotifier = ref.read(ttsProvider.notifier);
-      await ttsNotifier.setSpeed(speed);
-    } catch (e) {
-      // TTS反映に失敗しても、設定状態と保存処理は継続する。
-    }
-
+    // 保存はエンジンへの反映より先に行い、反映を待たない。Android でエンジンの
+    // 初期化の知らせが来ない端末では反映（setSpeechRate）が返らず、待つと保存に
+    // 届かないまま、失敗も告げずに速さが失われる（守る約束 ①、ADR-005）。
     await _persist(
       'tts_speed',
       (prefs) => prefs.setString('tts_speed', speed.name),
     );
+
+    if (!ref.mounted) return;
+    try {
+      await ref.read(ttsProvider.notifier).setSpeed(speed);
+    } catch (e) {
+      // TTS反映に失敗しても、設定状態と保存は保つ。
+    }
+  }
+
+  /// 読み上げの声を設定する（null は日本語の標準の声）
+  /// 速度と同じく、保存をエンジンへの反映より先に行う。
+  Future<void> setTTSVoice(String? voiceId) async {
+    final currentSettings = state.asData?.value;
+    if (currentSettings == null) return;
+
+    state = AsyncValue.data(currentSettings.copyWith(
+      ttsVoiceId: voiceId,
+      clearTTSVoiceId: voiceId == null,
+    ));
+
+    await _persist(
+      'tts_voice',
+      (prefs) => voiceId == null
+          ? prefs.remove('tts_voice')
+          : prefs.setString('tts_voice', voiceId),
+    );
+
+    if (!ref.mounted) return;
+    try {
+      await ref.read(ttsProvider.notifier).setVoice(voiceId);
+    } catch (e) {
+      // TTS反映に失敗しても、設定状態と保存は保つ。
+    }
   }
 
   Future<void> setAIPoliteness(PolitenessLevel level) async {

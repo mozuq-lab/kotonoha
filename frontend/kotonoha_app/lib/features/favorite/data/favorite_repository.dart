@@ -15,16 +15,24 @@ import 'package:kotonoha_app/shared/models/favorite_item.dart';
 /// reorderFavorites: 並び順を一括更新
 class FavoriteRepository {
   static const _initialFavoritesMarkerId = '__initial_favorites_done__';
-  static const _initialContents = [
-    '痛い',
-    'トイレ',
-    '暑い',
-    '寒い',
-    '水',
-    '眠い',
-    '助けて',
-    '待って',
+
+  /// 初回のお気に入りと色（この順に並べる）。色は利用者が選べる色
+  /// （favoriteColorChoices）と同じ値（2026-10-18 の人の決定）。
+  static const _initialFavorites = <(String, int)>[
+    ('ありがとう', 0xFF4CAF50), // 緑
+    ('暑い', 0xFFFF9800), // オレンジ
+    ('寒い', 0xFF2196F3), // 青
+    ('眠い', 0xFFB0BEC5), // 灰
+    ('待って', 0xFFFFD54F), // 黄
+    ('水ほしい', 0xFF2196F3), // 青
+    ('痛い', 0xFFFF9800), // オレンジ
+    ('トイレ', 0xFFB39DDB), // 紫
   ];
+
+  /// 初回に作るお気に入りの文（この順）。画面の折り返しなどのテストが、
+  /// 手書きの一覧ではなく本番と同じ文で確かめるために使う。
+  static List<String> get initialContents =>
+      [for (final (content, _) in _initialFavorites) content];
 
   /// フィールド定義: Hive Box（お気に入り保存用）
   /// 実装内容: コンストラクタで注入されたBoxを保持
@@ -69,19 +77,15 @@ class FavoriteRepository {
     if (_box.get(_initialFavoritesMarkerId) != null) return true;
     final now = DateTime.now();
     final initial = <String, FavoriteItem>{};
-    for (var index = 0; index < _initialContents.length; index++) {
+    for (var index = 0; index < _initialFavorites.length; index++) {
       final id = 'initial-favorite-$index';
       if (_box.get(id) != null) continue;
-      final colorValue = switch (index) {
-        0 || 2 || 3 || 5 => 0xFFFF9800,
-        _ => 0xFF2196F3,
-      };
+      final (content, colorValue) = _initialFavorites[index];
       initial[id] = FavoriteItem(
         id: id,
-        content: _initialContents[index],
+        content: content,
         createdAt: now,
-        // 項目のIDと色は保ち、表示順だけ「痛い」を末尾にする。
-        displayOrder: index == 0 ? _initialContents.length - 1 : index - 1,
+        displayOrder: index,
         colorValue: colorValue,
       );
     }

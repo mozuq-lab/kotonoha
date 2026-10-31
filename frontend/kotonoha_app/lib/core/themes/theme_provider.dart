@@ -158,14 +158,12 @@ TextStyle? _scaledStyle(TextStyle? style, double factor) {
 ///   （`TextStyle.merge`、`text_style.dart`）。本アプリの `textTheme.labelLarge`
 ///   は `fontSize`/`fontWeight`/`letterSpacing` が null で `color` のみ設定
 ///   されているため、結果は「geometry の書体情報＋テーマの色」になる。
-/// - `category` は本アプリの `MaterialApp`（`app.dart`）が `locale`/
-///   `localizationsDelegates` を指定していないため、既定の
-///   `ScriptCategory.englishLike` になる（コード上は日本語ロケールを想定した
-///   `ScriptCategory.dense` になり得るが、`typography.dart` の
+/// - `category` は本アプリの `MaterialApp`（`app.dart`）が日本語（`ja_JP`）に
+///   固定しているため `ScriptCategory.dense` になる。`typography.dart` の
 ///   `_M3Typography.englishLike`/`dense`/`tall` の `labelLarge` は
 ///   `fontSize: 14.0, fontWeight: FontWeight.w500, letterSpacing: 0.1` が
-///   3 つとも同一値のため、どちらが選ばれても本メソッドの結果は変わらない。
-///   差があるのは `textBaseline`（`alphabetic`/`ideographic`）のみ）。
+///   3 つとも同一値のため、どれが選ばれても本メソッドの結果は変わらない
+///   （差があるのは `textBaseline`（`alphabetic`/`ideographic`）のみ）。
 ///
 /// `Typography.englishLike2021` は locale/platform に依存しない定数のため
 /// `Typography.material2021()` を構築せずに直接参照できる。

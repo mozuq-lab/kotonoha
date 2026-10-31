@@ -6,7 +6,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kotonoha_app/shared/widgets/debounced_taps.dart';
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/themes/app_visual_theme.dart';
 import 'package:kotonoha_app/core/utils/contrast.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_state.dart';
@@ -92,22 +94,27 @@ class TTSButton extends ConsumerWidget {
         : (speakButtonColor ??
             Color.lerp(colorScheme.surface, colorScheme.primary, 0.18)!);
     final foregroundColor = bestContrastingTextColor(backgroundColor);
+    // 色で塗るのは呼び出し側が色を渡したときだけ。淡い色は灰色の枠で背景と分ける
+    final filled =
+        isSpeaking ? stopButtonColor != null : speakButtonColor != null;
     final icon =
         isSpeaking ? CupertinoIcons.stop_fill : CupertinoIcons.speaker_2;
 
-    return Semantics(
-      label: label,
-      button: true,
-      child: SizedBox(
-        width: width != null ? _effectiveWidth : null,
-        height: _effectiveHeight,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: _effectiveWidth,
-            minHeight: _effectiveHeight,
-          ),
-          child: ElevatedButton.icon(
-            onPressed: () => _handleTap(ref, isSpeaking),
+    // 読み上げの名前は中の文字（label）から付く。外にも Semantics を重ねると、
+    // ボタン自身の項目と別に同じ名前の項目ができ、2 回読まれる
+    return SizedBox(
+      width: width != null ? _effectiveWidth : null,
+      height: _effectiveHeight,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: _effectiveWidth,
+          minHeight: _effectiveHeight,
+        ),
+        // 300ms 以内の連続タップは無視する。押すとすぐ「停止」に変わるので、
+        // 二度押しの 2 回目で読み上げが黙っていた（大ボタン・定型文と同じ扱い）
+        child: DebouncedTaps(
+          builder: (context, debounced) => ElevatedButton.icon(
+            onPressed: debounced(() => _handleTap(ref, isSpeaking)),
             style: ElevatedButton.styleFrom(
               backgroundColor: backgroundColor,
               foregroundColor: foregroundColor,
@@ -119,6 +126,10 @@ class TTSButton extends ConsumerWidget {
                 borderRadius:
                     BorderRadius.circular(AppSizes.borderRadiusMedium),
               ),
+            ).copyWith(
+              side: filled
+                  ? filledButtonSide(backgroundColor, colorScheme)
+                  : null,
             ),
             icon: Icon(icon),
             label: Text(

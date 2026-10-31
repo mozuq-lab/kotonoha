@@ -10,8 +10,8 @@
 
 | ADR | 決めたこと | 却下した案 | 関わる行為 | 検査 | 赤の見方（2026-09-12 実測） |
 |---|---|---|---|---|---|
-| ADR-001 | backend はステートレス。サーバー側にユーザー状態を持たない | DB で履歴・ログを保存 | 依存, 永続化, 公開ルート | 卒業（2026-09-06）: backend/scripts/gates.sh（DB ディレクトリと依存の不在） | `backend/requirements.txt` に `sqlalchemy` を足して `bash backend/scripts/gates.sh` → `::error::ADR-001/002`、exit 1 |
-| ADR-003 | エラーは型（ErrorCode + SafeError）。自由文字列をログ・応答に載せない | 例外メッセージの秘匿関数 | 公開ルート, 外部送信先 | 卒業（2026-09-06）: backend/scripts/gates.sh（str(exc) 等 0 件）、canary 全シンク検査、mypy | `backend/app/errors.py` に `print("x")` を足して `bash backend/scripts/gates.sh` → `::error::ADR-003` |
-| ADR-004 | 設定は不変。Application Factory。import 時に資源を作らない | モジュールレベルの app / client | 設定キー, 可変グローバル | 卒業（2026-09-06）: 起動 smoke（import 副作用ゼロ）、frozen 設定 | `backend/app/config.py` の `frozen=True` を `False` にして `pytest tests/test_config.py` → `test_config_is_frozen` FAILED |
-| ADR-006 | レイヤ依存は import-linter で強制 | 規約だけで守る | 依存 | 卒業（2026-09-06）: lint-imports（CI） | `backend/app/errors.py` に `import app.main` を足して `lint-imports` → `Broken contracts: ADR-006 layers` |
+| ADR-001 | backend はステートレス。サーバー側にユーザー状態を持たない | DB で履歴・ログを保存 | 依存, 永続化, 公開ルート | 卒業（2026-09-06）: backend/fastapi/scripts/gates.sh（DB ディレクトリと依存の不在） | `backend/fastapi/requirements.txt` に `sqlalchemy` を足して `bash backend/fastapi/scripts/gates.sh` → `::error::ADR-001/002`、exit 1 |
+| ADR-003 | エラーは型（ErrorCode + SafeError）。自由文字列をログ・応答に載せない | 例外メッセージの秘匿関数 | 公開ルート, 外部送信先 | 卒業（2026-09-06）: backend/fastapi/scripts/gates.sh（str(exc) 等 0 件）、canary 全シンク検査、mypy | `backend/fastapi/app/errors.py` に `print("x")` を足して `bash backend/fastapi/scripts/gates.sh` → `::error::ADR-003` |
+| ADR-004 | 設定は不変。Application Factory。import 時に資源を作らない | モジュールレベルの app / client | 設定キー, 可変グローバル | 卒業（2026-09-06）: 起動 smoke（import 副作用ゼロ）、frozen 設定 | `backend/fastapi/app/config.py` の `frozen=True` を `False` にして `pytest tests/test_config.py` → `test_config_is_frozen` FAILED |
+| ADR-006 | レイヤ依存は import-linter で強制 | 規約だけで守る | 依存 | 卒業（2026-09-06）: lint-imports（CI） | `backend/fastapi/app/errors.py` に `import app.main` を足して `lint-imports` → `Broken contracts: ADR-006 layers` |
 | ADR-008 | 負債ゲートを機械では作らない。**同種の仕組みを作る前に必読** | 許可リスト方式のゲート（3 周・4,600 行で収束せず） | 依存, 永続化, 設定キー, 可変グローバル, 公開ルート, 外部送信先, 権限, 自作 | 卒業（2026-09-06）: 無し（却下の記録） | 無し（機械は持たない）。守るのは AGENTS.md「判断の手順」7 の 1 文。workflow・フック・スクリプトの増減は監査（ADR-010）が数える |

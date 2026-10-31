@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kotonoha_app/core/widgets/app_shell.dart';
+import 'package:kotonoha_app/features/tts/presentation/widgets/tts_failure_banner.dart';
 import 'package:kotonoha_app/features/tts/domain/services/tts_service.dart';
 import 'package:kotonoha_app/features/tts/providers/tts_provider.dart';
 import 'package:mocktail/mocktail.dart';
@@ -82,5 +83,51 @@ void main() {
 
     expect(find.textContaining('読み上げできませんでした'), findsNothing,
         reason: '読み上げが始まったのに失敗の告知が残る');
+  });
+
+  group('起動時に読み上げを準備できなかったとき（まだ押していない）', () {
+    setUp(() {
+      // 起動時の初期化が失敗するエンジン
+      when(() => tts.setLanguage(any()))
+          .thenAnswer((_) async => throw Exception('no voice'));
+    });
+
+    testWidgets('起動時用の文言で告げ、「押したが失敗した」文言は出さない', (tester) async {
+      await pumpShell(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.text(TtsFailureBanner.startupMessage), findsOneWidget);
+      expect(find.text(TtsFailureBanner.message), findsNothing);
+    });
+
+    testWidgets('押しても準備できなければ、押したときの文言に変わる', (tester) async {
+      await pumpShell(tester);
+      await tester.pumpAndSettle();
+
+      await container.read(ttsProvider.notifier).speak('いいえ');
+      await tester.pumpAndSettle();
+
+      expect(find.text(TtsFailureBanner.message), findsOneWidget);
+      expect(find.text(TtsFailureBanner.startupMessage), findsNothing);
+    });
+
+    testWidgets('押して読み上げが始まれば、帯は消える', (tester) async {
+      await pumpShell(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(TtsFailureBanner.startupMessage), findsOneWidget);
+
+      // エンジンが戻った
+      when(() => tts.setLanguage(any())).thenAnswer((_) async => 1);
+      when(() => tts.speak(any())).thenAnswer((_) async {
+        onStart?.call();
+        return 1;
+      });
+      await container.read(ttsProvider.notifier).speak('痛い');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TtsFailureBanner), findsOneWidget);
+      expect(find.text(TtsFailureBanner.startupMessage), findsNothing);
+      expect(find.text(TtsFailureBanner.message), findsNothing);
+    });
   });
 }

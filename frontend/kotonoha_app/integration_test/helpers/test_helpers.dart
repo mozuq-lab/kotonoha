@@ -28,7 +28,7 @@ export 'package:flutter/material.dart' show Icons;
 /// 電話幅のアイコンとタブレット幅の文字タイトルのどちらかを確認する。
 void expectHomeBrand() {
   expect(
-    find.text('kotonoha').evaluate().isNotEmpty ||
+    find.text('ことのは').evaluate().isNotEmpty ||
         find.byKey(const Key('home_app_icon')).evaluate().isNotEmpty,
     isTrue,
   );
@@ -467,11 +467,65 @@ Future<void> navigateTo(
 /// スクリーンショット取得（デバッグ用）
 /// [binding]: IntegrationTestWidgetsFlutterBinding
 /// [name]: スクリーンショット名
+/// 撮れなくてもテストは止めない（ログに残して続ける）。画像はテストの合否に
+/// 関わらず、撮れないことで実機の実行を止めないため。
+/// `flutter test -d <端末>` では、iOS は撮れるが画像はどこにも保存されない
+/// （受け取るドライバーが無い）。Android は `convertFlutterSurfaceToImage`
+/// を先に呼んでいないので StateError になる（integration_test のソースから
+/// 読んだこと。実測はしていない）。画像を残すときは
+/// `flutter drive --driver=test_driver/screenshot_driver.dart` で走らせる
+/// （`build/screenshots/` に書かれる。2026-10-17 に iPad シミュレータで確認）。
 Future<void> takeScreenshot(
   IntegrationTestWidgetsFlutterBinding binding,
   String name,
 ) async {
-  await binding.takeScreenshot(name);
+  try {
+    await binding.takeScreenshot(name);
+  } catch (e) {
+    debugPrint('[screenshot] $name を撮れなかった（テストは続ける）: $e');
+  }
+}
+
+/// アプリの ProviderContainer（設定や読み上げの状態を読むため）
+ProviderContainer appContainer(WidgetTester tester) =>
+    ProviderScope.containerOf(tester.element(find.byType(KotonohaApp)));
+
+/// ホームの AppBar のボタン（[tooltip]）で画面を開く
+Future<void> openFromHome(WidgetTester tester, String tooltip) async {
+  final target = find.byTooltip(tooltip);
+  expect(target, findsOneWidget, reason: 'ホームに「$tooltip」の入口が無い');
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+}
+
+/// AppBar の戻るボタンで前の画面に戻る
+Future<void> tapBack(WidgetTester tester) async {
+  expect(find.byType(BackButton), findsOneWidget, reason: '戻るボタンが無い');
+  await tester.tap(find.byType(BackButton));
+  await tester.pumpAndSettle();
+}
+
+/// 前の読み上げが終わるまで待つ（最大 10 秒）。続けて押す操作を、
+/// 前の読み上げの途中の割り込みにしないため。
+Future<void> waitUntilQuiet(WidgetTester tester) async {
+  for (var i = 0;
+      i < 100 &&
+          appContainer(tester).read(ttsProvider).state == TTSState.speaking;
+      i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  await tester.pumpAndSettle();
+}
+
+/// 描画する面の大きさを [size] にし、テストの終わりに端末の大きさへ戻す
+/// 戻しは `tearDown` ではなく `addTearDown` で行う。結合テストのバインディングは
+/// テストの外で `setSurfaceSize` を呼ぶと assert（inTest）で落ち、`tearDown` は
+/// テストの外で走る（2026-10-17 に iPad シミュレータで全件これで落ちた）。
+/// 面の大きさを変えても、`MediaQuery` の大きさは端末のままである。
+Future<void> setTestSurfaceSize(WidgetTester tester, Size size) async {
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+  await tester.binding.setSurfaceSize(size);
+  await tester.pumpAndSettle();
 }
 
 /// 読み上げを始める操作（[target] のタップ）をして、読み上げ中を通ったことを確かめる
@@ -507,7 +561,12 @@ Future<void> tapAndExpectSpeech(WidgetTester tester, Finder target) async {
 
 /// まだ読み上げ中なら「停止」で止める（短い文は既に終わっていることがある）
 /// 止める操作そのものを確かめるテストでは使わず、`tapButton(tester, '停止')` を使う。
+/// 「読み上げ」と「停止」は同じボタンで、300ms 以内の続けてのタップは無視される
+/// （#273）。読み上げを始めた直後に呼ばれても止まるよう、間を空けてから押す。
 Future<void> stopSpeechIfSpeaking(WidgetTester tester) async {
+  if (find.text('停止').evaluate().isNotEmpty) {
+    await tester.pump(const Duration(milliseconds: 400));
+  }
   if (find.text('停止').evaluate().isNotEmpty) {
     await tester.tap(find.text('停止'));
   }

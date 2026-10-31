@@ -33,7 +33,9 @@ mixin DebounceMixin<T extends StatefulWidget> on State<T> {
 
     if (_lastTapTime != null) {
       final difference = now.difference(_lastTapTime!).inMilliseconds;
-      if (difference < duration) {
+      // 端末の時刻が戻されたとき（差が負）は通す。通さないと、時刻が追いつくまで
+      // 「停止」を含むボタンが効かなくなる
+      if (difference >= 0 && difference < duration) {
         return false;
       }
     }

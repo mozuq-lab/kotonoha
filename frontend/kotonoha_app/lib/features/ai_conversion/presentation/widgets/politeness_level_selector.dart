@@ -40,30 +40,31 @@ class PolitenessLevelSelector extends StatelessWidget {
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Semantics(
-              // アクセシビリティ: スクリーンリーダー用ラベル
-              label: '${level.displayName}${isSelected ? "、選択中" : ""}',
-              button: true,
-              selected: isSelected,
-              child: ElevatedButton(
-                // スタイル設定: 選択状態で背景色を変える
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isSelected
-                      ? Color.lerp(
-                          Theme.of(context).colorScheme.surface,
-                          Theme.of(context).colorScheme.primary,
-                          0.18,
-                        )
-                      : Theme.of(context).colorScheme.surface,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
-                  // アクセシビリティ対応: 最小タップターゲットサイズ44px
-                  minimumSize: const Size.fromHeight(44),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                ),
-                // タップ処理: レベル変更コールバックを呼び出す
-                onPressed: enabled ? () => onLevelChanged(level) : null,
-                // 3等分の幅に収まらない長さ（「カジュアル」など）は
-                // 折り返さずに縮めて1行に保つ。
+            child: ElevatedButton(
+              // スタイル設定: 選択状態で背景色を変える
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isSelected
+                    ? Color.lerp(
+                        Theme.of(context).colorScheme.surface,
+                        Theme.of(context).colorScheme.primary,
+                        0.18,
+                      )
+                    : Theme.of(context).colorScheme.surface,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                // アクセシビリティ対応: 最小タップターゲットサイズ44px
+                minimumSize: const Size.fromHeight(44),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+              // タップ処理: レベル変更コールバックを呼び出す
+              onPressed: enabled ? () => onLevelChanged(level) : null,
+              // 3等分の幅に収まらない長さ（「カジュアル」など）は
+              // 折り返さずに縮めて1行に保つ。
+              // 読み上げの名前はボタンの中で付け、中の文字は読ませない。外に
+              // Semantics を重ねると、ボタン自身の項目と別の項目ができ、2 回読まれる
+              child: Semantics(
+                label: '${level.displayName}${isSelected ? "、選択中" : ""}',
+                selected: isSelected,
+                excludeSemantics: true,
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(

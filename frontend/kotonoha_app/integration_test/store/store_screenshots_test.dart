@@ -84,15 +84,17 @@ void main() {
     await _back(tester);
 
     // ホーム: 文字盤で打った文
-    await typeOnCharacterBoard(tester, 'すこしやすみたい');
+    await typeOnCharacterBoard(tester, 'いつもありがとう');
     await tapAndExpectSpeech(tester, find.text('読み上げ'));
     await _waitQuiet(tester);
     await shoot('01_home');
 
     await _open(tester, '対面表示');
     await shoot('02_face_to_face');
-    await tester.tap(find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.label == '対面表示モードを終了'));
+    await tester.tap(find
+        .byWidgetPredicate(
+            (w) => w is Semantics && w.properties.label == '対面表示モードを終了')
+        .first);
     await tester.pumpAndSettle();
 
     await _open(tester, '定型文');

@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models/network_state.dart';
 import '../../providers/network_provider.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 
 /// オンライン復帰時に表示される通知ウィジェット
 /// オフライン→オンラインに状態が変化した時、一時的に
@@ -71,7 +72,7 @@ class _OnlineRecoveryNotificationState
           // 継承するため、style を部分指定しただけでは装飾が残る。
           // PersistenceBanner / OfflineBanner と同じ扱いにする。
           Semantics(
-            label: 'オンラインに戻りました。AI変換が利用可能です。',
+            label: spokenLabel('オンラインに戻りました。AI変換が利用可能です。'),
             excludeSemantics: true,
             child: Material(
               // AA対応: green[900] on green[100] でコントラスト比 約5.9:1。

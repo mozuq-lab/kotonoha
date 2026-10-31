@@ -2,7 +2,7 @@
 ///
 /// 本物のアプリで、利用者が AI 変換を使う流れを確かめる。初回の同意、
 /// 送る中身（入力した文と丁寧さ、再生成では前回の結果）、採用・再生成・
-/// 元の文を使う、上限に達したときの告知、押せないとき。
+/// キャンセル、上限に達したときの告知、押せないとき。
 /// iOS シミュレータ（iPad）と Android エミュレータで走らせる。
 ///
 /// 偽物にするのはネットワークの境界（Dio）だけ。backend と同じ形の応答を返し、
@@ -32,7 +32,7 @@ class _FakeBackend {
   final Response<dynamic> Function(RequestOptions) respond;
   final requests = <RequestOptions>[];
 
-  /// backend の ConversionResponse と同じ形（`backend/app/schemas.py`）
+  /// backend の ConversionResponse と同じ形（`backend/fastapi/app/schemas.py`）
   static Response<dynamic> _converted(RequestOptions o) {
     final body = o.data as Map<String, dynamic>;
     final regenerating = o.path.endsWith('/regenerate');
@@ -189,7 +189,7 @@ void main() {
     await _waitFor(tester, find.text(_consentTitle));
     await _tapInDialog(tester, '同意して利用');
     await _waitFor(tester, find.text(_resultTitle));
-    await _tapInDialog(tester, '元の文を使う');
+    await _tapInDialog(tester, 'キャンセル');
     expect(backend.requests, hasLength(1));
 
     // 同意した後は聞かずに変換する
@@ -225,7 +225,7 @@ void main() {
     expect(_inputShowing('心より感謝申し上げます'), findsOneWidget);
   });
 
-  testWidgets('4. 「元の文を使う」と入力は元のまま', (tester) async {
+  testWidgets('4. 「キャンセル」で閉じても入力は元のまま', (tester) async {
     final backend = _FakeBackend();
     await pumpApp(tester, overrides: backend.overrides());
 
@@ -235,14 +235,14 @@ void main() {
     await _tapInDialog(tester, '同意して利用');
     await _waitFor(tester, find.text(_resultTitle));
 
-    await _tapInDialog(tester, '元の文を使う');
+    await _tapInDialog(tester, 'キャンセル');
     expect(find.text(_resultTitle), findsNothing);
     expect(_inputShowing('ありがとう'), findsOneWidget);
     expect(find.text('ありがとうございます'), findsNothing);
   });
 
   testWidgets('5. 上限に達したら backend の文言で告げ、入力を残す', (tester) async {
-    // backend の AI_RATE_LIMIT と同じ形（`backend/app/main.py` の _error_body）
+    // backend の AI_RATE_LIMIT と同じ形（`backend/fastapi/app/main.py` の _error_body）
     const message = 'いまAI変換を使えません。混み合っているか、利用の上限に達しています。'
         '時間をおいて試すか、元の文をお使いください。';
     final backend = _FakeBackend(

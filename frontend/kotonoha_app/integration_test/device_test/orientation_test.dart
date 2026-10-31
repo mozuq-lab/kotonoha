@@ -5,9 +5,10 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:kotonoha_app/features/settings/models/font_size.dart';
+import 'package:kotonoha_app/features/settings/providers/settings_provider.dart';
 
 import '../helpers/test_helpers.dart';
 
@@ -29,9 +30,7 @@ void main() {
         // 実際の処理実行: 画面サイズを縦向き（Portrait）に設定
         // Note: 実機では物理的にデバイスを回転させる
         // テストでは画面サイズを変更してシミュレート
-        await tester.binding
-            .setSurfaceSize(const Size(390, 844)); // iPhone 14相当
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(390, 844)); // iPhone 14相当
 
         // 結果検証: 文字盤が表示される
         expect(find.text('あ'), findsWidgets);
@@ -56,9 +55,7 @@ void main() {
 
         // 実際の処理実行: 画面サイズを横向き（Landscape）に設定
         // Note: 実機では物理的にデバイスを回転させる
-        await tester.binding
-            .setSurfaceSize(const Size(844, 390)); // iPhone 14横向き
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(844, 390)); // iPhone 14横向き
 
         // 結果検証: 文字盤が表示される
         expect(find.text('あ'), findsWidgets);
@@ -82,31 +79,28 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 縦向きで文字列を入力
-        await tester.binding.setSurfaceSize(const Size(390, 844)); // 縦向き
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(390, 844)); // 縦向き
 
-        await typeOnCharacterBoard(tester, '画面回転テスト');
+        await typeOnCharacterBoard(tester, 'がめんかいてん');
 
         // 結果検証: 入力内容が表示される
-        expect(find.text('画面回転テスト'), findsWidgets);
+        expect(find.text('がめんかいてん'), findsWidgets);
 
         await takeScreenshot(binding, 'RT-103_before_rotation');
 
         // 実際の処理実行: 横向きに回転
-        await tester.binding.setSurfaceSize(const Size(844, 390)); // 横向き
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(844, 390)); // 横向き
 
         // 結果検証: 入力内容が保持されている
-        expect(find.text('画面回転テスト'), findsWidgets);
+        expect(find.text('がめんかいてん'), findsWidgets);
 
         await takeScreenshot(binding, 'RT-103_after_rotation');
 
         // 実際の処理実行: 縦向きに戻す
-        await tester.binding.setSurfaceSize(const Size(390, 844)); // 縦向き
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(390, 844)); // 縦向き
 
         // 結果検証: 入力内容が引き続き保持されている
-        expect(find.text('画面回転テスト'), findsWidgets);
+        expect(find.text('がめんかいてん'), findsWidgets);
 
         await takeScreenshot(binding, 'RT-103_rotation_back');
       },
@@ -123,8 +117,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 縦向きで開始
-        await tester.binding.setSurfaceSize(const Size(390, 844));
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(390, 844));
 
         // 結果検証: 文字盤が縦向きレイアウトで表示される
         expect(find.text('あ'), findsWidgets);
@@ -132,8 +125,7 @@ void main() {
         await takeScreenshot(binding, 'rotation_portrait_initial');
 
         // 実際の処理実行: 横向きに回転
-        await tester.binding.setSurfaceSize(const Size(844, 390));
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(844, 390));
 
         // 結果検証: レイアウトが横向きに調整される
         expect(find.text('あ'), findsWidgets);
@@ -141,24 +133,22 @@ void main() {
         await takeScreenshot(binding, 'rotation_landscape');
 
         // 実際の処理実行: 設定画面に遷移して回転
-        await tapIconButton(tester, CupertinoIcons.gear_alt);
+        await openFromHome(tester, '設定');
         expect(find.text('設定'), findsOneWidget);
 
         await takeScreenshot(binding, 'rotation_settings_landscape');
 
-        // 実際の処理実行: 横向きのまま設定を変更
-        final mediumFontFinder = find.text('中');
-        if (mediumFontFinder.evaluate().isNotEmpty) {
-          await tester.tap(mediumFontFinder.first);
-          await tester.pumpAndSettle();
-        }
+        // 実際の処理実行: 横向きのまま設定を変更（既定の「中」から「大」へ）
+        await scrollAndTap(tester, find.text('大'));
 
         // 実際の処理実行: 縦向きに戻す
-        await tester.binding.setSurfaceSize(const Size(390, 844));
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(390, 844));
 
-        // 結果検証: 設定画面が縦向きレイアウトに調整される
+        // 結果検証: 設定画面のまま縦向きレイアウトに調整され、変えた設定が残る
         expect(find.text('設定'), findsOneWidget);
+        final settings =
+            await appContainer(tester).read(settingsNotifierProvider.future);
+        expect(settings.fontSize, FontSize.large, reason: '回転で設定が戻る');
 
         await takeScreenshot(binding, 'rotation_settings_portrait');
       },
@@ -175,8 +165,7 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: タブレット横向きサイズに設定（iPad 10.2インチ相当）
-        await tester.binding.setSurfaceSize(const Size(1080, 810));
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(1080, 810));
 
         // 結果検証: 文字盤が表示される
         expect(find.text('あ'), findsWidgets);
@@ -186,11 +175,8 @@ void main() {
         await takeScreenshot(binding, 'tablet_landscape_layout');
 
         // 実際の処理実行: 定型文画面に遷移
-        final presetTabFinder = find.text('定型文');
-        if (presetTabFinder.evaluate().isNotEmpty) {
-          await tester.tap(presetTabFinder);
-          await tester.pumpAndSettle();
-        }
+        await openFromHome(tester, '定型文');
+        expect(find.byTooltip('定型文を追加'), findsOneWidget);
 
         // 結果検証: 定型文が横向きで見やすく配置される
         // Note: 実機でタブレット横向き時に定型文が2-3列で表示されることを手動確認
@@ -210,21 +196,16 @@ void main() {
         await pumpApp(tester);
 
         // 実際の処理実行: 縦向きで定型文画面を表示
-        await tester.binding.setSurfaceSize(const Size(390, 844));
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(390, 844));
 
-        final presetTabFinder = find.text('定型文');
-        if (presetTabFinder.evaluate().isNotEmpty) {
-          await tester.tap(presetTabFinder);
-          await tester.pumpAndSettle();
-        }
+        await openFromHome(tester, '定型文');
+        expect(find.byTooltip('定型文を追加'), findsOneWidget);
 
         // 結果検証: 定型文が縦向きで表示される
         await takeScreenshot(binding, 'preset_portrait_columns');
 
         // 実際の処理実行: 横向きに回転
-        await tester.binding.setSurfaceSize(const Size(844, 390));
-        await tester.pumpAndSettle();
+        await setTestSurfaceSize(tester, const Size(844, 390));
 
         // 結果検証: 定型文が横向きで表示される
         // Note: 実機で横向き時にカラム数が増えることを手動確認
@@ -232,11 +213,5 @@ void main() {
         await takeScreenshot(binding, 'preset_landscape_columns');
       },
     );
-  });
-
-  // クリーンアップ
-  tearDown(() async {
-    // 画面サイズをリセット
-    await binding.setSurfaceSize(const Size(800, 600));
   });
 }

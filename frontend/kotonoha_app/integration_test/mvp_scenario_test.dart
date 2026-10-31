@@ -139,7 +139,7 @@ void main() {
     await tapButton(tester, 'はじめる');
     expect(find.text('準備完了'), findsNothing, reason: '「はじめる」でチュートリアルが閉じない');
     expect(
-      find.text('kotonoha').evaluate().isNotEmpty ||
+      find.text('ことのは').evaluate().isNotEmpty ||
           find.byKey(const Key('home_app_icon')).evaluate().isNotEmpty,
       isTrue,
     );
@@ -182,7 +182,7 @@ void main() {
     await _expectSpoke(tester, again, 'お気に入りのタップ');
     await _back(tester);
     expect(
-      find.text('kotonoha').evaluate().isNotEmpty ||
+      find.text('ことのは').evaluate().isNotEmpty ||
           find.byKey(const Key('home_app_icon')).evaluate().isNotEmpty,
       isTrue,
     );
@@ -231,7 +231,7 @@ void main() {
           .widgetList<FavoriteShortcutButton>(
               find.byType(FavoriteShortcutButton))
           .map((button) => button.favorite.content),
-      ['トイレ', '暑い', '寒い', '水', '眠い', '助けて', '待って', '痛い'],
+      ['ありがとう', '暑い', '寒い', '眠い', '待って', '水ほしい', '痛い', 'トイレ'],
     );
     await tester.tap(find.descendant(
       of: find.byType(FavoriteShortcutButton),

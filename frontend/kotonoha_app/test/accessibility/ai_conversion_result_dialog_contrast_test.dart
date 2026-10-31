@@ -63,7 +63,7 @@ Future<void> _pumpDialog(WidgetTester tester, ThemeData theme) async {
                 politenessLevel: _politenessLevel,
                 onAdopt: (_) {},
                 onRegenerate: () {},
-                onUseOriginal: (_) {},
+                onCancel: () {},
                 onLevelChanged: (_) async => '',
               ),
             ),
@@ -75,6 +75,14 @@ Future<void> _pumpDialog(WidgetTester tester, ThemeData theme) async {
   );
   await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
+}
+
+/// 枠で囲んだボタン（[label] の OutlinedButton）の枠線
+BorderSide _outlinedSide(WidgetTester tester, String label) {
+  final button = tester.widget<OutlinedButton>(
+    find.widgetWithText(OutlinedButton, label),
+  );
+  return button.style!.side!.resolve(<WidgetState>{})!;
 }
 
 /// 枠線は「隣接する色」に対して評価する（WCAG 1.4.11）。
@@ -135,51 +143,97 @@ void main() {
 
   group('操作ボタン', () {
     for (final entry in _themes.entries) {
-      testWidgets('${entry.key}テーマで「元の文を使う」の枠線が 3:1 以上', (tester) async {
+      for (final label in ['再生成', 'キャンセル']) {
+        testWidgets('${entry.key}テーマで「$label」の枠線が 3:1 以上', (tester) async {
+          await _pumpDialog(tester, entry.value);
+
+          final side = _outlinedSide(tester, label);
+          final dialogBg = _dialogBackground(tester);
+
+          expectOpaque(side.color, '${entry.key}テーマの「$label」枠線');
+          final ratio = contrastRatio(side.color, dialogBg);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(3.0),
+            reason: '${entry.key}テーマの「$label」枠線のコントラスト比が '
+                '${ratio.toStringAsFixed(2)}:1 で非テキスト基準 (3:1) 未達',
+          );
+        });
+
+        // この回帰テストの理由: 枠線だけをAA対応にしてラベル色を
+        // colorScheme.primary の既定に任せていたため、枠線 3:1 のテストは緑のまま
+        // ラベルが 2.87:1（ライト）／3.62:1（ダーク）でAA未達だった。
+        // 枠線と文字は別々に検証する。
+        testWidgets('${entry.key}テーマで「$label」の文字が 4.5:1 以上', (tester) async {
+          await _pumpDialog(tester, entry.value);
+
+          final dialogBg = _dialogBackground(tester);
+          final text = resolvedTextColor(tester, find.text(label));
+
+          expectOpaque(dialogBg, '${entry.key}テーマのダイアログ背景');
+          expectOpaque(text, '${entry.key}テーマの「$label」文字');
+
+          final ratio = contrastRatio(text, dialogBg);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason: '${entry.key}テーマの「$label」の文字のコントラスト比が '
+                '${ratio.toStringAsFixed(2)}:1 で WCAG 2.1 AA (4.5:1) 未達',
+          );
+        });
+      }
+
+      // 「再生成」を灰色の塗りにしていたため、押せないボタンやキャンセルに見えた
+      // （iPad、2026-10-18）。操作は基本色の太い枠、取りやめは灰色の細い枠で見分ける。
+      // 高コントラストは枠も文字も黒なので、太さで見分ける
+      testWidgets('${entry.key}テーマで「再生成」と「キャンセル」の枠が見分けられる', (tester) async {
         await _pumpDialog(tester, entry.value);
-
-        final button =
-            tester.widget<OutlinedButton>(find.byType(OutlinedButton));
-        final side = button.style!.side!.resolve(<WidgetState>{})!;
-        final dialogBg = _dialogBackground(tester);
-
-        expectOpaque(side.color, '${entry.key}テーマの「元の文を使う」枠線');
-
-        final ratio = contrastRatio(side.color, dialogBg);
+        final regenerate = _outlinedSide(tester, '再生成');
+        final cancel = _outlinedSide(tester, 'キャンセル');
         expect(
-          ratio,
-          greaterThanOrEqualTo(3.0),
-          reason: '${entry.key}テーマの「元の文を使う」枠線のコントラスト比が '
-              '${ratio.toStringAsFixed(2)}:1 で非テキスト基準 (3:1) 未達',
+          regenerate.color != cancel.color ||
+              regenerate.width >= cancel.width * 2,
+          isTrue,
+          reason: '再生成=$regenerate キャンセル=$cancel',
         );
       });
 
-      // この回帰テストの理由: 枠線だけをAA対応にしてラベル色を
-      // colorScheme.primary の既定に任せていたため、枠線 3:1 のテストは緑のまま
-      // ラベルが 2.87:1（ライト）／3.62:1（ダーク）でAA未達だった。
-      // 枠線と文字は別々に検証する。
-      testWidgets('${entry.key}テーマで「元の文を使う」の文字が 4.5:1 以上', (tester) async {
+      // 押せないとき（丁寧さを選び直して待つ間）に基本色の枠のままだと、押せそうに見える
+      testWidgets('${entry.key}テーマで押せない「再生成」の枠は基本色でない', (tester) async {
         await _pumpDialog(tester, entry.value);
-
-        final dialogBg = _dialogBackground(tester);
-        final text = resolvedTextColor(tester, find.text('元の文を使う'));
-
-        expectOpaque(dialogBg, '${entry.key}テーマのダイアログ背景');
-        expectOpaque(text, '${entry.key}テーマの「元の文を使う」文字');
-
-        final ratio = contrastRatio(text, dialogBg);
-        expect(
-          ratio,
-          greaterThanOrEqualTo(4.5),
-          reason: '${entry.key}テーマの「元の文を使う」の文字のコントラスト比が '
-              '${ratio.toStringAsFixed(2)}:1 で WCAG 2.1 AA (4.5:1) 未達',
+        final enabled = _outlinedSide(tester, '再生成');
+        final button = tester.widget<OutlinedButton>(
+          find.widgetWithText(OutlinedButton, '再生成'),
         );
+        final disabled =
+            button.style!.side!.resolve(<WidgetState>{WidgetState.disabled})!;
+        expect(disabled.color, isNot(enabled.color));
+      });
+
+      // テーマの既定の灰色の枠が、色で塗ったボタンにも付いていた（iPad、2026-10-18）
+      testWidgets('${entry.key}テーマで「採用」の枠線は塗りと同じ色', (tester) async {
+        await _pumpDialog(tester, entry.value);
+        final finder = find.widgetWithText(ElevatedButton, '採用');
+        final button = tester.widget<ElevatedButton>(finder);
+        final side = (button.style?.side ??
+                Theme.of(tester.element(finder))
+                    .elevatedButtonTheme
+                    .style
+                    ?.side)!
+            .resolve(<WidgetState>{})!;
+        final background = tester
+            .widget<Material>(
+              find
+                  .descendant(of: finder, matching: find.byType(Material))
+                  .first,
+            )
+            .color!;
+        expect(side.color, background);
       });
 
       // 丁寧さの3択（選択中の「丁寧」だけ色味を付けている）
       for (final label in [
         '採用',
-        '再生成',
         for (final level in PolitenessLevel.values) level.displayName,
       ]) {
         testWidgets('${entry.key}テーマで「$label」ボタンの文字が 4.5:1 以上', (tester) async {

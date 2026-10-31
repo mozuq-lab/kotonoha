@@ -12,8 +12,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:kotonoha_app/core/utils/validators.dart';
 import '../models/tts_speed.dart';
 import '../models/tts_state.dart';
+import '../models/tts_voice.dart';
 
 /// TTSサービス
 /// OS標準のText-to-Speech（TTS）エンジンを使用して
@@ -79,6 +81,10 @@ class TTSService {
   /// デフォルト値: TTSSpeed.normal（1.0倍速）
   /// 変更方法: setSpeedメソッドを使用
   TTSSpeed currentSpeed = TTSSpeed.normal;
+
+  /// 選んだ声の ID（null は日本語の標準の声）
+  /// 変更方法: setVoiceメソッドを使用
+  String? currentVoiceId;
 
   /// エラーメッセージ
   /// 設定タイミング: エラー発生時のみ
@@ -147,11 +153,16 @@ class TTSService {
         }
       }
 
+      // 速度設定: 現在保持している速度（デフォルトはnormal=1.0倍速）を設定。
+      // 言語より先に設定する。Android の flutter_tts は、エンジンの準備前に
+      // 届いた呼び出しを準備後に流し、その直後に言語を端末の既定へ戻す。
+      // この呼び出しが返れば準備は済んでいる
+      await tts.setSpeechRate(_pluginRate(currentSpeed));
+
       // 言語設定: 日本語（ja-JP）を設定
       await tts.setLanguage('ja-JP');
-
-      // 速度設定: 現在保持している速度（デフォルトはnormal=1.0倍速）を設定
-      await tts.setSpeechRate(_pluginRate(currentSpeed));
+      // 言語の設定は声を標準に戻す。初期化をやり直しても選んだ声を保つ
+      if (currentVoiceId != null) await _applyVoice();
 
       // 完了コールバック登録: 読み上げ完了時に状態をidleに戻す
       tts.setCompletionHandler(() {
@@ -222,8 +233,8 @@ class TTSService {
   /// 読み上げ開始まで1秒以内を目標
   /// [text] 読み上げるテキスト（空文字列の場合は何もしない）
   Future<void> speak(String text) async {
-    // 入力検証: 空文字列チェック（: 空文字列の読み上げ試行）
-    if (text.isEmpty) return;
+    // 入力検証: 空文字と、空白・改行だけの文は読み上げない
+    if (!Validators.hasSpeakableText(text)) return;
 
     // 自動初期化: 未初期化の場合は自動的に初期化を実行
     if (!_isInitialized) {
@@ -343,6 +354,48 @@ class TTSService {
 
     // 状態保存: 現在の速度を記録
     currentSpeed = speed;
+  }
+
+  /// 選べる声（日本語で、端末の中で読み上げるもの。品質の高い順）
+  /// Web は声が端末の中で読み上げるかを確かめられない（Chrome の「Google 日本語」は
+  /// 文を外へ送る）ので、選ばせない。一覧を返さないエンジンでも空にして続ける。
+  Future<List<TTSVoice>> voices() async {
+    if (kIsWeb) return const [];
+    try {
+      final raw = await tts.getVoices.timeout(speakTimeout);
+      if (raw is! List) return const [];
+      return raw.map(TTSVoice.fromPlugin).whereType<TTSVoice>().toList()
+        ..sort(TTSVoice.compare);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// 読み上げの声を設定する（null は日本語の標準の声）
+  /// 適用タイミング: 次回の読み上げから
+  Future<void> setVoice(String? voiceId) async {
+    currentVoiceId = voiceId;
+    await _applyVoice();
+  }
+
+  /// [currentVoiceId] の声をエンジンに渡す。その声が端末から消えていたり
+  /// エンジンが切り替えられなかったりしたら、日本語の標準の声に戻して
+  /// 読み上げを続ける（守る約束 ③）。選んだ ID は残し、声を入れ直せばまた使う。
+  Future<void> _applyVoice() async {
+    final voiceId = currentVoiceId;
+    if (voiceId != null) {
+      final voice = (await voices()).where((v) => v.id == voiceId).firstOrNull;
+      // 一覧を待つ間に別の声が選ばれていたら、後の選択に任せる
+      if (currentVoiceId != voiceId) return;
+      if (voice != null) {
+        try {
+          if (await tts.setVoice(voice.pluginArguments) == 1) return;
+        } catch (_) {
+          // 下で標準の声に戻す
+        }
+      }
+    }
+    await tts.setLanguage('ja-JP');
   }
 
   /// 読み上げ完了コールバック

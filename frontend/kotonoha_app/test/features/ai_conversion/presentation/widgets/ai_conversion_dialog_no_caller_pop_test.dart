@@ -81,7 +81,6 @@ void main() {
       expect(source, contains('AIConversionResultDialog.show'));
       expect(source, contains('onAdopt'));
       expect(source, contains('onRegenerate'));
-      expect(source, contains('onUseOriginal'));
 
       // 結果検証: このメソッドはダイアログを閉じる責務を持たない
       final collector = _PopCallCollector();

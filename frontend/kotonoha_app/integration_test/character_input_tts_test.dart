@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kotonoha_app/features/quick_response/domain/quick_response_constants.dart';
 
 import 'helpers/test_helpers.dart';
 
@@ -117,6 +118,11 @@ void main() {
 
         // 実際の処理実行: 読み上げボタンをタップ
         await tapAndExpectSpeech(tester, find.text('読み上げ'));
+
+        // 読み上げのタップから 300ms 以内のタップは連打として無視される（#273）。
+        // 読み上げは約 0.1 秒で始まるので、待たずに押すと「停止」が効かない
+        await Future<void>.delayed(const Duration(
+            milliseconds: QuickResponseConstants.debounceDurationMs + 100));
 
         // 実際の処理実行: 停止ボタンをタップ
         await tapButton(tester, '停止');

@@ -571,6 +571,145 @@ void main() {
 
         expect(tappedCharacter, equals(CharacterData.spaceKey));
       });
+
+      // 長音は記号タブにしか無く、「ラーメン」のような語のたびにタブを替えていた
+      for (final size in const [Size(1024, 1366), Size(390, 844)]) {
+        testWidgets('基本タブの「空白」の左隣に長音があり、押すと「ー」が入る（$size）', (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          String? tappedCharacter;
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: CharacterBoardWidget(
+                  onCharacterTap: (char) => tappedCharacter = char,
+                ),
+              ),
+            ),
+          );
+
+          final longVowel = find.text('ー');
+          expect(longVowel, findsOneWidget, reason: '基本タブに長音が無い');
+          final space = tester.getRect(find.text('空白'));
+          final vowel = tester.getRect(longVowel);
+          expect(vowel.center.dy, closeTo(space.center.dy, 1),
+              reason: '長音が空白と同じ行に無い');
+          expect(vowel.right, lessThan(space.left), reason: '長音が空白の左に無い');
+          // 間に別のキーが挟まっていない
+          final between = find.byWidgetPredicate((w) =>
+              w is Text &&
+              w.data != null &&
+              w.data!.isNotEmpty &&
+              () {
+                final r = tester.getRect(find.byWidget(w));
+                return (r.center.dy - space.center.dy).abs() < 1 &&
+                    r.left > vowel.right &&
+                    r.right < space.left;
+              }());
+          expect(between, findsNothing, reason: '長音と空白の間に別のキーがある');
+
+          await tester.tap(longVowel);
+          await tester.pump();
+          expect(tappedCharacter, 'ー');
+        });
+      }
+    });
+  });
+  // iPad では 1 列に 2 行分（あいうえお｜かきくけこ）が並び、どこが行の区切りか
+  // わかりにくかった。iPhone は 1 列＝1 行だが、どの列が何行目かを目で追いにくかった
+  // （人の依頼、2026-10-18）
+  group('行のまとまり', () {
+    Future<void> pump(WidgetTester tester, Size size,
+        {ThemeData? theme}) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        theme: theme ?? lightTheme,
+        home: Scaffold(body: CharacterBoardWidget(onCharacterTap: (_) {})),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    Rect key(WidgetTester tester, String c) =>
+        tester.getRect(find.byKey(ValueKey('character_button_$c')));
+
+    Color face(WidgetTester tester, String c) => tester
+        .widget<Material>(find
+            .descendant(
+              of: find.byKey(ValueKey('character_button_$c')),
+              matching: find.byType(Material),
+            )
+            .first)
+        .color!;
+
+    testWidgets('iPad: 5 文字ごとに隙間があり、キーの幅はすべて同じ', (tester) async {
+      await pump(tester, const Size(1024, 800));
+      final row = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ']
+          .map((c) => key(tester, c))
+          .toList();
+      expect(row.map((r) => r.top).toSet(), hasLength(1),
+          reason: '10 列で並んでいない');
+      for (final r in row) {
+        expect(r.width, closeTo(row.first.width, 0.01),
+            reason: '隙間に接するキーだけ細くなっている');
+      }
+      final usual = row[1].left - row[0].right;
+      final gap = row[5].left - row[4].right;
+      // 区切りは普段の間に 16 を足した幅。広すぎるとキーが細くなるので、
+      // 24 から 16 に狭めてキーへ等しく配った（人の依頼、2026-10-20）
+      expect(gap, closeTo(usual + 16, 0.01),
+          reason: '「お」と「か」の間の行の区切りの隙間（$gap）');
+      expect(row[9].right, lessThanOrEqualTo(1024), reason: '右端がはみ出す');
+    });
+
+    testWidgets('右から並べるとき（RTL）も、隙間が真ん中にあり、はみ出さない', (tester) async {
+      tester.view.physicalSize = const Size(1024, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        theme: lightTheme,
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(body: CharacterBoardWidget(onCharacterTap: (_) {})),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      // 右から あ い う え お ｜ か き く け こ
+      final usual = key(tester, 'あ').left - key(tester, 'い').right;
+      final gap = key(tester, 'お').left - key(tester, 'か').right;
+      expect(gap, greaterThanOrEqualTo(usual * 3), reason: '隙間が真ん中に無い（$gap）');
+      expect(key(tester, 'こ').left, greaterThanOrEqualTo(0), reason: '左端がはみ出す');
+      expect(key(tester, 'あ').right, lessThanOrEqualTo(1024),
+          reason: '右端がはみ出す');
+    });
+
+    testWidgets('iPad: 行ごとの色は付けない', (tester) async {
+      await pump(tester, const Size(1024, 800));
+      expect(face(tester, 'あ'), face(tester, 'か'));
+    });
+
+    testWidgets('iPhone: 行ごとに淡い色と白を交互にする', (tester) async {
+      await pump(tester, const Size(390, 844));
+      expect(key(tester, 'か').left, key(tester, 'あ').left,
+          reason: '5 列で並んでいない');
+      expect(face(tester, 'あ'), isNot(face(tester, 'か')));
+      expect(face(tester, 'さ'), face(tester, 'あ'));
+      expect(face(tester, 'ち'), face(tester, 'か'));
+      // 文字が読めることは変えない（淡い色でも本文の色で 4.5:1 以上）
+      final shaded = face(tester, 'あ');
+      final text = lightTheme.colorScheme.onSurface;
+      double lum(Color c) => c.computeLuminance();
+      final ratio =
+          (lum(text) > lum(shaded) ? lum(text) + 0.05 : lum(shaded) + 0.05) /
+              (lum(text) > lum(shaded) ? lum(shaded) + 0.05 : lum(text) + 0.05);
+      expect(ratio, greaterThanOrEqualTo(4.5));
+    });
+
+    testWidgets('iPhone の高コントラスト: 行ごとの色は付けない', (tester) async {
+      await pump(tester, const Size(390, 844), theme: highContrastTheme);
+      expect(face(tester, 'あ'), face(tester, 'か'));
     });
   });
 }

@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kotonoha_app/core/constants/app_sizes.dart';
+import 'package:kotonoha_app/core/utils/spoken_label.dart';
 import 'package:kotonoha_app/features/help/providers/tutorial_provider.dart';
 import 'package:kotonoha_app/features/settings/presentation/widgets/tts_speed_settings_widget.dart';
 import 'package:kotonoha_app/features/tts/domain/models/tts_speed.dart';
@@ -88,7 +89,8 @@ class HelpScreen extends ConsumerWidget {
                 SizedBox(height: 16),
                 _HelpItem(
                   title: '履歴とお気に入り',
-                  description: '読み上げた文は履歴に保存されます。'
+                  description: '読み上げた文は履歴に保存されます'
+                      '（履歴から読み直した文は、新しくは増えません）。'
                       'よく使う文はお気に入りに登録し、色や並び順を変えられます。'
                       '先頭の8件はホーム画面にも表示されます。',
                 ),
@@ -138,6 +140,12 @@ class HelpScreen extends ConsumerWidget {
                   description: '読み上げの速さを'
                       '${TTSSpeed.values.map((s) => '「${TTSSpeedSettingsWidget.label(s)}」').join()}'
                       'から選べます。',
+                ),
+                const SizedBox(height: 16),
+                const _HelpItem(
+                  title: '読み上げの声',
+                  description: '端末に入っている日本語の声から選べます。'
+                      '声は端末の設定で追加できます。',
                 ),
               ],
             ),
@@ -205,6 +213,7 @@ class _HelpItem extends StatelessWidget {
       children: [
         Text(
           title,
+          semanticsLabel: spokenLabel(title),
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -212,6 +221,7 @@ class _HelpItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           description,
+          semanticsLabel: spokenLabel(description),
           style: theme.textTheme.bodyMedium,
         ),
       ],
