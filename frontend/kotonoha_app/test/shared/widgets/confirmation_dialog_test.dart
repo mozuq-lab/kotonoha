@@ -69,6 +69,14 @@ class _NotYetAccepted extends SettingsNotifier {
   Future<AppSettings> build() async => const AppSettings();
 }
 
+/// 同意の保存を記録する。実際の保存はしない
+class _RecordsConsent extends _NotYetAccepted {
+  final List<bool> saved = [];
+
+  @override
+  Future<void> setAIPrivacyConsent(bool accepted) async => saved.add(accepted);
+}
+
 class _Phrases extends PresetPhraseNotifier {
   _Phrases(this._state);
   final PresetPhraseState _state;
@@ -438,6 +446,36 @@ void main() {
     expect(find.widgetWithText(ElevatedButton, 'AI変換'), findsOneWidget);
   });
 
+  // 守る約束 ②: 同意しない人の文を外へ送らない。CI は結合テストを回さないので、本番の入口からここで見る
+  testWidgets('AI変換の同意画面で「同意しない」を選ぶと、同意は保存されない', (tester) async {
+    tester.view.physicalSize = const Size(375, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final settings = _RecordsConsent();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inputBufferProvider.overrideWith(_FilledBuffer.new),
+          networkProvider.overrideWith(_Online.new),
+          settingsNotifierProvider.overrideWith(() => settings),
+          ttsProvider.overrideWith(_StubTts.new),
+        ],
+        child: const MaterialApp(
+          home: HomeScreen(enableAIConversion: true),
+        ),
+      ),
+    );
+    await pumpFrames(tester);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'AI変換'));
+    await pumpFrames(tester);
+
+    await tester.tap(find.text('同意しない'));
+    await pumpFrames(tester);
+
+    expect(find.text('AI変換の利用確認'), findsNothing);
+    expect(settings.saved, isEmpty);
+  });
+
   // App Store 審査ガイドライン 5.1.2(i): 外部の AI へ送る前に、何を・誰に送るかを示して許可を得る。
   // 個人情報保護法 28 条（施行規則 17 条 2 項）: 外国の名称・その国の制度・提供先の措置を同意の前に示す
   testWidgets('AI変換の同意は、送る中身・送り先・米国の制度・提供先の措置を示す', (tester) async {
@@ -460,6 +498,9 @@ void main() {
     await pumpFrames(tester);
     await tester.tap(find.widgetWithText(ElevatedButton, 'AI変換'));
     await pumpFrames(tester);
+    // 制度と措置の説明は、同じ画面の「詳しく見る」で読む（2026-10-31 の人の決定）
+    await tester.tap(find.text('詳しく見る'));
+    await pumpFrames(tester);
 
     for (final phrase in [
       '入力した文章',
@@ -468,6 +509,7 @@ void main() {
       // 外国の名称と提供先。処理する国は特定できないので、その旨も
       '米国の Cloudflare, Inc.',
       '特定できません',
+      'サービスの改善',
       // 米国の個人情報保護の制度
       '包括的な個人情報保護法が無く',
       // 提供先の措置と、講じられていない措置

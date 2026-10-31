@@ -125,6 +125,9 @@ class ConfirmationDialog extends StatelessWidget {
   /// 本文。何が起きるかを書く
   final String message;
 
+  /// 本文の下に足す補足（開いて読む説明など）。無ければ本文だけ
+  final Widget? details;
+
   /// 取り消し側のラベル。**必ず先（横並びなら左、縦積みなら上）に置かれる**
   final String cancelLabel;
 
@@ -145,6 +148,7 @@ class ConfirmationDialog extends StatelessWidget {
     super.key,
     required this.title,
     required this.message,
+    this.details,
     required this.cancelLabel,
     required this.confirmLabel,
     required this.onCancel,
@@ -165,7 +169,14 @@ class ConfirmationDialog extends StatelessWidget {
 
     return ConfirmationDialogLayout.build(
       title: Text(title, semanticsLabel: spokenLabel(title)),
-      content: Text(message, semanticsLabel: spokenLabel(message)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(message, semanticsLabel: spokenLabel(message)),
+          if (details != null) details!,
+        ],
+      ),
       actions: [
         TextButton(
           onPressed: onCancel,
