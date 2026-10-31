@@ -9,7 +9,7 @@
 - [ ] L-57 Android 12 以上と iOS の実機で、OS のバックアップから履歴・定型文・お気に入り・設定が復元されることを確認 — NFR-106（2026-09-12 に #99 の除外を撤回）
 - [ ] L-75 `docs/store-assets-guide.md` と `frontend/kotonoha_app/integration_test/device_test/README.md` は正本ではなく実行可能な手順として現在地に残す。ADR-007 条件 4（ストア提出）の充足で倉庫へ — Phase 5 A1
 - [ ] L-84 Google Play の開発者登録（Apple Developer Program は 2026-10-17 に登録済み）。Android は iOS の本公開の後（2026-10-17 の人の決定） — ADR-007 条件 4（人が動かす）
-- [ ] L-87 dependabot の PR の滞留 — .github/dependabot.yml。決定（2026-09-27）: actions は作り直させて CI が緑のものからマージ、backend は閉じた（`sqlalchemy` は ignore）、frontend（#60・#62〜#65）は画面や読み上げに影響しうるので本公開の後にまとめて見る
+- [ ] L-87 dependabot の PR の滞留 — .github/dependabot.yml。決定（2026-10-31）: pip は対象から外し、本番 Worker の npm を足す。frontend の #60・#62〜#65、openai・anthropic の #262・#264 は閉じた。frontend の更新は画面や読み上げに影響しうるので、新しい PR で 1 本ずつ見る
 - [ ] L-145 Android のクローズドテスト（12 人以上 × 14 日連続。代行サービスで集める）と、その後の production access の申請が未実施。申請の回答は実際に起きたことで書く — ADR-007 条件 4。人が動かす。L-84 の後、Android 公開の直前
 - [ ] L-146 Play Console のプライバシーポリシー URL は fastlane の metadata に無く、コンソールで設定する（iOS は `privacy_url.txt`）。同じ URL にする — ADR-007 条件 4。人が動かす。L-84 の後
 
