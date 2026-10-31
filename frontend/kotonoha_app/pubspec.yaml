@@ -36,7 +36,7 @@ dependencies:
   volume_controller: ^3.4.1
 
   # ロギング
-  logger: ^2.5.0
+  logger: ^2.8.0
 
   # ネットワーク状態監視
   connectivity_plus: ^7.0.0
