@@ -1,15 +1,24 @@
 const errors = {
   PAYLOAD_TOO_LARGE: [413, '送る内容が大きすぎます。'],
   RATE_LIMIT_EXCEEDED: [429, 'リクエスト数が上限に達しました。しばらく待ってから再試行してください。'],
+  AI_PROVIDER_ERROR: [503, 'AI変換サービスが一時的に利用できません。しばらく待ってから再度お試しください。'],
   AI_API_TIMEOUT: [504, 'AI変換APIがタイムアウトしました。しばらく待ってから再度お試しください。'],
   AI_RATE_LIMIT: [429, 'いまAI変換を使えません。混み合っているか、利用の上限に達しています。時間をおいて試すか、元の文をお使いください。'],
   AI_API_ERROR: [500, 'AI変換APIからのレスポンスに失敗しました。しばらく待ってから再度お試しください。'],
   INTERNAL_ERROR: [500, '予期しないエラーが発生しました。'],
-  CONFIG_INVALID: [500, '設定が不正なため起動できません。'],
 } as const;
 
 export class ApiError extends Error {
-  constructor(readonly code: keyof typeof errors, readonly retryable = false) { super(code); }
+  constructor(readonly code: keyof typeof errors, readonly retryable = false,
+    readonly detail?: string) { super(code); }
+}
+
+// 障害の原因を wrangler tail で追うための最小限。入力・IP・例外の文言は載せない。
+export function logFailure(error: unknown): void {
+  const known = error instanceof ApiError;
+  console.error(JSON.stringify({ event: 'request_failed',
+    code: known ? error.code : 'INTERNAL_ERROR',
+    cause: known ? error.detail : error instanceof Error ? error.name : typeof error }));
 }
 
 export function errorResponse(error: unknown): Response {

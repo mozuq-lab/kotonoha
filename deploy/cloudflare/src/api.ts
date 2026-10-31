@@ -1,6 +1,6 @@
 import * as ipaddr from 'ipaddr.js';
 import { complete } from './ai';
-import { ApiError, errorResponse, validationResponse, type ValidationIssue } from './errors';
+import { ApiError, errorResponse, logFailure, validationResponse, type ValidationIssue } from './errors';
 import type { ConversionInput, PolitenessLevel } from './prompts';
 
 export interface Env {
@@ -21,7 +21,7 @@ function configuredKeys(env: Env): string[] {
       !/^[\x20-\x7e]+$/.test(env.WORKERS_AI_API_TOKEN ?? '') ||
       !/^[a-fA-F0-9]{32}$/.test(env.WORKERS_AI_ACCOUNT_ID ?? '') ||
       !/^[\x20-\x7e]+$/.test(env.WORKERS_AI_GATEWAY_ID ?? '') || !env.RATE_LIMITER) {
-    throw new ApiError('CONFIG_INVALID');
+    throw new ApiError('AI_PROVIDER_ERROR', false, 'invalid_config');
   }
   return keys;
 }
@@ -153,7 +153,7 @@ export default {
           'Access-Control-Allow-Headers': 'Content-Type, X-API-Key', 'Access-Control-Max-Age': '600' } });
     } else {
       try { response = await route(request, env); }
-      catch (error) { response = errorResponse(error); }
+      catch (error) { logFailure(error); response = errorResponse(error); }
     }
     if (origin) {
       response.headers.set('Access-Control-Allow-Credentials', 'true');

@@ -17,6 +17,7 @@ const bindings = {
   WORKERS_AI_GATEWAY_ID: 'kotonoha-test',
 };
 let worker;
+let workerOptions;
 const pending = [];
 let source = 0;
 let logs = '';
@@ -25,9 +26,9 @@ before(async () => {
   const config = unstable_readConfig({ config: 'wrangler.jsonc' }, { hideWarnings: true });
   const bundle = await build({ entryPoints: ['src/index.ts'], bundle: true, write: false,
     format: 'esm', external: ['cloudflare:workers'], target: 'es2022' });
-  worker = new Miniflare(convertV4MiniflareOptions({
+  workerOptions = overrides => convertV4MiniflareOptions({
     modules: true, script: bundle.outputFiles[0].text, compatibilityDate: config.compatibility_date,
-    bindings, log: new Log(LogLevel.ERROR),
+    bindings: { ...bindings, ...overrides }, log: new Log(LogLevel.ERROR),
     outboundService: { node(request, response) {
       assert.equal(request.url, upstreamPath);
       assert.equal(request.method, 'POST');
@@ -54,7 +55,8 @@ before(async () => {
     } },
     ratelimits: Object.fromEntries(config.ratelimits.map(({ name, ...value }) => [name, value])),
     handleStructuredLogs(event) { logs += JSON.stringify(event); },
-  }));
+  });
+  worker = new Miniflare(workerOptions());
   await worker.ready;
 });
 after(async () => { await worker?.dispose(); });
@@ -81,6 +83,12 @@ function post(body = input, { path = convert, ip, headers = {}, key = 'contract-
       'CF-Connecting-IP': sender, ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   });
+}
+
+// 識別子は UTC の分で切り替わる。連続の途中で分をまたぐと 429 にならないので、境目を避けて始める。
+async function awayFromMinuteBoundary() {
+  const left = 60000 - Date.now() % 60000;
+  if (left < 5000) await new Promise(resolve => setTimeout(resolve, left + 50));
 }
 
 test('health is a real unauthenticated HTTP response', async () => {
@@ -217,6 +225,7 @@ for (const [input_text, expected] of [['はい', 'はい。'], ['いいえ！', 
 }
 
 test('real rate binding limits a source, ignores forged XFF, and returns the existing 429 shape', async () => {
+  await awayFromMinuteBoundary();
   for (let i = 0; i < 12; i++) {
     assert.equal((await post({ ...input, input_text: 'いいえ' }, {
       ip: '203.0.113.5', headers: { 'X-Forwarded-For': `10.0.0.${i}` },
@@ -233,6 +242,7 @@ test('real rate binding limits a source, ignores forged XFF, and returns the exi
     { ip: '203.0.113.5', path: regenerate })).status, 200);
 });
 test('IPv6 addresses within /64 share the real rate limit, while adjacent /64 is independent', async () => {
+  await awayFromMinuteBoundary();
   for (let i = 1; i <= 12; i++) {
     assert.equal((await post({ ...input, input_text: 'はい' }, { ip: `2001:db8:c0de:1::${i}` })).status, 200);
   }
@@ -240,6 +250,7 @@ test('IPv6 addresses within /64 share the real rate limit, while adjacent /64 is
   assert.equal((await post({ ...input, input_text: 'はい' }, { ip: '2001:db8:c0de:2::1' })).status, 200);
 });
 test('IPv4-mapped IPv6 uses the IPv4 bucket', async () => {
+  await awayFromMinuteBoundary();
   for (let i = 0; i < 12; i++) {
     assert.equal((await post({ ...input, input_text: 'はい' }, { ip: '192.0.2.80' })).status, 200);
   }
@@ -307,6 +318,37 @@ test('CORS preflight accepts the app and unknown origins receive no permission',
   const denied = await worker.dispatchFetch('http://localhost/api/v1/health', {
     headers: { Origin: 'https://malicious.example' } });
   assert.equal(denied.headers.get('access-control-allow-origin'), null);
+});
+test('a missing secret tells the app the service is unavailable, not that it cannot start', async () => {
+  const broken = new Miniflare(workerOptions({ WORKERS_AI_GATEWAY_ID: '' }));
+  try {
+    for (const [path, init] of [[convert, { method: 'POST', body: JSON.stringify(input) }],
+      ['/api/v1/health', {}]]) {
+      const response = await broken.dispatchFetch(`http://localhost${path}`, init);
+      assert.equal(response.status, 503);
+      const { error } = await response.json();
+      assert.equal(error.code, 'AI_PROVIDER_ERROR');
+      assert.equal(error.message, 'AI変換サービスが一時的に利用できません。しばらく待ってから再度お試しください。');
+    }
+  } finally { await broken.dispose(); }
+});
+test('a failure leaves its code and cause in the runtime log, without the sentence or the source', async () => {
+  provider({ error: 'CANARY-PROVIDER-SECRET' }, 401);
+  const response = await post({ ...input, input_text: '失敗の文-CANARY-TEXT' }, { ip: '198.51.100.77' });
+  assert.equal(response.status, 500);
+  await response.text();
+  const failed = async () => {
+    for (let i = 0; i < 40 && !logs.includes('request_failed'); i++) {
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    return logs;
+  };
+  const text = await failed();
+  assert.match(text, /request_failed/);
+  assert.match(text, /AI_API_ERROR/);
+  assert.match(text, /http_401/);
+  assert.ok(!text.includes('CANARY-'));
+  assert.ok(!text.includes('198.51.100.77'));
 });
 test('production docs stay private and request/provider canaries never reach runtime logs', async () => {
   for (const path of ['/docs', '/openapi.json']) {

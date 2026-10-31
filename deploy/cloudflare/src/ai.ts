@@ -26,21 +26,24 @@ export async function complete(input: ConversionInput, env: Env): Promise<string
       if (!response.ok) {
         void response.body?.cancel();
         throw new ApiError(response.status === 429 ? 'AI_RATE_LIMIT' : 'AI_API_ERROR',
-          response.status === 429);
+          response.status === 429, `http_${response.status}`);
       }
       let result: Completion;
       try { result = await response.json<Completion>(); }
       catch (error) {
-        if (error instanceof SyntaxError) throw new ApiError('AI_API_ERROR');
+        if (error instanceof SyntaxError) throw new ApiError('AI_API_ERROR', false, 'SyntaxError');
         throw error; // 本文の受信中の切断も、外側の通信失敗の再試行へ渡す。
       }
       const choice = result?.choices?.[0];
       const text = typeof choice?.message?.content === 'string' ? choice.message.content.trim() : '';
-      if (!text || choice?.finish_reason === 'length') throw new ApiError('AI_API_ERROR');
+      if (!text || choice?.finish_reason === 'length') {
+        throw new ApiError('AI_API_ERROR', false, 'unusable_completion');
+      }
       return text;
     } catch (error) {
       failure = signal.aborted ? new ApiError('AI_API_TIMEOUT')
-        : error instanceof ApiError ? error : new ApiError('AI_API_ERROR', true);
+        : error instanceof ApiError ? error
+          : new ApiError('AI_API_ERROR', true, error instanceof Error ? error.name : typeof error);
     }
     if (!failure.retryable || attempt === 1) throw failure;
     await new Promise<void>(resolve => setTimeout(resolve, 500));
