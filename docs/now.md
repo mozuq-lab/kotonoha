@@ -1,6 +1,6 @@
 # 現在地（上書きする 1 枚。日誌にしない。古くなった行は消す）
 
-更新: 2026-10-29
+更新: 2026-10-31
 
 ## 目的
 アプリを「形」にして、iOS から公式ストアで届ける（ADR-007）。Android は iOS の本公開の後に続ける（2026-10-17 の人の決定）。
@@ -23,6 +23,8 @@
 1. Google Play の開発者登録（L-84。人）。ここから Android の行（下の「iOS の後」）が動き出す
 
 ## 人待ち
+- #315 のマージ後、別 PR で `deploy/cloudflare` を `backend/worker`、今の `backend` の中身を `backend/fastapi` へ移す（2026-10-31 の人の決定）
+- 人の依頼で、AI API を Containers から TypeScript Worker へ移す差分を [#315](https://github.com/mozuq-lab/kotonoha/pull/315) に準備した（コスト削減、標準レート制限＋AI Gateway の A 案を選択）。iOS 検証は手元の Xcode のライセンス同意待ち。公開文の承認と本番切り替え、旧コンテナ削除による費用停止の確認は未実施。現状の本番はまだ Containers
 - 1.1.0（#308 の声の選択）を出す: #312 のマージ、`scripts/ios-testflight.sh` で送る、TestFlight で声の選択と AI 変換の往復を見る、App Store Connect で 1.1.0 を作って「このバージョンの新機能」を書き、審査へ出す（人）
 - 本公開したので、サポート連絡先とストアレビューの月 1 の巡回が始まっている（ADR-007 条件 4。人）
 - GitHub の Variables の `API_BASE_URL` は、まだ旧 `workers.dev` を指している（CI と `release.yml` の版が使う。TestFlight の版は使わない）。新しいドメインに変えるかは人が決める
