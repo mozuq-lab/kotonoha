@@ -19,7 +19,7 @@
 - binding は残り秒数を返さないので、429 の Retry-After と既存 X-RateLimit-* は最大 60 秒を案内する。成功時は付けない。
 - Workers AI の同じモデルへ同じ REST API から送る。Gateway 必須、ログ収集・キャッシュを要求ごとに無効化。出力は 256 トークン。
 - 既存の Container DO はこの変更で破壊せず、互換 export を残す。旧コンテナの削除と費用停止の確認は、API の切り替え確認後に人が行う。
-- `backend/fastapi/` の旧 FastAPI は開発・比較用に残る。そちらの MemoryStorage・単一 worker ガードは従来どおりだが、本番の制限方式ではない。
+- `backend/fastapi/` の旧 FastAPI はバックアップとして残る。そちらの MemoryStorage・単一 worker ガードは従来どおりだが、本番の制限方式ではない。
 
 ## 以前の却下を変えた理由
 
