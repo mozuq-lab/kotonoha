@@ -17,21 +17,21 @@ TTS読み上げ）はすべてオフラインで動作し、AI変換のみオン
 
 ## セットアップ
 
-本番 Worker は `deploy/cloudflare` で `npm ci`。以下の backend 手順は従来の FastAPI 開発用。
+本番 Worker は `backend/worker` で `npm ci`。以下の backend 手順は従来の FastAPI 開発用。
 
 ```bash
 git clone https://github.com/mozuq-lab/kotonoha.git
 cd kotonoha
-cp backend/.env.example backend/.env   # backend のアプリ設定。キーの説明は .env.example に書いてある
+cp backend/fastapi/.env.example backend/fastapi/.env   # backend のアプリ設定。キーの説明は .env.example に書いてある
 ```
 
 backend:
 
 ```bash
-cd backend
+cd backend/fastapi
 uv venv --python 3.12 --seed .venv          # --seed が無いと pip が入らない
 .venv/bin/pip install -r requirements-dev.txt
-(cd .. && backend/.venv/bin/pre-commit install)   # git フックの登録
+(cd ../.. && backend/fastapi/.venv/bin/pre-commit install)   # git フックの登録
 ```
 
 frontend:
@@ -47,7 +47,7 @@ fvm flutter pub get
 backend（Application Factory なので `--factory` が必須 — ADR-004）:
 
 ```bash
-(cd backend && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)
+(cd backend/fastapi && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)
 ```
 
 frontend:
@@ -62,13 +62,13 @@ AI変換ボタンは標準の起動・ビルドで表示されます（初回リ
 
 ローカルの docker-compose 構成をそのまま使うなら、これだけで動きます（アプリ側のデフォルトが
 `API_BASE_URL=http://localhost:8000`、`AI_API_KEY` は空文字）。接続先を変える場合や
-`backend/.env` の `API_KEYS` でAPIキー認証を有効にした場合は、値を `--dart-define` で渡します
+`backend/fastapi/.env` の `API_KEYS` でAPIキー認証を有効にした場合は、値を `--dart-define` で渡します
 （Flutter は `.env` を読みません）:
 
 ```bash
 fvm flutter run -d chrome \
   --dart-define=API_BASE_URL=http://localhost:8000 \
-  --dart-define=AI_API_KEY=<backend/.env の API_KEYS に含まれる値のいずれか>
+  --dart-define=AI_API_KEY=<backend/fastapi/.env の API_KEYS に含まれる値のいずれか>
 ```
 
 **空の `--dart-define` を渡さないこと。** `String.fromEnvironment` は「値が定義されたか」で判定するため、
@@ -88,7 +88,7 @@ Swagger UI は http://localhost:8000/docs （development / test でのみ公開 
 backend:
 
 ```bash
-cd backend
+cd backend/fastapi
 PATH="$PWD/.venv/bin:$PATH" pytest         # pytest-randomly が順序をシャッフルする
 PATH="$PWD/.venv/bin:$PATH" make check     # ruff + black + mypy --strict + lint-imports + gates.sh
 PATH="$PWD/.venv/bin:$PATH" make mutation  # kill rate は docs/ledger.md の計測へ。CI には入れない（ADR-008）
@@ -111,8 +111,8 @@ scripts/inventory.sh                                                    # 監査
 
 ## デプロイ（Cloudflare Workers）
 
-本番 API は `deploy/cloudflare/src/` の TypeScript Worker。DB・コンテナは使わない。
-`backend/` の FastAPI は従来のローカル開発・比較用として残している。
+本番 API は `backend/worker/src/` の TypeScript Worker。DB・コンテナは使わない。
+`backend/fastapi/` の FastAPI は従来のローカル開発・比較用として残している。
 URL・`X-API-Key`・変換と再生成の入出力は維持するので、公開済みアプリの更新は要らない。
 
 前提は Node.js 24、既存の Workers Paid 契約、AI Gateway（全体の回数制限・支出制限、ログ収集オフ）、
@@ -120,7 +120,7 @@ Workers AI の API トークン。Docker は不要。Paid の基本料と AI 推
 Free への契約変更はこの移行に含めない。
 
 ```bash
-cd deploy/cloudflare
+cd backend/worker
 npm ci
 npm run typecheck
 npm test
@@ -170,7 +170,7 @@ Worker の observability はオフ。AI Gateway へは `cf-aig-collect-log: fals
 
 ```bash
 openssl rand -hex 32    # 公開済みの版が無い環境でだけ。API_KEYS と ios-release.json の AI_API_KEY に使う
-cd deploy/cloudflare
+cd backend/worker
 npm ci
 npx wrangler login
 # 秘密は wrangler.jsonc に書かない。1 つずつ入力する
@@ -193,7 +193,7 @@ Worker を作り直すと外れる。Worker の Settings → Domains & Routes �
 `CF_`・`CLOUDFLARE_` で始まる環境変数をシェルから外し、wrangler 自身の認証を確認してから進める。
 
 ```bash
-cd deploy/cloudflare
+cd backend/worker
 npm ci
 npx wrangler whoami
 npx wrangler versions list                 # 戻す版の ID を控える
@@ -217,7 +217,7 @@ curl -fsS https://kotonoha.mozuq-lab.com/api/v1/health
 
 ### 旧構成（Containers）でデプロイする
 
-Workers へ移す前の構成は `493e85b705e` にある。Workers 版を戻すときや、旧構成と比べるときに使う。
+Workers へ移す前の構成は `493e85b705e` にある（当時のパスは `deploy/cloudflare` と `backend`）。Workers 版を戻すときや、旧構成と比べるときに使う。
 Docker と Workers Paid が要り、コンテナの待機費用がかかる（`sleepAfter` が 24 時間で、常時起動に近い）。
 
 ```bash
@@ -247,7 +247,7 @@ curl -fsS https://kotonoha.mozuq-lab.com/api/v1/health
 `API_KEYS` は Worker と一緒に消え、読み出せない。消す前に `ios-release.json` の `AI_API_KEY` の控えを確かめる。
 
 ```bash
-cd deploy/cloudflare
+cd backend/worker
 env | grep -E '^(CF_|CLOUDFLARE_)'          # 何も出ないことを確かめる。出たら unset する
 npx wrangler whoami                          # 自分のアカウントに OAuth でログインしていること
 npx wrangler delete                          # Worker（kotonoha-backend）・secret・Durable Object を消す
@@ -309,10 +309,10 @@ scripts/ios-testflight.sh
 
 ## ディレクトリ
 
-- `backend/` — 従来の FastAPI（ローカル開発・比較用。DB 無し）
+- `backend/worker/` — 本番 API（TypeScript Worker、Containers は使わない）
+- `backend/fastapi/` — 従来の FastAPI（ローカル開発・比較用。DB 無し）
 - `frontend/kotonoha_app/` — Flutter アプリ
 - `docker/` — backend の開発用コンテナ設定
-- `deploy/cloudflare/` — 本番 API（TypeScript Worker、Containers は使わない）
 - `scripts/` — ビルド・棚卸し・ADR索引貼付などの補助スクリプト
 - `docs/` — 決定・仕様・計画・倉庫
 - `.github/workflows/` — CI
@@ -322,7 +322,7 @@ scripts/ios-testflight.sh
 - 核: `AGENTS.md`
 - 決定: `docs/adr/`（索引は `AGENTS.md`）
 - 仕様: `docs/spec/kotonoha-requirements.md`
-- 本番 API の契約検証: `deploy/cloudflare/test/api.test.mjs`（旧 FastAPI の OpenAPI は `backend/tests/contract/openapi_baseline.json`）
+- 本番 API の契約検証: `backend/worker/test/api.test.mjs`（旧 FastAPI の OpenAPI は `backend/fastapi/tests/contract/openapi_baseline.json`）
 - 利用者向け: `docs/privacy-policy.md`・`docs/support.md`
 - 台帳: `docs/ledger.md`
 - 倉庫: `docs/archive/`（更新しない。現在の仕様として読まない）
@@ -342,7 +342,7 @@ scripts/ios-testflight.sh
 - **`pip install` が失敗する / pip が無い** → `uv venv --python 3.12 --seed .venv` の `--seed` を忘れると
   pip が入らない。venv を作り直す
 - **venv を作り直した後、pre-commit が動かない** → `.git/hooks/pre-commit` は作成時の venv の python を
-  指すため、`(cd .. && backend/.venv/bin/pre-commit install)` で入れ直す
+  指すため、`(cd ../.. && backend/fastapi/.venv/bin/pre-commit install)` で入れ直す
 
 ### frontend（Flutter）
 

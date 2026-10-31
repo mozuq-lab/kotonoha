@@ -8,13 +8,13 @@ coverage:
 
   status:
     project:
-      # NFR-501 is enforced in backend/pyproject.toml and flutter.yml.
+      # NFR-501 is enforced in backend/fastapi/pyproject.toml and flutter.yml.
       # Disable Codecov's automatically created default project status.
       default: false
 
       python:
         paths:
-          - "backend/app/**"
+          - "backend/fastapi/app/**"
         # NFR-502: all backend production code is the proposed critical scope.
         target: 90%
         threshold: 0%
@@ -51,7 +51,7 @@ flags:
 
   python:
     paths:
-      - backend/
+      - backend/fastapi/
     carryforward: true
     after_n_builds: 1
 
@@ -62,4 +62,4 @@ ignore:
   # Test files (don't count test coverage of tests)
   - "frontend/kotonoha_app/test/**"
   - "frontend/kotonoha_app/integration_test/**"
-  - "backend/tests/**"
+  - "backend/fastapi/tests/**"
