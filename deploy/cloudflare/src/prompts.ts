@@ -1,7 +1,12 @@
+/** 丁寧さの段階。アプリが送る値と同じ。 */
 export type PolitenessLevel = 'casual' | 'normal' | 'polite';
+/** 検証済みの変換の入力。 */
 export interface ConversionInput {
+  /** 利用者が入力した文。 */
   input_text: string;
+  /** 選んだ丁寧さ。 */
   politeness_level: PolitenessLevel;
+  /** 再生成のときだけある、前回の変換結果。 */
   previous_result?: string;
 }
 
@@ -13,6 +18,14 @@ const instructions: Record<PolitenessLevel, string> = {
   "polite": "目上の人や初対面の人に話すような、丁寧な敬語にしてください。「〜いただけますか」「〜しております」など、「です・ます」より一段丁寧な言い方を使います。大げさな言い回しは避けます。形容詞は「痛うございます」「寒うございます」のような古い言い方にしません。"
 };
 
+/**
+ * Workers AI へ送る本文を作る。
+ *
+ * 再生成は前回と違う言い回しを出しやすいように `temperature` を上げる。
+ *
+ * @param input 検証済みの入力
+ * @returns OpenAI 互換 API の本文
+ */
 export function makePrompt(input: ConversionInput) {
   let user = `${instructions[input.politeness_level]}\n\n入力: ${input.input_text}`;
   if (input.previous_result !== undefined) {

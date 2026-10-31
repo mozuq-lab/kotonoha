@@ -3,18 +3,34 @@ import { complete } from './ai';
 import { ApiError, errorResponse, logFailure, validationResponse, type ValidationIssue } from './errors';
 import type { ConversionInput, PolitenessLevel } from './prompts';
 
+/** Worker へ渡る設定。秘密は `wrangler secret put` で入れ、`RATE_LIMITER` は wrangler.jsonc で定義する。 */
 export interface Env {
+  /** 端末キー。カンマ区切りで新旧のキーを併用できる。 */
   API_KEYS: string;
+  /** Workers AI を呼べる API トークン。 */
   WORKERS_AI_API_TOKEN: string;
+  /** Cloudflare のアカウント ID（32 桁の 16 進数）。 */
   WORKERS_AI_ACCOUNT_ID: string;
+  /** 通す AI Gateway の ID。全体の回数と支出の制限はここで効く。 */
   WORKERS_AI_GATEWAY_ID: string;
+  /** 送信元ごとの標準レート制限。拠点ごとの概算（ADR-002）。 */
   RATE_LIMITER: RateLimit;
 }
 
 const encoder = new TextEncoder();
+/** CORS の許可元。手元の Flutter Web の確認用だけを許す。 */
 const origins = new Set(['http://localhost:3000', 'http://localhost:5173']);
+/** 受け取る本文の上限（バイト）。 */
 const bodyLimit = 64 * 1024;
 
+/**
+ * 設定を確かめ、端末キーの一覧を返す。
+ *
+ * Worker には起動時の検査が無いので、リクエストごとに確かめる。
+ *
+ * @returns 空白を除いた端末キー
+ * @throws {ApiError} 設定の不足・不正のとき `AI_PROVIDER_ERROR`
+ */
 function configuredKeys(env: Env): string[] {
   const keys = (env.API_KEYS ?? '').split(',').map(key => key.trim()).filter(Boolean);
   if (!keys.length || keys.some(key => !/^[\x20-\x7e]+$/.test(key)) ||
@@ -26,6 +42,13 @@ function configuredKeys(env: Env): string[] {
   return keys;
 }
 
+/**
+ * `X-API-Key` が端末キーのどれかと一致するかを、時間差から推測されない形で確かめる。
+ *
+ * 長さをそろえるために SHA-256 で比べ、一致しても途中で抜けずに全部のキーと比べる。
+ *
+ * @returns 一致したら true
+ */
 async function authenticated(request: Request, keys: string[]): Promise<boolean> {
   const supplied = request.headers.get('X-API-Key');
   if (!supplied || !/^[\x20-\x7e]+$/.test(supplied)) return false;
@@ -39,6 +62,14 @@ async function authenticated(request: Request, keys: string[]): Promise<boolean>
   return accepted;
 }
 
+/**
+ * 本文を上限まで読む。
+ *
+ * `Content-Length` は無いことも偽られることもあるので、宣言を見たうえで実際のバイト数も数える。
+ *
+ * @returns UTF-8 として解釈した本文。本文が無ければ空文字
+ * @throws {ApiError} 上限を超えたとき `PAYLOAD_TOO_LARGE`
+ */
 async function readBody(request: Request): Promise<string> {
   const declared = request.headers.get('Content-Length');
   if (declared && /^\d+$/.test(declared) && Number(declared) > bodyLimit) {
@@ -66,6 +97,15 @@ async function readBody(request: Request): Promise<string> {
   return new TextDecoder().decode(bytes);
 }
 
+/**
+ * 本文を検証し、AI へ渡す入力にする。
+ *
+ * 文字列は前後の空白を除き、文字数はコードポイントで数える（絵文字を 1 文字にする）。
+ *
+ * @param value JSON として解釈した本文
+ * @param regenerating 再生成なら true。`previous_result` を必須にする
+ * @returns 正しければ入力、誤りがあれば問題の一覧
+ */
 function validate(value: unknown, regenerating: boolean): ConversionInput | ValidationIssue[] {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return [{ type: 'model_attributes_type', loc: ['body'], msg: '入力が不正です' }];
@@ -96,6 +136,15 @@ function validate(value: unknown, regenerating: boolean): ConversionInput | Vali
     ...(regenerating ? { previous_result } : {}) };
 }
 
+/**
+ * レート制限の識別子を作る。
+ *
+ * API・送信元・UTC の分を HMAC にまとめ、生の IP を制限機能へ渡さない。分が変わると別の識別子になるので、
+ * 1 分をまたいで同じ送信元を結び付けられない。IPv4 射影は IPv4 に、IPv6 は /64 にそろえる。
+ *
+ * @param route API のパス。変換と再生成で枠を分ける
+ * @returns 16 進数の識別子
+ */
 async function rateKey(request: Request, route: string, env: Env): Promise<string> {
   let source = 'unknown';
   try {
@@ -110,6 +159,13 @@ async function rateKey(request: Request, route: string, env: Env): Promise<strin
   return Array.from(signature, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * パスと順序を決める本体。
+ *
+ * 順序は認証 → 本文の上限 → 検証 → レート制限 → 変換。無認証では本文を読まない。
+ *
+ * @throws {ApiError} 利用者へ返す失敗。`fetch` の側で応答に変える
+ */
 async function route(request: Request, env: Env): Promise<Response> {
   const path = new URL(request.url).pathname;
   if (!['/api/v1/health', '/api/v1/ai/convert', '/api/v1/ai/regenerate'].includes(path)) {
@@ -143,6 +199,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 }
 
 export default {
+  /** リクエストの入口。例外をここで応答に変え、CORS のヘッダーをそろえる。 */
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('Origin');
     const allowed = origin !== null && origins.has(origin);

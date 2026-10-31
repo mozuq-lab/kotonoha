@@ -2,8 +2,20 @@ import type { Env } from './api';
 import { ApiError } from './errors';
 import { makePrompt, type ConversionInput } from './prompts';
 
+/** Workers AI の応答のうち使う部分。上流の値なので、どの項目も無い場合を考える。 */
 type Completion = { choices?: { message?: { content?: unknown }; finish_reason?: string }[] };
 
+/**
+ * 入力を Workers AI で変換する。
+ *
+ * 1 回 8 秒・全体 10 秒で打ち切る。通信の失敗と 429 だけ 1 度再試行する。途中で切れた出力は、
+ * 本人が言っていない文を伝えないように返さない。
+ *
+ * @param input 検証済みの入力
+ * @param env 接続先と秘密
+ * @returns 変換後の文
+ * @throws {ApiError} 変換できなかったとき
+ */
 export async function complete(input: ConversionInput, env: Env): Promise<string> {
   // 意味が反転した実例がある答えの語は、従来どおり AI へ送らない。
   const word = input.input_text.replace(/[。．.！!]+$/u, '');
