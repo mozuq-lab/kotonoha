@@ -337,18 +337,14 @@ test('a failure leaves its code and cause in the runtime log, without the senten
   const response = await post({ ...input, input_text: '失敗の文-CANARY-TEXT' }, { ip: '198.51.100.77' });
   assert.equal(response.status, 500);
   await response.text();
-  const failed = async () => {
-    for (let i = 0; i < 40 && !logs.includes('request_failed'); i++) {
-      await new Promise(resolve => setTimeout(resolve, 25));
-    }
-    return logs;
-  };
-  const text = await failed();
-  assert.match(text, /request_failed/);
-  assert.match(text, /AI_API_ERROR/);
-  assert.match(text, /http_401/);
-  assert.ok(!text.includes('CANARY-'));
-  assert.ok(!text.includes('198.51.100.77'));
+  for (let i = 0; i < 40 && !logs.includes('http_401'); i++) {
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  assert.match(logs, /request_failed/);
+  assert.match(logs, /AI_API_ERROR/);
+  assert.match(logs, /http_401/);
+  assert.ok(!logs.includes('CANARY-'));
+  assert.ok(!logs.includes('198.51.100.77'));
 });
 test('production docs stay private and request/provider canaries never reach runtime logs', async () => {
   for (const path of ['/docs', '/openapi.json']) {

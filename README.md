@@ -151,7 +151,8 @@ API・送信元・UTC の分から HMAC で作る識別子で、生の IP や入
 識別子は 1 分ごとに切り替え、独自のログ・DB には IP・識別子・入力文・結果を保存しない。
 Worker の observability はオフ。AI Gateway へは `cf-aig-collect-log: false` と
 `cf-aig-skip-cache: true` を明示する。失敗時は `request_failed` の 1 行（エラーコードと、原因の型または
-上流の HTTP ステータス）だけを出す。保存はされず、`npx wrangler tail` を開いている間だけ見られる。
+上流の HTTP ステータス）だけを出す。保存はされず、`npx wrangler tail --format pretty` を開いている間だけ
+見られる。既定の JSON 形式は要求の情報まで出すので使わず、tail の出力はファイルへ残さない。
 
 各 API ごとに 12 回/60 秒を設定するが、拠点ごと・概算の制限で、12 回を超える場合がある。
 制限時は 429 と `Retry-After: 60`（binding は残り時間を返さないため最大の待ち時間を案内）。
@@ -160,12 +161,15 @@ Worker の observability はオフ。AI Gateway へは `cf-aig-collect-log: fals
 
 ### 新しい環境を作る
 
-端末キー（`API_KEYS`）は推測されにくい値を自分で作り、同じ値を `~/.config/kotonoha/ios-release.json` の
-`AI_API_KEY` に入れる。`CF_`・`CLOUDFLARE_` で始まる環境変数はシェルに入れたまま使わない。wrangler が
+**既存の環境を作り直すときは、端末キーを変えない。** `~/.config/kotonoha/ios-release.json` の `AI_API_KEY` と
+同じ値を `API_KEYS` に入れる。公開済みアプリにはキーが埋め込まれているので、変えると全員の AI 変換が 401 で
+止まり、旧キーを入れ直すかストア更新が済むまで直らない。新しいキーは、公開済みの版が無い環境でだけ作る。
+
+`CF_`・`CLOUDFLARE_` で始まる環境変数はシェルに入れたまま使わない。wrangler が
 ログインより優先して自分の認証に使うので、Workers AI 用の狭い権限で認証してデプロイや削除が失敗する。
 
 ```bash
-openssl rand -hex 32    # 16 進数 64 文字。表示された値を API_KEYS と ios-release.json の AI_API_KEY に使う
+openssl rand -hex 32    # 公開済みの版が無い環境でだけ。API_KEYS と ios-release.json の AI_API_KEY に使う
 cd deploy/cloudflare
 npm ci
 npx wrangler login
@@ -240,8 +244,10 @@ curl -fsS https://kotonoha.mozuq-lab.com/api/v1/health
 
 取り消せない操作なので、消す前に何が残り何が消えるかを確かめる。先に `unset` して、wrangler が自分の
 ログイン（OAuth）で動くようにしておく。Worker の削除・請求設定の変更は人が決める。
+`API_KEYS` は Worker と一緒に消え、読み出せない。消す前に `ios-release.json` の `AI_API_KEY` の控えを確かめる。
 
 ```bash
+cd deploy/cloudflare
 env | grep -E '^(CF_|CLOUDFLARE_)'          # 何も出ないことを確かめる。出たら unset する
 npx wrangler whoami                          # 自分のアカウントに OAuth でログインしていること
 npx wrangler delete                          # Worker（kotonoha-backend）・secret・Durable Object を消す
@@ -262,8 +268,8 @@ curl -s https://<Worker の URL>/api/v1/health   # 応答が無くなったこ�
 | Workers Paid の契約 | Workers & Pages → Plans | 月額が続く。止めるなら解約する |
 | `API_BASE_URL`（Variables） | GitHub の Settings → Secrets and variables → Actions | 残したままだと、CI のビルドは消えた URL を指す |
 
-作り直すときは「新しい環境を作る」の手順で secret を 4 つとも登録し直す（Worker と一緒に消えている）。
-`name` が同じなら URL も同じになり、端末キーを変えなければ GitHub の設定はそのまま使える。
+作り直すときは「新しい環境を作る」の手順で、同じ端末キーを使って secret を 4 つとも登録し直す（Worker と
+一緒に消えている）。`name` が同じなら URL も同じになり、GitHub の設定もそのまま使える。
 
 ## iOS の版を TestFlight へ送る
 
