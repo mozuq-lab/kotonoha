@@ -13,18 +13,24 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
-  # Python dependencies
-  - package-ecosystem: "pip"
-    directory: "/backend"
+  # 本番 Worker の npm 依存。FastAPI は開発・比較用なので対象にしない
+  - package-ecosystem: "npm"
+    directory: "/backend/worker"
     schedule:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "python"
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      # wrangler は miniflare と workers-types の版を指定するので、別々に上げると解決できない
+      cloudflare:
+        patterns:
+          - "wrangler"
+          - "miniflare"
+          - "@cloudflare/workers-types"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
