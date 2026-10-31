@@ -79,7 +79,7 @@ AI 変換で Cloudflare, Inc. へ送ることを除き、法令に基づく場�
 AI 変換を使うと、「AI 変換を使うときに送るもの」に書いたデータが、外国にある第三者へ提供されます。本アプリは、初めて AI 変換を使う前に次の要点を示し、同意をいただいてから送ります（個人情報保護法第 28 条）。
 
 - **提供先**: Cloudflare, Inc.（米国カリフォルニア州）。ことのは backend も同社の設備（Cloudflare Workers）の上で動いています
-- **提供する情報と目的**: 入力した文・丁寧さ・前回の変換結果（再生成のときだけ）を、AI 変換のためだけに送ります。入力した文に名前や体調など個人に関する情報を書いた場合は、それも送られます
+- **提供する情報と目的**: 入力した文・丁寧さ・前回の変換結果（再生成のときだけ）を、AI 変換のためだけに送ります。入力した文に名前や体調など個人に関する情報を書いた場合は、それも送られます。これとは別に、短い時間に多くの変換が送られたときに制限するためだけに、IP アドレスから作った識別子を同社のアクセス回数を制限する機能へ渡します
 - **処理する国**: 同社の世界各地の設備で処理され、日本の外になることがあります。どの国の設備で処理するかはリクエストごとに同社の設備の状況で決まるため、前もって特定できません
 - **米国の個人情報保護の制度**: 個人情報保護委員会の調査（2021 年 10 月時点）によると、次のとおりです。調査より後の法改正は反映していません（出典: 個人情報保護委員会「外国制度（アメリカ合衆国）」 https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ ）
   - 連邦レベルの包括的な個人情報保護法は無く、通信・金融・医療など分野ごとの法律があります
@@ -185,7 +185,7 @@ Except for sending data to Cloudflare, Inc. for AI conversion, the App does not 
 When you use AI conversion, the data described under "What Is Sent When You Use AI Conversion" is provided to a third party outside Japan. Before the first AI conversion, the App shows the key points below and sends data only after you consent (Article 28 of Japan's Act on the Protection of Personal Information).
 
 - **Recipient**: Cloudflare, Inc. (California, United States). The Kotonoha backend also runs on Cloudflare's infrastructure (Cloudflare Workers)
-- **Data and purpose**: The Input Text, the Politeness Level, and the Previous Conversion Result (only when regenerating) are sent solely for AI conversion. If you type personal information such as a name or a health condition, it is sent as well
+- **Data and purpose**: The Input Text, the Politeness Level, and the Previous Conversion Result (only when regenerating) are sent solely for AI conversion. If you type personal information such as a name or a health condition, it is sent as well. Separately, an identifier derived from your IP address is provided to Cloudflare's rate limiting service, solely to limit requests when many conversions are sent in a short time
 - **Country of processing**: Processing takes place in Cloudflare facilities around the world and may be outside Japan. The country cannot be identified in advance because Cloudflare's infrastructure decides it for each request
 - **Personal information protection system in the United States**: The following is based on a survey by Japan's Personal Information Protection Commission (as of October 2021). Later legal changes are not reflected (source: https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_america/ )
   - There is no comprehensive federal privacy law; instead there are sector-specific laws for areas such as telecommunications, finance, and healthcare

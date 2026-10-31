@@ -34,7 +34,7 @@
 
 | ADR | 決めたこと | 却下した案 | 関わる行為 | 検査 |
 |---|---|---|---|---|
-| ADR-002 | 【構造】本番は TypeScript Worker と標準 Rate Limiting（API ごと 12 回/60 秒、拠点ごとの概算）。IP から 1 分ごとに変わる HMAC 識別子を作る。全体は AI Gateway の回数・支出制限（推計・結果整合） | Redis 等の共有ストア、Durable Objects の永続カウンタ、Worker のグローバル変数、Gateway/WAF だけ、Containers の継続 | 依存, 設定キー, 外部送信先 | 本番 Wrangler 構成の workerd HTTP テスト。実 Gateway の遮断は未検査 |
+| ADR-002 | 【構造】本番は TypeScript Worker と標準 Rate Limiting（API ごと 12 回/60 秒、拠点ごとの概算）。IP から 1 分ごとに変わる HMAC 識別子を作る。全体は AI Gateway の回数・支出制限（推計・結果整合） | Redis 等の共有ストア、Durable Objects の永続カウンタ、端末ごとの匿名 ID、Worker のグローバル変数、Gateway/WAF だけ、Containers の継続 | 依存, 設定キー, 外部送信先 | 本番 Wrangler 構成の workerd HTTP テスト。実 Gateway の遮断は未検査 |
 | ADR-005 | 【約束】frontend は 1 概念 1 真実（お気に入りの正は `favoriteProvider`。履歴・定型文のモデルに `isFavorite` を持たせない）。お気に入りは定型文の削除で消えない。永続化の失敗（作り直し・一部の喪失・設定を含む）は利用者に伝える | 各モデルに isFavorite フィールド、定型文削除でお気に入りも消す | 永続化 | Hive スキーマ許可リスト検査（一部）、TC-SYNC-202 |
 | ADR-007 | 【約束】リリース基準: 公式ストアで本公開、初回から AI 変換を含む（Workers AI）、クラッシュ報告はストア標準に依拠（ADR-009）。条件は 5 つで閉じる。iOS 先行、Android は Play のクローズドテスト（12 人 × 14 日）通過後。開発者登録はアプリが形になってから | 日付を置く、自発的な β 配布、組織アカウント（D-U-N-S）で Play の要件を外す、初回を AI 変換抜きで出す | 権限, 外部送信先 | 無し（リリースまで生きる） |
 | ADR-009 | 【約束】クラッシュ報告はストア標準に依拠し、アプリからは何も送らない | Crashlytics、Sentry、自前送信先、オプトイン | 依存, 外部送信先, 権限 | 無し（送信経路が存在しないこと自体が担保） |
