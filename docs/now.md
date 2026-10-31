@@ -23,7 +23,7 @@
 1. Google Play の開発者登録（L-84。人）。ここから Android の行（下の「iOS の後」）が動き出す
 
 ## 人待ち
-- AI API は 2026-10-31 に Containers から TypeScript Worker へ切り替え、旧コンテナを削除した（#315、人の作業）。請求で費用が止まったことと、AI Gateway のログが空のままで支出制限が効くことの確認は人待ち。切り替え後の確認で否定が消える出力が見つかり、対策の PR を準備している。iOS の結合テストは Xcode のライセンス同意待ち
+- AI API は 2026-10-31 に Containers から TypeScript Worker へ切り替え、旧コンテナを削除した（#315、人の作業）。否定が消える出力の対策も本番へ出した（#318）。AI 変換の結合テストは iOS シミュレータでも通った。請求で費用が止まったことと、AI Gateway の支出制限が実際に止まることの確認は人待ち
 - 1.1.0（#308 の声の選択）を出す: #312 のマージ、`scripts/ios-testflight.sh` で送る、TestFlight で声の選択と AI 変換の往復を見る、App Store Connect で 1.1.0 を作って「このバージョンの新機能」を書き、審査へ出す（人）
 - 本公開したので、サポート連絡先とストアレビューの月 1 の巡回が始まっている（ADR-007 条件 4。人）
 - GitHub の Variables の `API_BASE_URL` は、まだ旧 `workers.dev` を指している（CI と `release.yml` の版が使う。TestFlight の版は使わない）。新しいドメインに変えるかは人が決める
