@@ -24,13 +24,15 @@ const instructions: Record<PolitenessLevel, string> = {
  * 再生成は前回と違う言い回しを出しやすいように `temperature` を上げる。
  *
  * @param input 検証済みの入力
+ * @param keepNegation 前の出力で否定が消えたとき true。同じ本文の再送では同じ誤りが起きやすい
  * @returns OpenAI 互換 API の本文
  */
-export function makePrompt(input: ConversionInput) {
+export function makePrompt(input: ConversionInput, keepNegation = false) {
   let user = `${instructions[input.politeness_level]}\n\n入力: ${input.input_text}`;
   if (input.previous_result !== undefined) {
     user += `\n前回の結果: ${input.previous_result}\n\n前回とは違う言い回しにしてください。前回と同じ文は出さず、意味は変えません。`;
   }
+  if (keepNegation) user += '\n\n入力の否定は必ず残してください。';
   return {
     model: '@cf/google/gemma-4-26b-a4b-it',
     messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
