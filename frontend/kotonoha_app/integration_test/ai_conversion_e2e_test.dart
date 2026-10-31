@@ -145,6 +145,10 @@ void main() {
     await _waitFor(tester, find.text(_consentTitle));
     expect(backend.requests, isEmpty, reason: '同意する前に送ってはいけない');
 
+    await _tapInDialog(tester, '詳しく見る');
+    await _waitFor(tester, find.textContaining('外国にある第三者への提供について'));
+    expect(backend.requests, isEmpty, reason: '説明を開いただけで送ってはいけない');
+
     await _tapInDialog(tester, '同意して利用');
     await _waitFor(tester, find.text(_resultTitle));
 
