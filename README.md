@@ -150,12 +150,37 @@ IPv4 射影を IPv4 へそろえ、IPv6 は /64 ごとに数える。標準 Rate
 API・送信元・UTC の分から HMAC で作る識別子で、生の IP や入力文は渡さない。
 識別子は 1 分ごとに切り替え、独自のログ・DB には IP・識別子・入力文・結果を保存しない。
 Worker の observability はオフ。AI Gateway へは `cf-aig-collect-log: false` と
-`cf-aig-skip-cache: true` を明示する。
+`cf-aig-skip-cache: true` を明示する。失敗時は `request_failed` の 1 行（エラーコードと、原因の型または
+上流の HTTP ステータス）だけを出す。保存はされず、`npx wrangler tail` を開いている間だけ見られる。
 
 各 API ごとに 12 回/60 秒を設定するが、拠点ごと・概算の制限で、12 回を超える場合がある。
 制限時は 429 と `Retry-After: 60`（binding は残り時間を返さないため最大の待ち時間を案内）。
 全体の回数と費用は AI Gateway 側でも制限する。支出制限も推計・結果整合で、厳密な請求上限ではない。
 既存の支出制限が Workers AI で実際に遮断するかは未検証で、本番切り替え時の確認事項。
+
+### 新しい環境を作る
+
+端末キー（`API_KEYS`）は推測されにくい値を自分で作り、同じ値を `~/.config/kotonoha/ios-release.json` の
+`AI_API_KEY` に入れる。`CF_`・`CLOUDFLARE_` で始まる環境変数はシェルに入れたまま使わない。wrangler が
+ログインより優先して自分の認証に使うので、Workers AI 用の狭い権限で認証してデプロイや削除が失敗する。
+
+```bash
+openssl rand -hex 32    # 16 進数 64 文字。表示された値を API_KEYS と ios-release.json の AI_API_KEY に使う
+cd deploy/cloudflare
+npm ci
+npx wrangler login
+# 秘密は wrangler.jsonc に書かない。1 つずつ入力する
+npx wrangler secret put API_KEYS
+npx wrangler secret put WORKERS_AI_API_TOKEN
+npx wrangler secret put WORKERS_AI_ACCOUNT_ID
+npx wrangler secret put WORKERS_AI_GATEWAY_ID
+npx wrangler deploy
+curl -fsS https://<Worker の URL>/api/v1/health
+```
+
+`secret put` で入れた秘密は Worker に残るので、2 回目以降の更新は `npm ci` → 検証 → `npx wrangler deploy` だけでよい。
+独自ドメイン `kotonoha.mozuq-lab.com`（Worker の Custom Domain。`mozuq-lab.com` の DNS は Cloudflare）は、
+Worker を作り直すと外れる。Worker の Settings → Domains & Routes で付け直す。
 
 ### Containers からの初回切り替え（人が行う）
 
@@ -184,12 +209,61 @@ curl -fsS https://kotonoha.mozuq-lab.com/api/v1/health
 イメージの削除・未使用 secret/DO の掃除・Paid の契約変更は別の判断にする。
 
 旧コンテナを消す前に戻す場合は `npx wrangler rollback <控えた旧バージョンID>`。
-削除後に戻す場合は、旧コミットを別 worktree へ取り出し、そちらの `deploy/cloudflare` から
-`npm ci` と `npx wrangler deploy` を行い、コンテナを再作成する（Docker が必要）。
+削除後に戻す場合は、次の「旧構成（Containers）でデプロイする」の手順でコンテナを作り直す。
 
-2 回目以降の更新は `npm ci` → 検証 → `npx wrangler deploy`。新規に環境を作る場合だけ、
-上の 4 つをそれぞれ `npx wrangler secret put <名前>` で登録する。
-Worker の削除・請求設定の変更は人が決める。AI Gateway・トークン・Paid 契約は Worker の削除だけでは消えない。
+### 旧構成（Containers）でデプロイする
+
+Workers へ移す前の構成は `493e85b705e` にある。Workers 版を戻すときや、旧構成と比べるときに使う。
+Docker と Workers Paid が要り、コンテナの待機費用がかかる（`sleepAfter` が 24 時間で、常時起動に近い）。
+
+```bash
+git worktree add ../kotonoha-containers 493e85b705e
+cd ../kotonoha-containers/deploy/cloudflare
+npm ci
+npx wrangler deploy --dry-run --outdir /tmp/kotonoha-containers-build   # イメージを作るだけで送らない
+npx wrangler deploy
+npx wrangler containers list                # kotonoha-backend-backend があることを確かめる
+curl -fsS https://kotonoha.mozuq-lab.com/api/v1/health
+```
+
+同じ `kotonoha-backend` を上書きするので、secret 4 つと URL はそのまま使える。実際に Workers 版から戻す操作は
+未実施で、確かめたのは dry-run まで。戻した後は、変換・再生成と、キー無しの 401 も確かめる。
+
+レート制限はプロセス内メモリなので、インスタンスは 1 つに固定する（`max_instances: 1`）。秘密はコンテナの
+起動時にしか渡らない。`secret put` と `deploy` だけでは古い値のまま動き続けるので、秘密を差し替えたら
+`npx wrangler containers list` で ID を確かめ、`npx wrangler containers delete <ID>` の後に `npx wrangler deploy` する。
+
+公開文は Workers 版に合わせてあるので、旧構成で続けるなら `docs/privacy-policy.md` の IP の扱いと
+第 28 条の記述も戻す。公開文の変更は人が承認する。
+
+### Cloudflare の環境を消す
+
+取り消せない操作なので、消す前に何が残り何が消えるかを確かめる。先に `unset` して、wrangler が自分の
+ログイン（OAuth）で動くようにしておく。Worker の削除・請求設定の変更は人が決める。
+
+```bash
+env | grep -E '^(CF_|CLOUDFLARE_)'          # 何も出ないことを確かめる。出たら unset する
+npx wrangler whoami                          # 自分のアカウントに OAuth でログインしていること
+npx wrangler delete                          # Worker（kotonoha-backend）・secret・Durable Object を消す
+npx wrangler containers list                 # 旧コンテナのアプリが残っていれば
+npx wrangler containers delete <ID>          # その ID で消す
+npx wrangler containers images list          # 保存されたイメージ（任意）
+npx wrangler containers images delete <イメージ名:タグ>
+curl -s https://<Worker の URL>/api/v1/health   # 応答が無くなったことを確かめる
+```
+
+`wrangler delete` では、次のものは消えない。必要に応じてダッシュボードで片付ける。
+
+| 残るもの | 場所 | メモ |
+| --- | --- | --- |
+| AI Gateway と、その支出上限・回数制限の設定 | AI → AI Gateway | 作り直すなら残しておく方が楽 |
+| Workers AI の API トークン | My Profile → API Tokens | 当分使わないなら無効にする |
+| 前払いのクレジット | Billing | 残る |
+| Workers Paid の契約 | Workers & Pages → Plans | 月額が続く。止めるなら解約する |
+| `API_BASE_URL`（Variables） | GitHub の Settings → Secrets and variables → Actions | 残したままだと、CI のビルドは消えた URL を指す |
+
+作り直すときは「新しい環境を作る」の手順で secret を 4 つとも登録し直す（Worker と一緒に消えている）。
+`name` が同じなら URL も同じになり、端末キーを変えなければ GitHub の設定はそのまま使える。
 
 ## iOS の版を TestFlight へ送る
 
