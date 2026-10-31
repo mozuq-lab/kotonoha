@@ -73,11 +73,10 @@ void main() {
       await tester.tap(find.byTooltip('対面表示'));
       await tester.pumpAndSettle();
 
-      // 上と下に1つずつある（本人の手元にも置く）
-      expect(find.byType(RotationToggleButton), findsNWidgets(2));
       expect(container.read(faceToFaceProvider).isRotated180, isFalse);
 
-      await tester.tap(find.byType(RotationToggleButton).first);
+      // 高さによって上側の複製を省く場合も、下端から回転を操作できる。
+      await tester.tap(find.byType(RotationToggleButton).last);
       await tester.pumpAndSettle();
 
       expect(container.read(faceToFaceProvider).isRotated180, isTrue);

@@ -657,8 +657,10 @@ void main() {
       }
       final usual = row[1].left - row[0].right;
       final gap = row[5].left - row[4].right;
-      expect(gap, greaterThanOrEqualTo(usual * 3),
-          reason: '「お」と「か」の間に行の区切りの隙間が無い（$gap）');
+      // 区切りは普段の間に 16 を足した幅。広すぎるとキーが細くなるので、
+      // 24 から 16 に狭めてキーへ等しく配った（人の依頼、2026-10-20）
+      expect(gap, closeTo(usual + 16, 0.01),
+          reason: '「お」と「か」の間の行の区切りの隙間（$gap）');
       expect(row[9].right, lessThanOrEqualTo(1024), reason: '右端がはみ出す');
     });
 

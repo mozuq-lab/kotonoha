@@ -32,7 +32,7 @@ class _FakeBackend {
   final Response<dynamic> Function(RequestOptions) respond;
   final requests = <RequestOptions>[];
 
-  /// backend の ConversionResponse と同じ形（`backend/app/schemas.py`）
+  /// backend の ConversionResponse と同じ形（`backend/fastapi/app/schemas.py`）
   static Response<dynamic> _converted(RequestOptions o) {
     final body = o.data as Map<String, dynamic>;
     final regenerating = o.path.endsWith('/regenerate');
@@ -242,7 +242,7 @@ void main() {
   });
 
   testWidgets('5. 上限に達したら backend の文言で告げ、入力を残す', (tester) async {
-    // backend の AI_RATE_LIMIT と同じ形（`backend/app/main.py` の _error_body）
+    // backend の AI_RATE_LIMIT と同じ形（`backend/fastapi/app/main.py` の _error_body）
     const message = 'いまAI変換を使えません。混み合っているか、利用の上限に達しています。'
         '時間をおいて試すか、元の文をお使いください。';
     final backend = _FakeBackend(

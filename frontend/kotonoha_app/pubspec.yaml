@@ -2,7 +2,7 @@ name: kotonoha_app
 description: 文字盤コミュニケーション支援アプリ
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.1.0+1
 
 environment:
   sdk: '>=3.5.0 <4.0.0'

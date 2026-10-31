@@ -11,7 +11,7 @@
 ## 関連文書
 
 - 決定（ADR）の索引: `AGENTS.md`
-- API の形: `backend/tests/contract/openapi_baseline.json`（起動中は http://localhost:8000/docs。値域は持たないので enum はコードを読む）
+- API の形: `backend/fastapi/tests/contract/openapi_baseline.json`（起動中は http://localhost:8000/docs。値域は持たないので enum はコードを読む）
 - 開発者向け: `README.md`
 - 利用者・審査者向け: `docs/privacy-policy.md`、`docs/support.md`
 - 各要件の出典表記 `mvp-requirements-original.md`・`tech-stack.md` は倉庫にある（`docs/archive/spec/`、`docs/archive/`。更新しない）
@@ -47,11 +47,13 @@
 - **REQ-402**: システムは読み上げボタンを明確に表示しなければならない *mvp-requirements-original.md 5-2-1*
 - **REQ-403**: システムは読み上げ中の停止・中断機能を提供しなければならない *mvp-requirements-original.md 5-2-1*
 - **REQ-404**: システムは読み上げ速度を「とても遅い」「遅い」「普通」「速い」の4段階から選択できなければならない *mvp-requirements-original.md 5-2-2*
+- **REQ-405**: システムは読み上げの声を、端末に入っている日本語の声（端末の外で合成する声を除く）から選択できなければならない。選んだ声が使えないときは標準の日本語の声で読み上げなければならない *#308（人の依頼）*
 
 #### 対面表示機能
 - **REQ-501**: システムは読み上げテキストを画面中央に大きく表示する拡大表示モードを提供しなければならない *mvp-requirements-original.md 5-2-3*
 - **REQ-502**: システムは画面を180度回転させて対面の相手から読みやすい表示に切り替える機能を提供しなければならない *mvp-requirements-original.md 5-2-3、ユーザヒアリング*
 - **REQ-503**: システムは通常モードと対面表示モードをシンプルな操作で切り替えられなければならない *mvp-requirements-original.md 5-2-3*
+- **REQ-504**: システムは対面表示モード内で文字盤・削除・確認付き全消去・OSキーボードによる編集を提供し、編集内容を通常画面と共有しなければならない。文章を180度回転しても入力操作は本人向きに保ち、編集欄を隠すと拡大表示に戻せなければならない *2026-10-18 ユーザー依頼*
 
 #### 履歴機能
 - **REQ-601**: システムは読み上げた文章を自動的に履歴として保存しなければならない（対面表示で見せただけの文章と、履歴から読み上げ直した文章は残さない。後者は 2026-10-17 ユーザー決定） *mvp-requirements-original.md 5-3-1、2026-10-03 ユーザー決定*

@@ -66,12 +66,12 @@ void main() {
 
     group('TC-105-002: SECRET_KEYが環境変数から読み込まれる', () {
       test('バックエンドのconfig.pyでSECRET_KEYが環境変数から読み込まれる', () async {
-        // backend/app/core/config.py を確認
-        final configFile = File('../../backend/app/core/config.py');
+        // backend/fastapi/app/core/config.py を確認
+        final configFile = File('../../backend/fastapi/app/core/config.py');
 
         if (!configFile.existsSync()) {
           // ファイルパスが異なる場合は別のパスを試行
-          final altConfigFile = File('../backend/app/core/config.py');
+          final altConfigFile = File('../backend/fastapi/app/core/config.py');
           if (!altConfigFile.existsSync()) {
             // テスト環境によってはスキップ
             return;
@@ -122,9 +122,9 @@ void main() {
         );
       });
 
-      test('backend/.envが.gitignoreに含まれる', () async {
+      test('backend/fastapi/.envが.gitignoreに含まれる', () async {
         // バックエンドの.gitignoreも確認
-        final gitignoreFile = File('../../backend/.gitignore');
+        final gitignoreFile = File('../../backend/fastapi/.gitignore');
 
         if (!gitignoreFile.existsSync()) {
           // ファイルが存在しない場合、プロジェクトルートの.gitignoreで管理されている可能性
@@ -135,7 +135,7 @@ void main() {
         expect(
           content.contains('.env'),
           isTrue,
-          reason: 'backend/.envがgitignoreに含まれていません',
+          reason: 'backend/fastapi/.envがgitignoreに含まれていません',
         );
       });
     });

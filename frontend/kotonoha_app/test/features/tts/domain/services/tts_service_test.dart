@@ -67,8 +67,8 @@ void main() {
                 const [],
                 IosTextToSpeechAudioMode.defaultMode,
               ),
-          () => mockFlutterTts.setLanguage('ja-JP'),
           () => mockFlutterTts.setSpeechRate(0.5),
+          () => mockFlutterTts.setLanguage('ja-JP'),
         ]);
       });
 
