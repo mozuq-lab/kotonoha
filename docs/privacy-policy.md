@@ -76,7 +76,7 @@ AI 変換で Cloudflare, Inc. へ送ることを除き、法令に基づく場�
 
 ### 外国にある第三者への提供について
 
-AI 変換を使うと、「AI 変換を使うときに送るもの」に書いたデータが、外国にある第三者へ提供されます。本アプリは、初めて AI 変換を使う前に次の要点を示し、同意をいただいてから送ります（個人情報保護法第 28 条）。
+AI 変換を使うと、「AI 変換を使うときに送るもの」に書いたデータが、外国にある第三者へ提供されます。本アプリは、初めて AI 変換を使う前に主な要点を示し、同意をいただいてから送ります（個人情報保護法第 28 条）。詳しい内容は次のとおりです。
 
 - **提供先**: Cloudflare, Inc.（米国カリフォルニア州）。ことのは backend も同社の設備（Cloudflare Workers）の上で動いています
 - **提供する情報と目的**: 入力した文・丁寧さ・前回の変換結果（再生成のときだけ）を、AI 変換のためだけに送ります。入力した文に名前や体調など個人に関する情報を書いた場合は、それも送られます
@@ -92,7 +92,7 @@ AI 変換を使うと、「AI 変換を使うときに送るもの」に書い�
   - ISO/IEC 27001・27018・27701 の認証（ https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ）と、Global CBPR・Global PRP の認証（ https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ ）を受けている
 - **講じられていない措置**: 同社の措置は、OECD プライバシーガイドラインの 8 原則におおむね対応すると考えます。ただし、同社の DPA が名前を挙げている法令は EU・EEA・スイス・英国・米国の州法で、日本の個人情報保護法は挙がっていません。同法に基づく保護や、本人の請求への協力も明記されていません
 
-この要点とは別に、短い時間に多くの変換が送られたときに制限するためだけに、IP アドレスから作った識別子を同社のアクセス回数を制限する機能へ渡します（「AI 変換を使うときに送るもの」を参照）。
+これとは別に、短い時間に多くの変換が送られたときに制限するためだけに、IP アドレスから作った識別子を同社のアクセス回数を制限する機能へ渡します（「AI 変換を使うときに送るもの」を参照）。
 
 同意しない場合、AI 変換は使えませんが、ほかの機能はすべて使えます。同意は、アプリの「設定」→「AI設定」からいつでも取り消せます。取り消すと、次に AI 変換を使うときにもう一度確認します。
 
@@ -184,7 +184,7 @@ Except for sending data to Cloudflare, Inc. for AI conversion, the App does not 
 
 ### Transfer to Third Parties Outside Japan
 
-When you use AI conversion, the data described under "What Is Sent When You Use AI Conversion" is provided to a third party outside Japan. Before the first AI conversion, the App shows the key points below and sends data only after you consent (Article 28 of Japan's Act on the Protection of Personal Information).
+When you use AI conversion, the data described under "What Is Sent When You Use AI Conversion" is provided to a third party outside Japan. Before the first AI conversion, the App shows the main points and sends data only after you consent (Article 28 of Japan's Act on the Protection of Personal Information). The details are as follows.
 
 - **Recipient**: Cloudflare, Inc. (California, United States). The Kotonoha backend also runs on Cloudflare's infrastructure (Cloudflare Workers)
 - **Data and purpose**: The Input Text, the Politeness Level, and the Previous Conversion Result (only when regenerating) are sent solely for AI conversion. If you type personal information such as a name or a health condition, it is sent as well
@@ -200,7 +200,7 @@ When you use AI conversion, the data described under "What Is Sent When You Use 
   - It holds ISO/IEC 27001, 27018, and 27701 certifications ( https://www.cloudflare.com/trust-hub/compliance-resources/iso-certifications/ ) and Global CBPR and Global PRP certifications ( https://www.cloudflare.com/press/press-releases/2025/cloudflare-earns-new-landmark-global-privacy-certifications/ )
 - **Measures not taken**: We consider that Cloudflare's measures broadly correspond to the eight OECD Privacy Guidelines principles. However, the laws its DPA names are those of the EU, the EEA, Switzerland, the UK, and US states. It does not name Japan's Act on the Protection of Personal Information, and does not expressly provide protection or cooperation with individuals' requests under that Act
 
-Separately from these key points, an identifier derived from your IP address is provided to Cloudflare's rate limiting service, solely to limit requests when many conversions are sent in a short time (see "What Is Sent When You Use AI Conversion").
+Separately, an identifier derived from your IP address is provided to Cloudflare's rate limiting service, solely to limit requests when many conversions are sent in a short time (see "What Is Sent When You Use AI Conversion").
 
 If you do not consent, AI conversion is unavailable, but all other features remain available. You can withdraw your consent at any time in the App under 設定 (Settings) > AI設定 (AI Settings). After you withdraw it, the App asks again the next time you use AI conversion.
 
