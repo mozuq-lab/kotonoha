@@ -258,6 +258,41 @@ test('IPv4-mapped IPv6 uses the IPv4 bucket', async () => {
   assert.equal((await post({ ...input, input_text: 'はい' }, { ip: '::ffff:192.0.2.80' })).status, 429);
 });
 
+test('a result that lost the negation is retried once and the kept negation is returned', async () => {
+  provider(completion('痛いです。'));
+  provider(completion('痛くないです。'));
+  const response = await post({ ...input, input_text: 'いたくない' });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).converted_text, '痛くないです。');
+});
+for (const [path, extra] of [[convert, {}], [regenerate, { previous_result: '痛くありません。' }]]) {
+  test(`${path}: a result that keeps losing the negation is refused and points to the original`, async () => {
+    provider(completion('痛いです。')).times(2);
+    const response = await post({ ...input, input_text: 'いたくない', ...extra }, { path });
+    assert.equal(response.status, 500);
+    const { error } = await response.json();
+    assert.equal(error.code, 'AI_MEANING_CHANGED');
+    assert.equal(error.message, '意味が変わるおそれがあるため、変換を止めました。元の文をお使いください。');
+  });
+}
+test('a result that lost the negation behind a word with な is still refused', async () => {
+  provider(completion('おなかが痛いです。')).times(2);
+  const response = await post({ ...input, input_text: 'おなかいたくない' });
+  assert.equal((await response.json()).error.code, 'AI_MEANING_CHANGED');
+});
+for (const [input_text, result] of [
+  ['いきたくない', '行きたくないです。'], ['たべたくない', '食べたくありません。'], ['いらない', 'いりません。'],
+  ['さわらないで', '触らないでください。'], ['いたくなかった', '痛くなかったです。'], ['ねむれなくて', '眠れなくて困っています。'],
+  ['はないたい', '鼻が痛いです。'], ['きたない', '汚いです。'], ['おさない', '幼いです。'], ['なくなった', '亡くなりました。'],
+]) {
+  test(`${input_text} passes the negation check as ${result}`, async () => {
+    provider(completion(result));
+    const response = await post({ ...input, input_text });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).converted_text, result);
+  });
+}
+
 for (const [body, status, code] of [
   [completion('', 'stop'), 500, 'AI_API_ERROR'],
   [completion('意味が途中で切れ', 'length'), 500, 'AI_API_ERROR'],

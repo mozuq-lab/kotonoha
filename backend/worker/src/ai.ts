@@ -5,11 +5,32 @@ import { makePrompt, type ConversionInput } from './prompts';
 /** Workers AI の応答のうち使う部分。上流の値なので、どの項目も無い場合を考える。 */
 type Completion = { choices?: { message?: { content?: unknown }; finish_reason?: string }[] };
 
+/** 「ない」を含むが否定ではない語。 */
+const notNegation = /きたな[いく]|おさな[いく]/gu;
+/** 入力の否定。「はないたい」の「ない」を拾わないよう、語の切れ目を見る。 */
+const negatedInput = /ない(?=$|[\s、。！!？?…]|で|の|よ|ね|か|けど|から|し|と|わ|ん)|なかっ|なくて|ません/u;
+/** 出力に残った否定。「おなか」に当たらないよう「なか」だけでは数えない。 */
+const negatedOutput = /ない|なく|なかっ|ません/u;
+
+/**
+ * 入力の否定が出力に残っているかを確かめる。
+ *
+ * モデルは「いたくない」を「痛いです」にすることがあり（2026-10-31 に本番で 5 回中 3 回）、
+ * 利用者は発話で訂正できない。否定を足す向きは「いただけませんか」と区別できないので見ない。
+ *
+ * @param input 入力した文
+ * @param output モデルの出力
+ * @returns 入力に否定が無い、または出力に否定が残っていれば true
+ */
+function keepsNegation(input: string, output: string): boolean {
+  return !negatedInput.test(input.replace(notNegation, '')) || negatedOutput.test(output);
+}
+
 /**
  * 入力を Workers AI で変換する。
  *
- * 1 回 8 秒・全体 10 秒で打ち切る。通信の失敗と 429 だけ 1 度再試行する。途中で切れた出力は、
- * 本人が言っていない文を伝えないように返さない。
+ * 1 回 8 秒・全体 10 秒で打ち切る。通信の失敗、429、否定が消えた出力だけ 1 度再試行する。途中で切れた
+ * 出力と否定が消えた出力は、本人が言っていない文を伝えないように返さない。
  *
  * @param input 検証済みの入力
  * @param env 接続先と秘密
@@ -50,6 +71,9 @@ export async function complete(input: ConversionInput, env: Env): Promise<string
       const text = typeof choice?.message?.content === 'string' ? choice.message.content.trim() : '';
       if (!text || choice?.finish_reason === 'length') {
         throw new ApiError('AI_API_ERROR', false, 'unusable_completion');
+      }
+      if (!keepsNegation(input.input_text, text)) {
+        throw new ApiError('AI_MEANING_CHANGED', true, 'negation_lost');
       }
       return text;
     } catch (error) {
