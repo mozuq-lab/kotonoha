@@ -65,7 +65,7 @@ dev_dependencies:
     sdk: flutter
 
   # テスト
-  mocktail: ^1.0.4
+  mocktail: ^1.0.5
 
   # ソース検査テスト用（Dartコードの構文解析）
   # 上限を広めに取る。^8.4.1 だと analyzer 9系が出た際に、周辺パッケージが
