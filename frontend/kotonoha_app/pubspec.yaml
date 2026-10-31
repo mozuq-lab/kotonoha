@@ -55,7 +55,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   # 設定保存の失敗注入（テストだけ）。外部 SDK の境界でのモック（AGENTS.md 規律 5、ADR-005 検査）
-  shared_preferences_platform_interface: ^2.4.1
+  shared_preferences_platform_interface: ^2.4.2
   # ブラウザで開く操作をテストで受け止める（外部 SDK の境界）
   url_launcher_platform_interface: ^2.3.2
   plugin_platform_interface: ^2.1.8
