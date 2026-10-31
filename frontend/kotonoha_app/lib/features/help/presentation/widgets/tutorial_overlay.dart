@@ -42,7 +42,7 @@ const _tutorialSteps = [
   _TutorialStep(
     title: '定型文を使う',
     description: 'よく使う言葉は定型文として登録できます。\n'
-        'タップするだけですばやく入力できます。',
+        'タップするだけで読み上げられます。',
     icon: CupertinoIcons.quote_bubble,
   ),
   _TutorialStep(
