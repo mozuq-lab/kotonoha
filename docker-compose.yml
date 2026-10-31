@@ -1,14 +1,14 @@
 services:
   backend:
-    # 開発用（--reload・ボリュームマウント前提）。本番イメージは backend/Dockerfile。
+    # 開発用（--reload・ボリュームマウント前提）。本番イメージは backend/fastapi/Dockerfile。
     build:
       context: .
       dockerfile: ./docker/backend/Dockerfile
     container_name: kotonoha_backend
-    # アプリ設定は backend/.env（マウント経由で /app/.env）。ここには何も書かない——
+    # アプリ設定は backend/fastapi/.env（マウント経由で /app/.env）。ここには何も書かない——
     # compose の environment は OS 環境変数として .env より優先され、静かに上書きする。
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
+      - ./backend/fastapi:/app
     restart: unless-stopped

@@ -12,14 +12,14 @@
 
 ## 決定
 
-- 本番は `deploy/cloudflare/src/` の TypeScript Worker。Containers を呼ばず、標準 Rate Limiting binding を使う。
+- 本番は `backend/worker/src/` の TypeScript Worker。Containers を呼ばず、標準 Rate Limiting binding を使う。
 - 変換と再生成それぞれ 12 回/60 秒を設定する。拠点ごとの概算制限であり、更新の遅れや分の切り替えで設定回数を超える場合を受け入れる。
 - `CF-Connecting-IP` だけを採用し、利用者の XFF は読まない。IPv4 射影は IPv4、IPv6 は /64 にそろえる。
 - API・送信元・UTC の分から、API_KEYS を鍵とする HMAC 識別子を作る。標準制限にはこの識別子だけを渡し、1 分ごとに切り替える。IP・識別子を AI の入力やヘッダーには載せない。
 - binding は残り秒数を返さないので、429 の Retry-After と既存 X-RateLimit-* は最大 60 秒を案内する。成功時は付けない。
 - Workers AI の同じモデルへ同じ REST API から送る。Gateway 必須、ログ収集・キャッシュを要求ごとに無効化。出力は 256 トークン。
 - 既存の Container DO はこの変更で破壊せず、互換 export を残す。旧コンテナの削除と費用停止の確認は、API の切り替え確認後に人が行う。
-- `backend/` の旧 FastAPI は開発・比較用に残る。そちらの MemoryStorage・単一 worker ガードは従来どおりだが、本番の制限方式ではない。
+- `backend/fastapi/` の旧 FastAPI は開発・比較用に残る。そちらの MemoryStorage・単一 worker ガードは従来どおりだが、本番の制限方式ではない。
 
 ## 以前の却下を変えた理由
 
@@ -42,7 +42,7 @@
 ## 限界と検査
 
 - 共通キーはアプリから取り出され得る。多数 IP による全体枠の消費と、同じ IP の利用者が枠を共有する限界は以前と同じ。オフラインの機能は影響を受けない。
-- `deploy/cloudflare/test/api.test.mjs` は本番 Wrangler 構成・実 workerd・実 binding・HTTP で、認証順序、本文上限、送信元と API ごとの枠、IPv6 /64、AI に載せない項目、429 の外部契約を検証する。AI の通信境界だけが偽物。
+- `backend/worker/test/api.test.mjs` は本番 Wrangler 構成・実 workerd・実 binding・HTTP で、認証順序、本文上限、送信元と API ごとの枠、IPv6 /64、AI に載せない項目、429 の外部契約を検証する。AI の通信境界だけが偽物。
 - CI は Worker の型・HTTP 試験・deploy dry-run。分散拠点間の挙動と実サービスの費用はローカル試験では再現しない。
 - 既存 Gateway の設定（2026-10-18、人の確認）: 支出 1 ドル/月、200 リクエスト/5 分、ログ収集オフ。支出制限の Workers AI に対する実際の遮断は未確認。本番切り替え時に確認する。
 
