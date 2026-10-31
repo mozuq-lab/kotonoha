@@ -44,7 +44,7 @@
 
 - ご利用の端末（例：iPad Pro 11インチ、Samsung Galaxy Tab S8）
 - OSバージョン（例：iOS 17.0、Android 14）
-- アプリのバージョン（設定画面で確認できます）
+- アプリのバージョン（分かる場合）
 - 問題が発生した操作の詳細
 - エラーメッセージ（表示されている場合）
 
@@ -97,7 +97,7 @@ Providing the following information helps us respond more quickly:
 
 - Device you're using (e.g., iPad Pro 11-inch, Samsung Galaxy Tab S8)
 - OS version (e.g., iOS 17.0, Android 14)
-- App version (can be found in Settings)
+- App version (if known)
 - Details of the operation when the problem occurred
 - Error message (if displayed)
 
