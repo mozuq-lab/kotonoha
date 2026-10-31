@@ -17,6 +17,7 @@ class AIPrivacyConsentDialog extends StatelessWidget {
   static const _message = 'AI変換を使うと、入力した文章と選んだ丁寧さが、'
       '米国の Cloudflare, Inc. のAIサービスへ送られます（再生成では前回の変換結果も）。'
       '処理は日本の外で行われることがあります。\n'
+      '名前や体調などを入力すると、それも送られます。\n'
       'ことのはのサーバーは内容を保存しません。'
       '同社は、送られた文章をAIの学習やサービスの改善に使わないとしています。';
 
