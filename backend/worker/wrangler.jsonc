@@ -1,0 +1,16 @@
+// 本番 API は Worker の中で処理する。秘密と本番切り替えの手順は README。
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kotonoha-backend",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-26",
+  "ratelimits": [
+    { "name": "RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 12, "period": 60 } }
+  ],
+  // 旧 DO のデータをこの変更で破壊しない。API からは参照しない互換 export を残す。
+  "durable_objects": {
+    "bindings": [{ "name": "BACKEND", "class_name": "Backend" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Backend"] }],
+  "observability": { "enabled": false }
+}

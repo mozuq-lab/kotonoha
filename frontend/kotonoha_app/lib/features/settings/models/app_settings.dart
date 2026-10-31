@@ -32,6 +32,9 @@ class AppSettings {
   // シンプルモード: 疲労時・症状進行時向けの、文字盤なし大ボタン画面への切替フラグ
   final bool simpleMode;
 
+  // 読み上げの声: 端末の声の ID（TTSVoice.id）。null は日本語の標準の声
+  final String? ttsVoiceId;
+
   // コンストラクタ: デフォルト値を設定（medium、light、normal、normal、false、false）
   // デフォルト値: interfaces.dartで定義されたデフォルト値
   // のデフォルト値定義に基づく
@@ -42,6 +45,7 @@ class AppSettings {
     this.aiPoliteness = PolitenessLevel.normal,
     this.hasAcceptedAIPrivacyPolicy = false,
     this.simpleMode = false,
+    this.ttsVoiceId,
   });
 
   /// 機能概要: 設定の一部を変更した新しいインスタンスを生成
@@ -53,6 +57,8 @@ class AppSettings {
     PolitenessLevel? aiPoliteness,
     bool? hasAcceptedAIPrivacyPolicy,
     bool? simpleMode,
+    String? ttsVoiceId,
+    bool clearTTSVoiceId = false,
   }) {
     // 実装内容: 指定されたフィールドのみ更新し、それ以外は既存値を保持
     // null安全性: Dart Null Safetyに準拠した実装
@@ -65,6 +71,7 @@ class AppSettings {
       hasAcceptedAIPrivacyPolicy:
           hasAcceptedAIPrivacyPolicy ?? this.hasAcceptedAIPrivacyPolicy,
       simpleMode: simpleMode ?? this.simpleMode,
+      ttsVoiceId: clearTTSVoiceId ? null : (ttsVoiceId ?? this.ttsVoiceId),
     );
   }
 
@@ -82,6 +89,7 @@ class AppSettings {
       'ai_politeness': aiPoliteness.name,
       'ai_privacy_consent': hasAcceptedAIPrivacyPolicy,
       'simple_mode': simpleMode,
+      'tts_voice': ttsVoiceId,
     };
   }
 
@@ -151,6 +159,8 @@ class AppSettings {
       aiPoliteness: aiPoliteness,
       hasAcceptedAIPrivacyPolicy: json['ai_privacy_consent'] as bool? ?? false,
       simpleMode: json['simple_mode'] as bool? ?? false,
+      ttsVoiceId:
+          json['tts_voice'] is String ? json['tts_voice'] as String : null,
     );
   }
 }

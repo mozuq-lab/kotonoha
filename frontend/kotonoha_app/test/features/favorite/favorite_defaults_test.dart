@@ -324,11 +324,18 @@ void main() {
     await tester.enterText(find.byKey(const Key('home_input_field')), 'こんにちは');
     await tester.pump();
     expect(container.read(inputBufferProvider), 'こんにちは');
-    await tester.runAsync(() async {
-      await tester.tap(find.byKey(const Key('favorite_current_input')));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    });
-    await tester.pump();
+    await tester.runAsync(
+      () => tester.tap(find.byKey(const Key('favorite_current_input'))),
+    );
+    for (var i = 0;
+        i < 100 && find.text('お気に入りに登録しました').evaluate().isEmpty;
+        i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+    expect(find.text('お気に入りに登録しました'), findsOneWidget);
     expect(box.values.where((item) => item.content == 'こんにちは'), hasLength(1));
 
     final favorite = container.read(favoriteProvider).favorites.last;

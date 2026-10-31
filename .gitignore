@@ -10,8 +10,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-/backend/lib/
-/backend/lib64/
+/backend/fastapi/lib/
+/backend/fastapi/lib64/
 parts/
 sdist/
 var/
@@ -93,8 +93,8 @@ openspec/
 docs/adr/.sessions/
 
 # mutmut の作業ディレクトリ・キャッシュ（1回計測用の一時成果物。恒久成果物は docs/ledger.md の記録のみ）
-backend/mutants/
-backend/.mutmut-cache
+backend/fastapi/mutants/
+backend/fastapi/.mutmut-cache
 
 # fvm が作る SDK のシンボリックリンク（.fvmrc は追跡する）
 frontend/kotonoha_app/.fvm/

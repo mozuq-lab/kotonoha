@@ -92,7 +92,7 @@ def _spawn(port: int, env: dict[str, str], *args: str) -> subprocess.Popen[str]:
             str(port),
             *args,
         ],
-        # 開発者の backend/.env を読ませない（読むと送り先などが紛れ込み、CI と結果が変わる）
+        # 開発者の backend/fastapi/.env を読ませない（読むと送り先などが紛れ込み、CI と結果が変わる）
         cwd=tempfile.mkdtemp(prefix="kotonoha-spawn-"),
         env=env,
         stdout=subprocess.PIPE,

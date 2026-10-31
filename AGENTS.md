@@ -5,7 +5,7 @@
 
 ## 目的と、守る約束
 
-**kotonoha（ことのは）** — 発話が困難な人（脳梗塞・ALS・筋疾患など）が、少ない操作で、適切な丁寧さで、安全に伝える文字盤アプリ（Flutter、タブレット向け）。**利用者は発話で訂正できず、データは端末内（Hive）にしか無い。** 文字盤・定型文・履歴・お気に入り・読み上げはオフラインで動き、AI 変換だけがオンライン（backend は FastAPI のステートレスなプロキシ。DB 無し）。仕様の正本は `docs/spec/kotonoha-requirements.md`。
+**kotonoha（ことのは）** — 発話が困難な人（脳梗塞・ALS・筋疾患など）が、少ない操作で、適切な丁寧さで、安全に伝える文字盤アプリ（Flutter、タブレット向け）。**利用者は発話で訂正できず、データは端末内（Hive）にしか無い。** 文字盤・定型文・履歴・お気に入り・読み上げはオフラインで動き、AI 変換だけがオンライン（本番 backend は `backend/worker/` の TypeScript Worker。DB 無し。旧 FastAPI は開発・比較用）。仕様の正本は `docs/spec/kotonoha-requirements.md`。
 目的はこのアプリを形にして届けること。「形」の定義と最短経路は `docs/now.md` にある。
 **守る約束**（製品の約束。変えるのは人）: ① データを黙って失わない（消えるのに残ると告げない） ② 端末の外へ出さない ③ 本人の意図どおりに伝える（言っていないことを言わない・読み上げが黙らない）。
 
@@ -13,7 +13,7 @@
 
 1. **何をするか**: `docs/now.md` の最短経路にある仕事と、人の依頼だけをする。レビュー指摘や思いついた改善は仕事の入口にしない。最短経路に動かせるものが無ければ、止まって待ってよい（仕事を作らない）。
 2. **等級**: 差分（修正の差分も）が触るパスで最低等級が決まり、エージェントは上げるだけ。挙動を変えない差分（文書・コメント・テストだけ）は C。`lib/…` は `frontend/kotonoha_app/lib/`。
-   - **A**（守る約束を破り得る）: 保存と消去（`lib/core/persistence/`・`lib/core/utils/hive_*`・`lib/shared/models/*_adapter.dart`・`lib/features/*/data/` とそれを呼んで保存・削除する provider（例: `preset_phrase_notifier.dart`）・SharedPreferences を読み書きするコード）、読み上げ（`lib/features/tts/domain/`・`lib/features/tts/providers/`）、端末の外（`lib/features/ai_conversion/data/`・`backend/app/`・権限・依存・`.github/workflows/`）
+   - **A**（守る約束を破り得る）: 保存と消去（`lib/core/persistence/`・`lib/core/utils/hive_*`・`lib/shared/models/*_adapter.dart`・`lib/features/*/data/` とそれを呼んで保存・削除する provider（例: `preset_phrase_notifier.dart`）・SharedPreferences を読み書きするコード）、読み上げ（`lib/features/tts/domain/`・`lib/features/tts/providers/`）、端末の外（`lib/features/ai_conversion/data/`・`backend/worker/`・`backend/fastapi/app/`・権限・依存・`.github/workflows/`）
    - **B**: それ以外のコード（画面・文言・配色・確認ダイアログを含む）
    - **C**: 文書・コメント・テストだけ・挙動を変えない整理
 3. **検証の重さ**: A はテストを先に書いて赤を見る、レビュー 1 系統、実物での確認（結合テストを iOS シミュレータ・Android エミュレータ・実 Chromium で走らせる。画像を読むのは失敗時と見た目を確かめる画面だけ。物理実機はストア提出の前）。保存・送信の経路を変えるときは、文脈を持たない担当がコードから公開文（`docs/privacy-policy.md`・`docs/support.md`）へ読む独立監査も通す。B はテストとレビュー 1 系統（画面を変えたら実物で見る）。C はビルドと既存テストだけ。
@@ -34,7 +34,7 @@
 
 | ADR | 決めたこと | 却下した案 | 関わる行為 | 検査 |
 |---|---|---|---|---|
-| ADR-002 | 【構造】レート制限は単一インスタンス前提・プロセス内メモリ（`limits` の `MemoryStorage`）。XFF は `backend/app/ratelimit.py` の 1 箇所、`TRUSTED_PROXY_COUNT` は実段数。総費用の上限はプロバイダの支出上限（Workers AI は AI Gateway） | Redis 等の共有ストレージ（URI が秘密を運ぶ。8 周の原因）、アプリ内の制限をやめてインフラ層に任せる | 依存, 設定キー, 外部送信先 | 起動ガード（worker>1 で失敗）。デプロイ側契約は未検査 |
+| ADR-002 | 【構造】本番は TypeScript Worker と標準 Rate Limiting（API ごと 12 回/60 秒、拠点ごとの概算）。IP から 1 分ごとに変わる HMAC 識別子を作る。全体は AI Gateway の回数・支出制限（推計・結果整合） | Redis 等の共有ストア、Durable Objects の永続カウンタ、端末ごとの匿名 ID、Worker のグローバル変数、Gateway/WAF だけ、Containers の継続 | 依存, 設定キー, 外部送信先 | 本番 Wrangler 構成の workerd HTTP テスト。実 Gateway の遮断は未検査 |
 | ADR-005 | 【約束】frontend は 1 概念 1 真実（お気に入りの正は `favoriteProvider`。履歴・定型文のモデルに `isFavorite` を持たせない）。お気に入りは定型文の削除で消えない。永続化の失敗（作り直し・一部の喪失・設定を含む）は利用者に伝える | 各モデルに isFavorite フィールド、定型文削除でお気に入りも消す | 永続化 | Hive スキーマ許可リスト検査（一部）、TC-SYNC-202 |
 | ADR-007 | 【約束】リリース基準: 公式ストアで本公開、初回から AI 変換を含む（Workers AI）、クラッシュ報告はストア標準に依拠（ADR-009）。条件は 5 つで閉じる。iOS 先行、Android は Play のクローズドテスト（12 人 × 14 日）通過後。開発者登録はアプリが形になってから | 日付を置く、自発的な β 配布、組織アカウント（D-U-N-S）で Play の要件を外す、初回を AI 変換抜きで出す | 権限, 外部送信先 | 無し（リリースまで生きる） |
 | ADR-009 | 【約束】クラッシュ報告はストア標準に依拠し、アプリからは何も送らない | Crashlytics、Sentry、自前送信先、オプトイン | 依存, 外部送信先, 権限 | 無し（送信経路が存在しないこと自体が担保） |
@@ -47,8 +47,8 @@
 ## コマンド（リポジトリルートから。セットアップ・前提・トラブルシューティングは README）
 
 ```bash
-(cd backend && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)   # 起動。--factory 必須。DB は無い
-(cd backend && export PATH="$PWD/.venv/bin:$PATH" && pytest && make check)   # テスト（pytest-randomly）＋ ruff / black / mypy --strict / lint-imports / gates.sh
+(cd backend/fastapi && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)   # 起動。--factory 必須。DB は無い
+(cd backend/fastapi && export PATH="$PWD/.venv/bin:$PATH" && pytest && make check)   # テスト（pytest-randomly）＋ ruff / black / mypy --strict / lint-imports / gates.sh
 (cd frontend/kotonoha_app && fvm flutter run -d chrome)                      # 接続先は --dart-define=API_BASE_URL=…（空文字は defaultValue を打ち消す）
 (cd frontend/kotonoha_app && fvm flutter analyze --no-fatal-infos && fvm flutter test && fvm dart format --output=none --set-exit-if-changed .)
 scripts/inventory.sh                                                         # 監査の計測。数えるだけ

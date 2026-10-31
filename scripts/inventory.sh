@@ -15,8 +15,8 @@ if [ -f docs/ledger.md ]; then
   printf '%s / %s / %s / %s\n' "$(grep -c '^- \[ \]' docs/ledger.md)" "$(grep -c '^- \[x\]' docs/ledger.md)" "$(grep -c '^- \[-\]' docs/ledger.md)" "$(grep -c '^- \[~\]' docs/ledger.md)"
 else echo "docs/ledger.md が無い"; fi
 
-h "直近 30 日のコミット（製品: frontend/kotonoha_app/lib・backend/app を変えたもの / 全体）"
-printf '%s / %s\n' "$(git log --since='30 days ago' --format=%h -- frontend/kotonoha_app/lib backend/app | wc -l | tr -d ' ')" "$(git log --since='30 days ago' --format=%h | wc -l | tr -d ' ')"
+h "直近 30 日のコミット（製品: frontend/kotonoha_app/lib・backend/fastapi/app を変えたもの / 全体）"
+printf '%s / %s\n' "$(git log --since='30 days ago' --format=%h -- frontend/kotonoha_app/lib backend/fastapi/app | wc -l | tr -d ' ')" "$(git log --since='30 days ago' --format=%h | wc -l | tr -d ' ')"
 
 h "出力ゼロの仕組み（90 日で実行 0 回の workflow）"
 since=$(date -u -d '90 days ago' +%F 2>/dev/null || date -u -v-90d +%F)
@@ -38,7 +38,7 @@ grep -ho '`[A-Za-z0-9_./-]*/[A-Za-z0-9_./-]*`' AGENTS.md docs/adr/*.md README.md
   | while read -r p; do case "$p" in *'*'*|http*) continue;; esac; [ -e "$p" ] || printf '  無い: %s\n' "$p"; done
 
 h "生成時コメントの残量（【】 / 🔵🟡🔴）"
-for d in frontend/kotonoha_app/lib frontend/kotonoha_app/test frontend/kotonoha_app/integration_test backend/app; do
+for d in frontend/kotonoha_app/lib frontend/kotonoha_app/test frontend/kotonoha_app/integration_test backend/fastapi/app; do
   printf '  %-45s 【】=%-5s 記号=%s\n' "$d" "$(grep -r '【' "$d" --include='*.dart' --include='*.py' | wc -l | tr -d ' ')" "$(grep -r '🔵\|🟡\|🔴' "$d" --include='*.dart' --include='*.py' | wc -l | tr -d ' ')"
 done
 

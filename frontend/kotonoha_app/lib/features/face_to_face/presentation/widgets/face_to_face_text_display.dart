@@ -24,6 +24,7 @@ class FaceToFaceTextDisplay extends StatelessWidget {
     super.key,
     required this.text,
     this.fontSize,
+    this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 88),
   });
 
   /// 自動で決めるときの最小・最大の文字の大きさ
@@ -32,8 +33,7 @@ class FaceToFaceTextDisplay extends StatelessWidget {
 
   /// 上下は左上・右上のボタン（上端から 16 + 56）と重ならないだけ空ける。
   /// 180 度回転しても同じになるよう上下を揃える。
-  static const EdgeInsets _padding =
-      EdgeInsets.symmetric(horizontal: 24.0, vertical: 88.0);
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class FaceToFaceTextDisplay extends StatelessWidget {
       label: '対面表示テキスト: $text',
       child: Center(
         child: Padding(
-          padding: _padding,
+          padding: padding,
           child: LayoutBuilder(
             builder: (context, constraints) {
               // 指定が無ければ、画面に収まる最大の大きさにする（相手が離れていても読める）

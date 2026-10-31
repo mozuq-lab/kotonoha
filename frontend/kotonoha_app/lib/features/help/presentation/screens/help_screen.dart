@@ -141,6 +141,12 @@ class HelpScreen extends ConsumerWidget {
                       '${TTSSpeed.values.map((s) => '「${TTSSpeedSettingsWidget.label(s)}」').join()}'
                       'から選べます。',
                 ),
+                const SizedBox(height: 16),
+                const _HelpItem(
+                  title: '読み上げの声',
+                  description: '端末に入っている日本語の声から選べます。'
+                      '声は端末の設定で追加できます。',
+                ),
               ],
             ),
 
