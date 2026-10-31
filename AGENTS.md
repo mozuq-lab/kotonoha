@@ -49,6 +49,7 @@
 ```bash
 (cd backend/fastapi && .venv/bin/uvicorn app.main:create_app --factory --no-proxy-headers --reload)   # 起動。--factory 必須。DB は無い
 (cd backend/fastapi && export PATH="$PWD/.venv/bin:$PATH" && pytest && make check)   # テスト（pytest-randomly）＋ ruff / black / mypy --strict / lint-imports / gates.sh
+(cd backend/worker && npm run typecheck && npm test)                         # 本番 Worker の型と実 workerd の HTTP テスト
 (cd frontend/kotonoha_app && fvm flutter run -d chrome)                      # 接続先は --dart-define=API_BASE_URL=…（空文字は defaultValue を打ち消す）
 (cd frontend/kotonoha_app && fvm flutter analyze --no-fatal-infos && fvm flutter test && fvm dart format --output=none --set-exit-if-changed .)
 scripts/inventory.sh                                                         # 監査の計測。数えるだけ
